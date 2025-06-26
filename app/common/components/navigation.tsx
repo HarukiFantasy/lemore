@@ -13,14 +13,14 @@ const menus = [
     to: '/secondhand',
     items: [
       {
-        name: 'Submit a Listing',
-        description: 'Sell your stuff. Make some cash',
-        to: '/secondhand/submit-a-listing',
-      },
-      {
         name: 'Browse Listings',
         description: 'Find great deals on used items',
         to: '/secondhand/browse-listings',
+      },
+      {
+        name: 'Submit a Listing',
+        description: 'Sell your stuff. Make some cash',
+        to: '/secondhand/submit-a-listing',
       },
     ],
   },
@@ -47,11 +47,6 @@ const menus = [
         name: 'Give & Glow',
         description: 'One-line notes from your giving moments',
         to: '/community/give-and-glow',
-      },
-      {
-        name: 'Post',
-        description: 'Share the information',
-        to: '/community/post',
       },
     ],
   },

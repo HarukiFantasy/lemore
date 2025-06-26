@@ -14,7 +14,6 @@ export default [
     route("/ask-and-answer", "features/community/pages/ask-and-answer-page.tsx"),
     route("/local-reviews", "features/community/pages/local-reviews-page.tsx"),
     route("/give-and-glow", "features/community/pages/give-and-glow-page.tsx"),
-    route("/post", "features/community/pages/post-page.tsx"),
   ]),
   route("/let-go-buddy", "features/let-go-buddy/pages/let-go-buddy-page.tsx"),
 ] satisfies RouteConfig;
