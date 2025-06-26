@@ -1,3 +1,5 @@
-export default function SecondhandPage() {
-  return <div className="p-8 text-2xl font-bold">Secondhand Page</div>;
-} 
+import { redirect } from "react-router";
+
+export function loader(){
+  return redirect("/secondhand/browse-listings");
+}
