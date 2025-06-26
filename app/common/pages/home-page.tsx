@@ -34,7 +34,7 @@ export default function HomePage({loaderData}: Route.ComponentProps) {
         {Array.from({ length: 4 }).map((_, index) => (
           <ProductCard
             key={index}
-            productId={`productId-${index}`}
+            productId={`${index}`}
             image="/sample.png"
             title="Bicycle for sale"
             price="THB 1000"

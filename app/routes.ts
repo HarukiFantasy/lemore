@@ -6,6 +6,7 @@ export default [
     index("features/products/pages/secondhand-page.tsx"),
     route("/submit-a-listing", "features/products/pages/submit-a-listing-page.tsx"), 
     route("/browse-listings", "features/products/pages/browse-listings-page.tsx"),
+    route("/product/:id", "features/products/pages/product-detail-page.tsx"),
   ]),
   ...prefix("community", [
     index("features/community/pages/community-page.tsx"),

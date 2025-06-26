@@ -26,35 +26,9 @@ export const meta: Route.MetaFunction = () => {
 
 export default function BrowseListingsPage() {
   const [search, setSearch] = useState("bicycle");
-  const [selectedLocation, setSelectedLocation] = useState("Bangkok");
-
-  const locations = [
-    "Bangkok",
-    "ChiangMai", 
-    "HuaHin",
-    "Phuket",
-    "Pattaya",
-    "Koh Phangan",
-    "Koh Tao",
-    "Koh Samui",
-  ];
 
   return (
     <div className="flex flex-col md:flex-row">
-      {/* 왼쪽 사이드바 (지역) */}
-      <aside className="w-56 p-6 px-8 text-gray-700 lg:block hidden">
-        <div className="font-bold text-lg mb-4">Location</div>
-        <RadioGroup value={selectedLocation} onValueChange={setSelectedLocation}>
-          {locations.map((location) => (
-            <div key={location} className="flex items-center space-x-2">
-              <RadioGroupItem value={location} id={location} />
-              <label htmlFor={location} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                {location}
-              </label>
-            </div>
-          ))}
-        </RadioGroup>
-      </aside>
 
       {/* 메인 컨텐츠 */}
       <main className="flex-1 p-8">
@@ -79,7 +53,7 @@ export default function BrowseListingsPage() {
                   ${index >= 7 ? 'hidden lg:flex' : ''}
                 `}
               >
-                <div className="w-10 h-10 flex items-center justify-center rounded-full bg-purple-100 text-sm mb-2">
+                <div className="w-15 h-15 flex items-center justify-center rounded-full bg-purple-100 text-2xl mb-2">
                   {cat.icon}
                 </div>
                 <span className="text-sm sm:text-sm md:text-sm lg:text-sm xl:text-sm text-center">{cat.name}</span>
@@ -98,7 +72,7 @@ export default function BrowseListingsPage() {
           {Array.from({ length: 12 }).map((_, index) => (
             <ProductCard
               key={index}
-              productId={`productId-${index}`}
+              productId={`${index}`}
               image="/sample.png"
               title="Bicycle for sale"
               price="THB 1000"
