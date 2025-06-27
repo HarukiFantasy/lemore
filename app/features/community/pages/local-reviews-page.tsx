@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router";
+import { z } from "zod";
 import type { Route } from './+types/local-reviews-page';
 import { Button } from "~/common/components/ui/button";
 import { Input } from "~/common/components/ui/input";
@@ -39,9 +40,27 @@ interface Business {
 }
 
 // Constants
-const BUSINESS_TYPES = ["Restaurant", "Cafe", "Shop", "Service", "Entertainment", "All"];
-const PRICE_RANGES = ["$", "$$", "$$$", "$$$$", "All"];
-const VALID_LOCATIONS = ["Bangkok", "ChiangMai", "HuaHin", "Phuket", "Pattaya", "Koh Phangan", "Koh Tao", "Koh Samui", "All Cities"];
+const BUSINESS_TYPES = ["Restaurant", "Cafe", "Shop", "Service", "Entertainment", "All"] as const;
+const PRICE_RANGES = ["$", "$$", "$$$", "$$$$", "All"] as const;
+const VALID_LOCATIONS = ["Bangkok", "ChiangMai", "HuaHin", "Phuket", "Pattaya", "Koh Phangan", "Koh Tao", "Koh Samui", "All Cities"] as const;
+
+// Zod Schemas
+const BusinessTypeSchema = z.enum(BUSINESS_TYPES);
+const PriceRangeSchema = z.enum(PRICE_RANGES);
+const LocationSchema = z.enum(VALID_LOCATIONS);
+
+const SearchQuerySchema = z.string()
+  .max(100, "Search query is too long. Maximum length is 100 characters.")
+  .transform(val => val.replace(/[<>]/g, "").trim())
+  .optional()
+  .default("");
+
+const FilterSchema = z.object({
+  type: BusinessTypeSchema.default("All"),
+  location: LocationSchema.default("Bangkok"),
+  search: SearchQuerySchema,
+  priceRange: PriceRangeSchema.default("All")
+});
 
 // Database connection function (replace with actual database client)
 async function fetchBusinessesFromDatabase(filters: {
@@ -78,59 +97,6 @@ async function fetchReviewsFromDatabase(filters: {
     console.error("Database error:", error);
     throw new Error("Failed to fetch reviews from database");
   }
-}
-
-// Validation functions
-function validateBusinessType(type: string | undefined): string {
-  if (!type || type === "All") {
-    return "All";
-  }
-  
-  if (!BUSINESS_TYPES.slice(0, -1).includes(type)) {
-    throw new Error(`Invalid business type: ${type}. Valid types are: ${BUSINESS_TYPES.slice(0, -1).join(", ")}`);
-  }
-  
-  return type;
-}
-
-function validateLocation(location: string | undefined): string {
-  if (!location) {
-    return "Bangkok"; // Default value
-  }
-  
-  if (!VALID_LOCATIONS.includes(location)) {
-    throw new Error(`Invalid location: ${location}. Valid locations are: ${VALID_LOCATIONS.join(", ")}`);
-  }
-  
-  return location;
-}
-
-function validateSearchQuery(search: string | undefined): string {
-  if (!search) {
-    return "";
-  }
-  
-  // Search query length limit
-  if (search.length > 100) {
-    throw new Error("Search query is too long. Maximum length is 100 characters.");
-  }
-  
-  // Sanitize search query (XSS prevention)
-  const sanitizedSearch = search.replace(/[<>]/g, "");
-  
-  return sanitizedSearch.trim();
-}
-
-function validatePriceRange(priceRange: string | undefined): string {
-  if (!priceRange || priceRange === "All") {
-    return "All";
-  }
-  
-  if (!PRICE_RANGES.slice(0, -1).includes(priceRange)) {
-    throw new Error(`Invalid price range: ${priceRange}. Valid ranges are: ${PRICE_RANGES.slice(0, -1).join(", ")}`);
-  }
-  
-  return priceRange;
 }
 
 // Database filtering function
@@ -178,11 +144,20 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
     const search = url.searchParams.get("search") || undefined;
     const priceRange = url.searchParams.get("priceRange") || undefined;
 
-    // Data validation
-    const validatedType = validateBusinessType(type);
-    const validatedLocation = validateLocation(location);
-    const validatedSearch = validateSearchQuery(search);
-    const validatedPriceRange = validatePriceRange(priceRange);
+    // Data validation using Zod
+    const validationResult = FilterSchema.safeParse({
+      type,
+      location,
+      search,
+      priceRange
+    });
+
+    if (!validationResult.success) {
+      const errorMessage = validationResult.error.errors.map(err => err.message).join(", ");
+      throw new Response(errorMessage, { status: 400 });
+    }
+
+    const { type: validatedType, location: validatedLocation, search: validatedSearch, priceRange: validatedPriceRange } = validationResult.data;
 
     // Fetch data from database
     const databaseFilters = buildDatabaseFilters(validatedType, validatedLocation, validatedSearch, validatedPriceRange);
@@ -238,15 +213,12 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
   } catch (error) {
     console.error("Loader error:", error);
     
+    if (error instanceof Response) {
+      // Re-throw validation and other HTTP errors
+      throw error;
+    }
+    
     if (error instanceof Error) {
-      // Validation errors return 400 Bad Request
-      if (error.message.includes("Invalid business type") || 
-          error.message.includes("Invalid location") || 
-          error.message.includes("Invalid price range") ||
-          error.message.includes("Search query is too long")) {
-        throw new Response(error.message, { status: 400 });
-      }
-      
       // Database errors return 500 Internal Server Error
       if (error.message.includes("Failed to fetch")) {
         throw new Response("Database connection failed", { status: 500 });
@@ -300,22 +272,22 @@ export default function LocalReviewsPage({ loaderData }: Route.ComponentProps) {
   const urlLocation = searchParams.get("location") || filters.location;
   
   const [searchQuery, setSearchQuery] = useState(filters.search);
-  const [selectedType, setSelectedType] = useState(filters.type);
-  const [selectedPriceRange, setSelectedPriceRange] = useState(filters.priceRange);
+  const [selectedType, setSelectedType] = useState<z.infer<typeof BusinessTypeSchema>>(filters.type);
+  const [selectedPriceRange, setSelectedPriceRange] = useState<z.infer<typeof PriceRangeSchema>>(filters.priceRange);
   const [showReviewForm, setShowReviewForm] = useState(false);
   const [selectedBusiness, setSelectedBusiness] = useState<Business | null>(null);
   const [newReview, setNewReview] = useState({
     rating: 5,
     review: "",
-    priceRange: "$",
+    priceRange: "$" as z.infer<typeof PriceRangeSchema>,
     tags: [] as string[]
   });
   const [showBusinessForm, setShowBusinessForm] = useState(false);
   const [newBusiness, setNewBusiness] = useState({
     name: "",
-    type: "Restaurant",
-    location: urlLocation,
-    priceRange: "$",
+    type: "Restaurant" as z.infer<typeof BusinessTypeSchema>,
+    location: urlLocation as z.infer<typeof LocationSchema>,
+    priceRange: "$" as z.infer<typeof PriceRangeSchema>,
     tags: [] as string[],
     address: "",
     phone: "",
@@ -324,7 +296,7 @@ export default function LocalReviewsPage({ loaderData }: Route.ComponentProps) {
   });
 
   useEffect(() => {
-    setNewBusiness(prev => ({ ...prev, location: urlLocation }));
+    setNewBusiness(prev => ({ ...prev, location: urlLocation as z.infer<typeof LocationSchema> }));
   }, [urlLocation]);
 
   // Filter businesses based on current state
@@ -339,7 +311,7 @@ export default function LocalReviewsPage({ loaderData }: Route.ComponentProps) {
   });
 
   // Update filters and URL
-  const updateFilters = (newType: string, newSearch: string, newPriceRange: string) => {
+  const updateFilters = (newType: z.infer<typeof BusinessTypeSchema>, newSearch: string, newPriceRange: z.infer<typeof PriceRangeSchema>) => {
     const newSearchParams = new URLSearchParams(searchParams);
     
     if (newType && newType !== "All") {
@@ -363,7 +335,7 @@ export default function LocalReviewsPage({ loaderData }: Route.ComponentProps) {
     setSearchParams(newSearchParams);
   };
 
-  const handleTypeChange = (type: string) => {
+  const handleTypeChange = (type: z.infer<typeof BusinessTypeSchema>) => {
     setSelectedType(type);
     updateFilters(type, searchQuery, selectedPriceRange);
   };
@@ -373,7 +345,7 @@ export default function LocalReviewsPage({ loaderData }: Route.ComponentProps) {
     updateFilters(selectedType, search, selectedPriceRange);
   };
 
-  const handlePriceRangeChange = (priceRange: string) => {
+  const handlePriceRangeChange = (priceRange: z.infer<typeof PriceRangeSchema>) => {
     setSelectedPriceRange(priceRange);
     updateFilters(selectedType, searchQuery, priceRange);
   };
@@ -384,7 +356,7 @@ export default function LocalReviewsPage({ loaderData }: Route.ComponentProps) {
       console.log("Submitting review:", { business: selectedBusiness, review: newReview });
       setShowReviewForm(false);
       setSelectedBusiness(null);
-      setNewReview({ rating: 5, review: "", priceRange: "$", tags: [] });
+      setNewReview({ rating: 5, review: "", priceRange: "$" as z.infer<typeof PriceRangeSchema>, tags: [] });
     }
   };
 
@@ -395,9 +367,9 @@ export default function LocalReviewsPage({ loaderData }: Route.ComponentProps) {
       setShowBusinessForm(false);
       setNewBusiness({
         name: "",
-        type: "Restaurant",
-        location: urlLocation,
-        priceRange: "$",
+        type: "Restaurant" as z.infer<typeof BusinessTypeSchema>,
+        location: urlLocation as z.infer<typeof LocationSchema>,
+        priceRange: "$" as z.infer<typeof PriceRangeSchema>,
         tags: [],
         address: "",
         phone: "",
@@ -780,9 +752,9 @@ export default function LocalReviewsPage({ loaderData }: Route.ComponentProps) {
                     setShowBusinessForm(false);
                     setNewBusiness({
                       name: "",
-                      type: "Restaurant",
-                      location: urlLocation,
-                      priceRange: "$",
+                      type: "Restaurant" as z.infer<typeof BusinessTypeSchema>,
+                      location: urlLocation as z.infer<typeof LocationSchema>,
+                      priceRange: "$" as z.infer<typeof PriceRangeSchema>,
                       tags: [],
                       address: "",
                       phone: "",
@@ -866,7 +838,7 @@ export default function LocalReviewsPage({ loaderData }: Route.ComponentProps) {
                   onClick={() => {
                     setShowReviewForm(false);
                     setSelectedBusiness(null);
-                    setNewReview({ rating: 5, review: "", priceRange: "$", tags: [] });
+                    setNewReview({ rating: 5, review: "", priceRange: "$" as z.infer<typeof PriceRangeSchema>, tags: [] });
                   }}
                 >
                   Cancel

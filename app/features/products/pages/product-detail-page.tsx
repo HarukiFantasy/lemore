@@ -3,6 +3,8 @@ import { Button } from "~/common/components/ui/button";
 import { Card } from "~/common/components/ui/card";
 import { Separator } from "~/common/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "~/common/components/ui/avatar";
+import { paramsSchema } from "~/lib/schemas";
+import { useParams } from "react-router";
 
 export const meta = () => {
   return [
@@ -12,13 +14,30 @@ export const meta = () => {
 };
 
 export default function ProductDetailPage() {
+  const params = useParams();
   const [selectedImage, setSelectedImage] = useState(0);
   const [isLiked, setIsLiked] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
 
+  // URL 파라미터 검증
+  const validationResult = paramsSchema.productId.safeParse(params);
+  
+  if (!validationResult.success) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-red-600 mb-2">Invalid Product ID</h1>
+          <p className="text-gray-600">{validationResult.error.errors[0]?.message}</p>
+        </div>
+      </div>
+    );
+  }
+
+  const { id: productId } = validationResult.data;
+
   // Mock product data - in a real app this would come from the loader
   const product = {
-    id: "1",
+    id: productId,
     title: "Vintage Bicycle - Perfect Condition",
     price: "THB 2,500",
     originalPrice: "THB 3,500",

@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Input } from "~/common/components/ui/input";
 import { Button } from "~/common/components/ui/button";
 import { useNavigate } from "react-router";
+import { productFormSchema, type ProductFormData } from "~/lib/schemas";
 
 export default function SubmitAListingPage() {
   const [images, setImages] = useState<File[]>([]);
@@ -9,6 +10,10 @@ export default function SubmitAListingPage() {
   const [title, setTitle] = useState("");
   const [price, setPrice] = useState("");
   const [description, setDescription] = useState("");
+  const [condition, setCondition] = useState("");
+  const [category, setCategory] = useState("");
+  const [location, setLocation] = useState("");
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const navigate = useNavigate();
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -30,8 +35,40 @@ export default function SubmitAListingPage() {
     setPreviews(prev => prev.filter((_, i) => i !== index));
   };
 
+  const validateForm = (): boolean => {
+    const formData: ProductFormData = {
+      title,
+      price,
+      description,
+      condition: condition as any,
+      category,
+      location,
+      images,
+    };
+
+    const result = productFormSchema.safeParse(formData);
+    
+    if (!result.success) {
+      const newErrors: Record<string, string> = {};
+      result.error.errors.forEach(error => {
+        const field = error.path.join('.');
+        newErrors[field] = error.message;
+      });
+      setErrors(newErrors);
+      return false;
+    }
+    
+    setErrors({});
+    return true;
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!validateForm()) {
+      return;
+    }
+
     // Here you would normally upload the product and get its ID
     // For now, redirect to a sample product detail page
     navigate("/secondhand/product/0");
@@ -71,31 +108,82 @@ export default function SubmitAListingPage() {
             disabled={images.length >= 5}
           />
           <span className="text-xs text-neutral-500 mt-2">{images.length}/5 images</span>
+          {errors.images && <span className="text-xs text-red-500 mt-1">{errors.images}</span>}
         </label>
       </div>
+      
       {/* Right: Product Details */}
       <div className="flex-1 flex flex-col gap-4 border rounded-lg p-6 bg-white shadow">
-        <Input
-          type="text"
-          placeholder="Product Title"
-          value={title}
-          onChange={e => setTitle(e.target.value)}
-          required
-        />
-        <Input
-          type="text"
-          placeholder="Price (e.g., THB 1000)"
-          value={price}
-          onChange={e => setPrice(e.target.value)}
-          required
-        />
-        <textarea
-          className="border rounded p-2 min-h-[100px]"
-          placeholder="Description"
-          value={description}
-          onChange={e => setDescription(e.target.value)}
-          required
-        />
+        <div>
+          <Input
+            type="text"
+            placeholder="Product Title"
+            value={title}
+            onChange={e => setTitle(e.target.value)}
+            className={errors.title ? "border-red-500" : ""}
+          />
+          {errors.title && <span className="text-xs text-red-500 mt-1">{errors.title}</span>}
+        </div>
+        
+        <div>
+          <Input
+            type="text"
+            placeholder="Price (e.g., THB 1000)"
+            value={price}
+            onChange={e => setPrice(e.target.value)}
+            className={errors.price ? "border-red-500" : ""}
+          />
+          {errors.price && <span className="text-xs text-red-500 mt-1">{errors.price}</span>}
+        </div>
+        
+        <div>
+          <textarea
+            className={`border rounded p-2 min-h-[100px] ${errors.description ? "border-red-500" : ""}`}
+            placeholder="Description"
+            value={description}
+            onChange={e => setDescription(e.target.value)}
+          />
+          {errors.description && <span className="text-xs text-red-500 mt-1">{errors.description}</span>}
+        </div>
+        
+        <div>
+          <select
+            value={condition}
+            onChange={e => setCondition(e.target.value)}
+            className={`border rounded p-2 w-full ${errors.condition ? "border-red-500" : ""}`}
+          >
+            <option value="">Select Condition</option>
+            <option value="New">New</option>
+            <option value="Like New">Like New</option>
+            <option value="Good">Good</option>
+            <option value="Fair">Fair</option>
+            <option value="Poor">Poor</option>
+          </select>
+          {errors.condition && <span className="text-xs text-red-500 mt-1">{errors.condition}</span>}
+        </div>
+        
+        <div>
+          <Input
+            type="text"
+            placeholder="Category"
+            value={category}
+            onChange={e => setCategory(e.target.value)}
+            className={errors.category ? "border-red-500" : ""}
+          />
+          {errors.category && <span className="text-xs text-red-500 mt-1">{errors.category}</span>}
+        </div>
+        
+        <div>
+          <Input
+            type="text"
+            placeholder="Location"
+            value={location}
+            onChange={e => setLocation(e.target.value)}
+            className={errors.location ? "border-red-500" : ""}
+          />
+          {errors.location && <span className="text-xs text-red-500 mt-1">{errors.location}</span>}
+        </div>
+        
         <Button type="submit" className="mt-4">Submit Listing</Button>
       </div>
     </form>

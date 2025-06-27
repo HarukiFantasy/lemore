@@ -1,16 +1,51 @@
 import { Link } from "react-router";
+import { z } from "zod";
 
-interface ProductCardProps {
-  productId: string;
-  image: string;
-  title: string;
-  price: string;
-  seller?: string;
-  likes?: number;
-  views?: number;
-}
+// Props 검증 스키마
+const productCardSchema = z.object({
+  productId: z.string().min(1, "Product ID is required"),
+  image: z.string().url("Image URL must be valid").min(1, "Image is required"),
+  title: z.string().min(1, "Title is required").max(100, "Title must be less than 100 characters"),
+  price: z.string().min(1, "Price is required").regex(/^THB\s\d+/, "Price must be in format 'THB [number]'"),
+  seller: z.string().optional(),
+  likes: z.number().min(0, "Likes cannot be negative").optional(),
+  views: z.number().min(0, "Views cannot be negative").optional(),
+});
 
-export function ProductCard({ productId, image, title, price, seller = "Multiple Owners", likes = 0, views = 0 }: ProductCardProps) {
+type ProductCardProps = z.infer<typeof productCardSchema>;
+
+export function ProductCard({ 
+  productId, 
+  image, 
+  title, 
+  price, 
+  seller = "Multiple Owners", 
+  likes = 0, 
+  views = 0 
+}: ProductCardProps) {
+  // Props 검증
+  const validationResult = productCardSchema.safeParse({ 
+    productId, 
+    image, 
+    title, 
+    price, 
+    seller, 
+    likes, 
+    views 
+  });
+  
+  if (!validationResult.success) {
+    return (
+      <div className="relative w-full h-40 sm:h-48 md:h-60 overflow-hidden bg-red-50 rounded-lg shadow border border-red-200">
+        <div className="flex items-center justify-center h-full">
+          <span className="text-red-600 text-sm text-center">
+            Invalid product data: {validationResult.error.errors[0]?.message}
+          </span>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <Link to={`/secondhand/product/${productId}`}>
       <div className="relative w-full h-40 sm:h-48 md:h-60 overflow-hidden bg-white rounded-lg shadow group">

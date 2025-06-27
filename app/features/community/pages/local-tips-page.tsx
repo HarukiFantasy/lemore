@@ -5,26 +5,24 @@ import { Card, CardContent, CardHeader, CardTitle } from "../../../common/compon
 import { Separator } from "../../../common/components/ui/separator";
 import type { Route } from './+types/local-tips-page';
 import { useSearchParams } from "react-router";
+import { 
+  localTipFiltersSchema, 
+  localTipPostSchema, 
+  localTipCreateSchema,
+  VALID_LOCAL_TIP_CATEGORIES,
+  type LocalTipFilters,
+  type LocalTipPost,
+  type LocalTipCreateData,
+  type LocalTipCategory
+} from "~/lib/schemas";
+import { validateWithZod, getFieldErrors } from "~/lib/utils";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/common/components/ui/select";
 
-// 데이터베이스에서 가져올 포스트 타입 정의
-interface LocalTipPost {
-  id: number;
-  title: string;
-  content: string;
-  category: string;
-  location: string;
-  author: string;
-  createdAt: Date;
-  likes: number;
-  comments: number;
-}
+// 데이터베이스에서 가져올 포스트 타입 정의 (Zod 스키마에서 추론)
+type LocalTipPostFromDB = LocalTipPost;
 
 // 데이터베이스 연결 함수 (실제 구현 시 데이터베이스 클라이언트로 교체)
-async function fetchLocalTipsFromDatabase(filters: {
-  category: string;
-  location: string;
-  search: string;
-}): Promise<LocalTipPost[]> {
+async function fetchLocalTipsFromDatabase(filters: LocalTipFilters): Promise<LocalTipPostFromDB[]> {
   try {
     // TODO: 실제 데이터베이스 연결 코드로 교체
     // 예시: const posts = await db.localTips.findMany({ where: filters });
@@ -35,6 +33,33 @@ async function fetchLocalTipsFromDatabase(filters: {
   } catch (error) {
     console.error("Database error:", error);
     throw new Error("Failed to fetch posts from database");
+  }
+}
+
+// 새로운 포스트 생성 함수
+async function createLocalTip(postData: LocalTipCreateData): Promise<LocalTipPost> {
+  try {
+    // TODO: 실제 데이터베이스 연결 코드로 교체
+    // 예시: const newPost = await db.localTips.create({ data: postData });
+    
+    // Mock 데이터 반환
+    const newPost: LocalTipPost = {
+      id: Date.now(),
+      title: postData.title,
+      content: postData.content,
+      category: postData.category,
+      location: postData.location,
+      author: "Current User", // 실제로는 로그인된 사용자 정보
+      createdAt: new Date(),
+      likes: 0,
+      comments: 0
+    };
+    
+    return newPost;
+    
+  } catch (error) {
+    console.error("Database error:", error);
+    throw new Error("Failed to create post");
   }
 }
 
@@ -86,20 +111,20 @@ function validateSearchQuery(search: string | undefined): string {
 }
 
 // 데이터베이스 필터링 함수
-function buildDatabaseFilters(validatedCategory: string, validatedLocation: string, validatedSearch: string) {
+function buildDatabaseFilters(validatedFilters: LocalTipFilters) {
   const filters: any = {};
   
-  if (validatedCategory !== "All") {
-    filters.category = validatedCategory;
+  if (validatedFilters.category !== "All") {
+    filters.category = validatedFilters.category;
   }
   
   // "All Cities"가 아닐 때만 location 필터 적용
-  if (validatedLocation !== "All Cities") {
-    filters.location = validatedLocation;
+  if (validatedFilters.location !== "All Cities") {
+    filters.location = validatedFilters.location;
   }
   
-  if (validatedSearch) {
-    filters.search = validatedSearch;
+  if (validatedFilters.search) {
+    filters.search = validatedFilters.search;
   }
   
   return filters;
@@ -108,21 +133,43 @@ function buildDatabaseFilters(validatedCategory: string, validatedLocation: stri
 export const loader = async ({ request }: Route.LoaderArgs) => {
   try {
     const url = new URL(request.url);
-    const category = url.searchParams.get("category") || undefined;
-    const location = url.searchParams.get("location") || undefined;
-    const search = url.searchParams.get("search") || undefined;
+    const rawFilters = {
+      category: url.searchParams.get("category") || "All",
+      location: url.searchParams.get("location") || "Bangkok",
+      search: url.searchParams.get("search") || "",
+    };
 
-    // 데이터 검증
-    const validatedCategory = validateCategory(category);
-    const validatedLocation = validateLocation(location);
-    const validatedSearch = validateSearchQuery(search);
+    // Zod를 사용한 데이터 검증
+    const validationResult = validateWithZod(localTipFiltersSchema, rawFilters);
+    
+    if (!validationResult.success) {
+      throw new Response(`Validation error: ${validationResult.errors.join(", ")}`, { 
+        status: 400 
+      });
+    }
+
+    const validatedFilters = validationResult.data;
 
     // 데이터베이스에서 포스트 가져오기
-    const databaseFilters = buildDatabaseFilters(validatedCategory, validatedLocation, validatedSearch);
+    const databaseFilters = buildDatabaseFilters({
+      ...validatedFilters,
+      search: validatedFilters.search || ""
+    });
     const posts = await fetchLocalTipsFromDatabase(databaseFilters);
 
+    // 각 포스트 검증
+    const validatedPosts = posts.map(post => {
+      const postValidation = validateWithZod(localTipPostSchema, post);
+      if (!postValidation.success) {
+        throw new Response(`Invalid post data: ${postValidation.errors.join(", ")}`, { 
+          status: 500 
+        });
+      }
+      return postValidation.data;
+    });
+
     // 클라이언트에서 사용할 포스트 데이터 변환
-    const transformedPosts = posts.map(post => ({
+    const transformedPosts = validatedPosts.map(post => ({
       id: post.id,
       title: post.title,
       content: post.content,
@@ -136,27 +183,21 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
 
     return {
       posts: transformedPosts,
-      filters: {
-        category: validatedCategory,
-        location: validatedLocation,
-        search: validatedSearch
-      },
+      filters: validatedFilters,
       totalCount: transformedPosts.length,
-      validCategories: VALID_CATEGORIES
+      validCategories: VALID_LOCAL_TIP_CATEGORIES
     };
 
   } catch (error) {
     // 에러 처리
     console.error("Loader error:", error);
     
+    if (error instanceof Response) {
+      // 이미 Response 객체인 경우 그대로 던지기
+      throw error;
+    }
+    
     if (error instanceof Error) {
-      // 검증 에러인 경우 400 Bad Request 반환
-      if (error.message.includes("Invalid category") || 
-          error.message.includes("Invalid location") || 
-          error.message.includes("Search query is too long")) {
-        throw new Response(error.message, { status: 400 });
-      }
-      
       // 데이터베이스 에러인 경우 500 Internal Server Error 반환
       if (error.message.includes("Failed to fetch posts from database")) {
         throw new Response("Database connection failed", { status: 500 });
@@ -197,68 +238,70 @@ function formatTimeAgo(date: Date): string {
 }
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
-  let message = "Something went wrong";
-  let details = "An unexpected error occurred while loading local tips.";
-
-  if (error instanceof Response) {
-    if (error.status === 400) {
-      message = "Invalid Request";
-      details = error.statusText || "The request contains invalid parameters.";
-    } else if (error.status === 500) {
-      message = "Server Error";
-      details = "An internal server error occurred. Please try again later.";
-    }
-  } else if (error instanceof Error) {
-    details = error.message;
-  }
-
+  const errorMessage = error instanceof Error ? error.message : "Something went wrong";
+  
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-      <div className="max-w-md mx-auto px-4 py-8">
-        <Card>
-          <CardContent className="p-8 text-center">
-            <h1 className="text-2xl font-bold text-red-600 mb-4">{message}</h1>
-            <p className="text-gray-600 mb-6">{details}</p>
-            <Button onClick={() => window.location.reload()}>
-              Try Again
-            </Button>
-          </CardContent>
-        </Card>
+      <div className="text-center">
+        <h1 className="text-2xl font-bold text-red-600 mb-2">Something went wrong</h1>
+        <p className="text-gray-600">{errorMessage}</p>
       </div>
     </div>
   );
 }
 
 export default function LocalTipsPage({ loaderData }: Route.ComponentProps) {
-  const { posts, filters, totalCount, validCategories } = loaderData;
-  
-  // URL의 location 파라미터를 우선적으로 사용
   const [searchParams, setSearchParams] = useSearchParams();
-  const urlLocation = searchParams.get("location");
-  
-  const [selectedCategory, setSelectedCategory] = useState(filters.category);
-  const [searchQuery, setSearchQuery] = useState(filters.search);
+  const urlLocation = searchParams.get("location") || "Bangkok";
+  const [selectedCategory, setSelectedCategory] = useState<LocalTipCategory>(loaderData.filters.category);
+  const [searchQuery, setSearchQuery] = useState(loaderData.filters.search || "");
+  const [posts, setPosts] = useState(loaderData.posts);
+  const [showPostForm, setShowPostForm] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+  const [newPost, setNewPost] = useState<LocalTipCreateData>({
+    title: "",
+    content: "",
+    category: "Visa/Immigration",
+    location: urlLocation as any
+  });
 
-  // 필터 변경 시 URL 업데이트를 위한 함수
-  const updateFilters = (newCategory: string, newSearch: string) => {
-    const newSearchParams = new URLSearchParams(searchParams);
+  // URL 파라미터와 상태 동기화
+  useEffect(() => {
+    const categoryParam = searchParams.get("category");
+    const category = VALID_LOCAL_TIP_CATEGORIES.includes(categoryParam as any) 
+      ? (categoryParam as LocalTipCategory) 
+      : "All";
+    const search = searchParams.get("search") || "";
     
-    if (newCategory && newCategory !== "All") {
-      newSearchParams.set("category", newCategory);
+    setSelectedCategory(category);
+    setSearchQuery(search);
+  }, [searchParams]);
+
+  // Update location when URL changes
+  useEffect(() => {
+    setNewPost(prev => ({ ...prev, location: urlLocation as any }));
+  }, [urlLocation]);
+
+  const updateFilters = (newCategory: LocalTipCategory, newSearch: string) => {
+    const params = new URLSearchParams(searchParams);
+    
+    if (newCategory !== "All") {
+      params.set("category", newCategory);
     } else {
-      newSearchParams.delete("category");
+      params.delete("category");
     }
     
-    if (newSearch) {
-      newSearchParams.set("search", newSearch);
+    if (newSearch.trim()) {
+      params.set("search", newSearch.trim());
     } else {
-      newSearchParams.delete("search");
+      params.delete("search");
     }
     
-    setSearchParams(newSearchParams);
+    setSearchParams(params);
   };
 
-  const handleCategoryChange = (category: string) => {
+  const handleCategoryChange = (category: LocalTipCategory) => {
     setSelectedCategory(category);
     updateFilters(category, searchQuery);
   };
@@ -268,119 +311,280 @@ export default function LocalTipsPage({ loaderData }: Route.ComponentProps) {
     updateFilters(selectedCategory, search);
   };
 
+  const validateForm = (): boolean => {
+    const result = localTipCreateSchema.safeParse(newPost);
+    
+    if (!result.success) {
+      const errors = getFieldErrors(localTipCreateSchema, newPost);
+      setFormErrors(errors);
+      return false;
+    }
+    
+    setFormErrors({});
+    return true;
+  };
+
+  const handleSubmitPost = async () => {
+    if (!validateForm()) {
+      return;
+    }
+
+    setIsSubmitting(true);
+    
+    try {
+      const createdPost = await createLocalTip(newPost);
+      const transformedPost = {
+        id: createdPost.id,
+        title: createdPost.title,
+        content: createdPost.content,
+        category: createdPost.category,
+        location: createdPost.location,
+        author: createdPost.author,
+        timeAgo: formatTimeAgo(createdPost.createdAt),
+        likes: createdPost.likes,
+        comments: createdPost.comments
+      };
+      
+      setPosts([transformedPost, ...posts]);
+      setShowPostForm(false);
+      setNewPost({
+        title: "",
+        content: "",
+        category: "Visa/Immigration",
+        location: urlLocation as any
+      });
+      setFormErrors({});
+    } catch (error) {
+      console.error("Error creating post:", error);
+      setFormErrors({ submit: error instanceof Error ? error.message : "Failed to create post" });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Filter posts based on current state
+  const filteredPosts = posts.filter(post => {
+    const matchesSearch = post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          post.content.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesCategory = selectedCategory === "All" || post.category === selectedCategory;
+    const matchesLocation = urlLocation === "All Cities" || post.location === urlLocation;
+    
+    return matchesSearch && matchesCategory && matchesLocation;
+  });
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-6xl mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Local Tips for Expats</h1>
-          <p className="text-gray-600">
-            Share and discover useful information for living in {urlLocation === "All Cities" ? "Thailand" : urlLocation || "Thailand"}
-          </p>
+    <div className="max-w-6xl mx-auto p-6">
+      {/* Header */}
+      <div className="text-center mb-8">
+        <h1 className="text-3xl font-bold mb-2">Local Tips</h1>
+        <p className="text-muted-foreground">
+          Share and discover helpful tips from the local community
+          {urlLocation === "All Cities" ? " across all cities" : ` in ${urlLocation}`}
+        </p>
+      </div>
+
+      {/* Filters */}
+      <div className="flex flex-col sm:flex-row gap-4 mb-6">
+        {/* Category Filter */}
+        <div className="flex-1">
+          <label className="block text-sm font-medium mb-2">Category</label>
+          <Select
+            value={selectedCategory}
+            onValueChange={(value) => handleCategoryChange(value as LocalTipCategory)}
+          >
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Select category" />
+            </SelectTrigger>
+            <SelectContent>
+              {loaderData.validCategories.map((category) => (
+                <SelectItem key={category} value={category}>
+                  {category}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
-        {/* Filter and Search */}
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle className="text-lg">Filters</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {/* Search */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Search</label>
-              <Input
-                placeholder="Search by title or content..."
-                value={searchQuery}
-                onChange={(e) => handleSearchChange(e.target.value)}
-                className="max-w-md"
-              />
-            </div>
-
-            {/* Category Filter */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
-              <div className="flex flex-wrap gap-2">
-                {validCategories.map((category) => (
-                  <Button
-                    key={category}
-                    variant={selectedCategory === category ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => handleCategoryChange(category)}
-                  >
-                    {category}
-                  </Button>
-                ))}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Results Statistics */}
-        <div className="mb-4">
-          <p className="text-sm text-gray-600">
-            Total <span className="font-semibold text-blue-600">{totalCount}</span> posts
-            {urlLocation && urlLocation !== "All Cities" && (
-              <span className="ml-2 text-gray-500">in {urlLocation}</span>
-            )}
-            {urlLocation === "All Cities" && (
-              <span className="ml-2 text-gray-500">across all cities</span>
-            )}
-          </p>
-        </div>
-
-        {/* Post List */}
-        <div className="space-y-4">
-          {posts.length > 0 ? (
-            posts.map((post) => (
-              <Card key={post.id} className="hover:shadow-md transition-shadow cursor-pointer">
-                <CardContent className="p-6">
-                  <div className="flex justify-between items-start mb-3">
-                    <div className="flex-1">
-                      <h3 className="text-lg font-semibold text-gray-900 mb-2">{post.title}</h3>
-                      <p className="text-gray-600 text-sm line-clamp-2">{post.content}</p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center justify-between text-sm text-gray-500">
-                    <div className="flex items-center space-x-4">
-                      <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-medium">
-                        {post.category}
-                      </span>
-                      <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-medium">
-                        {post.location}
-                      </span>
-                      <span>By: {post.author}</span>
-                      <span>{post.timeAgo}</span>
-                    </div>
-                    <div className="flex items-center space-x-4">
-                      <span>👍 {post.likes}</span>
-                      <span>💬 {post.comments}</span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))
-          ) : (
-            <Card>
-              <CardContent className="p-8 text-center">
-                <p className="text-gray-500">
-                  No posts found matching your search criteria.
-                  {urlLocation && (
-                    <span className="block mt-2 text-sm">Try changing the location in the navigation bar above.</span>
-                  )}
-                </p>
-              </CardContent>
-            </Card>
-          )}
-        </div>
-
-        {/* Create New Post Button */}
-        <div className="mt-8 text-center">
-          <Button size="lg" className="px-8">
-            Create New Post
-          </Button>
+        {/* Search */}
+        <div className="flex-1">
+          <label className="block text-sm font-medium mb-2">Search</label>
+          <Input
+            type="text"
+            placeholder="Search tips..."
+            value={searchQuery}
+            onChange={(e) => handleSearchChange(e.target.value)}
+          />
         </div>
       </div>
+
+      {/* Results and Action Button */}
+      <div className="flex justify-between items-center mb-4">
+        <p className="text-muted-foreground">
+          {filteredPosts.length} tip{filteredPosts.length !== 1 ? 's' : ''} found
+          {urlLocation === "All Cities" ? " across all cities" : ` in ${urlLocation}`}
+        </p>
+        <Button onClick={() => setShowPostForm(true)} size="lg">
+          Share a Tip
+        </Button>
+      </div>
+
+      {/* Tips List */}
+      <div className="space-y-4">
+        {filteredPosts.map((post) => (
+          <Card key={post.id}>
+            <CardContent className="p-6">
+              <div className="flex justify-between items-start mb-4">
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold mb-2">{post.title}</h3>
+                  <p className="text-muted-foreground mb-3 line-clamp-3">{post.content}</p>
+                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                    <span>By {post.author}</span>
+                    <span>•</span>
+                    <span>{post.timeAgo}</span>
+                    <span>•</span>
+                    <span>{post.location}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Category and Stats */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="px-2 py-1 bg-secondary text-secondary-foreground text-xs rounded-md">
+                    {post.category}
+                  </span>
+                </div>
+                <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                  <div className="flex items-center gap-1">
+                    <svg width="16" height="16" fill="none" viewBox="0 0 24 24">
+                      <path fill="currentColor" d="M16.697 4.747c-1.962 0-3.19 1.28-3.697 2.01-.507-.73-1.735-2.01-3.697-2.01C6.01 4.747 4 6.757 4 9.354c0 3.61 6.31 8.36 6.58 8.56.26.19.62.19.88 0 .27-.2 6.58-4.95 6.58-8.56 0-2.597-2.01-4.607-4.343-4.607Z"/>
+                    </svg>
+                    <span>{post.likes}</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <svg width="16" height="16" fill="none" viewBox="0 0 24 24">
+                      <path fill="currentColor" d="M12 21a9.004 9.004 0 0 0 8.716-6.747M12 21a9.004 9.004 0 0 1-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 0 1 7.843 4.582M12 3a8.997 8.997 0 0 0-7.843 4.582m15.686 0A11.953 11.953 0 0 1 12 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0 1 21 12c0 .338-.028-.675-.082-1.015M2.314 7.582A8.959 8.959 0 0 0 3 12c0 .338.028.675.082 1.015"/>
+                    </svg>
+                    <span>{post.comments}</span>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {/* Empty State */}
+      {filteredPosts.length === 0 && (
+        <Card>
+          <CardContent className="p-8 text-center">
+            <p className="text-muted-foreground">No tips found. Be the first to share a tip!</p>
+            <Button 
+              onClick={() => setShowPostForm(true)} 
+              className="mt-4"
+              size="lg"
+            >
+              Share a Tip
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Post Form Modal */}
+      {showPostForm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <CardHeader>
+              <CardTitle>Share a Local Tip</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Error Display */}
+              {formErrors.submit && (
+                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md">
+                  {formErrors.submit}
+                </div>
+              )}
+
+              {/* Title */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Title *</label>
+                <Input
+                  placeholder="What's your tip about?"
+                  value={newPost.title}
+                  onChange={(e) => setNewPost({ ...newPost, title: e.target.value })}
+                  className={formErrors.title ? "border-red-500" : ""}
+                />
+                {formErrors.title && (
+                  <p className="text-red-500 text-sm mt-1">{formErrors.title}</p>
+                )}
+              </div>
+
+              {/* Category */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Category *</label>
+                <Select
+                  value={newPost.category}
+                  onValueChange={(value) => setNewPost({ ...newPost, category: value as any })}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {VALID_LOCAL_TIP_CATEGORIES.filter(cat => cat !== "All").map((category) => (
+                      <SelectItem key={category} value={category}>
+                        {category}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {formErrors.category && (
+                  <p className="text-red-500 text-sm mt-1">{formErrors.category}</p>
+                )}
+              </div>
+
+              {/* Content */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Content *</label>
+                <textarea
+                  className={`w-full min-h-[120px] p-3 border rounded-md resize-none focus:outline-none focus:ring-2 focus:ring-ring ${formErrors.content ? "border-red-500" : ""}`}
+                  placeholder="Share your helpful tip with the community..."
+                  value={newPost.content}
+                  onChange={(e) => setNewPost({ ...newPost, content: e.target.value })}
+                />
+                {formErrors.content && (
+                  <p className="text-red-500 text-sm mt-1">{formErrors.content}</p>
+                )}
+              </div>
+
+              <div className="flex gap-2 pt-4">
+                <Button 
+                  onClick={handleSubmitPost} 
+                  className="flex-1"
+                  disabled={isSubmitting || !newPost.title || !newPost.content}
+                >
+                  {isSubmitting ? "Posting..." : "Post Tip"}
+                </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    setShowPostForm(false);
+                    setNewPost({
+                      title: "",
+                      content: "",
+                      category: "Visa/Immigration",
+                      location: urlLocation as any
+                    });
+                    setFormErrors({});
+                  }}
+                  disabled={isSubmitting}
+                >
+                  Cancel
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   );
 } 

@@ -1,109 +1,177 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router";
 import { Button } from "~/common/components/ui/button";
 import { Input } from "~/common/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "~/common/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "~/common/components/ui/avatar";
 import { Separator } from "~/common/components/ui/separator";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "~/common/components/ui/dropdown-menu";
+import { ChevronDown } from "lucide-react";
+import type { Route } from './+types/give-and-glow-page';
+import { 
+  type GiveAndGlowReview, 
+  type GiveAndGlowFilters,
+  type CreateGiveAndGlowReviewData,
+  giveAndGlowFiltersSchema,
+  createGiveAndGlowReviewSchema,
+  VALID_GIVE_AND_GLOW_CATEGORIES,
+  VALID_GIVE_AND_GLOW_LOCATIONS
+} from "~/lib/schemas";
+import { validateWithZod, getFieldErrors } from "~/lib/utils";
+import { fetchGiveAndGlowReviewsFromDatabase, createGiveAndGlowReview } from "~/features/community/queries";
 
-interface GiveAndGlowReview {
-  id: string;
-  itemName: string;
-  itemCategory: string;
-  giverName: string;
-  giverAvatar?: string;
-  receiverName: string;
-  receiverAvatar?: string;
-  rating: number;
-  review: string;
-  timestamp: string;
-  location: string;
-  tags: string[];
-  photos?: string[];
-  appreciationBadge?: boolean;
+// Loader function
+export const loader = async ({ request }: Route.LoaderArgs) => {
+  try {
+    const url = new URL(request.url);
+    const rawFilters = {
+      category: url.searchParams.get("category") || "All",
+      location: url.searchParams.get("location") || "Bangkok",
+      search: url.searchParams.get("search") || "",
+    };
+
+    // Zod를 사용한 데이터 검증
+    const validationResult = validateWithZod(giveAndGlowFiltersSchema, rawFilters);
+    
+    if (!validationResult.success) {
+      throw new Response(`Validation error: ${validationResult.errors.join(", ")}`, { 
+        status: 400 
+      });
+    }
+
+    const validatedFilters = validationResult.data;
+
+    // 데이터베이스에서 리뷰 가져오기
+    const reviews = await fetchGiveAndGlowReviewsFromDatabase({
+      category: validatedFilters.category || "All",
+      location: validatedFilters.location || "Bangkok", 
+      search: validatedFilters.search || ""
+    });
+
+    return {
+      reviews,
+      filters: validatedFilters,
+      totalCount: reviews.length,
+      validCategories: VALID_GIVE_AND_GLOW_CATEGORIES,
+      validLocations: VALID_GIVE_AND_GLOW_LOCATIONS
+    };
+
+  } catch (error) {
+    console.error("Loader error:", error);
+    
+    if (error instanceof Response) {
+      // 이미 Response 객체인 경우 그대로 던지기
+      throw error;
+    }
+    
+    if (error instanceof Error) {
+      // 데이터베이스 에러인 경우 500 Internal Server Error 반환
+      if (error.message.includes("Failed to fetch give-and-glow reviews from database")) {
+        throw new Response("Database connection failed", { status: 500 });
+      }
+    }
+    
+    // 기타 에러는 500 Internal Server Error 반환
+    throw new Response("Internal server error", { status: 500 });
+  }
+};
+
+// Error Boundary
+export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
+  let message = "Something went wrong";
+  let details = "An unexpected error occurred while loading give-and-glow reviews.";
+
+  if (error instanceof Response) {
+    if (error.status === 400) {
+      message = "Invalid Request";
+      details = error.statusText || "The request contains invalid parameters.";
+    } else if (error.status === 500) {
+      message = "Server Error";
+      details = "An internal server error occurred. Please try again later.";
+    }
+  } else if (error instanceof Error) {
+    details = error.message;
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="max-w-md mx-auto px-4 py-8">
+        <Card>
+          <CardContent className="p-8 text-center">
+            <h1 className="text-2xl font-bold text-red-600 mb-4">{message}</h1>
+            <p className="text-gray-600 mb-6">{details}</p>
+            <Button onClick={() => window.location.reload()}>
+              Try Again
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
 }
 
-// Mock data for demonstration
-const mockReviews: GiveAndGlowReview[] = [
-  {
-    id: "1",
-    itemName: "Vintage Bookshelf",
-    itemCategory: "Furniture",
-    giverName: "Sarah Johnson",
-    giverAvatar: "/sample.png",
-    receiverName: "Mike Chen",
-    receiverAvatar: "/sample.png",
-    rating: 5,
-    review: "Amazing bookshelf! Sarah was so kind to give it away for free. The quality is excellent and it fits perfectly in my study room. The pickup was smooth and she even helped me load it into my car. This is exactly what I needed for organizing my growing book collection.",
-    timestamp: "2 hours ago",
-    location: "Bangkok",
-    tags: ["Excellent Condition", "Friendly Giver", "Smooth Pickup"],
-    appreciationBadge: true
-  },
-  {
-    id: "2",
-    itemName: "Kitchen Appliances Set",
-    itemCategory: "Kitchen",
-    giverName: "Emma Wilson",
-    giverAvatar: "/sample.png",
-    receiverName: "David Kim",
-    receiverAvatar: "/sample.png",
-    rating: 4,
-    review: "Great set of kitchen appliances! Emma was very generous to give away her barely used mixer, blender, and toaster. Everything works perfectly and they're in great condition. The communication was clear and the handover was quick and easy.",
-    timestamp: "1 day ago",
-    location: "Chiang Mai",
-    tags: ["Good Condition", "Multiple Items", "Quick Handover"],
-    appreciationBadge: true
-  },
-  {
-    id: "3",
-    itemName: "Children's Toys",
-    itemCategory: "Toys",
-    giverName: "Lisa Park",
-    giverAvatar: "/sample.png",
-    receiverName: "Anna Rodriguez",
-    receiverAvatar: "/sample.png",
-    rating: 5,
-    review: "Wonderful collection of children's toys! Lisa was incredibly thoughtful and organized everything so well. My kids are absolutely thrilled with the new toys. Everything is clean and in excellent condition. Such a generous gesture!",
-    timestamp: "3 days ago",
-    location: "Phuket",
-    tags: ["Clean Items", "Well Organized", "Kids Love It"],
-    appreciationBadge: false
-  },
-  {
-    id: "4",
-    itemName: "Garden Tools",
-    itemCategory: "Garden",
-    giverName: "Tom Anderson",
-    giverAvatar: "/sample.png",
-    receiverName: "Maria Garcia",
-    receiverAvatar: "/sample.png",
-    rating: 4,
-    review: "Perfect garden tools for my new balcony garden! Tom was very helpful and even gave me some gardening tips. The tools are in good condition and will definitely help me start my urban garden project. Very grateful for this generous gift.",
-    timestamp: "5 days ago",
-    location: "Bangkok",
-    tags: ["Useful Items", "Helpful Giver", "Good Condition"],
-    appreciationBadge: true
-  }
-];
-
-const categories = ["All", "Furniture", "Electronics", "Clothing", "Books", "Kitchen", "Toys", "Garden", "Sports", "Other"];
-const locations = ["All", "Bangkok", "Chiang Mai", "Phuket", "Pattaya", "Krabi", "Other"];
-
-export default function GiveAndGlowPage() {
-  const [reviews, setReviews] = useState<GiveAndGlowReview[]>(mockReviews);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("All");
-  const [selectedLocation, setSelectedLocation] = useState("All");
+export default function GiveAndGlowPage({ loaderData }: Route.ComponentProps) {
+  const { reviews: initialReviews, filters, totalCount, validCategories, validLocations } = loaderData;
+  
+  const [searchParams, setSearchParams] = useSearchParams();
+  const urlLocation = searchParams.get("location") || filters.location;
+  
+  const [reviews, setReviews] = useState<GiveAndGlowReview[]>(initialReviews);
+  const [searchQuery, setSearchQuery] = useState(filters.search || "");
+  const [selectedCategory, setSelectedCategory] = useState<GiveAndGlowFilters['category']>(filters.category || "All");
   const [showReviewForm, setShowReviewForm] = useState(false);
-  const [newReview, setNewReview] = useState({
+  const [newReview, setNewReview] = useState<CreateGiveAndGlowReviewData>({
     itemName: "",
     itemCategory: "Furniture",
     giverName: "",
     rating: 5,
     review: "",
-    location: "Bangkok",
+    location: urlLocation as any,
     tags: ""
   });
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // URL 파라미터와 상태 동기화
+  useEffect(() => {
+    const categoryParam = searchParams.get("category");
+    const category = VALID_GIVE_AND_GLOW_CATEGORIES.includes(categoryParam as any) 
+      ? (categoryParam as GiveAndGlowFilters['category']) 
+      : "All";
+    const search = searchParams.get("search") || "";
+    
+    setSelectedCategory(category);
+    setSearchQuery(search);
+  }, [searchParams]);
+
+  // Update filters and URL
+  const updateFilters = (newCategory: GiveAndGlowFilters['category'], newSearch: string) => {
+    const newSearchParams = new URLSearchParams(searchParams);
+    
+    if (newCategory && newCategory !== "All") {
+      newSearchParams.set("category", newCategory);
+    } else {
+      newSearchParams.delete("category");
+    }
+    
+    if (newSearch) {
+      newSearchParams.set("search", newSearch);
+    } else {
+      newSearchParams.delete("search");
+    }
+    
+    setSearchParams(newSearchParams);
+  };
+
+  const handleCategoryChange = (category: GiveAndGlowFilters['category']) => {
+    setSelectedCategory(category);
+    updateFilters(category, searchQuery);
+  };
+
+  const handleSearchChange = (search: string) => {
+    setSearchQuery(search);
+    updateFilters(selectedCategory, search);
+  };
 
   // Filter reviews based on search and filters
   const filteredReviews = reviews.filter((review) => {
@@ -111,37 +179,81 @@ export default function GiveAndGlowPage() {
                          review.giverName.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          review.review.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory = selectedCategory === "All" || review.itemCategory === selectedCategory;
-    const matchesLocation = selectedLocation === "All" || review.location === selectedLocation;
+    const matchesLocation = urlLocation === "All Cities" || review.location === urlLocation;
     
     return matchesSearch && matchesCategory && matchesLocation;
   });
 
-  const handleSubmitReview = () => {
-    const review: GiveAndGlowReview = {
-      id: Date.now().toString(),
-      itemName: newReview.itemName,
-      itemCategory: newReview.itemCategory,
-      giverName: newReview.giverName,
-      receiverName: "Current User", // In real app, this would be the logged-in user
-      rating: newReview.rating,
-      review: newReview.review,
-      timestamp: "Just now",
-      location: newReview.location,
-      tags: newReview.tags.split(",").map(tag => tag.trim()).filter(tag => tag.length > 0),
-      appreciationBadge: true // New reviews get appreciation badge
-    };
+  const validateForm = (): boolean => {
+    const result = createGiveAndGlowReviewSchema.safeParse(newReview);
+    
+    if (!result.success) {
+      const errors = getFieldErrors(createGiveAndGlowReviewSchema, newReview);
+      setFormErrors(errors);
+      return false;
+    }
 
-    setReviews([review, ...reviews]);
-    setShowReviewForm(false);
-    setNewReview({
-      itemName: "",
-      itemCategory: "Furniture",
-      giverName: "",
-      rating: 5,
-      review: "",
-      location: "Bangkok",
-      tags: ""
-    });
+    // Validate tags separately
+    if (newReview.tags) {
+      const tags = newReview.tags.split(",").map(tag => tag.trim()).filter(tag => tag);
+      if (tags.length > 10) {
+        setFormErrors({ ...formErrors, tags: "Maximum 10 tags allowed" });
+        return false;
+      }
+      for (const tag of tags) {
+        if (tag.length > 20) {
+          setFormErrors({ ...formErrors, tags: "Each tag must be less than 20 characters" });
+          return false;
+        }
+      }
+    }
+    
+    setFormErrors({});
+    return true;
+  };
+
+  const handleSubmitReview = async () => {
+    if (!validateForm()) {
+      return;
+    }
+
+    setIsSubmitting(true);
+    
+    try {
+      const tags = newReview.tags.split(",").map(tag => tag.trim()).filter(tag => tag);
+      
+      const reviewData = {
+        itemName: newReview.itemName,
+        itemCategory: newReview.itemCategory,
+        giverName: newReview.giverName,
+        receiverName: "Current User", // In real app, this would be the logged-in user
+        receiverAvatar: "/sample.png", // In real app, this would be the user's avatar
+        rating: newReview.rating,
+        review: newReview.review,
+        location: newReview.location,
+        tags,
+        photos: [] // In real app, this would be uploaded photos
+      };
+
+      const newReviewData = await createGiveAndGlowReview(reviewData);
+      setReviews([newReviewData, ...reviews]);
+      setShowReviewForm(false);
+      setNewReview({
+        itemName: "",
+        itemCategory: "Furniture",
+        giverName: "",
+        rating: 5,
+        review: "",
+        location: urlLocation as any,
+        tags: ""
+      });
+      setFormErrors({});
+    } catch (error) {
+      console.error("Error submitting review:", error);
+      setFormErrors({ submit: error instanceof Error ? error.message : "Failed to submit review" });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const renderStars = (rating: number) => {
@@ -166,7 +278,10 @@ export default function GiveAndGlowPage() {
       {/* Header */}
       <div className="text-center space-y-2">
         <h1 className="text-3xl font-bold text-gray-900">Give and Glow</h1>
-        <p className="text-gray-600">Share appreciation for free items received and spread kindness in our community</p>
+        <p className="text-gray-600">
+          Share appreciation for free items received and spread kindness in our community
+          {urlLocation === "All Cities" ? " across all cities" : ` in ${urlLocation}`}
+        </p>
       </div>
 
       {/* Search and Filters */}
@@ -181,45 +296,25 @@ export default function GiveAndGlowPage() {
             <Input
               placeholder="Search by item name, giver name, or review content..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => handleSearchChange(e.target.value)}
               className="max-w-md"
             />
           </div>
 
-          {/* Filters */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Category Filter */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Item Category</label>
-              <div className="flex flex-wrap gap-2">
-                {categories.map((category) => (
-                  <Button
-                    key={category}
-                    variant={selectedCategory === category ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setSelectedCategory(category)}
-                  >
-                    {category}
-                  </Button>
-                ))}
-              </div>
-            </div>
-
-            {/* Location Filter */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Location</label>
-              <div className="flex flex-wrap gap-2">
-                {locations.map((location) => (
-                  <Button
-                    key={location}
-                    variant={selectedLocation === location ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setSelectedLocation(location)}
-                  >
-                    {location}
-                  </Button>
-                ))}
-              </div>
+          {/* Category Filter */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Item Category</label>
+            <div className="flex flex-wrap gap-2">
+              {validCategories.map((category) => (
+                <Button
+                  key={category}
+                  variant={selectedCategory === category ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => handleCategoryChange(category)}
+                >
+                  {category}
+                </Button>
+              ))}
             </div>
           </div>
         </CardContent>
@@ -229,6 +324,7 @@ export default function GiveAndGlowPage() {
       <div className="flex justify-between items-center">
         <p className="text-sm text-gray-600">
           Found <span className="font-semibold text-blue-600">{filteredReviews.length}</span> reviews
+          {urlLocation === "All Cities" ? " across all cities" : ` in ${urlLocation}`}
         </p>
         <Button onClick={() => setShowReviewForm(true)} size="lg">
           ✨ Write a Review
@@ -323,6 +419,13 @@ export default function GiveAndGlowPage() {
               <CardTitle>Write a Review for Free Item Received</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
+              {/* Error Display */}
+              {formErrors.submit && (
+                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md">
+                  {formErrors.submit}
+                </div>
+              )}
+
               {/* Item Name */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Item Name *</label>
@@ -330,14 +433,18 @@ export default function GiveAndGlowPage() {
                   placeholder="What item did you receive?"
                   value={newReview.itemName}
                   onChange={(e) => setNewReview({ ...newReview, itemName: e.target.value })}
+                  className={formErrors.itemName ? "border-red-500" : ""}
                 />
+                {formErrors.itemName && (
+                  <p className="text-red-500 text-sm mt-1">{formErrors.itemName}</p>
+                )}
               </div>
 
               {/* Item Category */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Item Category</label>
                 <div className="flex flex-wrap gap-2">
-                  {categories.slice(1).map((category) => (
+                  {validCategories.filter(cat => cat !== "All").map((category) => (
                     <Button
                       key={category}
                       variant={newReview.itemCategory === category ? "default" : "outline"}
@@ -348,33 +455,23 @@ export default function GiveAndGlowPage() {
                     </Button>
                   ))}
                 </div>
+                {formErrors.itemCategory && (
+                  <p className="text-red-500 text-sm mt-1">{formErrors.itemCategory}</p>
+                )}
               </div>
 
               {/* Giver Name */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2"> Giver's Name *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Giver's Name *</label>
                 <Input
                   placeholder="Who gave you this item?"
                   value={newReview.giverName}
                   onChange={(e) => setNewReview({ ...newReview, giverName: e.target.value })}
+                  className={formErrors.giverName ? "border-red-500" : ""}
                 />
-              </div>
-
-              {/* Location */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Location</label>
-                <div className="flex flex-wrap gap-2">
-                  {locations.slice(1).map((location) => (
-                    <Button
-                      key={location}
-                      variant={newReview.location === location ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => setNewReview({ ...newReview, location })}
-                    >
-                      {location}
-                    </Button>
-                  ))}
-                </div>
+                {formErrors.giverName && (
+                  <p className="text-red-500 text-sm mt-1">{formErrors.giverName}</p>
+                )}
               </div>
 
               {/* Rating */}
@@ -391,17 +488,23 @@ export default function GiveAndGlowPage() {
                     </button>
                   ))}
                 </div>
+                {formErrors.rating && (
+                  <p className="text-red-500 text-sm mt-1">{formErrors.rating}</p>
+                )}
               </div>
               
               {/* Review */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Your Review *</label>
                 <textarea
-                  className="w-full min-h-[120px] p-3 border rounded-md resize-none focus:outline-none focus:ring-2 focus:ring-ring"
+                  className={`w-full min-h-[120px] p-3 border rounded-md resize-none focus:outline-none focus:ring-2 focus:ring-ring ${formErrors.review ? "border-red-500" : ""}`}
                   placeholder="Share your experience and appreciation for the free item you received..."
                   value={newReview.review}
                   onChange={(e) => setNewReview({ ...newReview, review: e.target.value })}
                 />
+                {formErrors.review && (
+                  <p className="text-red-500 text-sm mt-1">{formErrors.review}</p>
+                )}
               </div>
 
               {/* Tags */}
@@ -411,16 +514,20 @@ export default function GiveAndGlowPage() {
                   placeholder="excellent condition, friendly giver, smooth pickup (comma separated)"
                   value={newReview.tags}
                   onChange={(e) => setNewReview({ ...newReview, tags: e.target.value })}
+                  className={formErrors.tags ? "border-red-500" : ""}
                 />
+                {formErrors.tags && (
+                  <p className="text-red-500 text-sm mt-1">{formErrors.tags}</p>
+                )}
               </div>
 
               <div className="flex gap-2 pt-4">
                 <Button 
                   onClick={handleSubmitReview} 
                   className="flex-1"
-                  disabled={!newReview.itemName || !newReview.giverName || !newReview.review}
+                  disabled={isSubmitting || !newReview.itemName || !newReview.giverName || !newReview.review}
                 >
-                  Submit Review
+                  {isSubmitting ? "Submitting..." : "Submit Review"}
                 </Button>
                 <Button 
                   variant="outline" 
@@ -432,10 +539,12 @@ export default function GiveAndGlowPage() {
                       giverName: "",
                       rating: 5,
                       review: "",
-                      location: "Bangkok",
+                      location: urlLocation as any,
                       tags: ""
                     });
+                    setFormErrors({});
                   }}
+                  disabled={isSubmitting}
                 >
                   Cancel
                 </Button>

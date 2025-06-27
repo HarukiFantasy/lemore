@@ -12,6 +12,7 @@ A modern, production-ready template for building full-stack React applications u
 - 🔄 Data loading and mutations
 - 🔒 TypeScript by default
 - 🎉 TailwindCSS for styling
+- ✅ Zod data validation
 - 📖 [React Router docs](https://reactrouter.com/)
 
 ## Getting Started
@@ -33,6 +34,85 @@ npm run dev
 ```
 
 Your application will be available at `http://localhost:5173`.
+
+## Data Validation with Zod
+
+This project uses [Zod](https://zod.dev/) for runtime type validation. All form inputs, URL parameters, and API responses are validated using Zod schemas.
+
+### Available Schemas
+
+#### URL Parameters
+
+```typescript
+import { paramsSchema } from "~/lib/schemas";
+
+// Product ID validation
+const validationResult = paramsSchema.productId.safeParse(params);
+if (!validationResult.success) {
+  // Handle validation error
+  return <ErrorComponent message={validationResult.error.errors[0]?.message} />;
+}
+const { id: productId } = validationResult.data;
+```
+
+#### Form Data
+
+```typescript
+import { productFormSchema } from "~/lib/schemas";
+
+const validateForm = (formData: unknown) => {
+  const result = productFormSchema.safeParse(formData);
+  if (!result.success) {
+    const errors: Record<string, string> = {};
+    result.error.errors.forEach((error) => {
+      const field = error.path.join(".");
+      errors[field] = error.message;
+    });
+    return { success: false, errors };
+  }
+  return { success: true, data: result.data };
+};
+```
+
+#### Search Parameters
+
+```typescript
+import { searchParamsSchema, paginationSchema } from "~/lib/schemas";
+
+const [searchParams] = useSearchParams();
+const searchValidation = searchParamsSchema.safeParse(
+  Object.fromEntries(searchParams)
+);
+const paginationValidation = paginationSchema.safeParse(
+  Object.fromEntries(searchParams)
+);
+```
+
+### Utility Functions
+
+```typescript
+import {
+  validateWithZod,
+  getFieldErrors,
+  validateUrlParams,
+} from "~/lib/utils";
+
+// Generic validation
+const result = validateWithZod(mySchema, data);
+
+// Get field-specific errors
+const errors = getFieldErrors(mySchema, data);
+
+// Validate URL parameters
+const validatedParams = validateUrlParams(mySchema, params);
+```
+
+### Schema Types
+
+- **Product Schemas**: `productFormSchema`, `paramsSchema.productId`
+- **User Schemas**: `userSchema`, `createUserSchema`, `loginSchema`
+- **Community Schemas**: `communityPostSchema`, `commentSchema`
+- **Search Schemas**: `searchParamsSchema`, `paginationSchema`
 
 ## Building for Production
 
