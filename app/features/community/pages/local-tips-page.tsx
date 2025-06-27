@@ -60,7 +60,7 @@ function validateLocation(location: string | undefined): string {
   }
   
   // navigation의 cities 배열과 일치하는지 확인
-  const validLocations = ["Bangkok", "ChiangMai", "HuaHin", "Phuket", "Pattaya", "Koh Phangan", "Koh Tao", "Koh Samui"];
+  const validLocations = ["Bangkok", "ChiangMai", "HuaHin", "Phuket", "Pattaya", "Koh Phangan", "Koh Tao", "Koh Samui", "All Cities"];
   
   if (!validLocations.includes(location)) {
     throw new Error(`Invalid location: ${location}. Valid locations are: ${validLocations.join(", ")}`);
@@ -93,8 +93,10 @@ function buildDatabaseFilters(validatedCategory: string, validatedLocation: stri
     filters.category = validatedCategory;
   }
   
-  // location은 항상 설정됨 (navigation에서 관리)
-  filters.location = validatedLocation;
+  // "All Cities"가 아닐 때만 location 필터 적용
+  if (validatedLocation !== "All Cities") {
+    filters.location = validatedLocation;
+  }
   
   if (validatedSearch) {
     filters.search = validatedSearch;
@@ -272,7 +274,9 @@ export default function LocalTipsPage({ loaderData }: Route.ComponentProps) {
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Local Tips for Expats</h1>
-          <p className="text-gray-600">Share and discover useful information for living in {urlLocation || "Thailand"}</p>
+          <p className="text-gray-600">
+            Share and discover useful information for living in {urlLocation === "All Cities" ? "Thailand" : urlLocation || "Thailand"}
+          </p>
         </div>
 
         {/* Filter and Search */}
@@ -315,8 +319,11 @@ export default function LocalTipsPage({ loaderData }: Route.ComponentProps) {
         <div className="mb-4">
           <p className="text-sm text-gray-600">
             Total <span className="font-semibold text-blue-600">{totalCount}</span> posts
-            {urlLocation && (
+            {urlLocation && urlLocation !== "All Cities" && (
               <span className="ml-2 text-gray-500">in {urlLocation}</span>
+            )}
+            {urlLocation === "All Cities" && (
+              <span className="ml-2 text-gray-500">across all cities</span>
             )}
           </p>
         </div>

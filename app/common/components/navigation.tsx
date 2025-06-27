@@ -64,7 +64,8 @@ const cities = [
   "Pattaya",
   "Koh Phangan",
   "Koh Tao",
-  "Koh Samui"
+  "Koh Samui",
+  "All Cities"
 ];
 
 export function Navigation({
