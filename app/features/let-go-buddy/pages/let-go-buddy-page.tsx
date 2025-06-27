@@ -1,4 +1,8 @@
 import { useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "../../../common/components/ui/card";
+import { Button } from "../../../common/components/ui/button";
+import { Input } from "../../../common/components/ui/input";
+import { Avatar, AvatarImage, AvatarFallback } from "../../../common/components/ui/avatar";
 
 const situations = [
   "I'm moving soon",
@@ -34,9 +38,33 @@ export default function LetGoBuddyPage() {
   const [selectedSituation, setSelectedSituation] = useState<string | null>(null);
   const [showListing, setShowListing] = useState(false);
   const [selectedItem, setSelectedItem] = useState<any>(null);
+  const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
+  const [previewUrls, setPreviewUrls] = useState<string[]>([]);
+
+  // Handle file upload
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files || []);
+    if (files.length > 5) {
+      alert("You can upload maximum 5 files");
+      return;
+    }
+    
+    setUploadedFiles(files);
+    
+    // Create preview URLs
+    const urls = files.map(file => URL.createObjectURL(file));
+    setPreviewUrls(urls);
+  };
 
   // Placeholder for uploaded images and analysis
   const items = mockAnalysis;
+
+  // Handle image removal
+  const handleRemoveImage = (index: number) => {
+    const newPreviewUrls = previewUrls.filter((_, i) => i !== index);
+    setPreviewUrls(newPreviewUrls);
+    setUploadedFiles(uploadedFiles.filter((_, i) => i !== index));
+  };
 
   return (
     <div className="max-w-xl mx-auto py-12 px-4">
@@ -48,15 +76,68 @@ export default function LetGoBuddyPage() {
       </p>
 
       {/* Step 1: Upload */}
-      <div className="bg-gray-50 border rounded-xl p-8 flex flex-col items-center mb-8">
-        <div className="text-5xl mb-2">📷</div>
-        <div className="text-2xl font-semibold mb-1">Upload your items</div>
-        <div className="text-gray-500 mb-2">Upload 1–5 items you want to declutter.</div>
-        {/* Placeholder for file input */}
-        <button className="mt-2 px-4 py-2 rounded bg-gray-200 text-gray-700 cursor-not-allowed" disabled>
-          Upload (Coming Soon)
-        </button>
-      </div>
+      <Card className="mb-8">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <span className="text-3xl">📷</span>
+            Upload your items
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-col items-center">
+          <p className="text-gray-500 mb-4">Upload 1–5 items you want to declutter.</p>
+          
+          {/* Hidden file input */}
+          <Input
+            type="file"
+            accept="image/*"
+            multiple
+            className="hidden"
+            id="file-upload"
+            onChange={handleFileUpload}
+          />
+          
+          {/* Upload button */}
+          <Button 
+            variant="outline" 
+            size="lg"
+            onClick={() => document.getElementById('file-upload')?.click()}
+            className="mb-4"
+          >
+            Choose Files
+          </Button>
+          
+          {/* Preview images or placeholder */}
+          <div className="flex flex-wrap gap-2 justify-center mt-4 w-full">
+            {previewUrls.length > 0 ? (
+              previewUrls.map((url, index) => (
+                <div key={index} className="relative group">
+                  <img 
+                    src={url} 
+                    alt={`Preview ${index + 1}`} 
+                    className="w-24 h-24 object-cover rounded" 
+                  />
+                  <button
+                    type="button"
+                    className="absolute top-1 right-1 bg-black/60 text-white text-xs px-2 py-0.5 rounded-full opacity-80 group-hover:opacity-100 transition-opacity"
+                    onClick={() => handleRemoveImage(index)}
+                  >
+                    ×
+                  </button>
+                </div>
+              ))
+            ) : (
+              <div className="w-48 h-48 flex items-center justify-center bg-gray-100 rounded text-gray-400">
+                Click to upload images
+              </div>
+            )}
+          </div>
+          
+          {/* Image count */}
+          {previewUrls.length > 0 && (
+            <span className="text-xs text-neutral-500 mt-2">{previewUrls.length}/5 images</span>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Step 2: Situation Selection */}
       <div className="mb-8">
@@ -64,13 +145,14 @@ export default function LetGoBuddyPage() {
         <div className="mb-2">Select your current situation</div>
         <div className="flex flex-wrap gap-3 mb-2">
           {situations.map((s) => (
-            <button
+            <Button
               key={s}
-              className={`px-4 py-2 rounded border ${selectedSituation === s ? "bg-black text-white" : "bg-white text-black"}`}
+              variant={selectedSituation === s ? "default" : "outline"}
+              size="sm"
               onClick={() => setSelectedSituation(s)}
             >
               {s}
-            </button>
+            </Button>
           ))}
         </div>
       </div>
@@ -91,9 +173,18 @@ export default function LetGoBuddyPage() {
               <div className="text-gray-600 mb-1">Recognition: <span className="font-medium">"{item.name}"</span></div>
               <div className="mb-2">Recommendation: <span className="font-medium">{item.recommendation}</span></div>
               <div className="flex gap-2">
-                <button className="px-3 py-1 rounded bg-blue-600 text-white" onClick={() => { setShowListing(true); setSelectedItem(item); }}>Create Listing</button>
-                <button className="px-3 py-1 rounded bg-green-600 text-white">Register to Give & Glow</button>
-                <button className="px-3 py-1 rounded bg-gray-200 text-black">Keep</button>
+                <Button 
+                  size="sm"
+                  onClick={() => { setShowListing(true); setSelectedItem(item); }}
+                >
+                  Create Listing
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                >
+                  Keep
+                </Button>
               </div>
             </div>
           </div>
