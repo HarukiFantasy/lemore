@@ -16,7 +16,6 @@ import {
   type LocalTipCategory
 } from "~/lib/schemas";
 import { validateWithZod, getFieldErrors } from "~/lib/utils";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/common/components/ui/select";
 
 // 데이터베이스에서 가져올 포스트 타입 정의 (Zod 스키마에서 추론)
 type LocalTipPostFromDB = LocalTipPost;
@@ -384,29 +383,9 @@ export default function LocalTipsPage({ loaderData }: Route.ComponentProps) {
       </div>
 
       {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-4 mb-6">
-        {/* Category Filter */}
-        <div className="flex-1">
-          <label className="block text-sm font-medium mb-2">Category</label>
-          <Select
-            value={selectedCategory}
-            onValueChange={(value) => handleCategoryChange(value as LocalTipCategory)}
-          >
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Select category" />
-            </SelectTrigger>
-            <SelectContent>
-              {loaderData.validCategories.map((category) => (
-                <SelectItem key={category} value={category}>
-                  {category}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
+      <div className="flex flex-col gap-4 mb-6">
         {/* Search */}
-        <div className="flex-1">
+        <div>
           <label className="block text-sm font-medium mb-2">Search</label>
           <Input
             type="text"
@@ -414,6 +393,22 @@ export default function LocalTipsPage({ loaderData }: Route.ComponentProps) {
             value={searchQuery}
             onChange={(e) => handleSearchChange(e.target.value)}
           />
+        </div>
+        {/* Category Filter */}
+        <div>
+          <label className="block text-sm font-medium mb-2">Category</label>
+          <div className="flex flex-wrap gap-2">
+            {loaderData.validCategories.map((category) => (
+              <Button
+                key={category}
+                variant={selectedCategory === category ? "default" : "outline"}
+                size="sm"
+                onClick={() => handleCategoryChange(category as LocalTipCategory)}
+              >
+                {category}
+              </Button>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -522,21 +517,18 @@ export default function LocalTipsPage({ loaderData }: Route.ComponentProps) {
               {/* Category */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Category *</label>
-                <Select
-                  value={newPost.category}
-                  onValueChange={(value) => setNewPost({ ...newPost, category: value as any })}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {VALID_LOCAL_TIP_CATEGORIES.filter(cat => cat !== "All").map((category) => (
-                      <SelectItem key={category} value={category}>
-                        {category}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <div className="flex flex-wrap gap-2">
+                  {VALID_LOCAL_TIP_CATEGORIES.filter(cat => cat !== "All").map((category) => (
+                    <Button
+                      key={category}
+                      variant={newPost.category === category ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setNewPost({ ...newPost, category: category as any })}
+                    >
+                      {category}
+                    </Button>
+                  ))}
+                </div>
                 {formErrors.category && (
                   <p className="text-red-500 text-sm mt-1">{formErrors.category}</p>
                 )}

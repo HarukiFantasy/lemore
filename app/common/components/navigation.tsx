@@ -82,7 +82,9 @@ export function Navigation({
 
   const updateLocation = (newLocation: string) => {
     setLocation(newLocation);
-    setSearchParams({ location: newLocation });
+    const params = new URLSearchParams(searchParams);
+    params.set("location", newLocation);
+    setSearchParams(params);
   };
 
   useEffect(() => {

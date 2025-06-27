@@ -262,13 +262,15 @@ export const giveAndGlowCategorySchema = z.enum([
 });
 
 export const giveAndGlowLocationSchema = z.enum([
-  "All",
   "Bangkok",
-  "Chiang Mai",
+  "ChiangMai",
+  "HuaHin",
   "Phuket",
   "Pattaya",
-  "Krabi",
-  "Other"
+  "Koh Phangan",
+  "Koh Tao",
+  "Koh Samui",
+  "All Cities"
 ], {
   errorMap: () => ({ message: "Please select a valid location" }),
 });
@@ -281,11 +283,11 @@ export const giveAndGlowSearchSchema = z.string()
 
 export const giveAndGlowFiltersSchema = z.object({
   category: giveAndGlowCategorySchema.optional().default("All"),
-  location: giveAndGlowLocationSchema.optional().default("All"),
+  location: giveAndGlowLocationSchema,
   search: giveAndGlowSearchSchema,
 }).transform((data) => ({
   category: data.category || "All",
-  location: data.location || "All",
+  location: data.location || "Bangkok",
   search: data.search || "",
 }));
 
@@ -300,7 +302,7 @@ export const giveAndGlowReviewSchema = z.object({
   rating: z.number().min(1, "Rating must be at least 1").max(5, "Rating must be at most 5"),
   review: z.string().min(10, "Review must be at least 10 characters").max(2000, "Review must be less than 2000 characters"),
   timestamp: z.string().min(1, "Timestamp is required"),
-  location: giveAndGlowLocationSchema.exclude(["All"]),
+  location: giveAndGlowLocationSchema,
   tags: z.array(z.string().max(20, "Tag must be less than 20 characters")).max(10, "Maximum 10 tags allowed"),
   photos: z.array(z.string().url("Photo URL must be valid")).max(5, "Maximum 5 photos allowed").optional(),
   appreciationBadge: z.boolean().optional().default(false),
@@ -312,7 +314,7 @@ export const createGiveAndGlowReviewSchema = z.object({
   giverName: z.string().min(1, "Giver name is required").max(100, "Giver name must be less than 100 characters"),
   rating: z.number().min(1, "Rating must be at least 1").max(5, "Rating must be at most 5"),
   review: z.string().min(10, "Review must be at least 10 characters").max(2000, "Review must be less than 2000 characters"),
-  location: giveAndGlowLocationSchema.exclude(["All"]),
+  location: giveAndGlowLocationSchema,
   tags: z.string().max(200, "Tags string must be less than 200 characters").optional().default(""),
 });
 
@@ -330,15 +332,6 @@ export const VALID_GIVE_AND_GLOW_CATEGORIES = [
   "Other"
 ] as const;
 
-export const VALID_GIVE_AND_GLOW_LOCATIONS = [
-  "All",
-  "Bangkok",
-  "Chiang Mai",
-  "Phuket",
-  "Pattaya",
-  "Krabi",
-  "Other"
-] as const;
 
 export type GiveAndGlowCategory = z.infer<typeof giveAndGlowCategorySchema>;
 export type GiveAndGlowLocation = z.infer<typeof giveAndGlowLocationSchema>;
