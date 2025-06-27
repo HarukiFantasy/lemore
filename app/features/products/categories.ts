@@ -1,0 +1,21 @@
+// 상품 카테고리(공통)
+export const PRODUCT_CATEGORIES = [
+  { name: "Vehicles", icon: "🚗" },
+  { name: "Classifieds", icon: "🏷️" },
+  { name: "Clothing", icon: "👕" },
+  { name: "Electronics", icon: "📱" },
+  { name: "Entertainment", icon: "🎬" },
+  { name: "Family", icon: "❤️" },
+  { name: "Free stuff", icon: "🎁" },
+  { name: "Outdoors", icon: "🪴" },
+  { name: "Hobbies", icon: "🖌️" },
+  { name: "Home goods", icon: "🏠" },
+  { name: "Home improvement supplies", icon: "🔧" },
+  { name: "Musical instruments", icon: "🎸" },
+  { name: "Office supplies", icon: "🏷️" },
+  { name: "Pet supplies", icon: "🐾" },
+  { name: "Property for sale", icon: "🏠💲" },
+  { name: "Sporting goods", icon: "🏃" },
+  { name: "Toys and games", icon: "🎮" },
+  { name: "Buy-and-sell groups", icon: "👥" },
+]; 

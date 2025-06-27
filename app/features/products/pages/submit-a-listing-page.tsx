@@ -1,8 +1,11 @@
 import React, { useState } from "react";
 import { Input } from "~/common/components/ui/input";
 import { Button } from "~/common/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/common/components/ui/select";
 import { useNavigate } from "react-router";
 import { productFormSchema, type ProductFormData } from "~/lib/schemas";
+import { PRODUCT_CATEGORIES } from "../categories";
+import { LOCATIONS } from "~/common/data/locations";
 
 export default function SubmitAListingPage() {
   const [images, setImages] = useState<File[]>([]);
@@ -147,40 +150,50 @@ export default function SubmitAListingPage() {
         </div>
         
         <div>
-          <select
-            value={condition}
-            onChange={e => setCondition(e.target.value)}
-            className={`border rounded p-2 w-full ${errors.condition ? "border-red-500" : ""}`}
-          >
-            <option value="">Select Condition</option>
-            <option value="New">New</option>
-            <option value="Like New">Like New</option>
-            <option value="Good">Good</option>
-            <option value="Fair">Fair</option>
-            <option value="Poor">Poor</option>
-          </select>
+          <Select value={condition} onValueChange={setCondition}>
+            <SelectTrigger className={errors.condition ? "border-red-500" : ""}>
+              <SelectValue placeholder="Select Condition" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="New">New</SelectItem>
+              <SelectItem value="Like New">Like New</SelectItem>
+              <SelectItem value="Good">Good</SelectItem>
+              <SelectItem value="Fair">Fair</SelectItem>
+              <SelectItem value="Poor">Poor</SelectItem>
+            </SelectContent>
+          </Select>
           {errors.condition && <span className="text-xs text-red-500 mt-1">{errors.condition}</span>}
         </div>
         
         <div>
-          <Input
-            type="text"
-            placeholder="Category"
-            value={category}
-            onChange={e => setCategory(e.target.value)}
-            className={errors.category ? "border-red-500" : ""}
-          />
+          <Select value={category} onValueChange={setCategory}>
+            <SelectTrigger className={errors.category ? "border-red-500" : ""}>
+              <SelectValue placeholder="Select Category" />
+            </SelectTrigger>
+            <SelectContent>
+              {PRODUCT_CATEGORIES.map(cat => (
+                <SelectItem key={cat.name} value={cat.name}>
+                  {cat.icon} {cat.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           {errors.category && <span className="text-xs text-red-500 mt-1">{errors.category}</span>}
         </div>
         
         <div>
-          <Input
-            type="text"
-            placeholder="Location"
-            value={location}
-            onChange={e => setLocation(e.target.value)}
-            className={errors.location ? "border-red-500" : ""}
-          />
+          <Select value={location} onValueChange={setLocation}>
+            <SelectTrigger className={errors.location ? "border-red-500" : ""}>
+              <SelectValue placeholder="Select Location" />
+            </SelectTrigger>
+            <SelectContent>
+              {LOCATIONS.map((loc) => (
+                <SelectItem key={loc} value={loc}>
+                  {loc}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           {errors.location && <span className="text-xs text-red-500 mt-1">{errors.location}</span>}
         </div>
         

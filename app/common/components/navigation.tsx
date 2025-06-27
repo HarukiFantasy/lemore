@@ -6,6 +6,7 @@ import { Button } from './ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from './ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { BarChart3Icon, BellIcon, LogOutIcon, MenuIcon, MessageCircleIcon, SettingsIcon, UserIcon, MapPin, ChevronDown } from 'lucide-react';
+import { LOCATIONS } from '../data/locations';
 
 const menus = [
   {
@@ -54,18 +55,6 @@ const menus = [
     name: 'Let Go Buddy',
     to: '/let-go-buddy',
   }
-];
-
-const cities = [
-  "Bangkok",
-  "ChiangMai", 
-  "HuaHin",
-  "Phuket",
-  "Pattaya",
-  "Koh Phangan",
-  "Koh Tao",
-  "Koh Samui",
-  "All Cities"
 ];
 
 export function Navigation({
@@ -182,7 +171,7 @@ export function Navigation({
           </Button>
         </DropdownMenuTrigger>
       <DropdownMenuContent>
-          {cities.map((city) => (
+          {LOCATIONS.map((city) => (
             <DropdownMenuItem key={city} onClick={() => updateLocation(city)}>
               {city}
             </DropdownMenuItem>
