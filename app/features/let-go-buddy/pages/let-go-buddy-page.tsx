@@ -8,6 +8,8 @@ const situations = [
   "I'm moving soon",
   "I need more space",
   "I'm just tidying up",
+  "I'm downsizing",
+  "I'm going minimalist",
 ];
 
 const declutterPlan = [
@@ -18,12 +20,38 @@ const declutterPlan = [
   "Day 5: Miscellaneous items",
 ];
 
+// Emotional attachment questions
+const emotionalQuestions = [
+  "When was the last time you used this item?",
+  "Does this item remind you of a special memory?",
+  "Would you buy this item again if you lost it?",
+  "Do you feel guilty about getting rid of it?",
+  "Does this item represent who you are or want to be?",
+];
+
+// Environmental impact data
+const environmentalImpact: Record<string, { co2: number; landfill: string; recyclable: boolean }> = {
+  "Electronics": { co2: 25, landfill: "High", recyclable: true },
+  "Clothing": { co2: 15, landfill: "Medium", recyclable: true },
+  "Books": { co2: 5, landfill: "Low", recyclable: true },
+  "Furniture": { co2: 30, landfill: "High", recyclable: false },
+  "Kitchen Items": { co2: 10, landfill: "Medium", recyclable: true },
+};
+
 const mockAnalysis = [
   {
     photo: "/sample.png",
     name: "Electric Kettle",
     recommendation: "Donate (small + rarely used)",
     suggestion: "Give & Glow recommended",
+    category: "Electronics",
+    emotionalScore: 3,
+    costBenefit: {
+      originalPrice: 800,
+      currentValue: 250,
+      maintenanceCost: 0,
+      spaceValue: 50,
+    },
     aiListing: {
       title: "Electric Kettle – Still in great shape!",
       desc: "Used gently, perfect for daily tea or coffee. Clean and fully functional.",
@@ -40,6 +68,13 @@ export default function LetGoBuddyPage() {
   const [selectedItem, setSelectedItem] = useState<any>(null);
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [analysisComplete, setAnalysisComplete] = useState(false);
+  const [showDeclutterPlan, setShowDeclutterPlan] = useState(false);
+  const [showEmotionalAssessment, setShowEmotionalAssessment] = useState(false);
+  const [showCostBenefit, setShowCostBenefit] = useState(false);
+  const [showEnvironmentalImpact, setShowEnvironmentalImpact] = useState(false);
+  const [emotionalAnswers, setEmotionalAnswers] = useState<number[]>([]);
 
   // Handle file upload
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -64,6 +99,61 @@ export default function LetGoBuddyPage() {
     const newPreviewUrls = previewUrls.filter((_, i) => i !== index);
     setPreviewUrls(newPreviewUrls);
     setUploadedFiles(uploadedFiles.filter((_, i) => i !== index));
+  };
+
+  // Handle AI analysis generation
+  const handleGenerateAnalysis = async () => {
+    if (!selectedSituation) {
+      alert("Please select your situation first");
+      return;
+    }
+    
+    if (uploadedFiles.length === 0) {
+      alert("Please upload at least one image first");
+      return;
+    }
+
+    setIsAnalyzing(true);
+    
+    // Simulate AI analysis delay
+    setTimeout(() => {
+      setIsAnalyzing(false);
+      setAnalysisComplete(true);
+    }, 3000);
+  };
+
+  // Handle declutter plan generation
+  const handleGenerateDeclutterPlan = () => {
+    setShowDeclutterPlan(true);
+  };
+
+  // Handle emotional assessment
+  const handleEmotionalAssessment = () => {
+    setShowEmotionalAssessment(true);
+    setEmotionalAnswers(new Array(emotionalQuestions.length).fill(0));
+  };
+
+  // Handle emotional answer change
+  const handleEmotionalAnswerChange = (questionIndex: number, value: number) => {
+    const newAnswers = [...emotionalAnswers];
+    newAnswers[questionIndex] = value;
+    setEmotionalAnswers(newAnswers);
+  };
+
+  // Calculate emotional score
+  const calculateEmotionalScore = () => {
+    const total = emotionalAnswers.reduce((sum, answer) => sum + answer, 0);
+    return Math.round((total / (emotionalQuestions.length * 5)) * 100);
+  };
+
+  // Handle cost-benefit analysis
+  const handleCostBenefitAnalysis = () => {
+    setShowCostBenefit(true);
+  };
+
+  // Handle environmental impact
+  const handleEnvironmentalImpact = () => {
+    setShowEnvironmentalImpact(true);
   };
 
   return (
@@ -143,7 +233,7 @@ export default function LetGoBuddyPage() {
       <div className="mb-8">
         <div className="font-semibold text-lg mb-2">Step 2</div>
         <div className="mb-2">Select your current situation</div>
-        <div className="flex flex-wrap gap-3 mb-2">
+        <div className="flex flex-wrap gap-3 mb-4">
           {situations.map((s) => (
             <Button
               key={s}
@@ -155,41 +245,110 @@ export default function LetGoBuddyPage() {
             </Button>
           ))}
         </div>
+        
+        {/* Generate AI Analysis Button */}
+        <Button 
+          onClick={handleGenerateAnalysis}
+          disabled={!selectedSituation || uploadedFiles.length === 0 || isAnalyzing}
+          className="w-full"
+          size="lg"
+        >
+          {isAnalyzing ? (
+            <>
+              <span className="animate-spin mr-2">⏳</span>
+              Generating AI Analysis...
+            </>
+          ) : (
+            <>
+              <span className="mr-2">🤖</span>
+              Generate AI Analysis
+            </>
+          )}
+        </Button>
       </div>
 
       {/* Step 3: Analyzing */}
-      <div className="mb-8">
-        <div className="font-semibold text-lg mb-2">Step 3</div>
-        <div className="flex items-center gap-2">Analyzing your items... <span>🧠✨</span></div>
-      </div>
+      {isAnalyzing && (
+        <div className="mb-8">
+          <div className="font-semibold text-lg mb-2">Step 3</div>
+          <div className="flex items-center gap-2">
+            <span className="animate-spin">🧠</span>
+            Analyzing your items... <span>✨</span>
+          </div>
+          <div className="mt-2 text-sm text-gray-600">
+            Our AI is examining your photos and situation to provide personalized recommendations...
+          </div>
+        </div>
+      )}
 
       {/* Analysis Result Cards */}
-      <div className="space-y-6 mb-12">
-        {items.map((item, idx) => (
-          <div key={idx} className="bg-white border rounded-xl p-5 flex gap-4 items-center shadow-sm">
-            <img src={item.photo} alt={item.name} className="w-20 h-20 object-cover rounded-lg border" />
-            <div className="flex-1">
-              <div className="font-semibold text-lg mb-1">📸 Photo: {item.name}</div>
-              <div className="text-gray-600 mb-1">Recognition: <span className="font-medium">"{item.name}"</span></div>
-              <div className="mb-2">Recommendation: <span className="font-medium">{item.recommendation}</span></div>
-              <div className="flex gap-2">
-                <Button 
-                  size="sm"
-                  onClick={() => { setShowListing(true); setSelectedItem(item); }}
-                >
-                  Create Listing
-                </Button>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                >
-                  Keep
-                </Button>
+      {analysisComplete && (
+        <div className="space-y-6 mb-12">
+          <div className="font-semibold text-lg mb-4">Analysis Complete! 🎉</div>
+          {items.map((item, idx) => (
+            <div key={idx} className="bg-white border rounded-xl p-5 flex gap-4 items-center shadow-sm">
+              <img src={item.photo} alt={item.name} className="w-20 h-20 object-cover rounded-lg border" />
+              <div className="flex-1">
+                <div className="font-semibold text-lg mb-1">📸 Photo: {item.name}</div>
+                <div className="text-gray-600 mb-1">Recognition: <span className="font-medium">"{item.name}"</span></div>
+                <div className="mb-2">Recommendation: <span className="font-medium">{item.recommendation}</span></div>
+                
+                {/* Decision Helper Buttons */}
+                <div className="flex gap-2 flex-wrap mb-3">
+                  <Button 
+                    size="sm"
+                    onClick={() => { setShowListing(true); setSelectedItem(item); }}
+                  >
+                    Create Listing
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                  >
+                    Keep
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={handleGenerateDeclutterPlan}
+                  >
+                    📅 Get Declutter Plan
+                  </Button>
+                </div>
+
+                {/* Decision Helper Tools */}
+                <div className="text-sm text-gray-600 mb-2">Still unsure? Try these decision helpers:</div>
+                <div className="flex gap-2 flex-wrap">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={handleEmotionalAssessment}
+                    className="text-xs"
+                  >
+                    💭 Emotional Check
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={handleCostBenefitAnalysis}
+                    className="text-xs"
+                  >
+                    💰 Cost Analysis
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={handleEnvironmentalImpact}
+                    className="text-xs"
+                  >
+                    🌱 Eco Impact
+                  </Button>
+                </div>
               </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
 
       {/* AI Generated Listing Popup */}
       {showListing && selectedItem && (
@@ -211,28 +370,140 @@ export default function LetGoBuddyPage() {
         </div>
       )}
 
-      {/* Declutter Plan Section */}
-      <div className="bg-gray-50 border rounded-xl p-6 mb-8">
-        <div className="font-semibold text-lg mb-2">📅 Your 5-Day Declutter Plan</div>
-        <div className="mb-2 text-gray-600">Start with small steps:</div>
-        <ul className="list-disc pl-6 mb-4">
-          {declutterPlan.map((d, i) => (
-            <li key={i}>{d}</li>
-          ))}
-        </ul>
-        <div className="flex gap-2">
-          <button className="px-3 py-1 rounded bg-gray-200 text-black">Download Plan as Image</button>
-          <button className="px-3 py-1 rounded bg-gray-200 text-black">Sync to Calendar</button>
+      {/* Emotional Assessment Popup */}
+      {showEmotionalAssessment && (
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-8 max-w-lg w-full relative shadow-lg max-h-[80vh] overflow-y-auto">
+            <button className="absolute top-3 right-3 text-2xl" onClick={() => setShowEmotionalAssessment(false)}>×</button>
+            <div className="mb-6 text-lg font-bold flex items-center gap-2">💭 Emotional Attachment Assessment</div>
+            <div className="space-y-4">
+              {emotionalQuestions.map((question, index) => (
+                <div key={index} className="border rounded-lg p-4">
+                  <div className="font-medium mb-3">{question}</div>
+                  <div className="flex gap-2">
+                    {[1, 2, 3, 4, 5].map((value) => (
+                      <button
+                        key={value}
+                        onClick={() => handleEmotionalAnswerChange(index, value)}
+                        className={`px-3 py-1 rounded text-sm ${
+                          emotionalAnswers[index] === value
+                            ? 'bg-blue-600 text-white'
+                            : 'bg-gray-200 text-gray-700'
+                        }`}
+                      >
+                        {value}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="text-xs text-gray-500 mt-1">1 = Not at all, 5 = Very much</div>
+                </div>
+              ))}
+              <div className="mt-6 p-4 bg-blue-50 rounded-lg">
+                <div className="font-medium">Emotional Attachment Score: {calculateEmotionalScore()}%</div>
+                <div className="text-sm text-gray-600 mt-1">
+                  {calculateEmotionalScore() > 70 ? "High attachment - Consider keeping" :
+                   calculateEmotionalScore() > 40 ? "Moderate attachment - Think carefully" :
+                   "Low attachment - Safe to let go"}
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
+      )}
 
-      {/* My Page Summary */}
-      <div className="bg-white border rounded-xl p-6 mb-4">
-        <div className="font-semibold text-lg mb-2">My Decluttered Items</div>
-        <div className="mb-1 text-gray-600">Estimated space freed: <b>30L</b></div>
-        <div className="mb-1 text-gray-600">Donations: <b>2</b> / Secondhand sales: <b>1</b> / Carbon saved: <b>1.2kg</b></div>
-        <div className="text-gray-500 text-sm">(This section will show your declutter stats and item history.)</div>
-      </div>
+      {/* Cost-Benefit Analysis Popup */}
+      {showCostBenefit && (
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-8 max-w-md w-full relative shadow-lg">
+            <button className="absolute top-3 right-3 text-2xl" onClick={() => setShowCostBenefit(false)}>×</button>
+            <div className="mb-6 text-lg font-bold flex items-center gap-2">💰 Cost-Benefit Analysis</div>
+            <div className="space-y-3">
+              <div className="flex justify-between">
+                <span>Original Price:</span>
+                <span>THB {mockAnalysis[0].costBenefit.originalPrice}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Current Value:</span>
+                <span>THB {mockAnalysis[0].costBenefit.currentValue}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Maintenance Cost:</span>
+                <span>THB {mockAnalysis[0].costBenefit.maintenanceCost}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Space Value (per month):</span>
+                <span>THB {mockAnalysis[0].costBenefit.spaceValue}</span>
+              </div>
+              <hr />
+              <div className="flex justify-between font-bold">
+                <span>Net Loss:</span>
+                <span className="text-red-600">THB {mockAnalysis[0].costBenefit.originalPrice - mockAnalysis[0].costBenefit.currentValue}</span>
+              </div>
+              <div className="mt-4 p-3 bg-yellow-50 rounded">
+                <div className="text-sm">
+                  <strong>Recommendation:</strong> Selling now would recover {Math.round((mockAnalysis[0].costBenefit.currentValue / mockAnalysis[0].costBenefit.originalPrice) * 100)}% of your investment.
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Environmental Impact Popup */}
+      {showEnvironmentalImpact && (
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-8 max-w-md w-full relative shadow-lg">
+            <button className="absolute top-3 right-3 text-2xl" onClick={() => setShowEnvironmentalImpact(false)}>×</button>
+            <div className="mb-6 text-lg font-bold flex items-center gap-2">🌱 Environmental Impact</div>
+            <div className="space-y-4">
+              <div className="p-4 bg-green-50 rounded-lg">
+                <div className="font-medium mb-2">By donating/selling this item:</div>
+                <div className="text-sm space-y-1">
+                  <div>• Saves {environmentalImpact[mockAnalysis[0].category].co2}kg CO2 emissions</div>
+                  <div>• Reduces landfill waste</div>
+                  <div>• Extends item's useful life</div>
+                  <div>• Supports circular economy</div>
+                </div>
+              </div>
+              <div className="p-4 bg-blue-50 rounded-lg">
+                <div className="font-medium mb-2">Best disposal method:</div>
+                <div className="text-sm">
+                  {environmentalImpact[mockAnalysis[0].category].recyclable 
+                    ? "♻️ Recycle or donate to extend life"
+                    : "🔄 Repurpose or upcycle if possible"}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Declutter Plan Section - Only shown when user requests it */}
+      {showDeclutterPlan && (
+        <div className="bg-gray-50 border rounded-xl p-6 mb-8">
+          <div className="flex justify-between items-center mb-4">
+            <div className="font-semibold text-lg">📅 Your 5-Day Declutter Plan</div>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => setShowDeclutterPlan(false)}
+            >
+              × Close
+            </Button>
+          </div>
+          <div className="mb-2 text-gray-600">Start with small steps:</div>
+          <ul className="list-disc pl-6 mb-4">
+            {declutterPlan.map((d, i) => (
+              <li key={i}>{d}</li>
+            ))}
+          </ul>
+          <div className="flex gap-2">
+            <button className="px-3 py-1 rounded bg-gray-200 text-black">Download Plan as Image</button>
+            <button className="px-3 py-1 rounded bg-gray-200 text-black">Sync to Calendar</button>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 } 
