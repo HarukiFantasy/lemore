@@ -253,7 +253,7 @@ export default function AskAndAnswerPage({ loaderData }: Route.ComponentProps) {
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-6 space-y-6">
+    <div className="max-w-4xl mx-auto px-0 py-6 md:p-6 space-y-6">
       {/* Header */}
       <div className="text-center space-y-2">
         <h1 className="text-3xl font-bold">Ask & Answer</h1>

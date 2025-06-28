@@ -395,7 +395,7 @@ export default function LocalReviewsPage({ loaderData }: Route.ComponentProps) {
   };
 
   return (
-    <div className="max-w-7xl mx-auto p-6 space-y-6">
+    <div className="max-w-7xl mx-auto px-0 py-6 md:p-6 space-y-6">
       {/* Header */}
       <div className="text-center space-y-2">
         <h1 className="text-3xl font-bold text-gray-900">Local Reviews</h1>

@@ -55,6 +55,75 @@ export const newPasswordSchema = z.object({
   path: ["confirmPassword"],
 });
 
+// 메시지 스키마
+export const messageSchema = z.object({
+  id: z.string().min(1, "Message ID is required"),
+  content: z.string().min(1, "Message content is required").max(1000, "Message content must be less than 1000 characters"),
+  senderId: z.string().min(1, "Sender ID is required"),
+  receiverId: z.string().min(1, "Receiver ID is required"),
+  timestamp: z.string().datetime("Invalid timestamp"),
+  isRead: z.boolean(),
+  attachments: z.array(z.string().url("Attachment URL must be valid")).optional(),
+});
+
+// 대화 스키마
+export const conversationSchema = z.object({
+  id: z.string().min(1, "Conversation ID is required"),
+  participantIds: z.array(z.string().min(1, "Participant ID is required")).length(2, "Conversation must have exactly 2 participants"),
+  lastMessage: messageSchema.optional(),
+  unreadCount: z.number().min(0, "Unread count must be non-negative"),
+  updatedAt: z.string().datetime("Invalid timestamp"),
+});
+
+// 메시지 필터 스키마
+export const messageFiltersSchema = z.object({
+  search: z.string().optional(),
+  unreadOnly: z.boolean().optional(),
+  limit: z.number().min(1).max(100).default(20),
+});
+
+// 메시지 목록 스키마
+export const messageListSchema = z.object({
+  conversations: z.array(conversationSchema),
+  totalCount: z.number().min(0),
+  hasMore: z.boolean(),
+});
+
+// 알림 스키마
+export const notificationSchema = z.object({
+  id: z.string().min(1, "Notification ID is required"),
+  type: z.enum(["message", "sale", "review", "system", "price_drop"]),
+  title: z.string().min(1, "Title is required"),
+  content: z.string().min(1, "Content is required"),
+  timestamp: z.string().datetime("Invalid timestamp"),
+  isRead: z.boolean(),
+  avatar: z.string().url("Avatar URL must be valid").optional(),
+  avatarFallback: z.string().optional(),
+  actions: z.array(z.object({
+    label: z.string(),
+    action: z.string(),
+    variant: z.enum(["default", "outline"]),
+  })).optional(),
+  metadata: z.record(z.any()).optional(),
+});
+
+// 알림 필터 스키마
+export const notificationFiltersSchema = z.object({
+  type: z.enum(["all", "message", "sale", "review", "system", "price_drop"]).default("all"),
+  unreadOnly: z.boolean().optional(),
+  limit: z.number().min(1).max(100).default(20),
+  page: z.number().min(1).default(1),
+});
+
+// 알림 목록 스키마
+export const notificationListSchema = z.object({
+  notifications: z.array(notificationSchema),
+  totalCount: z.number().min(0),
+  unreadCount: z.number().min(0),
+  hasMore: z.boolean(),
+  filters: notificationFiltersSchema,
+});
+
 // 타입 추론
 export type User = z.infer<typeof userSchema>;
 export type CreateUserData = z.infer<typeof createUserSchema>;
@@ -62,3 +131,10 @@ export type UpdateUserData = z.infer<typeof updateUserSchema>;
 export type LoginData = z.infer<typeof loginSchema>;
 export type ResetPasswordData = z.infer<typeof resetPasswordSchema>;
 export type NewPasswordData = z.infer<typeof newPasswordSchema>;
+export type Message = z.infer<typeof messageSchema>;
+export type Conversation = z.infer<typeof conversationSchema>;
+export type MessageFilters = z.infer<typeof messageFiltersSchema>;
+export type MessageList = z.infer<typeof messageListSchema>;
+export type Notification = z.infer<typeof notificationSchema>;
+export type NotificationFilters = z.infer<typeof notificationFiltersSchema>;
+export type NotificationList = z.infer<typeof notificationListSchema>;

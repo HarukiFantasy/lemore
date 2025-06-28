@@ -199,7 +199,7 @@ export default function BrowseListingsPage() {
     <div className="flex flex-col md:flex-row">
 
       {/* 메인 컨텐츠 */}
-      <main className="flex-1 p-8">
+      <main className="flex-1 mx-auto px-0 py-6 md:p-6 ">
         {/* 검색바 */}
           <Form className="flex items-center justify-center max-w-screen-sm mx-auto mt-1 gap-2 mb-6 focus:ring-1 focus:ring-accent">
             <Input 

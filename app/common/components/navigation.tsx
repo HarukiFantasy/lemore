@@ -228,6 +228,16 @@ export function Navigation({
                       <SettingsIcon className="size-4 mr-2" />Settings
                     </Link>
                   </DropdownMenuItem>
+                  <DropdownMenuItem asChild className="cursor-pointer md:hidden">
+                    <Link to="/my/notifications">
+                      <BellIcon className="size-4 mr-2" />Notifications
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild className="cursor-pointer md:hidden">
+                    <Link to="/my/messages">
+                      <MessageCircleIcon className="size-4 mr-2" />Messages
+                    </Link>
+                  </DropdownMenuItem>
                 </DropdownMenuGroup>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild className="cursor-pointer">

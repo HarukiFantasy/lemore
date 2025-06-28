@@ -30,4 +30,11 @@ export default [
       ]),
     ]),
   ]),
+  ...prefix("/my", [
+    route("/dashboard", "features/users/pages/dashboard-page.tsx"),
+    route("/profile", "features/users/pages/profile-page.tsx"),
+    route("/settings", "features/users/pages/settings-page.tsx"),
+    route("/notifications", "features/users/pages/notifications-page.tsx"),
+    route("/messages", "features/users/pages/messages-page.tsx"),
+  ]),
 ] satisfies RouteConfig;
