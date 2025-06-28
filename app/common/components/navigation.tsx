@@ -166,7 +166,9 @@ export function Navigation({
             className="rounded-full p-2 flex items-center space-x-2 bg-transparent"
           >
             <MapPin className="w-5 h-5 mr-1" />
-            <span className="font-semibold text-sm mr-0">{location}</span>
+            <span className="font-semibold text-sm mr-0">
+              {location}
+            </span>
             <ChevronDown className="w-4 h-4 ml-0" />
           </Button>
         </DropdownMenuTrigger>

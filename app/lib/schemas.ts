@@ -305,7 +305,7 @@ export const giveAndGlowReviewSchema = z.object({
   location: giveAndGlowLocationSchema,
   tags: z.array(z.string().max(20, "Tag must be less than 20 characters")).max(10, "Maximum 10 tags allowed"),
   photos: z.array(z.string().url("Photo URL must be valid")).max(5, "Maximum 5 photos allowed").optional(),
-  appreciationBadge: z.boolean().optional().default(false),
+  appreciationBadge: z.boolean(),
 });
 
 export const createGiveAndGlowReviewSchema = z.object({

@@ -15,6 +15,7 @@ import {
 } from '~/common/components/ui/pagination';
 import { productFiltersSchema, productListSchema, type ProductFilters, type ProductList } from "~/lib/schemas";
 import { PRODUCT_CATEGORIES } from "../categories";
+import { searchProducts, fetchProductsByLocation } from "../queries";
 
 export const meta: Route.MetaFunction = () => {
   return [
@@ -41,29 +42,42 @@ export const loader = async ({ request }: { request: Request }) => {
 
     const filters = filtersValidation.data;
 
-    // 실제 API 호출 대신 목업 데이터 생성
-    const conditions = ["New", "Like New", "Good", "Fair", "Poor"] as const;
-    const mockProducts = Array.from({ length: filters.limit }, (_, index) => ({
-      id: `${filters.page}-${index + 1}`,
-      title: filters.q ? `${filters.q} item ${index + 1}` : `Product ${index + 1}`,
-      price: `THB ${Math.floor(Math.random() * 5000) + 100}`,
-      description: `This is a sample product description for item ${index + 1}. It's in good condition and ready for sale.`,
-      condition: conditions[Math.floor(Math.random() * conditions.length)],
-      category: filters.category || "Electronics",
-      location: filters.location || "Bangkok",
-      image: "/sample.png",
-      sellerId: `seller-${index + 1}`,
-      createdAt: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000), // 최근 30일 내
-      updatedAt: new Date(),
-    }));
+    // 실제 데이터베이스에서 상품들을 가져오기
+    let products;
+    if (filters.q) {
+      // 검색어가 있는 경우 검색
+      products = await searchProducts(filters.q, filters);
+    } else if (filters.location) {
+      // 위치 필터가 있는 경우
+      products = await fetchProductsByLocation(filters.location, filters.limit);
+    } else {
+      // 기본적으로 모든 상품 (실제로는 페이지네이션 적용 필요)
+      const allProducts = await searchProducts("", filters);
+      products = allProducts.slice((filters.page - 1) * filters.limit, filters.page * filters.limit);
+    }
 
-    const totalCount = 100; // 목업 총 개수
+    // 정렬 적용
+    if (filters.sortBy === "price") {
+      products.sort((a, b) => {
+        const priceA = parseInt(a.price.replace("THB ", ""));
+        const priceB = parseInt(b.price.replace("THB ", ""));
+        return filters.sortOrder === "asc" ? priceA - priceB : priceB - priceA;
+      });
+    } else if (filters.sortBy === "date") {
+      products.sort((a, b) => {
+        const dateA = a.createdAt.getTime();
+        const dateB = b.createdAt.getTime();
+        return filters.sortOrder === "asc" ? dateA - dateB : dateB - dateA;
+      });
+    }
+
+    const totalCount = products.length; // 실제로는 데이터베이스에서 총 개수를 가져와야 함
     const totalPages = Math.ceil(totalCount / filters.limit);
     const hasNextPage = filters.page < totalPages;
     const hasPrevPage = filters.page > 1;
 
     const productList: ProductList = {
-      products: mockProducts,
+      products,
       totalCount,
       currentPage: filters.page,
       totalPages,

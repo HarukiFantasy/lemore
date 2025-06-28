@@ -35,6 +35,61 @@ npm run dev
 
 Your application will be available at `http://localhost:5173`.
 
+## Today's Picks Selection Algorithm
+
+The "Today's Picks" feature on the home page uses a sophisticated scoring algorithm to select the best 4 products to showcase. Here's how it works:
+
+### Scoring Criteria
+
+1. **Recency Score (0-30 points)**
+
+   - Recently posted (≤7 days): +30 points
+   - Posted within 2 weeks: +20 points
+   - Posted within a month: +10 points
+
+2. **Quality Score (5-25 points)**
+
+   - New condition: +25 points
+   - Like new condition: +20 points
+   - Good condition: +15 points
+   - Fair condition: +10 points
+   - Poor condition: +5 points
+
+3. **Popularity Score (10-30 points)**
+
+   - Reasonable price (1000-3000 THB): +20 points
+   - Great value (<1000 THB): +15 points
+   - Fair price (≤5000 THB): +10 points
+   - Popular categories (Electronics, Clothing, Home goods): +10 points
+
+4. **Location Score (0-15 points)**
+
+   - Local items (matching user location): +15 points
+
+5. **Diversity Factor (0-10 points)**
+   - Random factor to ensure variety
+
+### Selection Process
+
+1. **Score Calculation**: Each product gets a total score based on the above criteria
+2. **Category Diversity**: First pass selects the highest-scoring product from each category
+3. **Score-based Selection**: Second pass fills remaining slots with highest-scoring products
+4. **Final Selection**: Returns up to 4 diverse, high-quality products
+
+### Usage
+
+```typescript
+import { fetchTodaysPicks } from "~/features/products/queries";
+
+const todaysPicks = await fetchTodaysPicks({
+  location: "ChiangMai",
+  limit: 4,
+  includePopular: true,
+  includeRecent: true,
+  includeQuality: true,
+});
+```
+
 ## Data Validation with Zod
 
 This project uses [Zod](https://zod.dev/) for runtime type validation. All form inputs, URL parameters, and API responses are validated using Zod schemas.

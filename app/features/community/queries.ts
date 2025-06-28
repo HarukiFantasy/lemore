@@ -1,7 +1,9 @@
 import { 
   type GiveAndGlowReview, 
   type GiveAndGlowFilters,
-  giveAndGlowReviewSchema
+  giveAndGlowReviewSchema,
+  type LocalTipPost,
+  type Question
 } from "~/lib/schemas";
 import { validateWithZod } from "~/lib/utils";
 
@@ -39,7 +41,7 @@ export async function fetchGiveAndGlowReviewsFromDatabase(filters: GiveAndGlowFi
         rating: 4,
         review: "Great set of kitchen appliances! Emma was very generous to give away her barely used mixer, blender, and toaster. Everything works perfectly and they're in great condition. The communication was clear and the handover was quick and easy.",
         timestamp: "1 day ago",
-        location: "Chiang Mai",
+        location: "ChiangMai",
         tags: ["Good Condition", "Multiple Items", "Quick Handover"],
         appreciationBadge: true
       },
@@ -84,7 +86,7 @@ export async function fetchGiveAndGlowReviewsFromDatabase(filters: GiveAndGlowFi
     }
 
     // Filter by location
-    if (filters.location !== "All") {
+    if (filters.location !== "All Cities") {
       filteredReviews = filteredReviews.filter(review => review.location === filters.location);
     }
 
@@ -142,5 +144,167 @@ export async function createGiveAndGlowReview(reviewData: Omit<GiveAndGlowReview
   } catch (error) {
     console.error("Error creating give-and-glow review:", error);
     throw new Error("Failed to create give-and-glow review");
+  }
+}
+
+// Mock database function for fetching latest local tips
+export async function fetchLatestLocalTips(limit: number = 5): Promise<LocalTipPost[]> {
+  try {
+    // Simulate database delay
+    await new Promise(resolve => setTimeout(resolve, 100));
+
+    // Mock data for local tips
+    const mockLocalTips: LocalTipPost[] = [
+      {
+        id: 1,
+        title: "Best places to donate clothes in Chiang Mai",
+        content: "Here are some great places where you can donate clothes in Chiang Mai...",
+        category: "Other",
+        location: "ChiangMai",
+        author: "Sarah Johnson",
+        createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2 hours ago
+        likes: 15,
+        comments: 8
+      },
+      {
+        id: 2,
+        title: "How to get a Thai SIM card as a foreigner",
+        content: "Getting a Thai SIM card is quite straightforward. Here's what you need to know...",
+        category: "Other",
+        location: "Bangkok",
+        author: "Mike Chen",
+        createdAt: new Date(Date.now() - 4 * 60 * 60 * 1000), // 4 hours ago
+        likes: 23,
+        comments: 12
+      },
+      {
+        id: 3,
+        title: "Best vegetarian restaurants in Phuket",
+        content: "If you're looking for vegetarian options in Phuket, here are my top recommendations...",
+        category: "Other",
+        location: "Phuket",
+        author: "Emma Wilson",
+        createdAt: new Date(Date.now() - 6 * 60 * 60 * 1000), // 6 hours ago
+        likes: 18,
+        comments: 6
+      },
+      {
+        id: 4,
+        title: "Transportation tips for getting around Bangkok",
+        content: "Bangkok's transportation can be overwhelming. Here are some useful tips...",
+        category: "Transportation",
+        location: "Bangkok",
+        author: "David Kim",
+        createdAt: new Date(Date.now() - 8 * 60 * 60 * 1000), // 8 hours ago
+        likes: 31,
+        comments: 14
+      },
+      {
+        id: 5,
+        title: "Healthcare insurance options for expats",
+        content: "Finding the right healthcare insurance in Thailand can be tricky. Here's what I learned...",
+        category: "Healthcare/Insurance",
+        location: "ChiangMai",
+        author: "Lisa Park",
+        createdAt: new Date(Date.now() - 12 * 60 * 60 * 1000), // 12 hours ago
+        likes: 27,
+        comments: 9
+      }
+    ];
+
+    // Return the latest tips based on limit
+    return mockLocalTips.slice(0, limit);
+
+  } catch (error) {
+    console.error("Error fetching latest local tips:", error);
+    throw new Error("Failed to fetch latest local tips");
+  }
+}
+
+// Mock database function for fetching latest questions
+export async function fetchLatestQuestions(limit: number = 5): Promise<Question[]> {
+  try {
+    // Simulate database delay
+    await new Promise(resolve => setTimeout(resolve, 100));
+
+    // Mock data for questions
+    const mockQuestions: Question[] = [
+      {
+        id: "1",
+        title: "Where can I find good quality second-hand furniture?",
+        content: "I'm looking for affordable second-hand furniture in Bangkok. Any recommendations for reliable shops or online platforms?",
+        author: "Anna Rodriguez",
+        timestamp: "1 hour ago",
+        tags: ["Furniture", "Bangkok", "Second-hand"],
+        answers: [
+          {
+            id: "1",
+            content: "I recommend checking out Chatuchak Weekend Market. There are several vendors selling good quality second-hand furniture at reasonable prices.",
+            author: "Tom Anderson",
+            timestamp: "30 minutes ago",
+            isAccepted: false
+          }
+        ]
+      },
+      {
+        id: "2",
+        title: "Best way to sell electronics safely?",
+        content: "I have some electronics I want to sell but I'm worried about safety. What's the best way to meet buyers safely?",
+        author: "Maria Garcia",
+        timestamp: "3 hours ago",
+        tags: ["Electronics", "Safety", "Selling"],
+        answers: [
+          {
+            id: "2",
+            content: "Always meet in public places like shopping malls or coffee shops. I also recommend meeting during daylight hours and bringing a friend if possible.",
+            author: "John Smith",
+            timestamp: "2 hours ago",
+            isAccepted: true
+          }
+        ]
+      },
+      {
+        id: "3",
+        title: "Looking for vintage clothing stores",
+        content: "I'm interested in vintage clothing. Are there any good vintage stores in Chiang Mai?",
+        author: "Sophie Lee",
+        timestamp: "5 hours ago",
+        tags: ["Clothing", "Vintage", "Chiang Mai"],
+        answers: []
+      },
+      {
+        id: "4",
+        title: "How to donate books effectively?",
+        content: "I have a lot of books I want to donate. What's the best way to donate them so they actually get used?",
+        author: "Carlos Mendez",
+        timestamp: "7 hours ago",
+        tags: ["Books", "Donation"],
+        answers: [
+          {
+            id: "3",
+            content: "You can donate to local libraries, schools, or community centers. Some coffee shops also have book exchange programs.",
+            author: "Rachel Green",
+            timestamp: "6 hours ago",
+            isAccepted: false
+          }
+        ]
+      },
+      {
+        id: "5",
+        title: "Sports equipment exchange groups?",
+        content: "Are there any groups or platforms for exchanging sports equipment in Phuket?",
+        author: "Alex Turner",
+        timestamp: "9 hours ago",
+        tags: ["Sports", "Exchange", "Phuket"],
+        answers: []
+      }
+    ];
+
+    // Return the latest questions based on limit
+    return mockQuestions.slice(0, limit);
+
+  } catch (error) {
+    console.error("Error fetching latest questions:", error);
+    throw new Error("Failed to fetch latest questions");
   }
 } 
