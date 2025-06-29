@@ -5,7 +5,7 @@ import { NavigationMenu, NavigationMenuContent, NavigationMenuItem, NavigationMe
 import { Button } from './ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from './ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
-import { BarChart3Icon, BellIcon, LogOutIcon, MenuIcon, MessageCircleIcon, SettingsIcon, UserIcon, MapPin, ChevronDown } from 'lucide-react';
+import { BarChart3Icon, BellIcon, LogOutIcon, MenuIcon, MessageCircleIcon, SettingsIcon, UserIcon, MapPin, ChevronDown, HeartIcon } from 'lucide-react';
 import { LOCATIONS } from '../data/locations';
 
 const menus = [
@@ -33,11 +33,6 @@ const menus = [
         name: 'Local Tips',
         description: 'Share your local tips',
         to: '/community/local-tips',
-      },
-      {
-        name: 'Ask & Answer',
-        description: 'Ask and answer questions',
-        to: '/community/ask-and-answer',
       },
       {
         name: 'Local Reviews ',
@@ -201,9 +196,9 @@ export function Navigation({
             </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Avatar>
-                  <AvatarImage src="https://github.com/harukifantasy.png" />
-                  <AvatarFallback>N</AvatarFallback>
+                <Avatar className="h-10 w-10 cursor-pointer">
+                  <AvatarImage src="https://github.com/harukifantasy.png" alt="Haruki" />
+                  <AvatarFallback>H</AvatarFallback>
                 </Avatar>
               </DropdownMenuTrigger>
               <DropdownMenuContent className="w-56">
@@ -221,6 +216,11 @@ export function Navigation({
                   <DropdownMenuItem asChild className="cursor-pointer">
                     <Link to="/my/profile">
                       <UserIcon className="size-4 mr-2" />Profile
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild className="cursor-pointer">
+                    <Link to="/my/likes">
+                      <HeartIcon className="size-4 mr-2" />Likes
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild className="cursor-pointer">

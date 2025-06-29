@@ -17,19 +17,23 @@ const profileStatsSchema = z.object({
 // Profile loader data schema
 const profileLoaderDataSchema = z.object({
   user: z.object({
-    id: z.string().min(1, "User ID is required"),
-    name: z.string().min(1, "Name is required").max(50, "Name must be less than 50 characters"),
-    email: z.string().email("Invalid email address"),
+    id: z.string(),
+    name: z.string(),
+    email: z.string(),
     avatar: z.string().optional(),
-    bio: z.string().max(200, "Bio must be less than 200 characters").optional(),
+    bio: z.string().optional(),
     location: z.string().optional(),
     memberSince: z.string().optional(),
-    rating: z.number().min(0).max(5).optional(),
-    totalSales: z.number().min(0).optional(),
-    responseRate: z.string().optional(),
+    rating: z.number().optional(),
+    totalSales: z.number().optional(),
     responseTime: z.string().optional(),
   }).optional(),
-  stats: profileStatsSchema,
+  stats: z.object({
+    // 기본 통계 정보만 유지
+    totalListings: z.number(),
+    totalLikes: z.number(),
+    totalViews: z.number(),
+  }),
 });
 
 type ProfileLoaderData = z.infer<typeof profileLoaderDataSchema>;
@@ -58,9 +62,9 @@ export const loader = async ({ request }: { request: Request }) => {
     const loaderData: ProfileLoaderData = {
       user: result.user,
       stats: {
-        itemsSold: result.user?.totalSales || 127,
-        averageRating: result.user?.rating || 4.8,
-        responseRate: result.user?.responseRate || "89%"
+        totalListings: result.user?.totalSales || 127,
+        totalLikes: result.user?.rating || 4.8,
+        totalViews: 89
       }
     };
 
@@ -163,18 +167,18 @@ export default function ProfilePage({ loaderData }: { loaderData: ProfileLoaderD
             <CardContent>
               <div className="space-y-4">
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-blue-600">{stats.itemsSold}</div>
-                  <div className="text-sm text-gray-500">Items Sold</div>
+                  <div className="text-2xl font-bold text-blue-600">{stats.totalListings}</div>
+                  <div className="text-sm text-gray-500">Total Listings</div>
                 </div>
                 <Separator />
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-green-600">{stats.averageRating}</div>
-                  <div className="text-sm text-gray-500">Average Rating</div>
+                  <div className="text-2xl font-bold text-green-600">{stats.totalLikes}</div>
+                  <div className="text-sm text-gray-500">Total Likes</div>
                 </div>
                 <Separator />
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-orange-600">{stats.responseRate}</div>
-                  <div className="text-sm text-gray-500">Response Rate</div>
+                  <div className="text-2xl font-bold text-orange-600">{stats.totalViews}</div>
+                  <div className="text-sm text-gray-500">Total Views</div>
                 </div>
               </div>
             </CardContent>

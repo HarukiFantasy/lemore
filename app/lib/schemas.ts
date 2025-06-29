@@ -296,9 +296,9 @@ export const giveAndGlowReviewSchema = z.object({
   itemName: z.string().min(1, "Item name is required").max(100, "Item name must be less than 100 characters"),
   itemCategory: giveAndGlowCategorySchema.exclude(["All"]),
   giverName: z.string().min(1, "Giver name is required").max(100, "Giver name must be less than 100 characters"),
-  giverAvatar: z.string().url("Giver avatar URL must be valid").optional(),
+  giverAvatar: z.string().optional(),
   receiverName: z.string().min(1, "Receiver name is required").max(100, "Receiver name must be less than 100 characters"),
-  receiverAvatar: z.string().url("Receiver avatar URL must be valid").optional(),
+  receiverAvatar: z.string().optional(),
   rating: z.number().min(1, "Rating must be at least 1").max(5, "Rating must be at most 5"),
   review: z.string().min(10, "Review must be at least 10 characters").max(2000, "Review must be less than 2000 characters"),
   timestamp: z.string().min(1, "Timestamp is required"),
@@ -332,6 +332,17 @@ export const VALID_GIVE_AND_GLOW_CATEGORIES = [
   "Other"
 ] as const;
 
+export const VALID_GIVE_AND_GLOW_LOCATIONS = [
+  "Bangkok",
+  "ChiangMai",
+  "HuaHin",
+  "Phuket",
+  "Pattaya",
+  "Koh Phangan",
+  "Koh Tao",
+  "Koh Samui",
+  "All Cities"
+] as const;
 
 export type GiveAndGlowCategory = z.infer<typeof giveAndGlowCategorySchema>;
 export type GiveAndGlowLocation = z.infer<typeof giveAndGlowLocationSchema>;

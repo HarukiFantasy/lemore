@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import type { Route } from './+types/browse-listings-page';
 import { RadioGroup, RadioGroupItem } from "~/common/components/ui/radio-group";
 import { ProductCard } from '../components/product-card';
@@ -159,6 +159,12 @@ export default function BrowseListingsPage() {
   const [searchParams] = useSearchParams();
   const loaderData = useLoaderData() as ProductList;
   const [searchInput, setSearchInput] = useState(searchParams.get("q") || "");
+  const [displayedProducts, setDisplayedProducts] = useState(loaderData.products.slice(0, 20));
+  const [currentPage, setCurrentPage] = useState(1);
+  const [isLoading, setIsLoading] = useState(false);
+  const [hasMore, setHasMore] = useState(loaderData.products.length > 20);
+  const observerRef = useRef<IntersectionObserver | null>(null);
+  const loadingRef = useRef<HTMLDivElement>(null);
   const submit = useSubmit();
 
   // URL 검색 파라미터 검증
@@ -175,24 +181,65 @@ export default function BrowseListingsPage() {
   // 검색어 설정
   const searchQuery = filters.q || searchInput;
 
+  // 무한 스크롤 콜백
+  const loadMoreProducts = useCallback(() => {
+    if (isLoading || !hasMore) return;
+
+    setIsLoading(true);
+    
+    // 시뮬레이션된 로딩 (실제로는 API 호출)
+    setTimeout(() => {
+      const nextPage = currentPage + 1;
+      const startIndex = (nextPage - 1) * 20;
+      const endIndex = startIndex + 20;
+      const newProducts = loaderData.products.slice(startIndex, endIndex);
+      
+      if (newProducts.length > 0) {
+        setDisplayedProducts(prev => [...prev, ...newProducts]);
+        setCurrentPage(nextPage);
+        setHasMore(endIndex < loaderData.products.length);
+      } else {
+        setHasMore(false);
+      }
+      
+      setIsLoading(false);
+    }, 500);
+  }, [isLoading, hasMore, currentPage, loaderData.products]);
+
+  // Intersection Observer 설정
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMore && !isLoading) {
+          loadMoreProducts();
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    observerRef.current = observer;
+
+    if (loadingRef.current) {
+      observer.observe(loadingRef.current);
+    }
+
+    return () => {
+      if (observerRef.current) {
+        observerRef.current.disconnect();
+      }
+    };
+  }, [loadMoreProducts, hasMore, isLoading]);
+
+  // 검색어나 필터가 변경될 때 상태 초기화
+  useEffect(() => {
+    setDisplayedProducts(loaderData.products.slice(0, 20));
+    setCurrentPage(1);
+    setHasMore(loaderData.products.length > 20);
+  }, [loaderData.products]);
+
   // 카테고리 클릭 핸들러
   const handleCategoryClick = (categoryName: string) => {
     setSearchInput(categoryName);
-  };
-
-  // 페이지네이션 핸들러
-  const handlePageChange = (page: number) => {
-    const formData = new FormData();
-    formData.append('page', page.toString());
-    
-    // 기존 필터들 유지
-    Object.entries(filters).forEach(([key, value]) => {
-      if (key !== 'page') {
-        formData.append(key, value.toString());
-      }
-    });
-    
-    submit(formData);
   };
 
   return (
@@ -247,74 +294,37 @@ export default function BrowseListingsPage() {
           {searchQuery ? `"${searchQuery}" Search Results` : "All Listings"}
         </h2>
 
-        {/* 페이지네이션 정보 */}
+        {/* 표시된 상품 수 정보 */}
         <div className="mb-4 text-sm text-gray-600">
-          Page {loaderData.currentPage} of {loaderData.totalPages} (showing {loaderData.products.length} of {loaderData.totalCount} items)
+          Showing {displayedProducts.length} of {loaderData.totalCount} items
         </div>
 
         {/* 상품 카드 그리드 */}
         <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {loaderData.products.map((product) => (
+          {displayedProducts.map((product) => (
             <ProductCard
               key={product.id}
               productId={product.id}
               image={product.image || "/sample.png"}
               title={product.title}
               price={product.price}
+              seller={product.sellerId}
             />
           ))}
         </div>
 
-        {/* 페이지네이션 */}
-        {(loaderData.hasNextPage || loaderData.hasPrevPage) && (
-          <Pagination className="mt-8">
-            <PaginationContent>
-              {loaderData.hasPrevPage && (
-                <PaginationItem>
-                  <PaginationPrevious 
-                    onClick={() => handlePageChange(loaderData.currentPage - 1)}
-                    className="cursor-pointer"
-                  />
-                </PaginationItem>
-              )}
-              
-              {/* 페이지 번호들 */}
-              {Array.from({ length: Math.min(5, loaderData.totalPages) }, (_, i) => {
-                let pageNum;
-                if (loaderData.totalPages <= 5) {
-                  pageNum = i + 1;
-                } else if (loaderData.currentPage <= 3) {
-                  pageNum = i + 1;
-                } else if (loaderData.currentPage >= loaderData.totalPages - 2) {
-                  pageNum = loaderData.totalPages - 4 + i;
-                } else {
-                  pageNum = loaderData.currentPage - 2 + i;
-                }
-                
-                return (
-                  <PaginationItem key={pageNum}>
-                    <PaginationLink 
-                      onClick={() => handlePageChange(pageNum)}
-                      isActive={pageNum === loaderData.currentPage}
-                      className="cursor-pointer"
-                    >
-                      {pageNum}
-                    </PaginationLink>
-                  </PaginationItem>
-                );
-              })}
-              
-              {loaderData.hasNextPage && (
-                <PaginationItem>
-                  <PaginationNext 
-                    onClick={() => handlePageChange(loaderData.currentPage + 1)}
-                    className="cursor-pointer"
-                  />
-                </PaginationItem>
-              )}
-            </PaginationContent>
-          </Pagination>
-        )}
+        {/* 로딩 인디케이터 */}
+        <div ref={loadingRef} className="mt-8 text-center">
+          {isLoading && (
+            <div className="flex items-center justify-center space-x-2">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-purple-600"></div>
+              <span className="text-gray-600">Loading more products...</span>
+            </div>
+          )}
+          {!hasMore && displayedProducts.length > 0 && (
+            <p className="text-gray-500 text-sm">No more products to load</p>
+          )}
+        </div>
       </main>
     </div>
   );

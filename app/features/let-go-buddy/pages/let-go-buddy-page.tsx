@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "../../../common/compon
 import { Button } from "../../../common/components/ui/button";
 import { Input } from "../../../common/components/ui/input";
 import { Avatar, AvatarImage, AvatarFallback } from "../../../common/components/ui/avatar";
+import { useNavigate } from "react-router";
 
 const situations = [
   "I'm moving soon",
@@ -62,6 +63,7 @@ const mockAnalysis = [
 ];
 
 export default function LetGoBuddyPage() {
+  const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const [selectedSituation, setSelectedSituation] = useState<string | null>(null);
   const [showListing, setShowListing] = useState(false);
@@ -156,6 +158,109 @@ export default function LetGoBuddyPage() {
     setShowEnvironmentalImpact(true);
   };
 
+  // Handle navigation to submit listing page
+  const handlePostAfterEditing = () => {
+    if (selectedItem) {
+      // Prepare the data to pass to submit-a-listing-page
+      const listingData = {
+        title: selectedItem.aiListing.title,
+        description: selectedItem.aiListing.desc,
+        price: selectedItem.aiListing.price,
+        location: selectedItem.aiListing.location,
+        images: uploadedFiles, // Pass the uploaded images
+        category: selectedItem.category || "Electronics",
+        condition: "Used - Good",
+        aiGenerated: true,
+        originalItem: selectedItem
+      };
+
+      // Navigate to submit-a-listing-page with the data
+      navigate("/secondhand/submit-a-listing", { 
+        state: { 
+          prefillData: listingData,
+          fromLetGoBuddy: true 
+        } 
+      });
+      
+      // Close the popup
+      setShowListing(false);
+    }
+  };
+
+  // Handle generating another AI suggestion
+  const handleSeeAnotherSuggestion = () => {
+    if (selectedItem) {
+      // Generate alternative suggestions for the same item
+      const alternativeSuggestions = [
+        {
+          title: `${selectedItem.name} – Excellent condition, ready to use!`,
+          desc: "Well-maintained item in great shape. Perfect for daily use or as a gift.",
+          price: "THB 300",
+          location: "Chiang Mai",
+        },
+        {
+          title: `${selectedItem.name} – Bargain price for quick sale!`,
+          desc: "Selling at a great price to make room. Still works perfectly, just need space.",
+          price: "THB 180",
+          location: "Chiang Mai",
+        },
+        {
+          title: `${selectedItem.name} – Premium quality, barely used!`,
+          desc: "High-quality item with minimal wear. Like new condition, great value.",
+          price: "THB 350",
+          location: "Chiang Mai",
+        },
+        {
+          title: `${selectedItem.name} – Perfect for students or budget-conscious buyers!`,
+          desc: "Affordable option that doesn't compromise on quality. Great for those on a budget.",
+          price: "THB 220",
+          location: "Chiang Mai",
+        }
+      ];
+
+      // Randomly select a new suggestion
+      const randomIndex = Math.floor(Math.random() * alternativeSuggestions.length);
+      const newSuggestion = alternativeSuggestions[randomIndex];
+
+      // Update the selected item with new AI suggestion
+      setSelectedItem({
+        ...selectedItem,
+        aiListing: newSuggestion
+      });
+    }
+  };
+
+  // Handle free giveaway navigation
+  const handleFreeGiveaway = () => {
+    if (selectedItem) {
+      // Prepare free giveaway data
+      const giveawayData = {
+        title: `FREE: ${selectedItem.name} - Giving away for free!`,
+        description: `Free giveaway! This ${selectedItem.name} is in good condition and I'm giving it away for free. Perfect for someone who needs it. Please contact me if you're interested.`,
+        price: "THB 0",
+        location: selectedItem.aiListing.location || "Chiang Mai",
+        images: uploadedFiles,
+        category: selectedItem.category || "Electronics",
+        condition: "Used - Good",
+        aiGenerated: true,
+        isGiveaway: true,
+        originalItem: selectedItem
+      };
+
+      // Navigate to submit-a-listing-page with free giveaway data
+      navigate("/secondhand/submit-a-listing", { 
+        state: { 
+          prefillData: giveawayData,
+          fromLetGoBuddy: true,
+          isGiveaway: true
+        } 
+      });
+      
+      // Close the popup
+      setShowListing(false);
+    }
+  };
+
   return (
     <div className="max-w-xl mx-auto py-12 px-4">
       {/* Title & Subtitle */}
@@ -174,7 +279,19 @@ export default function LetGoBuddyPage() {
           </CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col items-center">
-          <p className="text-gray-500 mb-4">Upload 1–5 items you want to declutter.</p>
+          <p className="text-gray-500 mb-4">Upload 1–5 photos of the item you want to declutter.</p>
+          
+          {/* Photo tips */}
+          <div className="bg-purple-50 border border-primary/20 rounded-lg p-4 mb-4 w-full">
+            <div className="font-medium text-primary-foreground mb-2">📸 Tips for better AI analysis:</div>
+            <ul className="text-sm text-primary-foreground/80 space-y-1">
+              <li>• Take photos from different angles (front, back, sides)</li>
+              <li>• Include close-ups of any damage or wear</li>
+              <li>• Show brand names and model numbers clearly</li>
+              <li>• Ensure good lighting for clear visibility</li>
+              <li>• Include the item in context (e.g., size reference)</li>
+            </ul>
+          </div>
           
           {/* Hidden file input */}
           <Input
@@ -363,8 +480,24 @@ export default function LetGoBuddyPage() {
               <p><b>📍 Location:</b> {selectedItem.aiListing.location}</p>
             </div>
             <div className="flex gap-2">
-              <button className="px-4 py-2 rounded bg-blue-600 text-white">Post after editing</button>
-              <button className="px-4 py-2 rounded bg-gray-200 text-black">See another suggestion</button>
+              <button 
+                className="px-4 py-2 rounded bg-teal-500 text-white"
+                onClick={handlePostAfterEditing}
+              >
+                Post after editing
+              </button>
+              <button 
+                className="px-4 py-2 rounded bg-gray-200 text-black"
+                onClick={handleSeeAnotherSuggestion}
+              >
+                See another suggestion
+              </button>
+              <button 
+                className="px-4 py-2 rounded bg-fuchsia-300 text-white"
+                onClick={handleFreeGiveaway}
+              >
+                🎁 Free Giveaway
+              </button>
             </div>
           </div>
         </div>

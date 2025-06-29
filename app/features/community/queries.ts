@@ -28,6 +28,7 @@ export async function fetchGiveAndGlowReviewsFromDatabase(filters: GiveAndGlowFi
         timestamp: "2 hours ago",
         location: "Bangkok",
         tags: ["Excellent Condition", "Friendly Giver", "Smooth Pickup"],
+        photos: [],
         appreciationBadge: true
       },
       {
@@ -43,6 +44,7 @@ export async function fetchGiveAndGlowReviewsFromDatabase(filters: GiveAndGlowFi
         timestamp: "1 day ago",
         location: "ChiangMai",
         tags: ["Good Condition", "Multiple Items", "Quick Handover"],
+        photos: [],
         appreciationBadge: true
       },
       {
@@ -58,6 +60,7 @@ export async function fetchGiveAndGlowReviewsFromDatabase(filters: GiveAndGlowFi
         timestamp: "3 days ago",
         location: "Phuket",
         tags: ["Clean Items", "Well Organized", "Kids Love It"],
+        photos: [],
         appreciationBadge: false
       },
       {
@@ -73,7 +76,72 @@ export async function fetchGiveAndGlowReviewsFromDatabase(filters: GiveAndGlowFi
         timestamp: "5 days ago",
         location: "Bangkok",
         tags: ["Useful Items", "Helpful Giver", "Good Condition"],
+        photos: [],
         appreciationBadge: true
+      },
+      {
+        id: "5",
+        itemName: "Coffee Maker",
+        itemCategory: "Electronics",
+        giverName: "David Wilson",
+        giverAvatar: "/sample.png",
+        receiverName: "Lisa Park",
+        receiverAvatar: "/sample.png",
+        rating: 4,
+        review: "Great coffee maker! Works perfectly and David was very helpful explaining how to use it. The pickup was quick and easy. Highly recommend!",
+        timestamp: "5 hours ago",
+        location: "ChiangMai",
+        tags: ["working perfectly", "helpful giver", "quick pickup"],
+        photos: [],
+        appreciationBadge: false
+      },
+      {
+        id: "6",
+        itemName: "Bicycle",
+        itemCategory: "Sports",
+        giverName: "Tom Lee",
+        giverAvatar: "/sample.png",
+        receiverName: "Sarah Wilson",
+        receiverAvatar: "/sample.png",
+        rating: 4,
+        review: "Great bicycle! Tom was very helpful and the bike is in good condition. It's perfect for getting around the city. The pickup was smooth and Tom even showed me how to adjust the seat.",
+        timestamp: "4 days ago",
+        location: "Bangkok",
+        tags: ["good condition", "helpful giver", "smooth pickup"],
+        photos: [],
+        appreciationBadge: false
+      },
+      {
+        id: "7",
+        itemName: "Plant Collection",
+        itemCategory: "Garden",
+        giverName: "Anna Garcia",
+        giverAvatar: "/sample.png",
+        receiverName: "Chris Davis",
+        receiverAvatar: "/sample.png",
+        rating: 5,
+        review: "Beautiful plants! Anna gave me a collection of indoor plants including a monstera, snake plant, and several succulents. She even included care instructions for each plant. Such a generous gift!",
+        timestamp: "5 days ago",
+        location: "HuaHin",
+        tags: ["beautiful plants", "care instructions", "generous gift"],
+        photos: [],
+        appreciationBadge: true
+      },
+      {
+        id: "8",
+        itemName: "Art Supplies",
+        itemCategory: "Other",
+        giverName: "Kevin Martinez",
+        giverAvatar: "/sample.png",
+        receiverName: "Jennifer Lee",
+        receiverAvatar: "/sample.png",
+        rating: 4,
+        review: "Excellent art supplies! Kevin gave me a complete set of paints, brushes, and canvases. Everything is in great condition and I'm excited to start painting. Thank you for your generosity!",
+        timestamp: "1 week ago",
+        location: "Pattaya",
+        tags: ["complete set", "great condition", "generous giver"],
+        photos: [],
+        appreciationBadge: false
       }
     ];
 
@@ -96,7 +164,8 @@ export async function fetchGiveAndGlowReviewsFromDatabase(filters: GiveAndGlowFi
       filteredReviews = filteredReviews.filter(review => 
         review.itemName.toLowerCase().includes(searchLower) ||
         review.giverName.toLowerCase().includes(searchLower) ||
-        review.review.toLowerCase().includes(searchLower)
+        review.review.toLowerCase().includes(searchLower) ||
+        review.tags.some(tag => tag.toLowerCase().includes(searchLower))
       );
     }
 

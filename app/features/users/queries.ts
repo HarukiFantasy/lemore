@@ -648,7 +648,6 @@ export async function fetchMockUserProfile(userId: string): Promise<{ success: b
       memberSince: "January 2024",
       rating: 4.8,
       totalSales: 127,
-      responseRate: "89%",
       responseTime: "2 hours"
     };
 
@@ -730,3 +729,32 @@ export async function fetchMockUserSettings(userId: string): Promise<{ success: 
     return { success: false, errors: [error instanceof Error ? error.message : 'Unknown error'] };
   }
 }
+
+// 유저 통계 정보 조회 쿼리
+export async function fetchUserStats(userId: string): Promise<{ success: boolean; stats?: any; errors?: string[] }> {
+  if (!userId) {
+    return { success: false, errors: ['User ID is required'] };
+  }
+
+  try {
+    // 실제 API 호출 로직
+    const response = await fetch(`/api/users/${userId}/stats`);
+    
+    if (!response.ok) {
+      throw new Error('Failed to fetch user stats');
+    }
+
+    const stats = await response.json();
+    
+    // 데이터 검증 (실제로는 스키마를 정의해야 함)
+    if (!stats || typeof stats !== 'object') {
+      return { success: false, errors: ['Invalid stats data'] };
+    }
+
+    return { success: true, stats };
+  } catch (error) {
+    return { success: false, errors: [error instanceof Error ? error.message : 'Unknown error'] };
+  }
+}
+
+export { userSchema, createUserSchema, updateUserSchema, loginSchema, type User, type CreateUserData, type UpdateUserData, type LoginData } from "./schema";

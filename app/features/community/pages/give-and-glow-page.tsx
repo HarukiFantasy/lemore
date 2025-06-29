@@ -1,12 +1,13 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useSearchParams } from "react-router";
 import { Button } from "~/common/components/ui/button";
 import { Input } from "~/common/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "~/common/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "~/common/components/ui/avatar";
+import { Badge } from "~/common/components/ui/badge";
+import { Textarea } from "~/common/components/ui/textarea";
 import { Separator } from "~/common/components/ui/separator";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "~/common/components/ui/dropdown-menu";
-import { ChevronDown } from "lucide-react";
+import { HeartIcon, MessageCircleIcon, ShareIcon, SparklesIcon } from "lucide-react";
 import type { Route } from './+types/give-and-glow-page';
 import { 
   type GiveAndGlowReview, 
@@ -17,7 +18,7 @@ import {
   VALID_GIVE_AND_GLOW_CATEGORIES,
   VALID_GIVE_AND_GLOW_LOCATIONS
 } from "~/lib/schemas";
-import { validateWithZod, getFieldErrors } from "~/lib/utils";
+import { validateWithZod, getFieldErrors, getCategoryColors } from "~/lib/utils";
 import { fetchGiveAndGlowReviewsFromDatabase, createGiveAndGlowReview } from "~/features/community/queries";
 
 // Loader function
@@ -305,16 +306,20 @@ export default function GiveAndGlowPage({ loaderData }: Route.ComponentProps) {
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Item Category</label>
             <div className="flex flex-wrap gap-2">
-              {validCategories.map((category) => (
-                <Button
-                  key={category}
-                  variant={selectedCategory === category ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => handleCategoryChange(category)}
-                >
-                  {category}
-                </Button>
-              ))}
+              {validCategories.map((category) => {
+                const colors = getCategoryColors(category);
+                return (
+                  <Button
+                    key={category}
+                    variant={selectedCategory === category ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => handleCategoryChange(category)}
+                    className={selectedCategory === category ? `${colors.bg} ${colors.text} ${colors.border} ${colors.hover}` : ""}
+                  >
+                    {category}
+                  </Button>
+                );
+              })}
             </div>
           </div>
         </CardContent>
@@ -327,7 +332,7 @@ export default function GiveAndGlowPage({ loaderData }: Route.ComponentProps) {
           {urlLocation === "All Cities" ? " across all cities" : ` in ${urlLocation}`}
         </p>
         <Button onClick={() => setShowReviewForm(true)} size="lg">
-          ✨ Write a Review
+          Write a Review
         </Button>
       </div>
 
@@ -339,10 +344,12 @@ export default function GiveAndGlowPage({ loaderData }: Route.ComponentProps) {
               <CardContent className="p-6">
                 <div className="flex items-start gap-4">
                   {/* Giver Avatar */}
-                  <Avatar className="w-12 h-12">
-                    <AvatarImage src={review.giverAvatar} alt={review.giverName} />
-                    <AvatarFallback>{review.giverName.split(' ').map(n => n[0]).join('')}</AvatarFallback>
-                  </Avatar>
+                  <div className="flex items-center space-x-3 mb-4">
+                    <Avatar className="h-10 w-10">
+                      <AvatarImage src="/sample.png" alt="Emma Wilson" />
+                      <AvatarFallback>EW</AvatarFallback>
+                    </Avatar>
+                  </div>
                   
                   <div className="flex-1">
                     {/* Review Header */}
@@ -357,12 +364,6 @@ export default function GiveAndGlowPage({ loaderData }: Route.ComponentProps) {
                           <span>{review.timestamp}</span>
                         </div>
                       </div>
-                      {review.appreciationBadge && (
-                        <div className="flex items-center gap-1 bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-medium">
-                          <span>✨</span>
-                          <span>Appreciation Badge</span>
-                        </div>
-                      )}
                     </div>
                     
                     {/* Rating and Category */}
@@ -371,7 +372,10 @@ export default function GiveAndGlowPage({ loaderData }: Route.ComponentProps) {
                         {renderStars(review.rating)}
                         <span className="text-sm text-gray-600">{review.rating}/5</span>
                       </div>
-                      <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-medium">
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${(() => {
+                        const colors = getCategoryColors(review.itemCategory);
+                        return `${colors.bg} ${colors.text} ${colors.border}`;
+                      })()}`}>
                         {review.itemCategory}
                       </span>
                     </div>
@@ -395,7 +399,15 @@ export default function GiveAndGlowPage({ loaderData }: Route.ComponentProps) {
                     
                     {/* Receiver Info */}
                     <div className="flex items-center gap-2 text-sm text-gray-500">
-                      <span>Reviewed by {review.receiverName}</span>
+                      <div className="flex items-center gap-2">
+                        <div className="relative">
+                          <Avatar className="h-10 w-10">
+                            <AvatarImage src="/sample.png" alt="David Chen" />
+                            <AvatarFallback>DC</AvatarFallback>
+                          </Avatar>
+                        </div>
+                        <span>Reviewed by {review.receiverName}</span>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -444,16 +456,20 @@ export default function GiveAndGlowPage({ loaderData }: Route.ComponentProps) {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Item Category</label>
                 <div className="flex flex-wrap gap-2">
-                  {validCategories.filter(cat => cat !== "All").map((category) => (
-                    <Button
-                      key={category}
-                      variant={newReview.itemCategory === category ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => setNewReview({ ...newReview, itemCategory: category })}
-                    >
-                      {category}
-                    </Button>
-                  ))}
+                  {validCategories.filter(cat => cat !== "All").map((category) => {
+                    const colors = getCategoryColors(category);
+                    return (
+                      <Button
+                        key={category}
+                        variant={newReview.itemCategory === category ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setNewReview({ ...newReview, itemCategory: category })}
+                        className={newReview.itemCategory === category ? `${colors.bg} ${colors.text} ${colors.border} ${colors.hover}` : ""}
+                      >
+                        {category}
+                      </Button>
+                    );
+                  })}
                 </div>
                 {formErrors.itemCategory && (
                   <p className="text-red-500 text-sm mt-1">{formErrors.itemCategory}</p>
@@ -477,16 +493,24 @@ export default function GiveAndGlowPage({ loaderData }: Route.ComponentProps) {
               {/* Rating */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Rating</label>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1">
                   {[1, 2, 3, 4, 5].map((star) => (
                     <button
                       key={star}
+                      type="button"
                       onClick={() => setNewReview({ ...newReview, rating: star })}
-                      className="text-2xl"
+                      className="text-2xl hover:scale-110 transition-transform"
                     >
-                      {renderStars(star)}
+                      <svg
+                        className={`w-8 h-8 ${star <= newReview.rating ? "text-yellow-400" : "text-gray-300"}`}
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                      >
+                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                      </svg>
                     </button>
                   ))}
+                  <span className="ml-2 text-sm text-gray-600">{newReview.rating}/5</span>
                 </div>
                 {formErrors.rating && (
                   <p className="text-red-500 text-sm mt-1">{formErrors.rating}</p>

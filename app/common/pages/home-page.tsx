@@ -5,8 +5,9 @@ import { Button } from '../components/ui/button';
 import { ProductCard } from "../../features/products/components/product-card";
 import { CommunityPostCard } from "../../features/community/components/community-post-card";
 import { fetchTodaysPicks } from "../../features/products/queries";
-import { fetchLatestLocalTips, fetchLatestQuestions } from "../../features/community/queries";
+import { fetchLatestLocalTips } from "../../features/community/queries";
 import { useLoaderData } from "react-router";
+import { BlurFade } from 'components/magicui/blur-fade';
 
 export const meta: Route.MetaFunction = () => {
   return [
@@ -29,38 +30,19 @@ export const loader = async ({ request }: { request: Request }) => {
       includeQuality: true,
     });
 
-    // Community 최신 글들을 가져오기 (local-tips 5개, ask-and-answer 5개)
-    const [latestLocalTips, latestQuestions] = await Promise.all([
-      fetchLatestLocalTips(5),
-      fetchLatestQuestions(5)
-    ]);
+    // Community 최신 글들을 가져오기 (local-tips만)
+    const latestLocalTips = await fetchLatestLocalTips(10);
 
-    // 두 배열을 합치고 시간순으로 정렬
-    const communityPosts = [
-      ...latestLocalTips.map(tip => ({
-        id: `tip-${tip.id}`,
-        title: tip.title,
-        timeAgo: getTimeAgo(tip.createdAt),
-        type: 'tip' as const,
-        author: tip.author,
-        likes: tip.likes,
-        comments: tip.comments
-      })),
-      ...latestQuestions.map(question => ({
-        id: `question-${question.id}`,
-        title: question.title,
-        timeAgo: question.timestamp,
-        type: 'question' as const,
-        author: question.author,
-        likes: 0, // questions don't have likes in current schema
-        comments: question.answers.length
-      }))
-    ].sort((a, b) => {
-      // 시간순 정렬 (최신순)
-      const timeA = new Date(a.timeAgo.includes('ago') ? Date.now() - getTimeInMs(a.timeAgo) : a.timeAgo);
-      const timeB = new Date(b.timeAgo.includes('ago') ? Date.now() - getTimeInMs(b.timeAgo) : b.timeAgo);
-      return timeB.getTime() - timeA.getTime();
-    }).slice(0, 10); // 최대 10개만 표시
+    // local tips 데이터를 community posts 형식으로 변환
+    const communityPosts = latestLocalTips.map(tip => ({
+      id: `tip-${tip.id}`,
+      title: tip.title,
+      timeAgo: getTimeAgo(tip.createdAt),
+      type: 'tip' as const,
+      author: tip.author,
+      likes: tip.likes,
+      comments: tip.comments
+    }));
 
     return {
       todaysPicks,
@@ -120,7 +102,7 @@ export default function HomePage() {
       id: string;
       title: string;
       timeAgo: string;
-      type: 'tip' | 'question';
+      type: 'tip';
       author: string;
       likes: number;
       comments: number;
@@ -140,13 +122,16 @@ export default function HomePage() {
       <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-4 items-center w-full lg:max-w-[70vw] mx-auto sm:max-w-[100vw] md:max-w-[100vw]">
         {todaysPicks.length > 0 ? (
           todaysPicks.map((product) => (
-            <ProductCard
-              key={product.id}
-              productId={product.id}
-              image={product.image}
-              title={product.title}
-              price={product.price}
-            />
+            <BlurFade>
+              <ProductCard
+                key={product.id}
+                productId={product.id}
+                image={product.image}
+                title={product.title}
+                price={product.price}
+                seller={product.sellerId}
+              />
+            </BlurFade>
           ))
         ) : (
           // 데이터가 없을 때 기본 상품들 표시
@@ -157,22 +142,26 @@ export default function HomePage() {
               image="/sample.png"
               title="Bicycle for sale"
               price="THB 1000"
+              seller={`seller-${index + 1}`}
             />
           ))
         )}
+
       </div>
       <div className="text-2xl font-bold mt-10 w-full lg:max-w-[70vw] mx-auto sm:max-w-[100vw] md:max-w-[100vw]">Community</div>
       <div className="bg-white rounded-2xl shadow-sm border mt-2 overflow-hidden w-full lg:max-w-[70vw] mx-auto sm:max-w-[100vw] md:max-w-[100vw]">
         {communityPosts.length > 0 ? (
-          communityPosts.map((post) => (
+          communityPosts.map((post, index) => (
             <CommunityPostCard
               key={post.id}
+              id={post.id}
               title={post.title}
               timeAgo={post.timeAgo}
               author={post.author}
               type={post.type}
               likes={post.likes}
               comments={post.comments}
+              isLast={index === communityPosts.length - 1}
             />
           ))
         ) : (

@@ -80,3 +80,110 @@ export function formatTimeAgo(date: Date): string {
   const diffInYears = Math.floor(diffInDays / 365);
   return `${diffInYears} year${diffInYears > 1 ? 's' : ''} ago`;
 }
+
+// 카테고리별 색상 매핑
+export const categoryColors = {
+  // Local Tips 카테고리
+  "Visa/Immigration": {
+    bg: "bg-blue-100",
+    text: "text-blue-800",
+    border: "border-blue-200",
+    hover: "hover:bg-blue-200"
+  },
+  "Healthcare/Insurance": {
+    bg: "bg-green-100",
+    text: "text-green-800",
+    border: "border-green-200",
+    hover: "hover:bg-green-200"
+  },
+  "Transportation": {
+    bg: "bg-purple-100",
+    text: "text-purple-800",
+    border: "border-purple-200",
+    hover: "hover:bg-purple-200"
+  },
+  "Banking/Finance": {
+    bg: "bg-yellow-100",
+    text: "text-yellow-800",
+    border: "border-yellow-200",
+    hover: "hover:bg-yellow-200"
+  },
+  "Housing": {
+    bg: "bg-orange-100",
+    text: "text-orange-800",
+    border: "border-orange-200",
+    hover: "hover:bg-orange-200"
+  },
+  "Education": {
+    bg: "bg-indigo-100",
+    text: "text-indigo-800",
+    border: "border-indigo-200",
+    hover: "hover:bg-indigo-200"
+  },
+  "Other": {
+    bg: "bg-gray-100",
+    text: "text-gray-800",
+    border: "border-gray-200",
+    hover: "hover:bg-gray-200"
+  },
+  
+  // Give and Glow 카테고리
+  "Furniture": {
+    bg: "bg-amber-100",
+    text: "text-amber-800",
+    border: "border-amber-200",
+    hover: "hover:bg-amber-200"
+  },
+  "Electronics": {
+    bg: "bg-cyan-100",
+    text: "text-cyan-800",
+    border: "border-cyan-200",
+    hover: "hover:bg-cyan-200"
+  },
+  "Clothing": {
+    bg: "bg-pink-100",
+    text: "text-pink-800",
+    border: "border-pink-200",
+    hover: "hover:bg-pink-200"
+  },
+  "Books": {
+    bg: "bg-emerald-100",
+    text: "text-emerald-800",
+    border: "border-emerald-200",
+    hover: "hover:bg-emerald-200"
+  },
+  "Kitchen": {
+    bg: "bg-red-100",
+    text: "text-red-800",
+    border: "border-red-200",
+    hover: "hover:bg-red-200"
+  },
+  "Toys": {
+    bg: "bg-lime-100",
+    text: "text-lime-800",
+    border: "border-lime-200",
+    hover: "hover:bg-lime-200"
+  },
+  "Garden": {
+    bg: "bg-teal-100",
+    text: "text-teal-800",
+    border: "border-teal-200",
+    hover: "hover:bg-teal-200"
+  },
+  "Sports": {
+    bg: "bg-violet-100",
+    text: "text-violet-800",
+    border: "border-violet-200",
+    hover: "hover:bg-violet-200"
+  }
+} as const;
+
+// 카테고리 색상 가져오기 함수
+export function getCategoryColors(category: string) {
+  return categoryColors[category as keyof typeof categoryColors] || {
+    bg: "bg-gray-100",
+    text: "text-gray-800",
+    border: "border-gray-200",
+    hover: "hover:bg-gray-200"
+  };
+}

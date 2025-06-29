@@ -2,6 +2,7 @@ import { Form, Link } from "react-router";
 import { Button } from "../../../common/components/ui/button";
 import { Input } from "../../../common/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../../common/components/ui/card";
+import { AnimatedGradientText } from "components/magicui/animated-gradient-text";
 
 export default function JoinPage() {
   return (
@@ -70,7 +71,7 @@ export default function JoinPage() {
           <div className="mt-4 text-center text-sm">
             <span className="text-muted-foreground">Already have an account? </span>
             <Link to="/auth/login" className="text-primary hover:underline">
-              Sign in
+              <AnimatedGradientText>Sign in</AnimatedGradientText>
             </Link>
           </div>
         </CardContent>

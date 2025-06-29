@@ -1,12 +1,15 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../../common/components/ui/card";
 import { Button } from "../../../common/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "../../../common/components/ui/avatar";
+import { Badge } from "../../../common/components/ui/badge";
 import { Separator } from "../../../common/components/ui/separator";
-import type { Route } from './+types/dashboard-page';
+import { useLoaderData, useRouteError, isRouteErrorResponse, Link } from "react-router";
 import { fetchMockDashboardData } from "../queries";
+import { fetchUserListingsCount } from "../../products/queries";
+import { NumberTicker } from 'components/magicui/number-ticker';
 
 // Meta function for SEO
-export const meta: Route.MetaFunction = () => {
+export const meta = () => {
   return [
     { title: "Dashboard | Lemore" },
     { name: "description", content: "Manage your account, view stats, and track your activity on Lemore" },
@@ -77,7 +80,7 @@ function DashboardLoading() {
 }
 
 // Loader function
-export const loader = async ({ request }: Route.LoaderArgs) => {
+export const loader = async ({ request }: any) => {
   try {
     // 실제 환경에서는 사용자 ID를 세션이나 토큰에서 가져와야 함
     const userId = "current-user"; // 임시 사용자 ID
@@ -85,14 +88,23 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
     // 대시보드 데이터 가져오기
     const dashboardResult = await fetchMockDashboardData();
     
-    if (!dashboardResult.success) {
+    if (!dashboardResult.success || !dashboardResult.data) {
       throw new Response("Failed to load dashboard data", { 
         status: 500,
         statusText: dashboardResult.errors?.join(", ") || "Unknown error"
       });
     }
 
-    return dashboardResult.data;
+    // 사용자의 리스팅 개수 가져오기
+    const userListingsCount = await fetchUserListingsCount(userId);
+
+    return {
+      ...dashboardResult.data,
+      stats: {
+        ...dashboardResult.data.stats,
+        activeListings: userListingsCount
+      }
+    };
   } catch (error) {
     console.error("Dashboard loader error:", error);
     
@@ -114,7 +126,7 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
 };
 
 // Error Boundary
-export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
+export function ErrorBoundary({ error }: any) {
   let message = "Something went wrong";
   let details = "An unexpected error occurred while loading your dashboard.";
 
@@ -147,7 +159,7 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
   );
 }
 
-export default function DashboardPage({ loaderData }: Route.ComponentProps) {
+export default function DashboardPage({ loaderData }: any) {
   // loaderData가 undefined일 수 있으므로 기본값 제공
   const { stats, recentActivity } = loaderData || {
     stats: {
@@ -170,16 +182,18 @@ export default function DashboardPage({ loaderData }: Route.ComponentProps) {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
         {/* Quick Stats */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Active Listings</CardTitle>
-            <CardDescription>Items you're currently selling</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold text-blue-600">{stats.activeListings}</div>
-            <p className="text-sm text-gray-500 mt-1">{stats.activeListingsChange}</p>
-          </CardContent>
-        </Card>
+        <Link to="/my/listings">
+          <Card className="cursor-pointer hover:shadow-lg transition-shadow">
+            <CardHeader>
+              <CardTitle className="text-lg">My Listings</CardTitle>
+              <CardDescription>Items you've uploaded</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-blue-600">{stats.activeListings}</div>
+              <p className="text-sm text-gray-500 mt-1">Click to view all</p>
+            </CardContent>
+          </Card>
+        </Link>
 
         <Card>
           <CardHeader>
@@ -187,7 +201,7 @@ export default function DashboardPage({ loaderData }: Route.ComponentProps) {
             <CardDescription>Your earnings this month</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-green-600">${stats.totalSales}</div>
+            <div className="text-3xl font-bold text-green-600">$<NumberTicker value={stats.totalSales} className="text-3xl font-bold text-green-600"/></div>
             <p className="text-sm text-gray-500 mt-1">{stats.totalSalesChange}</p>
           </CardContent>
         </Card>
@@ -213,34 +227,19 @@ export default function DashboardPage({ loaderData }: Route.ComponentProps) {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {recentActivity.map((activity: any, index: number) => (
+              {(recentActivity || []).map((activity: any, index: number) => (
                 <div key={activity.id}>
                   <div className="flex items-center space-x-3">
-                    {activity.avatar ? (
-                      <Avatar className="h-8 w-8">
-                        <AvatarImage src={activity.avatar} />
-                        <AvatarFallback>{activity.avatarFallback}</AvatarFallback>
-                      </Avatar>
-                    ) : (
-                      <div className={`h-8 w-8 rounded-full flex items-center justify-center ${
-                        activity.icon === 'sale' ? 'bg-green-100' : 
-                        activity.icon === 'listing' ? 'bg-blue-100' : 'bg-gray-100'
-                      }`}>
-                        <span className={`text-xs ${
-                          activity.icon === 'sale' ? 'text-green-600' : 
-                          activity.icon === 'listing' ? 'text-blue-600' : 'text-gray-600'
-                        }`}>
-                          {activity.icon === 'sale' ? '✓' : 
-                           activity.icon === 'listing' ? '+' : '💬'}
-                        </span>
-                      </div>
-                    )}
+                    <Avatar className="h-10 w-10">
+                      <AvatarImage src="/sample.png" alt="John Doe" />
+                      <AvatarFallback>JD</AvatarFallback>
+                    </Avatar>
                     <div className="flex-1">
                       <p className="text-sm font-medium">{activity.title}</p>
                       <p className="text-xs text-gray-500">{activity.timestamp}</p>
                     </div>
                   </div>
-                  {index < recentActivity.length - 1 && <Separator className="mt-4" />}
+                  {index < (recentActivity || []).length - 1 && <Separator className="mt-4" />}
                 </div>
               ))}
             </div>
@@ -255,21 +254,29 @@ export default function DashboardPage({ loaderData }: Route.ComponentProps) {
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              <Button className="w-full justify-start" variant="outline">
-                <span className="mr-2">📝</span>
-                Create New Listing
+              <Button className="w-full justify-start" variant="outline" asChild>
+                <Link to="/secondhand/submit-a-listing">
+                  <span className="mr-2">📝</span>
+                  Create New Listing
+                </Link>
               </Button>
-              <Button className="w-full justify-start" variant="outline">
-                <span className="mr-2">💬</span>
-                View Messages
+              <Button className="w-full justify-start" variant="outline" asChild>
+                <Link to="/my/messages">
+                  <span className="mr-2">💬</span>
+                  View Messages
+                </Link>
               </Button>
-              <Button className="w-full justify-start" variant="outline">
-                <span className="mr-2">📊</span>
-                View Analytics
+              <Button className="w-full justify-start" variant="outline" asChild>
+                <Link to="/my/listings">
+                  <span className="mr-2">📊</span>
+                  View My Listings
+                </Link>
               </Button>
-              <Button className="w-full justify-start" variant="outline">
-                <span className="mr-2">⚙️</span>
-                Account Settings
+              <Button className="w-full justify-start" variant="outline" asChild>
+                <Link to="/my/settings">
+                  <span className="mr-2">⚙️</span>
+                  Account Settings
+                </Link>
               </Button>
             </div>
           </CardContent>

@@ -1,8 +1,8 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../../common/components/ui/card";
 import { Button } from "../../../common/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "../../../common/components/ui/avatar";
-import { Separator } from "../../../common/components/ui/separator";
 import { Badge } from "../../../common/components/ui/badge";
+import { Separator } from "../../../common/components/ui/separator";
 import { useLoaderData, useRouteError, isRouteErrorResponse } from "react-router";
 import type { Route } from "./+types/notifications-page";
 import { fetchMockNotifications } from "../queries";
@@ -218,16 +218,10 @@ export default function NotificationsPage() {
                         key={notification.id}
                         className={`flex items-start space-x-4 p-4 ${style.bgColor} rounded-lg border-l-4 ${style.borderColor}`}
                       >
-                        {notification.avatar ? (
-                          <Avatar className="h-10 w-10">
-                            <AvatarImage src={notification.avatar} />
-                            <AvatarFallback>{notification.avatarFallback}</AvatarFallback>
-                          </Avatar>
-                        ) : (
-                          <div className="h-10 w-10 rounded-full bg-gray-100 flex items-center justify-center">
-                            <span className="text-gray-600 text-lg">{style.icon}</span>
-                          </div>
-                        )}
+                        <Avatar className="h-10 w-10">
+                          <AvatarImage src="/sample.png" alt="Sarah Miller" />
+                          <AvatarFallback>SM</AvatarFallback>
+                        </Avatar>
                         <div className="flex-1">
                           <div className="flex items-center justify-between">
                             <h4 className="font-medium">{notification.title}</h4>

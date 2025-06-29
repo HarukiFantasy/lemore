@@ -5,6 +5,7 @@ import { Separator } from "~/common/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "~/common/components/ui/avatar";
 import { paramsSchema } from "~/lib/schemas";
 import { useParams } from "react-router";
+import { HeartIcon } from "lucide-react";
 
 export const meta = () => {
   return [
@@ -17,7 +18,6 @@ export default function ProductDetailPage() {
   const params = useParams();
   const [selectedImage, setSelectedImage] = useState(0);
   const [isLiked, setIsLiked] = useState(false);
-  const [isSaved, setIsSaved] = useState(false);
 
   // URL 파라미터 검증
   const validationResult = paramsSchema.productId.safeParse(params);
@@ -136,23 +136,12 @@ export default function ProductDetailPage() {
                 variant="outline" 
                 size="lg"
                 onClick={() => setIsLiked(!isLiked)}
-                className={isLiked ? "text-red-500 border-red-500" : ""}
+                className={isLiked ? "text-rose-500 border-primary" : ""}
               >
-                <svg width="20" height="20" fill={isLiked ? "currentColor" : "none"} viewBox="0 0 24 24">
-                  <path fill="currentColor" d="M16.697 4.747c-1.962 0-3.19 1.28-3.697 2.01-.507-.73-1.735-2.01-3.697-2.01C6.01 4.747 4 6.757 4 9.354c0 3.61 6.31 8.36 6.58 8.56.26.19.62.19.88 0 .27-.2 6.58-4.95 6.58-8.56 0-2.597-2.01-4.607-4.343-4.607Z"/>
-                </svg>
+                <HeartIcon 
+                  className={`w-5 h-5 ${isLiked ? 'fill-rose-500 text-rose-500' : 'text-gray-600'}`} 
+                />
                 {isLiked ? "Liked" : "Like"}
-              </Button>
-              <Button 
-                variant="outline" 
-                size="lg"
-                onClick={() => setIsSaved(!isSaved)}
-                className={isSaved ? "text-blue-500 border-blue-500" : ""}
-              >
-                <svg width="20" height="20" fill="none" viewBox="0 0 24 24">
-                  <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16l-7-3.5L5 21V5Z"/>
-                </svg>
-                {isSaved ? "Saved" : "Save"}
               </Button>
             </div>
 
@@ -219,9 +208,11 @@ export default function ProductDetailPage() {
           <Card className="p-6">
             <h3 className="text-lg font-semibold mb-4">Seller Information</h3>
             <div className="flex items-start gap-4">
-              <Avatar className="w-16 h-16">
+              <Avatar className="h-16 w-16">
                 <AvatarImage src={product.seller.avatar} alt={product.seller.name} />
-                <AvatarFallback>{product.seller.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+                <AvatarFallback>
+                  {product.seller.name.split(' ').map(n => n[0]).join('').toUpperCase()}
+                </AvatarFallback>
               </Avatar>
               <div className="flex-1">
                 <h4 className="font-semibold text-lg">{product.seller.name}</h4>

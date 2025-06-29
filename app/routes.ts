@@ -11,7 +11,6 @@ export default [
   ...prefix("community", [
     index("features/community/pages/community-page.tsx"),
     route("/local-tips", "features/community/pages/local-tips-page.tsx"),
-    route("/ask-and-answer", "features/community/pages/ask-and-answer-page.tsx"),
     route("/local-reviews", "features/community/pages/local-reviews-page.tsx"),
     route("/give-and-glow", "features/community/pages/give-and-glow-page.tsx"),
   ]),
@@ -32,9 +31,11 @@ export default [
   ]),
   ...prefix("/my", [
     route("/dashboard", "features/users/pages/dashboard-page.tsx"),
+    route("/listings", "features/users/pages/user-listings-page.tsx"),
     route("/profile", "features/users/pages/profile-page.tsx"),
     route("/settings", "features/users/pages/settings-page.tsx"),
     route("/notifications", "features/users/pages/notifications-page.tsx"),
     route("/messages", "features/users/pages/messages-page.tsx"),
+    route("/likes", "features/users/pages/likes-page.tsx"),
   ]),
 ] satisfies RouteConfig;

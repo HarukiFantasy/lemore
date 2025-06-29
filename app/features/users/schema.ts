@@ -11,8 +11,14 @@ export const userSchema = z.object({
   memberSince: z.string().optional(),
   rating: z.number().min(0).max(5).optional(),
   totalSales: z.number().min(0).optional(),
-  responseRate: z.string().optional(),
   responseTime: z.string().optional(),
+});
+
+// 사용자 통계 정보 스키마
+export const userStatsSchema = z.object({
+  itemsSold: z.number().min(0, "Items sold must be non-negative"),
+  averageRating: z.number().min(0).max(5, "Average rating must be between 0 and 5"),
+  responseRate: z.string().regex(/^\d+%$/, "Response rate must be in percentage format (e.g., '89%')"),
 });
 
 // 사용자 생성 스키마
@@ -20,10 +26,9 @@ export const createUserSchema = z.object({
   name: z.string().min(1, "Name is required").max(50, "Name must be less than 50 characters"),
   email: z.string().email("Invalid email address"),
   password: z.string().min(8, "Password must be at least 8 characters"),
-  confirmPassword: z.string(),
-}).refine((data) => data.password === data.confirmPassword, {
-  message: "Passwords don't match",
-  path: ["confirmPassword"],
+  avatar: z.instanceof(File).optional(),
+  bio: z.string().max(200, "Bio must be less than 200 characters").optional(),
+  location: z.string().optional(),
 });
 
 // 사용자 업데이트 스키마
@@ -126,6 +131,7 @@ export const notificationListSchema = z.object({
 
 // 타입 추론
 export type User = z.infer<typeof userSchema>;
+export type UserStats = z.infer<typeof userStatsSchema>;
 export type CreateUserData = z.infer<typeof createUserSchema>;
 export type UpdateUserData = z.infer<typeof updateUserSchema>;
 export type LoginData = z.infer<typeof loginSchema>;

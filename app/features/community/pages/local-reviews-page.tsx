@@ -73,8 +73,124 @@ async function fetchBusinessesFromDatabase(filters: {
     // TODO: Replace with actual database connection code
     // Example: const businesses = await db.businesses.findMany({ where: filters });
     
-    // For now, return empty array (until database is connected)
-    return [];
+    // 목업 데이터 반환
+    const mockBusinesses: Business[] = [
+      {
+        id: "1",
+        name: "Sukhumvit Thai Restaurant",
+        type: "Restaurant",
+        location: "Bangkok",
+        averageRating: 4.5,
+        totalReviews: 127,
+        priceRange: "$$",
+        tags: ["thai food", "authentic", "family-friendly"],
+        image: "/sample.png",
+        address: "123 Sukhumvit Road, Bangkok",
+        phone: "+66 2 123 4567",
+        website: "https://sukhumvit-thai.com",
+        description: "Authentic Thai cuisine in a cozy atmosphere"
+      },
+      {
+        id: "2",
+        name: "Chiang Mai Coffee House",
+        type: "Cafe",
+        location: "ChiangMai",
+        averageRating: 4.8,
+        totalReviews: 89,
+        priceRange: "$",
+        tags: ["coffee", "organic", "local beans"],
+        image: "/sample.png",
+        address: "456 Nimman Road, Chiang Mai",
+        phone: "+66 53 987 6543",
+        website: "https://chiangmai-coffee.com",
+        description: "Specialty coffee shop with locally sourced beans"
+      },
+      {
+        id: "3",
+        name: "Phuket Beach Massage",
+        type: "Service",
+        location: "Phuket",
+        averageRating: 4.3,
+        totalReviews: 203,
+        priceRange: "$$",
+        tags: ["massage", "beach", "relaxation"],
+        image: "/sample.png",
+        address: "789 Patong Beach Road, Phuket",
+        phone: "+66 76 555 1234",
+        website: "https://phuket-massage.com",
+        description: "Professional massage services on the beach"
+      },
+      {
+        id: "4",
+        name: "Bangkok Electronics Store",
+        type: "Shop",
+        location: "Bangkok",
+        averageRating: 4.1,
+        totalReviews: 156,
+        priceRange: "$$$",
+        tags: ["electronics", "gadgets", "repair"],
+        image: "/sample.png",
+        address: "321 Silom Road, Bangkok",
+        phone: "+66 2 789 0123",
+        website: "https://bangkok-electronics.com",
+        description: "Complete electronics store with repair services"
+      },
+      {
+        id: "5",
+        name: "Hua Hin Yoga Studio",
+        type: "Entertainment",
+        location: "HuaHin",
+        averageRating: 4.7,
+        totalReviews: 67,
+        priceRange: "$$",
+        tags: ["yoga", "wellness", "meditation"],
+        image: "/sample.png",
+        address: "654 Hua Hin Beach Road",
+        phone: "+66 32 456 7890",
+        website: "https://huahin-yoga.com",
+        description: "Peaceful yoga studio with ocean views"
+      },
+      {
+        id: "6",
+        name: "Pattaya Seafood Market",
+        type: "Shop",
+        location: "Pattaya",
+        averageRating: 4.4,
+        totalReviews: 234,
+        priceRange: "$$",
+        tags: ["seafood", "fresh", "local market"],
+        image: "/sample.png",
+        address: "987 Walking Street, Pattaya",
+        phone: "+66 38 123 4567",
+        website: "https://pattaya-seafood.com",
+        description: "Fresh seafood market with local specialties"
+      }
+    ];
+
+    // 필터링 로직
+    let filteredBusinesses = mockBusinesses;
+    
+    if (filters.type && filters.type !== "All") {
+      filteredBusinesses = filteredBusinesses.filter(business => business.type === filters.type);
+    }
+    
+    if (filters.location && filters.location !== "All Cities") {
+      filteredBusinesses = filteredBusinesses.filter(business => business.location === filters.location);
+    }
+    
+    if (filters.search) {
+      const searchLower = filters.search.toLowerCase();
+      filteredBusinesses = filteredBusinesses.filter(business => 
+        business.name.toLowerCase().includes(searchLower) ||
+        business.tags.some(tag => tag.toLowerCase().includes(searchLower))
+      );
+    }
+    
+    if (filters.priceRange && filters.priceRange !== "All") {
+      filteredBusinesses = filteredBusinesses.filter(business => business.priceRange === filters.priceRange);
+    }
+    
+    return filteredBusinesses;
     
   } catch (error) {
     console.error("Database error:", error);
@@ -90,8 +206,88 @@ async function fetchReviewsFromDatabase(filters: {
     // TODO: Replace with actual database connection code
     // Example: const reviews = await db.reviews.findMany({ where: filters, take: limit });
     
-    // For now, return empty array (until database is connected)
-    return [];
+    // 목업 데이터 반환
+    const mockReviews: Review[] = [
+      {
+        id: "1",
+        businessName: "Sukhumvit Thai Restaurant",
+        businessType: "Restaurant",
+        location: "Bangkok",
+        rating: 5,
+        review: "Amazing authentic Thai food! The pad thai was perfect and the service was excellent. Highly recommend for anyone visiting Bangkok.",
+        author: "Sarah Johnson",
+        authorAvatar: "/sample.png",
+        timestamp: "2 hours ago",
+        photos: [],
+        priceRange: "$$",
+        tags: ["authentic", "delicious", "friendly service"]
+      },
+      {
+        id: "2",
+        businessName: "Chiang Mai Coffee House",
+        businessType: "Cafe",
+        location: "ChiangMai",
+        rating: 4,
+        review: "Great coffee and atmosphere! The local beans are fantastic and the staff is very knowledgeable about coffee.",
+        author: "Mike Chen",
+        authorAvatar: "/sample.png",
+        timestamp: "5 hours ago",
+        photos: [],
+        priceRange: "$",
+        tags: ["great coffee", "local beans", "cozy atmosphere"]
+      },
+      {
+        id: "3",
+        businessName: "Phuket Beach Massage",
+        businessType: "Service",
+        location: "Phuket",
+        rating: 4,
+        review: "Relaxing massage right on the beach! The therapists are professional and the setting is perfect for relaxation.",
+        author: "Emma Wilson",
+        authorAvatar: "/sample.png",
+        timestamp: "1 day ago",
+        photos: [],
+        priceRange: "$$",
+        tags: ["relaxing", "professional", "beach setting"]
+      },
+      {
+        id: "4",
+        businessName: "Bangkok Electronics Store",
+        businessType: "Shop",
+        location: "Bangkok",
+        rating: 3,
+        review: "Good selection of electronics but prices are a bit high. Staff was helpful with my purchase.",
+        author: "David Kim",
+        authorAvatar: "/sample.png",
+        timestamp: "2 days ago",
+        photos: [],
+        priceRange: "$$$",
+        tags: ["good selection", "helpful staff", "expensive"]
+      },
+      {
+        id: "5",
+        businessName: "Hua Hin Yoga Studio",
+        businessType: "Entertainment",
+        location: "HuaHin",
+        rating: 5,
+        review: "Beautiful yoga studio with ocean views! The instructors are excellent and the classes are perfect for all levels.",
+        author: "Lisa Park",
+        authorAvatar: "/sample.png",
+        timestamp: "3 days ago",
+        photos: [],
+        priceRange: "$$",
+        tags: ["beautiful setting", "excellent instructors", "ocean views"]
+      }
+    ];
+
+    // 필터링 로직
+    let filteredReviews = mockReviews;
+    
+    if (filters.location && filters.location !== "All Cities") {
+      filteredReviews = filteredReviews.filter(review => review.location === filters.location);
+    }
+    
+    return filteredReviews.slice(0, filters.limit);
     
   } catch (error) {
     console.error("Database error:", error);
@@ -380,18 +576,20 @@ export default function LocalReviewsPage({ loaderData }: Route.ComponentProps) {
   };
 
   const renderStars = (rating: number) => {
-    return [...Array(5)].map((_, i) => (
-      <svg
-        key={i}
-        width="16"
-        height="16"
-        fill={i < rating ? "currentColor" : "none"}
-        viewBox="0 0 24 24"
-        className={i < rating ? "text-yellow-400" : "text-gray-300"}
-      >
-        <path fill="currentColor" d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-      </svg>
-    ));
+    return (
+      <div className="flex items-center">
+        {[1, 2, 3, 4, 5].map((star) => (
+          <svg
+            key={star}
+            className={`w-4 h-4 ${star <= rating ? "text-yellow-400" : "text-gray-300"}`}
+            fill="currentColor"
+            viewBox="0 0 20 20"
+          >
+            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+          </svg>
+        ))}
+      </div>
+    );
   };
 
   return (
@@ -790,16 +988,24 @@ export default function LocalReviewsPage({ loaderData }: Route.ComponentProps) {
               
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Rating</label>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1">
                   {[1, 2, 3, 4, 5].map((star) => (
                     <button
                       key={star}
+                      type="button"
                       onClick={() => setNewReview({ ...newReview, rating: star })}
-                      className="text-2xl"
+                      className="text-2xl hover:scale-110 transition-transform"
                     >
-                      {renderStars(star)}
+                      <svg
+                        className={`w-8 h-8 ${star <= newReview.rating ? "text-yellow-400" : "text-gray-300"}`}
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                      >
+                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                      </svg>
                     </button>
                   ))}
+                  <span className="ml-2 text-sm text-gray-600">{newReview.rating}/5</span>
                 </div>
               </div>
               

@@ -206,27 +206,26 @@ export default function MessagesPage() {
                   conversations.map((conversation) => (
                     <div key={conversation.id} className="flex items-center space-x-3 p-4 hover:bg-gray-50 cursor-pointer border-l-4 border-transparent hover:border-blue-500">
                       <Avatar className="h-10 w-10">
-                        <AvatarImage src="/sample.png" />
+                        <AvatarImage src="/sample.png" alt={`User ${conversation.participantIds[1]?.slice(-2) || "Unknown"}`} />
                         <AvatarFallback>
-                          {conversation.participantIds[1]?.slice(0, 2).toUpperCase() || "U"}
+                          {conversation.participantIds[1]?.slice(-2) || "U"}
                         </AvatarFallback>
                       </Avatar>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between">
-                          <h4 className="font-medium text-sm">
-                            User {conversation.participantIds[1]?.slice(-2)}
-                          </h4>
-                          <span className="text-xs text-gray-500">
-                            {new Date(conversation.updatedAt).toLocaleDateString()}
-                          </span>
+                          <p className="text-sm font-medium text-gray-900 truncate">
+                            User {conversation.participantIds[1]?.slice(-2) || "Unknown"}
+                          </p>
+                          {conversation.unreadCount > 0 && (
+                            <Badge variant="destructive" className="ml-2">
+                              {conversation.unreadCount}
+                            </Badge>
+                          )}
                         </div>
-                        <p className="text-sm text-gray-600 truncate">
+                        <p className="text-xs text-gray-500 truncate">
                           {conversation.lastMessage?.content || "No messages yet"}
                         </p>
                       </div>
-                      {conversation.unreadCount > 0 && (
-                        <Badge className="ml-2">{conversation.unreadCount}</Badge>
-                      )}
                     </div>
                   ))
                 )}
@@ -241,17 +240,23 @@ export default function MessagesPage() {
             <CardHeader className="border-b">
               <div className="flex items-center space-x-3">
                 <Avatar className="h-10 w-10">
-                  <AvatarImage src="/sample.png" />
+                  <AvatarImage src="/sample.png" alt="Sarah Miller" />
                   <AvatarFallback>SM</AvatarFallback>
                 </Avatar>
                 <div className="flex-1">
-                  <CardTitle className="text-lg">Sarah Miller</CardTitle>
-                  <CardDescription>Online now</CardDescription>
+                  <h3 className="font-semibold">Sarah Miller</h3>
+                  <p className="text-sm text-gray-500">Online</p>
                 </div>
                 <div className="flex space-x-2">
-                  <Button variant="outline" size="sm">📞</Button>
-                  <Button variant="outline" size="sm">📹</Button>
-                  <Button variant="outline" size="sm">⋯</Button>
+                  <Button variant="ghost" size="icon">
+                    📞
+                  </Button>
+                  <Button variant="ghost" size="icon">
+                    📹
+                  </Button>
+                  <Button variant="ghost" size="icon">
+                    ⚙️
+                  </Button>
                 </div>
               </div>
             </CardHeader>
@@ -263,12 +268,12 @@ export default function MessagesPage() {
                   {/* Received Message */}
                   <div className="flex items-start space-x-3">
                     <Avatar className="h-8 w-8">
-                      <AvatarImage src="/sample.png" />
+                      <AvatarImage src="/sample.png" alt="Sarah Miller" />
                       <AvatarFallback>SM</AvatarFallback>
                     </Avatar>
                     <div className="flex-1">
                       <div className="bg-gray-100 rounded-lg p-3 max-w-xs">
-                        <p className="text-sm">Hi! I'm interested in your vintage camera. Is it still available?</p>
+                        <p className="text-sm">Hi! I'm interested in your bicycle. Is it still available?</p>
                       </div>
                       <p className="text-xs text-gray-500 mt-1">2:30 PM</p>
                     </div>
@@ -278,25 +283,25 @@ export default function MessagesPage() {
                   <div className="flex items-start space-x-3 justify-end">
                     <div className="flex-1 text-right">
                       <div className="bg-blue-500 text-white rounded-lg p-3 max-w-xs ml-auto">
-                        <p className="text-sm">Yes, it's still available! It's in excellent condition. Would you like to see more photos?</p>
+                        <p className="text-sm">Yes, it's still available! Would you like to see it?</p>
                       </div>
                       <p className="text-xs text-gray-500 mt-1">2:32 PM</p>
                     </div>
                     <Avatar className="h-8 w-8">
-                      <AvatarImage src="/sample.png" />
-                      <AvatarFallback>You</AvatarFallback>
+                      <AvatarImage src="/sample.png" alt="You" />
+                      <AvatarFallback>Y</AvatarFallback>
                     </Avatar>
                   </div>
 
                   {/* Received Message */}
                   <div className="flex items-start space-x-3">
                     <Avatar className="h-8 w-8">
-                      <AvatarImage src="/sample.png" />
+                      <AvatarImage src="/sample.png" alt="Sarah Miller" />
                       <AvatarFallback>SM</AvatarFallback>
                     </Avatar>
                     <div className="flex-1">
                       <div className="bg-gray-100 rounded-lg p-3 max-w-xs">
-                        <p className="text-sm">That would be great! What's the lowest you'd be willing to go on the price?</p>
+                        <p className="text-sm">That would be great! When are you free?</p>
                       </div>
                       <p className="text-xs text-gray-500 mt-1">2:35 PM</p>
                     </div>
@@ -305,7 +310,7 @@ export default function MessagesPage() {
                   {/* Typing Indicator */}
                   <div className="flex items-start space-x-3">
                     <Avatar className="h-8 w-8">
-                      <AvatarImage src="/sample.png" />
+                      <AvatarImage src="/sample.png" alt="Sarah Miller" />
                       <AvatarFallback>SM</AvatarFallback>
                     </Avatar>
                     <div className="flex-1">

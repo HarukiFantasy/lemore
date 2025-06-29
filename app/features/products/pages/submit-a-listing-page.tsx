@@ -1,8 +1,9 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Input } from "~/common/components/ui/input";
 import { Button } from "~/common/components/ui/button";
+import { Textarea } from "~/common/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/common/components/ui/select";
-import { useNavigate } from "react-router";
+import { useNavigate, useLocation } from "react-router";
 import { productFormSchema, type ProductFormData } from "~/lib/schemas";
 import { PRODUCT_CATEGORIES } from "../categories";
 import { LOCATIONS } from "~/common/data/locations";
@@ -18,6 +19,30 @@ export default function SubmitAListingPage() {
   const [location, setLocation] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
   const navigate = useNavigate();
+  const locationState = useLocation();
+  const prefillData = locationState.state?.prefillData;
+  const fromLetGoBuddy = locationState.state?.fromLetGoBuddy;
+
+  // Auto-fill form with data from Let Go Buddy
+  useEffect(() => {
+    if (prefillData && fromLetGoBuddy) {
+      setTitle(prefillData.title || "");
+      setPrice(prefillData.price !== undefined && prefillData.price !== null ? String(prefillData.price) : "");
+      setDescription(prefillData.description || "");
+      setCondition(prefillData.condition || "");
+      setCategory(prefillData.category || "");
+      setLocation(prefillData.location || "");
+      
+      // Handle images from Let Go Buddy
+      if (prefillData.images && prefillData.images.length > 0) {
+        setImages(prefillData.images);
+        setPreviews(prefillData.images.map((file: File) => URL.createObjectURL(file)));
+      }
+    }
+  }, [prefillData, fromLetGoBuddy]);
+
+  // Check if this is a giveaway item
+  const isGiveaway = locationState.state?.isGiveaway || false;
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files ? Array.from(e.target.files) : [];
@@ -134,17 +159,19 @@ export default function SubmitAListingPage() {
             placeholder="Price (e.g., THB 1000)"
             value={price}
             onChange={e => setPrice(e.target.value)}
-            className={errors.price ? "border-red-500" : ""}
+            className={`${errors.price ? "border-red-500" : ""} ${isGiveaway ? "bg-green-50 border-green-300" : ""}`}
+            disabled={isGiveaway}
           />
           {errors.price && <span className="text-xs text-red-500 mt-1">{errors.price}</span>}
+          {isGiveaway && <span className="text-xs text-green-600 mt-1">🎁 This is a free giveaway item</span>}
         </div>
         
         <div>
-          <textarea
-            className={`border rounded p-2 min-h-[100px] ${errors.description ? "border-red-500" : ""}`}
+          <Textarea
             placeholder="Description"
             value={description}
             onChange={e => setDescription(e.target.value)}
+            className={`min-h-[100px] ${errors.description ? "border-red-500" : ""}`}
           />
           {errors.description && <span className="text-xs text-red-500 mt-1">{errors.description}</span>}
         </div>

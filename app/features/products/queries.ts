@@ -213,4 +213,28 @@ export async function searchProducts(query: string, filters: any = {}): Promise<
     console.error("Error searching products:", error);
     throw new Error("Failed to search products");
   }
+}
+
+// 사용자의 모든 리스팅을 가져오는 함수
+export async function fetchUserListings(userId: string): Promise<Product[]> {
+  try {
+    const allProducts = await fetchAllProductsFromDatabase();
+    return allProducts
+      .filter(product => product.sellerId === userId)
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  } catch (error) {
+    console.error("Error fetching user listings:", error);
+    throw new Error("Failed to fetch user listings");
+  }
+}
+
+// 사용자의 리스팅 개수를 가져오는 함수
+export async function fetchUserListingsCount(userId: string): Promise<number> {
+  try {
+    const userListings = await fetchUserListings(userId);
+    return userListings.length;
+  } catch (error) {
+    console.error("Error fetching user listings count:", error);
+    throw new Error("Failed to fetch user listings count");
+  }
 } 
