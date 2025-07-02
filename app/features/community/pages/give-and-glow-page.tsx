@@ -401,7 +401,7 @@ export default function GiveAndGlowPage({ loaderData }: Route.ComponentProps) {
                     <div className="flex items-center gap-2 text-sm text-gray-500">
                       <div className="flex items-center gap-2">
                         <div className="relative">
-                          <Avatar className="h-10 w-10">
+                          <Avatar className="h-7 w-7">
                             <AvatarImage src="/sample.png" alt="David Chen" />
                             <AvatarFallback>DC</AvatarFallback>
                           </Avatar>

@@ -2,9 +2,7 @@ import { useState, useEffect } from "react";
 import { Button } from "../../../common/components/ui/button";
 import { Input } from "../../../common/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "../../../common/components/ui/card";
-import { Separator } from "../../../common/components/ui/separator";
-import { HandThumbUpIcon, ChatBubbleLeftEllipsisIcon, ChevronDownIcon, ChevronUpIcon } from "@heroicons/react/24/outline";
-import type { Route } from './+types/local-tips-page';
+import { HandThumbUpIcon, ChatBubbleLeftEllipsisIcon, ChevronDownIcon, ChevronUpIcon, EyeIcon } from "@heroicons/react/24/outline";
 import { useSearchParams } from "react-router";
 import { 
   localTipFiltersSchema, 
@@ -17,6 +15,7 @@ import {
   type LocalTipCategory
 } from "~/lib/schemas";
 import { validateWithZod, getFieldErrors, getCategoryColors } from "~/lib/utils";
+import { Route } from './+types/local-tips-page';
 
 // 코멘트 타입 정의
 type Comment = {
@@ -131,7 +130,8 @@ async function fetchLocalTipsFromDatabase(filters: LocalTipFilters): Promise<Loc
         author: "Sarah Johnson",
         createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2 hours ago
         likes: 15,
-        comments: 8
+        comments: 8,
+        reviews: 12
       },
       {
         id: 2,
@@ -142,7 +142,8 @@ async function fetchLocalTipsFromDatabase(filters: LocalTipFilters): Promise<Loc
         author: "Mike Chen",
         createdAt: new Date(Date.now() - 4 * 60 * 60 * 1000), // 4 hours ago
         likes: 23,
-        comments: 12
+        comments: 12,
+        reviews: 8
       },
       {
         id: 3,
@@ -153,7 +154,8 @@ async function fetchLocalTipsFromDatabase(filters: LocalTipFilters): Promise<Loc
         author: "Emma Wilson",
         createdAt: new Date(Date.now() - 6 * 60 * 60 * 1000), // 6 hours ago
         likes: 18,
-        comments: 6
+        comments: 6,
+        reviews: 15
       },
       {
         id: 4,
@@ -164,7 +166,8 @@ async function fetchLocalTipsFromDatabase(filters: LocalTipFilters): Promise<Loc
         author: "David Kim",
         createdAt: new Date(Date.now() - 8 * 60 * 60 * 1000), // 8 hours ago
         likes: 31,
-        comments: 14
+        comments: 14,
+        reviews: 22
       },
       {
         id: 5,
@@ -175,7 +178,8 @@ async function fetchLocalTipsFromDatabase(filters: LocalTipFilters): Promise<Loc
         author: "Lisa Park",
         createdAt: new Date(Date.now() - 12 * 60 * 60 * 1000), // 12 hours ago
         likes: 42,
-        comments: 19
+        comments: 19,
+        reviews: 35
       },
       {
         id: 6,
@@ -186,7 +190,8 @@ async function fetchLocalTipsFromDatabase(filters: LocalTipFilters): Promise<Loc
         author: "Alex Thompson",
         createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000), // 1 day ago
         likes: 28,
-        comments: 11
+        comments: 11,
+        reviews: 18
       },
       {
         id: 7,
@@ -197,7 +202,8 @@ async function fetchLocalTipsFromDatabase(filters: LocalTipFilters): Promise<Loc
         author: "Maria Garcia",
         createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000), // 2 days ago
         likes: 35,
-        comments: 16
+        comments: 16,
+        reviews: 28
       },
       {
         id: 8,
@@ -208,7 +214,8 @@ async function fetchLocalTipsFromDatabase(filters: LocalTipFilters): Promise<Loc
         author: "Tom Anderson",
         createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000), // 3 days ago
         likes: 19,
-        comments: 7
+        comments: 7,
+        reviews: 14
       },
       {
         id: 9,
@@ -219,7 +226,8 @@ async function fetchLocalTipsFromDatabase(filters: LocalTipFilters): Promise<Loc
         author: "Sophie Brown",
         createdAt: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000), // 4 days ago
         likes: 26,
-        comments: 9
+        comments: 9,
+        reviews: 11
       },
       {
         id: 10,
@@ -230,7 +238,8 @@ async function fetchLocalTipsFromDatabase(filters: LocalTipFilters): Promise<Loc
         author: "Rachel Green",
         createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000), // 5 days ago
         likes: 33,
-        comments: 13
+        comments: 13,
+        reviews: 20
       }
     ];
 
@@ -277,7 +286,8 @@ async function createLocalTip(postData: LocalTipCreateData): Promise<LocalTipPos
       author: "Current User", // 실제로는 로그인된 사용자 정보
       createdAt: new Date(),
       likes: 0,
-      comments: 0
+      comments: 0,
+      reviews: 0,
     };
     
     return newPost;
@@ -628,7 +638,7 @@ export default function LocalTipsPage({ loaderData }: Route.ComponentProps) {
   };
 
   // Filter posts based on current state
-  const filteredPosts = posts.filter(post => {
+  const filteredPosts = posts.filter((post: any) => {
     const matchesSearch = post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
                           post.content.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory = selectedCategory === "All" || post.category === selectedCategory;
@@ -695,21 +705,17 @@ export default function LocalTipsPage({ loaderData }: Route.ComponentProps) {
 
       {/* Tips List */}
       <div className="space-y-4">
-        {filteredPosts.map((post) => (
+        {filteredPosts.map((post: any) => (
           <Card key={post.id}>
             <CardContent className="p-6">
               <div className="flex justify-between items-start mb-4">
                 <div className="flex-1">
                   <h3 className="text-lg font-semibold mb-2">{post.title}</h3>
                   <div className="mb-3">
-                    <p 
-                      className={`text-muted-foreground cursor-pointer hover:text-foreground transition-colors ${
-                        expandedPosts.has(post.id) ? '' : 'line-clamp-1'
-                      }`}
-                      onClick={() => togglePostExpansion(post.id)}
-                    >
-                      {post.content}
-                    </p>
+                    <div
+                      className="text-sm text-gray-700"
+                      dangerouslySetInnerHTML={{ __html: post.content }}
+                    />
                     <button
                       onClick={() => togglePostExpansion(post.id)}
                       className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800 mt-1"
@@ -751,6 +757,10 @@ export default function LocalTipsPage({ loaderData }: Route.ComponentProps) {
                 </div>
                 <div className="flex items-center gap-4 text-sm text-muted-foreground">
                   <div className="flex items-center gap-1">
+                    <EyeIcon className="h-4 w-4 text-muted-foreground" />
+                    <span>{post.reviews}</span>
+                  </div>
+                  <div className="flex items-center gap-1">
                     <HandThumbUpIcon className="h-4 w-4 text-muted-foreground" />
                     <span>{post.likes}</span>
                   </div>
@@ -781,7 +791,10 @@ export default function LocalTipsPage({ loaderData }: Route.ComponentProps) {
                             <span className="font-medium text-sm">{comment.author}</span>
                             <span className="text-xs text-muted-foreground">{formatTimeAgo(comment.createdAt)}</span>
                           </div>
-                          <p className="text-sm text-gray-700">{comment.content}</p>
+                          <div
+                            className="text-sm text-gray-700"
+                            dangerouslySetInnerHTML={{ __html: comment.content }}
+                          />
                           <div className="flex items-center gap-2 mt-2">
                             <button className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors">
                               <HandThumbUpIcon className="h-3 w-3" />

@@ -2,8 +2,23 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "../../../common/components/ui/card";
 import { Button } from "../../../common/components/ui/button";
 import { Input } from "../../../common/components/ui/input";
-import { Avatar, AvatarImage, AvatarFallback } from "../../../common/components/ui/avatar";
-import { useNavigate } from "react-router";
+import { Textarea } from "../../../common/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../../common/components/ui/select";
+import { 
+  CameraIcon, 
+  ArrowPathIcon, 
+  SparklesIcon, 
+  HeartIcon, 
+  GiftIcon, 
+  LightBulbIcon,
+  XMarkIcon,
+  CheckCircleIcon,
+  GlobeAltIcon,
+  CogIcon,
+  MagnifyingGlassIcon,
+  LightBulbIcon as TipsIcon
+} from "@heroicons/react/24/outline";
+import { useNavigate, useSearchParams } from "react-router";
 
 const situations = [
   "I'm moving soon",
@@ -11,14 +26,6 @@ const situations = [
   "I'm just tidying up",
   "I'm downsizing",
   "I'm going minimalist",
-];
-
-const declutterPlan = [
-  "Day 1: Organize your closet",
-  "Day 2: Check your kitchen",
-  "Day 3: Review appliances",
-  "Day 4: Books & papers",
-  "Day 5: Miscellaneous items",
 ];
 
 // Emotional attachment questions
@@ -57,13 +64,38 @@ const mockAnalysis = [
       title: "Electric Kettle – Still in great shape!",
       desc: "Used gently, perfect for daily tea or coffee. Clean and fully functional.",
       price: "THB 250",
-      location: "Chiang Mai",
+      location: "Bangkok", // This will be dynamically updated
     },
   },
 ];
 
+const creativeIdeas = [
+  {
+    icon: "🪴",
+    title: "Planter Pot",
+    desc: "Turn it into a quirky herb planter for your kitchen."
+  },
+  {
+    icon: "🖼️",
+    title: "Art Piece",
+    desc: "Use as base for a DIY lamp or sculpture."
+  },
+  {
+    icon: "\uD83D\uDD27",
+    title: "Watering Can",
+    desc: "Repurpose it for watering your garden (if it's no longer functional)."
+  },
+  {
+    icon: "🖼️",
+    title: "Prop for Photos",
+    desc: "Vintage kettles make great styling props!"
+  }
+];
+
 export default function LetGoBuddyPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const currentLocation = searchParams.get("location") || "Bangkok";
   const [step, setStep] = useState(1);
   const [selectedSituation, setSelectedSituation] = useState<string | null>(null);
   const [showListing, setShowListing] = useState(false);
@@ -72,11 +104,23 @@ export default function LetGoBuddyPage() {
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisComplete, setAnalysisComplete] = useState(false);
-  const [showDeclutterPlan, setShowDeclutterPlan] = useState(false);
+  const [showCreativeIdeas, setShowCreativeIdeas] = useState(false);
   const [showEmotionalAssessment, setShowEmotionalAssessment] = useState(false);
   const [showCostBenefit, setShowCostBenefit] = useState(false);
   const [showEnvironmentalImpact, setShowEnvironmentalImpact] = useState(false);
+  const [showKeepMessage, setShowKeepMessage] = useState(false);
+  const [showGiveawayMessage, setShowGiveawayMessage] = useState(false);
+  const [keepMessage, setKeepMessage] = useState<string>("");
+  const [giveawayMessage, setGiveawayMessage] = useState<string>("");
   const [emotionalAnswers, setEmotionalAnswers] = useState<number[]>([]);
+  const [selectedAction, setSelectedAction] = useState<string | null>(null);
+  const [completedActions, setCompletedActions] = useState<Set<string>>(new Set());
+  const [showCompletionMessage, setShowCompletionMessage] = useState(false);
+  const [itemDetails, setItemDetails] = useState({
+    usagePeriod: "",
+    pros: "",
+    cons: ""
+  });
 
   // Handle file upload
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -94,7 +138,13 @@ export default function LetGoBuddyPage() {
   };
 
   // Placeholder for uploaded images and analysis
-  const items = mockAnalysis;
+  const items = mockAnalysis.map(item => ({
+    ...item,
+    aiListing: {
+      ...item.aiListing,
+      location: currentLocation
+    }
+  }));
 
   // Handle image removal
   const handleRemoveImage = (index: number) => {
@@ -117,16 +167,22 @@ export default function LetGoBuddyPage() {
 
     setIsAnalyzing(true);
     
-    // Simulate AI analysis delay
+    // Simulate AI analysis delay with enhanced analysis based on user input
     setTimeout(() => {
       setIsAnalyzing(false);
       setAnalysisComplete(true);
+      
+      // Scroll to analysis results after completion
+      setTimeout(() => {
+        const analysisSection = document.getElementById('analysis-results');
+        if (analysisSection) {
+          analysisSection.scrollIntoView({ 
+            behavior: 'smooth', 
+            block: 'center' 
+          });
+        }
+      }, 100);
     }, 3000);
-  };
-
-  // Handle declutter plan generation
-  const handleGenerateDeclutterPlan = () => {
-    setShowDeclutterPlan(true);
   };
 
   // Handle emotional assessment
@@ -166,7 +222,7 @@ export default function LetGoBuddyPage() {
         title: selectedItem.aiListing.title,
         description: selectedItem.aiListing.desc,
         price: selectedItem.aiListing.price,
-        location: selectedItem.aiListing.location,
+        location: currentLocation,
         images: uploadedFiles, // Pass the uploaded images
         category: selectedItem.category || "Electronics",
         condition: "Used - Good",
@@ -190,33 +246,52 @@ export default function LetGoBuddyPage() {
   // Handle generating another AI suggestion
   const handleSeeAnotherSuggestion = () => {
     if (selectedItem) {
-      // Generate alternative suggestions for the same item
-      const alternativeSuggestions = [
+      // Generate alternative suggestions based on user input
+      let alternativeSuggestions = [
         {
           title: `${selectedItem.name} – Excellent condition, ready to use!`,
           desc: "Well-maintained item in great shape. Perfect for daily use or as a gift.",
           price: "THB 300",
-          location: "Chiang Mai",
+          location: currentLocation,
         },
         {
           title: `${selectedItem.name} – Bargain price for quick sale!`,
           desc: "Selling at a great price to make room. Still works perfectly, just need space.",
           price: "THB 180",
-          location: "Chiang Mai",
+          location: currentLocation,
         },
         {
           title: `${selectedItem.name} – Premium quality, barely used!`,
           desc: "High-quality item with minimal wear. Like new condition, great value.",
           price: "THB 350",
-          location: "Chiang Mai",
+          location: currentLocation,
         },
         {
           title: `${selectedItem.name} – Perfect for students or budget-conscious buyers!`,
           desc: "Affordable option that doesn't compromise on quality. Great for those on a budget.",
           price: "THB 220",
-          location: "Chiang Mai",
+          location: currentLocation,
         }
       ];
+
+      // Enhance suggestions based on user input
+      if (itemDetails.pros) {
+        alternativeSuggestions.unshift({
+          title: `${selectedItem.name} – ${itemDetails.pros.split(',')[0].trim()}!`,
+          desc: `This item has ${itemDetails.pros.toLowerCase()}. ${itemDetails.usagePeriod ? `Used for ${itemDetails.usagePeriod.replace(/-/g, ' ')}.` : ''} Great value for someone who appreciates quality.`,
+          price: "THB 280",
+          location: currentLocation,
+        });
+      }
+
+      if (itemDetails.cons) {
+        alternativeSuggestions.push({
+          title: `${selectedItem.name} – Honest condition, great price!`,
+          desc: `Transparent about condition: ${itemDetails.cons.toLowerCase()}. Still functional and priced accordingly. Perfect for someone who doesn't mind minor imperfections.`,
+          price: "THB 150",
+          location: currentLocation,
+        });
+      }
 
       // Randomly select a new suggestion
       const randomIndex = Math.floor(Math.random() * alternativeSuggestions.length);
@@ -238,7 +313,7 @@ export default function LetGoBuddyPage() {
         title: `FREE: ${selectedItem.name} - Giving away for free!`,
         description: `Free giveaway! This ${selectedItem.name} is in good condition and I'm giving it away for free. Perfect for someone who needs it. Please contact me if you're interested.`,
         price: "THB 0",
-        location: selectedItem.aiListing.location || "Chiang Mai",
+        location: currentLocation,
         images: uploadedFiles,
         category: selectedItem.category || "Electronics",
         condition: "Used - Good",
@@ -258,7 +333,94 @@ export default function LetGoBuddyPage() {
       
       // Close the popup
       setShowListing(false);
+      setShowGiveawayMessage(false);
     }
+  };
+
+  // Generate AI message for keeping item
+  const generateKeepMessage = (itemName: string, situation: string) => {
+    let baseMessages = [
+      `Sometimes the most beautiful decluttering decision is to keep what truly matters. Your ${itemName} might be holding memories that are worth more than any space it takes up.`,
+      `In a world that moves so fast, holding onto things that bring you comfort isn't clutter—it's self-care. Your ${itemName} might be exactly what you need on a difficult day.`,
+      `The best decluttering advice? Keep what makes you smile. Your ${itemName} seems to have found a special place in your heart, and that's perfectly okay.`,
+      `You're ${situation.toLowerCase()}, but remember: not everything needs to go. Your ${itemName} might be the one thing you'd regret letting go of.`,
+      `Sometimes the most sustainable choice is to keep and cherish. Your ${itemName} has already been made, so loving it longer is actually the most eco-friendly decision.`
+    ];
+
+    // Enhance message based on user input
+    if (itemDetails.pros) {
+      const prosMessages = [
+        `I can see from your input that you really appreciate ${itemDetails.pros.toLowerCase()}. These qualities make your ${itemName} special and worth holding onto.`,
+        `Your mention of ${itemDetails.pros.toLowerCase()} shows this ${itemName} has real value to you. Sometimes the best decluttering decision is to keep what genuinely serves you.`,
+        `The fact that you highlighted ${itemDetails.pros.toLowerCase()} suggests this ${itemName} brings you genuine joy or utility. That's exactly the kind of item worth keeping.`
+      ];
+      baseMessages = [...prosMessages, ...baseMessages];
+    }
+
+    if (itemDetails.usagePeriod && itemDetails.usagePeriod.includes('less-than-1-year')) {
+      baseMessages.unshift(`Since you've only had this ${itemName} for a short time, you might want to give it a bit longer to see if it truly fits your life. New items often need time to find their place.`);
+    }
+
+    return baseMessages[Math.floor(Math.random() * baseMessages.length)];
+  };
+
+  // Generate AI message for free giveaway
+  const generateGiveawayMessage = (itemName: string, situation: string) => {
+    let baseMessages = [
+      `Your generosity with this ${itemName} will create ripples of kindness in your community. Someone's day is about to be brightened by your thoughtful gesture.`,
+      `By giving away your ${itemName}, you're not just decluttering—you're creating space for new possibilities while giving someone else a chance to discover something they need.`,
+      `The beauty of letting go is that it often leads to the most unexpected connections. Your ${itemName} might become someone else's treasure, creating a story you'll never know but will have started.`,
+      `As you're ${situation.toLowerCase()}, remember that your ${itemName} can have a second life with someone who will appreciate it just as much as you once did.`,
+      `Your decision to give away this ${itemName} shows that you understand the true value of things—not in what they cost, but in the joy they can bring to others.`
+    ];
+
+    // Enhance message based on user input
+    if (itemDetails.pros) {
+      const prosMessages = [
+        `Even though you mentioned ${itemDetails.pros.toLowerCase()}, your willingness to share this ${itemName} shows incredible generosity. Someone else will surely appreciate these same qualities.`,
+        `Your ${itemName} has ${itemDetails.pros.toLowerCase()}, making it perfect for someone who needs exactly those features. Your generosity will make a real difference.`
+      ];
+      baseMessages = [...prosMessages, ...baseMessages];
+    }
+
+    if (itemDetails.cons) {
+      const consMessages = [
+        `By addressing your concerns about ${itemDetails.cons.toLowerCase()}, you're making space for what truly serves you while giving someone else a chance to find value in this ${itemName}.`,
+        `Your honesty about ${itemDetails.cons.toLowerCase()} shows self-awareness. Someone else might not have the same concerns and could find this ${itemName} perfect for their needs.`
+      ];
+      baseMessages = [...consMessages, ...baseMessages];
+    }
+
+    if (itemDetails.usagePeriod && itemDetails.usagePeriod.includes('more-than-2-years')) {
+      baseMessages.unshift(`After ${itemDetails.usagePeriod.replace(/-/g, ' ')} of use, your ${itemName} has served you well. Now it's time to let it serve someone else and create new memories.`);
+    }
+
+    return baseMessages[Math.floor(Math.random() * baseMessages.length)];
+  };
+
+  // Handle keep with love
+  const handleKeepWithLove = (item: any) => {
+    const message = generateKeepMessage(item.name, selectedSituation || "");
+    setKeepMessage(message);
+    setShowKeepMessage(true);
+  };
+
+  // Handle popup close with completion
+  const handlePopupClose = (actionType: string, itemName: string) => {
+    setCompletedActions(prev => new Set([...prev, `${actionType}-${itemName}`]));
+    setShowCompletionMessage(true);
+    
+    // Hide completion message after 3 seconds
+    setTimeout(() => {
+      setShowCompletionMessage(false);
+    }, 3000);
+  };
+
+  // Handle giveaway start
+  const handleGiveawayStart = (item: any) => {
+    const message = generateGiveawayMessage(item.name, selectedSituation || "");
+    setGiveawayMessage(message);
+    setShowGiveawayMessage(true);
   };
 
   return (
@@ -274,7 +436,7 @@ export default function LetGoBuddyPage() {
       <Card className="mb-8">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <span className="text-3xl">📷</span>
+            <CameraIcon className="w-6 h-6 text-blue-600" />
             Upload your items
           </CardTitle>
         </CardHeader>
@@ -283,7 +445,7 @@ export default function LetGoBuddyPage() {
           
           {/* Photo tips */}
           <div className="bg-purple-50 border border-primary/20 rounded-lg p-4 mb-4 w-full">
-            <div className="font-medium text-primary-foreground mb-2">📸 Tips for better AI analysis:</div>
+            <div className="font-medium text-primary-foreground mb-2">Tips for better AI analysis</div>
             <ul className="text-sm text-primary-foreground/80 space-y-1">
               <li>• Take photos from different angles (front, back, sides)</li>
               <li>• Include close-ups of any damage or wear</li>
@@ -291,6 +453,58 @@ export default function LetGoBuddyPage() {
               <li>• Ensure good lighting for clear visibility</li>
               <li>• Include the item in context (e.g., size reference)</li>
             </ul>
+          </div>
+
+          {/* Item Details Form */}
+          <div className="w-full space-y-4 mb-4">
+            <div className="text-sm font-medium text-gray-700 mb-2">Tell us more about your item (optional but helpful for better analysis)</div>
+            
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <div className="text-sm font-medium text-gray-700">
+                  How long have you used this item?
+                </div>
+                <Select value={itemDetails.usagePeriod} onValueChange={(value) => setItemDetails(prev => ({ ...prev, usagePeriod: value }))}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select usage period" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="less-than-1-month">Less than 1 month</SelectItem>
+                    <SelectItem value="1-6-months">1-6 months</SelectItem>
+                    <SelectItem value="6-months-1-year">6 months - 1 year</SelectItem>
+                    <SelectItem value="1-2-years">1-2 years</SelectItem>
+                    <SelectItem value="2-5-years">2-5 years</SelectItem>
+                    <SelectItem value="more-than-5-years">More than 5 years</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <div className="text-sm font-medium text-gray-700">
+                  What do you like about this item? (pros)
+                </div>
+                <Textarea 
+                  value={itemDetails.pros}
+                  onChange={(e) => setItemDetails(prev => ({ ...prev, pros: e.target.value }))}
+                  placeholder="e.g., Still works perfectly, great quality, sentimental value..."
+                  className="resize-none"
+                  rows={2}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <div className="text-sm font-medium text-gray-700">
+                  What concerns you about this item? (cons)
+                </div>
+                <Textarea 
+                  value={itemDetails.cons}
+                  onChange={(e) => setItemDetails(prev => ({ ...prev, cons: e.target.value }))}
+                  placeholder="e.g., Takes up space, rarely used, minor scratches..."
+                  className="resize-none"
+                  rows={2}
+                />
+              </div>
+            </div>
           </div>
           
           {/* Hidden file input */}
@@ -365,19 +579,31 @@ export default function LetGoBuddyPage() {
         
         {/* Generate AI Analysis Button */}
         <Button 
-          onClick={handleGenerateAnalysis}
+          onClick={() => {
+            handleGenerateAnalysis();
+            // Scroll to analyzing section immediately
+            setTimeout(() => {
+              const analyzingSection = document.getElementById('analyzing-section');
+              if (analyzingSection) {
+                analyzingSection.scrollIntoView({ 
+                  behavior: 'smooth', 
+                  block: 'center' 
+                });
+              }
+            }, 100);
+          }}
           disabled={!selectedSituation || uploadedFiles.length === 0 || isAnalyzing}
           className="w-full"
           size="lg"
         >
           {isAnalyzing ? (
             <>
-              <span className="animate-spin mr-2">⏳</span>
+              <ArrowPathIcon className="w-5 h-5 mr-2 animate-spin text-blue-600" />
               Generating AI Analysis...
             </>
           ) : (
             <>
-              <span className="mr-2">🤖</span>
+              <SparklesIcon className="w-5 h-5 mr-2 text-purple-600" />
               Generate AI Analysis
             </>
           )}
@@ -386,11 +612,11 @@ export default function LetGoBuddyPage() {
 
       {/* Step 3: Analyzing */}
       {isAnalyzing && (
-        <div className="mb-8">
+        <div id="analyzing-section" className="mb-8">
           <div className="font-semibold text-lg mb-2">Step 3</div>
           <div className="flex items-center gap-2">
-            <span className="animate-spin">🧠</span>
-            Analyzing your items... <span>✨</span>
+            <ArrowPathIcon className="w-5 h-5 animate-spin text-blue-600" />
+            Analyzing your items...
           </div>
           <div className="mt-2 text-sm text-gray-600">
             Our AI is examining your photos and situation to provide personalized recommendations...
@@ -400,36 +626,92 @@ export default function LetGoBuddyPage() {
 
       {/* Analysis Result Cards */}
       {analysisComplete && (
-        <div className="space-y-6 mb-12">
-          <div className="font-semibold text-lg mb-4">Analysis Complete! 🎉</div>
+        <div id="analysis-results" className="space-y-6 mb-12">
+          <div className="font-semibold text-lg mb-4">Analysis Complete!</div>
+          
+          {/* Progress Summary */}
+          {completedActions.size > 0 && (
+            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-xl border border-blue-100 mb-6">
+              <div className="flex items-center gap-3 mb-2">
+                <CheckCircleIcon className="w-5 h-5 text-blue-600" />
+                <div className="font-semibold text-gray-800">Your Progress</div>
+              </div>
+              <div className="text-sm text-gray-600">
+                You've made {completedActions.size} decision{completedActions.size > 1 ? 's' : ''} so far. 
+                {completedActions.size === 1 && " Great start!"}
+                {completedActions.size > 1 && " You're doing great!"}
+              </div>
+            </div>
+          )}
           {items.map((item, idx) => (
-            <div key={idx} className="bg-white border rounded-xl p-5 flex gap-4 items-center shadow-sm">
+            <div key={idx} className={`bg-white border rounded-xl p-5 flex gap-4 items-center shadow-sm relative ${
+              completedActions.has(`keep-${item.name}`) ? 'ring-2 ring-green-200 bg-green-50/30' : ''
+            }`}>
+              {completedActions.has(`keep-${item.name}`) && (
+                <div className="absolute top-2 right-2">
+                  <div className="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center">
+                    <CheckCircleIcon className="w-4 h-4 text-green-600" />
+                  </div>
+                </div>
+              )}
               <img src={item.photo} alt={item.name} className="w-20 h-20 object-cover rounded-lg border" />
               <div className="flex-1">
-                <div className="font-semibold text-lg mb-1">📸 Photo: {item.name}</div>
+                <div className="font-semibold text-lg mb-1">Photo: {item.name}</div>
                 <div className="text-gray-600 mb-1">Recognition: <span className="font-medium">"{item.name}"</span></div>
                 <div className="mb-2">Recommendation: <span className="font-medium">{item.recommendation}</span></div>
                 
+                {/* User Provided Details */}
+                {(itemDetails.usagePeriod || itemDetails.pros || itemDetails.cons) && (
+                  <div className="mb-3 p-3 bg-blue-50 rounded-lg border border-blue-100">
+                    <div className="text-sm font-medium text-blue-800 mb-2">Your Input Analysis</div>
+                    {itemDetails.usagePeriod && (
+                      <div className="text-xs text-blue-700 mb-1">
+                        <span className="font-medium">Usage:</span> {itemDetails.usagePeriod.replace(/-/g, ' ')}
+                      </div>
+                    )}
+                    {itemDetails.pros && (
+                      <div className="text-xs text-green-700 mb-1">
+                        <span className="font-medium">Pros:</span> {itemDetails.pros}
+                      </div>
+                    )}
+                    {itemDetails.cons && (
+                      <div className="text-xs text-orange-700">
+                        <span className="font-medium">Cons:</span> {itemDetails.cons}
+                      </div>
+                    )}
+                  </div>
+                )}
+                
                 {/* Decision Helper Buttons */}
                 <div className="flex gap-2 flex-wrap mb-3">
-                  <Button 
+                  <Button
                     size="sm"
-                    onClick={() => { setShowListing(true); setSelectedItem(item); }}
+                    variant={selectedAction === 'create' ? 'default' : 'outline'}
+                    onClick={() => { setShowListing(true); setSelectedItem(item); setSelectedAction('create'); }}
                   >
-                    Create Listing
+                    Start Selling
                   </Button>
-                  <Button 
-                    variant="outline" 
+                  <Button
                     size="sm"
+                    variant={selectedAction === 'keep' ? 'default' : 'outline'}
+                    onClick={() => { handleKeepWithLove(item); setSelectedAction('keep'); }}
+                    className={completedActions.has(`keep-${item.name}`) ? 'bg-green-100 text-green-700 border-green-300' : ''}
                   >
-                    Keep
+                    {completedActions.has(`keep-${item.name}`) ? (
+                      <>
+                        <CheckCircleIcon className="w-4 h-4 mr-1" />
+                        Kept with Love
+                      </>
+                    ) : (
+                      'Keep with Love'
+                    )}
                   </Button>
-                  <Button 
-                    variant="outline" 
+                  <Button
                     size="sm"
-                    onClick={handleGenerateDeclutterPlan}
+                    variant={selectedAction === 'giveaway' ? 'default' : 'outline'}
+                    onClick={() => { handleGiveawayStart(item); setSelectedItem(item); setSelectedAction('giveaway'); }}
                   >
-                    📅 Get Declutter Plan
+                    Free Giveaway
                   </Button>
                 </div>
 
@@ -442,7 +724,7 @@ export default function LetGoBuddyPage() {
                     onClick={handleEmotionalAssessment}
                     className="text-xs"
                   >
-                    💭 Emotional Check
+                    Emotional Check
                   </Button>
                   <Button 
                     variant="outline" 
@@ -450,7 +732,7 @@ export default function LetGoBuddyPage() {
                     onClick={handleCostBenefitAnalysis}
                     className="text-xs"
                   >
-                    💰 Cost Analysis
+                    Cost Analysis
                   </Button>
                   <Button 
                     variant="outline" 
@@ -458,7 +740,7 @@ export default function LetGoBuddyPage() {
                     onClick={handleEnvironmentalImpact}
                     className="text-xs"
                   >
-                    🌱 Eco Impact
+                    Eco Impact
                   </Button>
                 </div>
               </div>
@@ -469,35 +751,45 @@ export default function LetGoBuddyPage() {
 
       {/* AI Generated Listing Popup */}
       {showListing && selectedItem && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-8 max-w-md w-full relative shadow-lg">
-            <button className="absolute top-3 right-3 text-2xl" onClick={() => setShowListing(false)}>×</button>
-            <div className="mb-4 text-lg font-bold flex items-center gap-2">📝 AI Generated Listing</div>
-            <div className="prose mb-4">
-              <h2>{selectedItem.aiListing.title}</h2>
-              <p>{selectedItem.aiListing.desc}</p>
-              <p><b>💰 Suggested Price:</b> {selectedItem.aiListing.price}</p>
-              <p><b>📍 Location:</b> {selectedItem.aiListing.location}</p>
+        <div className="fixed inset-0 bg-black/10 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl p-8 max-w-md w-full relative shadow-2xl border border-gray-100">
+            <button className="absolute top-3 right-3 p-1 hover:bg-gray-100 rounded-full" onClick={() => { setShowListing(false); setSelectedAction(null); }}>
+              <XMarkIcon className="w-5 h-5 text-gray-500" />
+            </button>
+            <div className="mb-6 text-xl font-semibold text-gray-800 flex items-center gap-3">
+              <SparklesIcon className="w-6 h-6 text-purple-600" />
+              AI Generated Listing
             </div>
-            <div className="flex gap-2">
-              <button 
-                className="px-4 py-2 rounded bg-teal-500 text-white"
+            <div className="space-y-4 mb-6">
+              <div className="bg-gradient-to-r from-purple-50 to-blue-50 p-4 rounded-xl border border-purple-100">
+                <h3 className="text-lg font-semibold text-gray-800 mb-2">{selectedItem.aiListing.title}</h3>
+                <p className="text-gray-600 text-sm leading-relaxed">{selectedItem.aiListing.desc}</p>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-gray-50 p-3 rounded-lg">
+                  <div className="text-sm text-gray-500 mb-1">Suggested Price</div>
+                  <div className="font-semibold text-green-600">{selectedItem.aiListing.price}</div>
+                </div>
+                <div className="bg-gray-50 p-3 rounded-lg">
+                  <div className="text-sm text-gray-500 mb-1">Location</div>
+                  <div className="font-semibold text-gray-800">{selectedItem.aiListing.location}</div>
+                </div>
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <Button 
+                className="flex-1 bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 text-white font-medium shadow-lg hover:shadow-xl transition-all duration-200"
                 onClick={handlePostAfterEditing}
               >
                 Post after editing
-              </button>
-              <button 
-                className="px-4 py-2 rounded bg-gray-200 text-black"
+              </Button>
+              <Button 
+                variant="outline"
+                className="flex-1 border-gray-300 hover:bg-gray-50 font-medium transition-all duration-200"
                 onClick={handleSeeAnotherSuggestion}
               >
                 See another suggestion
-              </button>
-              <button 
-                className="px-4 py-2 rounded bg-fuchsia-300 text-white"
-                onClick={handleFreeGiveaway}
-              >
-                🎁 Free Giveaway
-              </button>
+              </Button>
             </div>
           </div>
         </div>
@@ -505,10 +797,15 @@ export default function LetGoBuddyPage() {
 
       {/* Emotional Assessment Popup */}
       {showEmotionalAssessment && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-8 max-w-lg w-full relative shadow-lg max-h-[80vh] overflow-y-auto">
-            <button className="absolute top-3 right-3 text-2xl" onClick={() => setShowEmotionalAssessment(false)}>×</button>
-            <div className="mb-6 text-lg font-bold flex items-center gap-2">💭 Emotional Attachment Assessment</div>
+        <div className="fixed inset-0 bg-black/10 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl p-8 max-w-lg w-full relative shadow-2xl border border-gray-100 max-h-[80vh] overflow-y-auto">
+            <button className="absolute top-3 right-3 p-1 hover:bg-gray-100 rounded-full" onClick={() => setShowEmotionalAssessment(false)}>
+              <XMarkIcon className="w-5 h-5 text-gray-500" />
+            </button>
+            <div className="mb-6 text-xl font-semibold text-gray-800 flex items-center gap-3">
+              <HeartIcon className="w-6 h-6 text-pink-600" />
+              Emotional Attachment Assessment
+            </div>
             <div className="space-y-4">
               {emotionalQuestions.map((question, index) => (
                 <div key={index} className="border rounded-lg p-4">
@@ -531,9 +828,9 @@ export default function LetGoBuddyPage() {
                   <div className="text-xs text-gray-500 mt-1">1 = Not at all, 5 = Very much</div>
                 </div>
               ))}
-              <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-                <div className="font-medium">Emotional Attachment Score: {calculateEmotionalScore()}%</div>
-                <div className="text-sm text-gray-600 mt-1">
+              <div className="mt-6 p-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-100 shadow-sm">
+                <div className="font-semibold text-gray-800 mb-2">Emotional Attachment Score: <span className="text-blue-600">{calculateEmotionalScore()}%</span></div>
+                <div className="text-sm text-gray-600">
                   {calculateEmotionalScore() > 70 ? "High attachment - Consider keeping" :
                    calculateEmotionalScore() > 40 ? "Moderate attachment - Think carefully" :
                    "Low attachment - Safe to let go"}
@@ -546,10 +843,12 @@ export default function LetGoBuddyPage() {
 
       {/* Cost-Benefit Analysis Popup */}
       {showCostBenefit && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-primary/2 backdrop-blur-sm flex items-center justify-center z-50">
           <div className="bg-white rounded-xl p-8 max-w-md w-full relative shadow-lg">
-            <button className="absolute top-3 right-3 text-2xl" onClick={() => setShowCostBenefit(false)}>×</button>
-            <div className="mb-6 text-lg font-bold flex items-center gap-2">💰 Cost-Benefit Analysis</div>
+            <button className="absolute top-3 right-3 p-1 hover:bg-gray-100 rounded-full" onClick={() => setShowCostBenefit(false)}>
+              <XMarkIcon className="w-5 h-5 text-gray-500" />
+            </button>
+            <div className="mb-6 text-lg font-bold flex items-center gap-2">Cost-Benefit Analysis</div>
             <div className="space-y-3">
               <div className="flex justify-between">
                 <span>Original Price:</span>
@@ -584,10 +883,12 @@ export default function LetGoBuddyPage() {
 
       {/* Environmental Impact Popup */}
       {showEnvironmentalImpact && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-primary/2 backdrop-blur-sm flex items-center justify-center z-50">
           <div className="bg-white rounded-xl p-8 max-w-md w-full relative shadow-lg">
-            <button className="absolute top-3 right-3 text-2xl" onClick={() => setShowEnvironmentalImpact(false)}>×</button>
-            <div className="mb-6 text-lg font-bold flex items-center gap-2">🌱 Environmental Impact</div>
+            <button className="absolute top-3 right-3 p-1 hover:bg-gray-100 rounded-full" onClick={() => setShowEnvironmentalImpact(false)}>
+              <XMarkIcon className="w-5 h-5 text-gray-500" />
+            </button>
+            <div className="mb-6 text-lg font-bold flex items-center gap-2">Environmental Impact</div>
             <div className="space-y-4">
               <div className="p-4 bg-green-50 rounded-lg">
                 <div className="font-medium mb-2">By donating/selling this item:</div>
@@ -611,31 +912,176 @@ export default function LetGoBuddyPage() {
         </div>
       )}
 
-      {/* Declutter Plan Section - Only shown when user requests it */}
-      {showDeclutterPlan && (
-        <div className="bg-gray-50 border rounded-xl p-6 mb-8">
-          <div className="flex justify-between items-center mb-4">
-            <div className="font-semibold text-lg">📅 Your 5-Day Declutter Plan</div>
+      {/* Keep with Love Message Popup */}
+      {showKeepMessage && (
+        <div className="fixed inset-0 bg-black/10 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl p-8 max-w-md w-full relative shadow-2xl border border-gray-100 text-center">
+            <button className="absolute top-3 right-3 p-1 hover:bg-gray-100 rounded-full" onClick={() => { setShowKeepMessage(false); setSelectedAction(null); }}>
+              <XMarkIcon className="w-5 h-5 text-gray-500" />
+            </button>
+            <div className="flex flex-col items-center mb-8">
+              <div className="w-16 h-16 bg-gradient-to-br from-pink-100 to-pink-200 rounded-full flex items-center justify-center mb-4">
+                <HeartIcon className="w-8 h-8 text-pink-600" />
+              </div>
+              <div className="text-2xl font-bold mb-2 text-gray-800">Keep with Love</div>
+              <div className="text-sm text-gray-500">Sometimes the best choice is to cherish what matters</div>
+            </div>
+            <div className="space-y-6 mb-8 text-left">
+              <div className="bg-gradient-to-br from-pink-50 to-rose-50 p-6 rounded-xl border border-pink-100 shadow-sm">
+                <div className="text-sm font-medium text-pink-700 mb-3 uppercase tracking-wide">A personal message for you</div>
+                <div className="text-gray-700 leading-relaxed italic">
+                  "{keepMessage}"
+                </div>
+              </div>
+            </div>
             <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => setShowDeclutterPlan(false)}
+              className="w-full bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 text-white font-medium shadow-lg hover:shadow-xl transition-all duration-200" 
+              onClick={() => { 
+                setShowKeepMessage(false); 
+                setSelectedAction(null);
+                handlePopupClose('keep', selectedItem?.name || 'item');
+              }}
             >
-              × Close
+              Thank you for the reminder
             </Button>
-          </div>
-          <div className="mb-2 text-gray-600">Start with small steps:</div>
-          <ul className="list-disc pl-6 mb-4">
-            {declutterPlan.map((d, i) => (
-              <li key={i}>{d}</li>
-            ))}
-          </ul>
-          <div className="flex gap-2">
-            <button className="px-3 py-1 rounded bg-gray-200 text-black">Download Plan as Image</button>
-            <button className="px-3 py-1 rounded bg-gray-200 text-black">Sync to Calendar</button>
           </div>
         </div>
       )}
+
+      {/* Free Giveaway Message Popup */}
+      {showGiveawayMessage && selectedItem && (
+        <div className="fixed inset-0 bg-black/10 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl p-8 max-w-md w-full relative shadow-2xl border border-gray-100 text-center">
+            <button className="absolute top-3 right-3 p-1 hover:bg-gray-100 rounded-full" onClick={() => { setShowGiveawayMessage(false); setSelectedAction(null); }}>
+              <XMarkIcon className="w-5 h-5 text-gray-500" />
+            </button>
+            <div className="flex flex-col items-center mb-8">
+              <div className="w-16 h-16 bg-gradient-to-br from-green-100 to-emerald-200 rounded-full flex items-center justify-center mb-4">
+                <GiftIcon className="w-8 h-8 text-green-600" />
+              </div>
+              <div className="text-2xl font-bold mb-2 text-gray-800">Free Giveaway</div>
+              <div className="text-sm text-gray-500">Spread kindness and make someone's day</div>
+            </div>
+            <div className="space-y-6 mb-8">
+              <div className="bg-gradient-to-br from-green-50 to-emerald-50 p-6 rounded-xl border border-green-100 shadow-sm">
+                <div className="text-sm font-medium text-green-700 mb-3 uppercase tracking-wide">A personal message for you</div>
+                <div className="text-gray-700 leading-relaxed italic">
+                  "{giveawayMessage}"
+                </div>
+              </div>
+              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-xl border border-blue-100">
+                <div className="text-sm text-blue-800 font-medium">
+                  Ready to share your generosity?<br/>
+                  <span className="text-blue-600">Let's create a free giveaway post for the community!</span>
+                </div>
+              </div>
+            </div>
+            <Button 
+              className="w-full bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white font-medium shadow-lg hover:shadow-xl transition-all duration-200" 
+              onClick={() => {
+                setShowGiveawayMessage(false);
+                setSelectedAction(null);
+                handleFreeGiveaway();
+              }}
+            >
+              Share the love with a free giveaway
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Completion Message */}
+      {showCompletionMessage && (
+        <div className="fixed top-4 right-4 z-50 animate-in slide-in-from-right duration-300">
+          <div className="bg-white rounded-xl p-4 shadow-2xl border border-green-200 max-w-sm">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                <CheckCircleIcon className="w-5 h-5 text-green-600" />
+              </div>
+              <div>
+                <div className="font-semibold text-gray-800">Decision Made!</div>
+                <div className="text-sm text-gray-600">You've completed this step successfully.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Creative Ideas Popup */}
+      {showCreativeIdeas && (
+          <div className="fixed inset-0 bg-primary/2 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-8 max-w-md w-full relative shadow-lg text-center">
+            <button className="absolute top-3 right-3 p-1 hover:bg-gray-100 rounded-full" onClick={() => { setShowCreativeIdeas(false); setSelectedAction(null); }}>
+              <XMarkIcon className="w-5 h-5 text-gray-500" />
+            </button>
+            <div className="flex flex-col items-center mb-4">
+              <LightBulbIcon className="w-10 h-10 mb-2 text-yellow-500" />
+              <div className="text-2xl font-bold mb-1">Creative Ideas for:</div>
+              <div className="text-xl font-semibold mb-4">{mockAnalysis[0].name || "Your Item"}</div>
+            </div>
+            <div className="space-y-4 mb-4 text-left">
+              {creativeIdeas.map((idea, i) => (
+                <div key={i} className="flex items-start gap-3">
+                  <div className="w-8 h-8 mt-0.5 flex items-center justify-center">
+                    {i === 0 && <GlobeAltIcon className="w-6 h-6 text-green-500" />}
+                    {i === 1 && <LightBulbIcon className="w-6 h-6 text-yellow-500" />}
+                    {i === 2 && <CogIcon className="w-6 h-6 text-blue-500" />}
+                    {i === 3 && <CameraIcon className="w-6 h-6 text-purple-500" />}
+                  </div>
+                  <div>
+                    <div className="font-semibold">{i + 1}. {idea.title}</div>
+                    <div className="text-gray-700 text-sm">{idea.desc}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <Button className="w-full" onClick={() => { setShowCreativeIdeas(false); setSelectedAction(null); }}>Close</Button>
+          </div>
+        </div>
+      )}
+
+      {/* Bottom Guidance */}
+      {analysisComplete && (
+        <div className="mt-8 p-6 bg-gradient-to-r from-gray-50 to-blue-50 rounded-xl border border-gray-200">
+          <div className="text-center">
+            <div className="font-semibold text-gray-800 mb-2">What's Next?</div>
+            <div className="text-sm text-gray-600 space-y-1">
+              <div>• Make decisions for each item using the buttons above</div>
+              <div>• Use the decision helpers if you're unsure</div>
+              <div>• Once you've decided on all items, you're all set!</div>
+            </div>
+            {completedActions.size > 0 && (
+              <div className="mt-4 p-3 bg-green-100 rounded-lg">
+                <div className="text-sm font-medium text-green-800">
+                  🎉 You've completed {completedActions.size} decision{completedActions.size > 1 ? 's' : ''}!
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Bottom Action Buttons */}
+      <div className="mt-8 flex justify-center gap-4">
+        <Button
+          variant="outline"
+          size="sm"
+          className="px-6 py-2 border-gray-300 hover:bg-gray-50 text-gray-700 font-medium transition-all duration-200"
+          onClick={() => navigate("/secondhand/browse-listings")}
+        >
+          <MagnifyingGlassIcon className="w-4 h-4 mr-2" />
+          Browse Items
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          className="px-6 py-2 border-gray-300 hover:bg-gray-50 text-gray-700 font-medium transition-all duration-200"
+          onClick={() => navigate("/community/local-tips")}
+        >
+          <TipsIcon className="w-4 h-4 mr-2" />
+          Get Tips
+        </Button>
+      </div>
 
     </div>
   );

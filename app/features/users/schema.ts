@@ -1,5 +1,19 @@
 import { z } from "zod";
 
+// 사용자 관련 스키마
+// 현재 사용자 기능에 대한 Zod 스키마가 정의되지 않았습니다.
+// 필요에 따라 스키마를 추가하세요.
+
+// 예시 스키마 (필요시 사용):
+// export const userSchema = z.object({
+//   id: z.string().min(1, "User ID is required"),
+//   name: z.string().min(1, "Name is required").max(50, "Name must be less than 50 characters"),
+//   email: z.string().email("Invalid email address"),
+//   // 기타 사용자 필드들
+// });
+
+// export type User = z.infer<typeof userSchema>;
+
 // 사용자 기본 정보 스키마
 export const userSchema = z.object({
   id: z.string().min(1, "User ID is required"),
