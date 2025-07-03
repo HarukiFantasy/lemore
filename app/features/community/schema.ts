@@ -74,7 +74,7 @@ export const localBusinessReviews = pgTable("local_business_reviews", {
   location: text("location").notNull(),
   rating: integer("rating").notNull(), // 1~5
   review: text("review").notNull(),
-  author: text("author").notNull().references(() => userProfiles.display_name),
+  author: uuid().notNull().references(() => userProfiles.profile_id),
   author_avatar: text("author_avatar").references(() => userProfiles.avatar_url),
   timestamp: text("timestamp").notNull(), // 상대적 시간
   photos: jsonb("photos").notNull().default([]), // string[]

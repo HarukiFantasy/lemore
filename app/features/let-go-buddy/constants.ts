@@ -1,4 +1,4 @@
-export const SITUATIONS = [
+export const DECLUTTER_SITUATIONS = [
   {
     label: "I'm moving soon",
     value: "moving",
@@ -153,34 +153,6 @@ export const ENVIRONMENTAL_IMPACT_LEVELS = [
   {
     label: "High",
     value: "high",
-  },
-] as const;
-
-export const DECLUTTER_PLANS = [
-  {
-    day: 1,
-    title: "Organize your closet",
-    description: "Sort through clothes, shoes, and accessories",
-  },
-  {
-    day: 2,
-    title: "Check your kitchen",
-    description: "Review appliances, utensils, and pantry items",
-  },
-  {
-    day: 3,
-    title: "Review appliances",
-    description: "Assess electronics and household appliances",
-  },
-  {
-    day: 4,
-    title: "Books & papers",
-    description: "Organize books, documents, and paperwork",
-  },
-  {
-    day: 5,
-    title: "Miscellaneous items",
-    description: "Handle remaining items and final cleanup",
   },
 ] as const;
 

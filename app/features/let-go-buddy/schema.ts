@@ -10,7 +10,7 @@ import {
   uuid
 } from "drizzle-orm/pg-core";
 import { 
-  SITUATIONS, 
+  DECLUTTER_SITUATIONS, 
   ITEM_CATEGORIES, 
   RECOMMENDATION_ACTIONS, 
   ITEM_CONDITIONS,
@@ -21,7 +21,7 @@ import { userProfiles } from '../users/schema';
 // Enums
 export const declutterSituations = pgEnum(
   "declutter_situation",
-  SITUATIONS.map((situation) => situation.value) as [string, ...string[]]
+  DECLUTTER_SITUATIONS.map((situation) => situation.value) as [string, ...string[]]
 );
 
 export const itemCategories = pgEnum(
