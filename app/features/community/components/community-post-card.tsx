@@ -9,7 +9,7 @@ const communityPostCardSchema = z.object({
   title: z.string().min(1, "Title is required").max(100, "Title must be less than 100 characters"),
   timeAgo: z.string().min(1, "Time is required"),
   author: z.string().optional(),
-  type: z.enum(["tip", "question"]).optional(),
+  type: z.enum(["tip", "give-and-glow", "local-review"]).optional(),
   likes: z.number().optional(),
   comments: z.number().optional(),
   isLast: z.boolean().optional(),
@@ -49,26 +49,31 @@ export function CommunityPostCard({
     );
   }
 
-  // post ID에서 실제 ID 추출 (tip-123 -> 123, question-456 -> 456)
-  const actualId = id.includes('-') ? id.split('-')[1] : id;
+  // post ID에서 실제 ID 추출 (tip-123 -> 123, give-and-glow-456 -> 456, local-review-789 -> 789)
+  const actualId = id.includes('-') ? id.split('-').slice(1).join('-') : id;
   
   // type에 따라 링크 경로 결정
-  const linkPath = type === 'tip' 
-    ? `/community/local-tips?post=${actualId}`
-    : `/community/ask-and-answer?post=${actualId}`;
+  let linkPath = `/community/local-tips?post=${actualId}`;
+  if (type === 'give-and-glow') {
+    linkPath = `/community/give-and-glow?post=${actualId}`;
+  } else if (type === 'local-review') {
+    linkPath = `/community/local-reviews?post=${actualId}`;
+  }
 
   return (
     <Link to={linkPath} className="block">
-      <Card className={`hover:bg-gray-50 transition-colors cursor-pointer ${!isLast ? 'border-b border-gray-200 rounded-none' : ''}`}>
-        <CardHeader className="pb-2">
+      <Card className={`hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 transition-all duration-300 hover:scale-[1.02] hover:shadow-lg ${!isLast ? 'border-b border-gray-200 rounded-none' : ''}`}>
+        <CardHeader className="pb-0">
           <div className="flex items-center gap-2 mb-1">
             {type && (
               <span className={`text-xs px-2 py-1 rounded-full ${
                 type === 'tip' 
                   ? 'bg-blue-100 text-blue-700' 
-                  : 'bg-green-100 text-green-700'
+                  : type === 'give-and-glow'
+                  ? 'bg-purple-100 text-purple-700'
+                  : 'bg-orange-100 text-orange-700'
               }`}>
-                {type === 'tip' ? 'Tip' : 'Q&A'}
+                {type === 'tip' ? 'Tip' : type === 'give-and-glow' ? 'Give & Glow' : 'Review'}
               </span>
             )}
             {author && (

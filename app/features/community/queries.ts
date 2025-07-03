@@ -233,7 +233,8 @@ export async function fetchLatestLocalTips(limit: number = 5): Promise<LocalTipP
         author: "Sarah Johnson",
         createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2 hours ago
         likes: 15,
-        comments: 8
+        comments: 8,
+        reviews: 5
       },
       {
         id: 2,
@@ -244,7 +245,8 @@ export async function fetchLatestLocalTips(limit: number = 5): Promise<LocalTipP
         author: "Mike Chen",
         createdAt: new Date(Date.now() - 4 * 60 * 60 * 1000), // 4 hours ago
         likes: 23,
-        comments: 12
+        comments: 12,
+        reviews: 8
       },
       {
         id: 3,
@@ -255,7 +257,8 @@ export async function fetchLatestLocalTips(limit: number = 5): Promise<LocalTipP
         author: "Emma Wilson",
         createdAt: new Date(Date.now() - 6 * 60 * 60 * 1000), // 6 hours ago
         likes: 18,
-        comments: 6
+        comments: 6,
+        reviews: 3
       },
       {
         id: 4,
@@ -266,7 +269,8 @@ export async function fetchLatestLocalTips(limit: number = 5): Promise<LocalTipP
         author: "David Kim",
         createdAt: new Date(Date.now() - 8 * 60 * 60 * 1000), // 8 hours ago
         likes: 31,
-        comments: 14
+        comments: 14,
+        reviews: 12
       },
       {
         id: 5,
@@ -277,7 +281,8 @@ export async function fetchLatestLocalTips(limit: number = 5): Promise<LocalTipP
         author: "Lisa Park",
         createdAt: new Date(Date.now() - 12 * 60 * 60 * 1000), // 12 hours ago
         likes: 27,
-        comments: 9
+        comments: 9,
+        reviews: 7
       }
     ];
 
@@ -375,5 +380,122 @@ export async function fetchLatestQuestions(limit: number = 5): Promise<Question[
   } catch (error) {
     console.error("Error fetching latest questions:", error);
     throw new Error("Failed to fetch latest questions");
+  }
+}
+
+// Mock database function for fetching latest give-and-glow reviews
+export async function fetchLatestGiveAndGlowReviews(limit: number = 5): Promise<any[]> {
+  try {
+    // Simulate database delay
+    await new Promise(resolve => setTimeout(resolve, 100));
+
+    // Mock data for give-and-glow reviews
+    const mockReviews = [
+      {
+        id: "1",
+        title: "Vintage Bookshelf - Amazing quality!",
+        itemName: "Vintage Bookshelf",
+        itemCategory: "Furniture",
+        giverName: "Sarah Johnson",
+        receiverName: "Mike Chen",
+        rating: 5,
+        review: "Amazing bookshelf! Sarah was so kind to give it away for free. The quality is excellent and it fits perfectly in my study room.",
+        timestamp: "2 hours ago",
+        location: "Bangkok",
+        tags: ["Excellent Condition", "Friendly Giver", "Smooth Pickup"],
+        appreciationBadge: true
+      },
+      {
+        id: "2",
+        title: "Kitchen Appliances Set - Great condition!",
+        itemName: "Kitchen Appliances Set",
+        itemCategory: "Kitchen",
+        giverName: "Emma Wilson",
+        receiverName: "David Kim",
+        rating: 4,
+        review: "Great set of kitchen appliances! Emma was very generous to give away her barely used mixer, blender, and toaster.",
+        timestamp: "1 day ago",
+        location: "ChiangMai",
+        tags: ["Good Condition", "Multiple Items", "Quick Handover"],
+        appreciationBadge: true
+      },
+      {
+        id: "3",
+        title: "Children's Toys - Wonderful collection!",
+        itemName: "Children's Toys",
+        itemCategory: "Toys",
+        giverName: "Lisa Park",
+        receiverName: "Anna Rodriguez",
+        rating: 5,
+        review: "Wonderful collection of children's toys! Lisa was incredibly thoughtful and organized everything so well.",
+        timestamp: "3 days ago",
+        location: "Phuket",
+        tags: ["Clean Items", "Well Organized", "Kids Love It"],
+        appreciationBadge: false
+      }
+    ];
+
+    return mockReviews.slice(0, limit);
+
+  } catch (error) {
+    console.error("Error fetching latest give-and-glow reviews:", error);
+    throw new Error("Failed to fetch latest give-and-glow reviews");
+  }
+}
+
+// Mock database function for fetching latest local reviews
+export async function fetchLatestLocalReviews(limit: number = 5): Promise<any[]> {
+  try {
+    // Simulate database delay
+    await new Promise(resolve => setTimeout(resolve, 100));
+
+    // Mock data for local reviews
+    const mockReviews = [
+      {
+        id: "1",
+        title: "Sukhumvit Thai Restaurant - Amazing authentic Thai food!",
+        businessName: "Sukhumvit Thai Restaurant",
+        businessType: "Restaurant",
+        location: "Bangkok",
+        rating: 5,
+        review: "Amazing authentic Thai food! The pad thai was perfect and the service was excellent. Highly recommend for anyone visiting Bangkok.",
+        author: "Sarah Johnson",
+        timestamp: "2 hours ago",
+        priceRange: "$$",
+        tags: ["authentic", "delicious", "friendly service"]
+      },
+      {
+        id: "2",
+        title: "Chiang Mai Coffee House - Great coffee and atmosphere!",
+        businessName: "Chiang Mai Coffee House",
+        businessType: "Cafe",
+        location: "ChiangMai",
+        rating: 4,
+        review: "Great coffee and atmosphere! The local beans are fantastic and the staff is very knowledgeable about coffee.",
+        author: "Mike Chen",
+        timestamp: "5 hours ago",
+        priceRange: "$",
+        tags: ["great coffee", "local beans", "cozy atmosphere"]
+      },
+      {
+        id: "3",
+        title: "Phuket Beach Massage - Relaxing massage right on the beach!",
+        businessName: "Phuket Beach Massage",
+        businessType: "Service",
+        location: "Phuket",
+        rating: 4,
+        review: "Relaxing massage right on the beach! The therapists are professional and the setting is perfect for relaxation.",
+        author: "Emma Wilson",
+        timestamp: "1 day ago",
+        priceRange: "$$",
+        tags: ["relaxing", "professional", "beach setting"]
+      }
+    ];
+
+    return mockReviews.slice(0, limit);
+
+  } catch (error) {
+    console.error("Error fetching latest local reviews:", error);
+    throw new Error("Failed to fetch latest local reviews");
   }
 } 

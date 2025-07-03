@@ -4,6 +4,7 @@ import { Input } from "../../../common/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "../../../common/components/ui/card";
 import { HandThumbUpIcon, ChatBubbleLeftEllipsisIcon, ChevronDownIcon, ChevronUpIcon, EyeIcon } from "@heroicons/react/24/outline";
 import { useSearchParams } from "react-router";
+import { AvatarCircles } from "../../../../components/magicui/avatar-circles";
 import { 
   localTipFiltersSchema, 
   localTipPostSchema, 
@@ -25,6 +26,8 @@ type Comment = {
   content: string;
   createdAt: Date;
   likes: number;
+  avatarUrl: string;
+  profileUrl: string;
 };
 
 // 데이터베이스에서 가져올 포스트 타입 정의 (Zod 스키마에서 추론)
@@ -44,7 +47,9 @@ async function fetchCommentsFromDatabase(postId: number): Promise<Comment[]> {
         author: "John Doe",
         content: "Great tip! I've been to Free Bird Cafe and they're really helpful.",
         createdAt: new Date(Date.now() - 30 * 60 * 1000), // 30 minutes ago
-        likes: 3
+        likes: 3,
+        avatarUrl: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face",
+        profileUrl: "/profile/john-doe"
       },
       {
         id: 2,
@@ -52,7 +57,9 @@ async function fetchCommentsFromDatabase(postId: number): Promise<Comment[]> {
         author: "Jane Smith",
         content: "Don't forget to check if they accept specific types of clothing before donating.",
         createdAt: new Date(Date.now() - 45 * 60 * 1000), // 45 minutes ago
-        likes: 1
+        likes: 1,
+        avatarUrl: "https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face",
+        profileUrl: "/profile/jane-smith"
       },
       {
         id: 3,
@@ -60,7 +67,9 @@ async function fetchCommentsFromDatabase(postId: number): Promise<Comment[]> {
         author: "Mike Wilson",
         content: "I got my SIM at the airport and it was super easy. Just make sure you have your passport ready.",
         createdAt: new Date(Date.now() - 1 * 60 * 60 * 1000), // 1 hour ago
-        likes: 5
+        likes: 5,
+        avatarUrl: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face",
+        profileUrl: "/profile/mike-wilson"
       },
       {
         id: 4,
@@ -68,7 +77,9 @@ async function fetchCommentsFromDatabase(postId: number): Promise<Comment[]> {
         author: "Lisa Chen",
         content: "AIS has the best coverage in my experience, especially in rural areas.",
         createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2 hours ago
-        likes: 7
+        likes: 7,
+        avatarUrl: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face",
+        profileUrl: "/profile/lisa-chen"
       },
       {
         id: 5,
@@ -76,7 +87,9 @@ async function fetchCommentsFromDatabase(postId: number): Promise<Comment[]> {
         author: "David Brown",
         content: "Atsumi Raw Cafe is amazing! Their smoothie bowls are to die for.",
         createdAt: new Date(Date.now() - 3 * 60 * 60 * 1000), // 3 hours ago
-        likes: 4
+        likes: 4,
+        avatarUrl: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&h=150&fit=crop&crop=face",
+        profileUrl: "/profile/david-brown"
       },
       {
         id: 6,
@@ -84,7 +97,9 @@ async function fetchCommentsFromDatabase(postId: number): Promise<Comment[]> {
         author: "Sarah Kim",
         content: "The river boats are definitely the most scenic way to get around Bangkok!",
         createdAt: new Date(Date.now() - 4 * 60 * 60 * 1000), // 4 hours ago
-        likes: 6
+        likes: 6,
+        avatarUrl: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&h=150&fit=crop&crop=face",
+        profileUrl: "/profile/sarah-kim"
       },
       {
         id: 7,
@@ -92,7 +107,9 @@ async function fetchCommentsFromDatabase(postId: number): Promise<Comment[]> {
         author: "Tom Anderson",
         content: "Make sure to bring cash for the visa extension fee. They don't accept cards.",
         createdAt: new Date(Date.now() - 5 * 60 * 60 * 1000), // 5 hours ago
-        likes: 8
+        likes: 8,
+        avatarUrl: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=150&h=150&fit=crop&crop=face",
+        profileUrl: "/profile/tom-anderson"
       },
       {
         id: 8,
@@ -100,7 +117,9 @@ async function fetchCommentsFromDatabase(postId: number): Promise<Comment[]> {
         author: "Emma Davis",
         content: "Nimman area is great but can be expensive. Santitham is more affordable.",
         createdAt: new Date(Date.now() - 6 * 60 * 60 * 1000), // 6 hours ago
-        likes: 2
+        likes: 2,
+        avatarUrl: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&h=150&fit=crop&crop=face",
+        profileUrl: "/profile/emma-davis"
       }
     ];
 
@@ -497,6 +516,7 @@ export default function LocalTipsPage({ loaderData }: Route.ComponentProps) {
   const [expandedPosts, setExpandedPosts] = useState<Set<number>>(new Set());
   const [commentsData, setCommentsData] = useState<Record<number, Comment[]>>({});
   const [loadingComments, setLoadingComments] = useState<Set<number>>(new Set());
+  const [commentAvatars, setCommentAvatars] = useState<Record<number, { imageUrl: string; profileUrl: string }[]>>({});
   const [newPost, setNewPost] = useState<LocalTipCreateData>({
     title: "",
     content: "",
@@ -520,6 +540,43 @@ export default function LocalTipsPage({ loaderData }: Route.ComponentProps) {
   useEffect(() => {
     setNewPost(prev => ({ ...prev, location: urlLocation as any }));
   }, [urlLocation]);
+
+  // Load comment avatars for all posts on mount
+  useEffect(() => {
+    const loadCommentAvatars = async () => {
+      const avatarPromises = posts.map(async (post) => {
+        try {
+          const comments = await fetchCommentsFromDatabase(post.id);
+          return {
+            postId: post.id,
+            avatars: comments.slice(0, 3).map(comment => ({
+              imageUrl: comment.avatarUrl,
+              profileUrl: comment.profileUrl
+            })),
+            totalComments: comments.length
+          };
+        } catch (error) {
+          console.error(`Error loading avatars for post ${post.id}:`, error);
+          return {
+            postId: post.id,
+            avatars: [],
+            totalComments: 0
+          };
+        }
+      });
+
+      const results = await Promise.all(avatarPromises);
+      const avatarsMap: Record<number, { imageUrl: string; profileUrl: string }[]> = {};
+      
+      results.forEach(result => {
+        avatarsMap[result.postId] = result.avatars;
+      });
+
+      setCommentAvatars(avatarsMap);
+    };
+
+    loadCommentAvatars();
+  }, [posts]);
 
   const updateFilters = (newCategory: LocalTipCategory, newSearch: string) => {
     const params = new URLSearchParams(searchParams);
@@ -706,8 +763,8 @@ export default function LocalTipsPage({ loaderData }: Route.ComponentProps) {
       {/* Tips List */}
       <div className="space-y-4">
         {filteredPosts.map((post: any) => (
-          <Card key={post.id}>
-            <CardContent className="p-6">
+          <Card key={post.id} className="hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 transition-all duration-300 hover:scale-[1.01] hover:shadow-md">
+            <CardContent className="py-1">
               <div className="flex justify-between items-start mb-4">
                 <div className="flex-1">
                   <h3 className="text-lg font-semibold mb-2">{post.title}</h3>
@@ -770,6 +827,13 @@ export default function LocalTipsPage({ loaderData }: Route.ComponentProps) {
                   >
                     <ChatBubbleLeftEllipsisIcon className="h-4 w-4" />
                     <span>{post.comments}</span>
+                    {commentAvatars[post.id] && commentAvatars[post.id].length > 0 && (
+                      <AvatarCircles
+                        avatarUrls={commentAvatars[post.id]}
+                        numPeople={post.comments > 3 ? post.comments - 3 : 0}
+                        className="scale-50 ml-1"
+                      />
+                    )}
                   </button>
                 </div>
               </div>

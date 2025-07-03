@@ -607,7 +607,7 @@ export default function LocalReviewsPage({ loaderData }: Route.ComponentProps) {
         <CardHeader>
           <CardTitle className="text-lg">Search & Filters</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="py-1">
           {/* Search */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Search Businesses</label>
@@ -678,7 +678,7 @@ export default function LocalReviewsPage({ loaderData }: Route.ComponentProps) {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredBusinesses.length > 0 ? (
           filteredBusinesses.map((business) => (
-            <Card key={business.id} className="hover:shadow-lg transition-shadow cursor-pointer">
+            <Card key={business.id} className="hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 transition-all duration-300 hover:scale-[1.02] hover:shadow-lg cursor-pointer">
               <div className="aspect-video overflow-hidden rounded-t-lg">
                 <img 
                   src={business.image || "/sample.png"} 
@@ -686,7 +686,7 @@ export default function LocalReviewsPage({ loaderData }: Route.ComponentProps) {
                   className="w-full h-full object-cover"
                 />
               </div>
-              <CardContent className="p-4">
+              <CardContent className="py-1">
                 <div className="flex justify-between items-start mb-2">
                   <h3 className="font-semibold text-lg text-gray-900">{business.name}</h3>
                   <span className="text-sm text-gray-500">{business.priceRange}</span>
@@ -761,8 +761,8 @@ export default function LocalReviewsPage({ loaderData }: Route.ComponentProps) {
         <div className="space-y-4">
           {reviews.length > 0 ? (
             reviews.map((review) => (
-              <Card key={review.id}>
-                <CardContent className="p-6">
+              <Card key={review.id} className="hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 transition-all duration-300 hover:scale-[1.01] hover:shadow-md">
+                <CardContent className="py-1">
                   <div className="flex items-start gap-4">
                     <Avatar className="w-12 h-12">
                       <AvatarImage src={review.authorAvatar} alt={review.author} />

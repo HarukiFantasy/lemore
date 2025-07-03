@@ -5,7 +5,7 @@ import { Button } from '../components/ui/button';
 import { ProductCard } from "../../features/products/components/product-card";
 import { CommunityPostCard } from "../../features/community/components/community-post-card";
 import { fetchTodaysPicks } from "../../features/products/queries";
-import { fetchLatestLocalTips } from "../../features/community/queries";
+import { fetchLatestLocalTips, fetchLatestGiveAndGlowReviews, fetchLatestLocalReviews } from "../../features/community/queries";
 import { useLoaderData } from "react-router";
 import { BlurFade } from 'components/magicui/blur-fade';
 
@@ -30,19 +30,53 @@ export const loader = async ({ request }: { request: Request }) => {
       includeQuality: true,
     });
 
-    // Community 최신 글들을 가져오기 (local-tips만)
-    const latestLocalTips = await fetchLatestLocalTips(10);
+    // Community 최신 글들을 가져오기 (local-tips, give-and-glow, local-reviews)
+    const [latestLocalTips, latestGiveAndGlowReviews, latestLocalReviews] = await Promise.all([
+      fetchLatestLocalTips(4),
+      fetchLatestGiveAndGlowReviews(3),
+      fetchLatestLocalReviews(3)
+    ]);
 
-    // local tips 데이터를 community posts 형식으로 변환
-    const communityPosts = latestLocalTips.map(tip => ({
-      id: `tip-${tip.id}`,
-      title: tip.title,
-      timeAgo: getTimeAgo(tip.createdAt),
-      type: 'tip' as const,
-      author: tip.author,
-      likes: tip.likes,
-      comments: tip.comments
-    }));
+    // 모든 데이터를 community posts 형식으로 변환
+    const communityPosts = [
+      // Local tips
+      ...latestLocalTips.map(tip => ({
+        id: `tip-${tip.id}`,
+        title: tip.title,
+        timeAgo: getTimeAgo(tip.createdAt),
+        type: 'tip' as const,
+        author: tip.author,
+        likes: tip.likes,
+        comments: tip.comments
+      })),
+      // Give and Glow reviews
+      ...latestGiveAndGlowReviews.map(review => ({
+        id: `give-and-glow-${review.id}`,
+        title: review.title,
+        timeAgo: review.timestamp,
+        type: 'give-and-glow' as const,
+        author: review.giverName,
+        likes: review.rating,
+        comments: 0
+      })),
+      // Local reviews
+      ...latestLocalReviews.map(review => ({
+        id: `local-review-${review.id}`,
+        title: review.title,
+        timeAgo: review.timestamp,
+        type: 'local-review' as const,
+        author: review.author,
+        likes: review.rating,
+        comments: 0
+      }))
+    ];
+
+    // 시간순으로 정렬 (최신순)
+    communityPosts.sort((a, b) => {
+      const timeA = getTimeInMs(a.timeAgo);
+      const timeB = getTimeInMs(b.timeAgo);
+      return timeA - timeB;
+    });
 
     return {
       todaysPicks,
@@ -102,7 +136,7 @@ export default function HomePage() {
       id: string;
       title: string;
       timeAgo: string;
-      type: 'tip';
+      type: 'tip' | 'give-and-glow' | 'local-review';
       author: string;
       likes: number;
       comments: number;
@@ -110,7 +144,7 @@ export default function HomePage() {
   };
 
   return (
-    <div className="sm:max-w-[100vw] md:max-w-[100vw]">
+    <div className="sm:max-w-[100vw] md:max-w-[100vw] lg:max-w-[100vw] xl:max-w-[100vw]">
       <div className="flex flex-col px-8 py-15 items-center justify-center rounded-md bg-gradient-to-t from-background to-primary/10">
         <h1 className="text-4xl font-bold text-center">Buy Less, Share More, Live Lighter - in {location}</h1>
       </div>
@@ -118,8 +152,8 @@ export default function HomePage() {
         <Input name="query" type="text" placeholder="Search for items" />
         <Button type="submit" variant="outline">Search</Button>
       </Form>
-      <div className="text-2xl font-bold mt-10 w-full lg:max-w-[70vw] mx-auto sm:max-w-[100vw] md:max-w-[100vw]">Today's Picks</div>
-      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-4 items-center w-full lg:max-w-[70vw] mx-auto sm:max-w-[100vw] md:max-w-[100vw]">
+      <div className="text-2xl font-bold mt-10 mx-auto sm:max-w-[100vw] md:max-w-[100vw]">Today's Picks</div>
+      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-4 items-start mx-auto sm:max-w-[100vw] md:max-w-[100vw]">
         {todaysPicks.length > 0 ? (
           todaysPicks.map((product) => (
             <BlurFade>
@@ -130,11 +164,12 @@ export default function HomePage() {
                 title={product.title}
                 price={product.price}
                 seller={product.sellerId}
+                isSold={product.isSold || false}
               />
             </BlurFade>
           ))
         ) : (
-          // 데이터가 없을 때 기본 상품들 표시
+          // 데이터가 없을 때 기본 상품들 표시 (예시로 일부는 판매완료로 표시)
           Array.from({ length: 4 }).map((_, index) => (
             <ProductCard
               key={index}
@@ -143,6 +178,7 @@ export default function HomePage() {
               title="Bicycle for sale"
               price="THB 1000"
               seller={`seller-${index + 1}`}
+              isSold={index === 1} // 두 번째 상품만 판매완료로 표시
             />
           ))
         )}

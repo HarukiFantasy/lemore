@@ -340,8 +340,8 @@ export default function GiveAndGlowPage({ loaderData }: Route.ComponentProps) {
       <div className="space-y-6">
         {filteredReviews.length > 0 ? (
           filteredReviews.map((review) => (
-            <Card key={review.id} className="hover:shadow-lg transition-shadow">
-              <CardContent className="p-6">
+            <Card key={review.id} className="hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 transition-all duration-300 hover:scale-[1.02] hover:shadow-lg">
+              <CardContent className="py-1">
                 <div className="flex items-start gap-4">
                   {/* Giver Avatar */}
                   <div className="flex items-center space-x-3 mb-4">

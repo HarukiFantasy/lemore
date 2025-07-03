@@ -5,17 +5,10 @@ import { ProductCard } from '../components/product-card';
 import { Form, useSearchParams, useLoaderData, useRouteError, isRouteErrorResponse, useSubmit } from 'react-router';
 import { Input } from '~/common/components/ui/input';
 import { Button } from '~/common/components/ui/button';
-import { 
-  Pagination, 
-  PaginationContent, 
-  PaginationItem, 
-  PaginationLink, 
-  PaginationNext, 
-  PaginationPrevious 
-} from '~/common/components/ui/pagination';
 import { productFiltersSchema, productListSchema, type ProductFilters, type ProductList } from "~/lib/schemas";
 import { PRODUCT_CATEGORIES } from "../categories";
 import { searchProducts, fetchProductsByLocation } from "../queries";
+import { BlurFade } from 'components/magicui/blur-fade';
 
 export const meta: Route.MetaFunction = () => {
   return [
@@ -243,10 +236,10 @@ export default function BrowseListingsPage() {
   };
 
   return (
-    <div className="flex flex-col md:flex-row">
+    <div className="mx-auto sm:max-w-[100vw] md:max-w-[100vw] lg:max-w-[100vw] xl:max-w-[100vw]">
 
-      {/* 메인 컨텐츠 */}
-      <main className="flex-1 mx-auto px-0 py-6 md:p-6 ">
+      {/* 메인 컨텐츠  */}
+      <main className="mx-auto sm:max-w-[100vw] md:max-w-[100vw] lg:max-w-[100vw] xl:max-w-[100vw]">
         {/* 검색바 */}
           <Form className="flex items-center justify-center max-w-screen-sm mx-auto mt-1 gap-2 mb-6 focus:ring-1 focus:ring-accent">
             <Input 
@@ -295,21 +288,23 @@ export default function BrowseListingsPage() {
         </h2>
 
         {/* 표시된 상품 수 정보 */}
-        <div className="mb-4 text-sm text-gray-600">
+        <div className="mb-4 text-sm text-gray-600 mx-auto sm:max-w-[100vw] md:max-w-[100vw]">
           Showing {displayedProducts.length} of {loaderData.totalCount} items
         </div>
 
         {/* 상품 카드 그리드 */}
-        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-4 items-start mx-auto sm:max-w-[100vw] md:max-w-[100vw]">
           {displayedProducts.map((product) => (
-            <ProductCard
-              key={product.id}
-              productId={product.id}
-              image={product.image || "/sample.png"}
-              title={product.title}
-              price={product.price}
-              seller={product.sellerId}
-            />
+            <BlurFade key={product.id}>
+              <ProductCard
+                productId={product.id}
+                image={product.image || "/sample.png"}
+                title={product.title}
+                price={product.price}
+                seller={product.sellerId}
+                isSold={product.isSold || false}
+              />
+            </BlurFade>
           ))}
         </div>
 

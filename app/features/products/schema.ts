@@ -15,6 +15,7 @@ export const productSchema = z.object({
   sellerId: z.string().min(1, "Seller ID is required"),
   createdAt: z.date(),
   updatedAt: z.date(),
+  isSold: z.boolean().optional(),
 });
 
 export const productListSchema = z.object({
