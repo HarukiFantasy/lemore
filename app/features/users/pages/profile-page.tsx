@@ -4,8 +4,24 @@ import { Input } from "../../../common/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "../../../common/components/ui/avatar";
 import { Separator } from "../../../common/components/ui/separator";
 import { useLoaderData, useRouteError, isRouteErrorResponse } from "react-router";
-import { fetchMockUserProfile } from "../queries";
 import { z } from "zod";
+
+// Mock user profile function (임시)
+async function fetchMockUserProfile(userId: string) {
+  return {
+    success: true,
+    user: {
+      id: userId,
+      displayName: "John Doe",
+      email: "john.doe@example.com",
+      avatarUrl: "/sample.png",
+      bio: "Passionate about sustainable living and finding great deals on secondhand items.",
+      location: "Bangkok, Thailand",
+      createdAt: "2024-01-01T00:00:00Z",
+      updatedAt: "2024-01-15T00:00:00Z",
+    }
+  };
+}
 
 // Profile stats schema
 const profileStatsSchema = z.object({
@@ -18,15 +34,13 @@ const profileStatsSchema = z.object({
 const profileLoaderDataSchema = z.object({
   user: z.object({
     id: z.string(),
-    name: z.string(),
+    displayName: z.string(),
     email: z.string(),
-    avatar: z.string().optional(),
+    avatarUrl: z.string().optional(),
     bio: z.string().optional(),
-    location: z.string().optional(),
-    memberSince: z.string().optional(),
-    rating: z.number().optional(),
-    totalSales: z.number().optional(),
-    responseTime: z.string().optional(),
+    location: z.string(),
+    createdAt: z.string(),
+    updatedAt: z.string(),
   }).optional(),
   stats: z.object({
     // 기본 통계 정보만 유지
@@ -52,8 +66,8 @@ export const loader = async ({ request }: { request: Request }) => {
     console.log("Profile loader: Mock data result:", result);
     
     if (!result.success) {
-      console.error("Profile loader: Failed to fetch user profile:", result.errors);
-      throw new Response(result.errors?.join(", ") || "Failed to load profile", { 
+      console.error("Profile loader: Failed to fetch user profile");
+      throw new Response("Failed to load profile", { 
         status: 500,
         statusText: "Failed to load profile"
       });
@@ -62,9 +76,9 @@ export const loader = async ({ request }: { request: Request }) => {
     const loaderData: ProfileLoaderData = {
       user: result.user,
       stats: {
-        totalListings: result.user?.totalSales || 127,
-        totalLikes: result.user?.rating || 4.8,
-        totalViews: 89
+        totalListings: 127, // Mock data
+        totalLikes: 4.8, // Mock data
+        totalViews: 89 // Mock data
       }
     };
 
@@ -155,14 +169,14 @@ export default function ProfilePage({ loaderData }: { loaderData: ProfileLoaderD
             <CardHeader className="text-center">
               <div className="flex justify-center mb-4">
                 <Avatar className="h-24 w-24">
-                  <AvatarImage src={user?.avatar || "/sample.png"} />
+                  <AvatarImage src={user?.avatarUrl || "/sample.png"} />
                   <AvatarFallback className="text-2xl">
-                    {user?.name?.split(' ').map(n => n[0]).join('').toUpperCase() || "JD"}
+                    {user?.displayName?.split(' ').map((n: string) => n[0]).join('').toUpperCase() || "JD"}
                   </AvatarFallback>
                 </Avatar>
               </div>
-              <CardTitle>{user?.name || "John Doe"}</CardTitle>
-              <CardDescription>Member since {user?.memberSince || "January 2024"}</CardDescription>
+              <CardTitle>{user?.displayName || "John Doe"}</CardTitle>
+              <CardDescription>Member since {user?.createdAt ? new Date(user.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long' }) : "January 2024"}</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
@@ -199,13 +213,13 @@ export default function ProfilePage({ loaderData }: { loaderData: ProfileLoaderD
                     <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-2">
                       First Name
                     </label>
-                    <Input id="firstName" defaultValue={user?.name?.split(' ')[0] || "John"} />
+                    <Input id="firstName" defaultValue={user?.displayName?.split(' ')[0] || "John"} />
                   </div>
                   <div>
                     <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-2">
                       Last Name
                     </label>
-                    <Input id="lastName" defaultValue={user?.name?.split(' ').slice(1).join(' ') || "Doe"} />
+                    <Input id="lastName" defaultValue={user?.displayName?.split(' ').slice(1).join(' ') || "Doe"} />
                   </div>
                 </div>
 
@@ -215,7 +229,7 @@ export default function ProfilePage({ loaderData }: { loaderData: ProfileLoaderD
                   </label>
                   <Input 
                     id="username" 
-                    defaultValue={user?.name?.toLowerCase().replace(/\s+/g, '.') || "john.doe"} 
+                    defaultValue={user?.displayName?.toLowerCase().replace(/\s+/g, '.') || "john.doe"} 
                     placeholder="Enter your username"
                   />
                   <p className="text-xs text-gray-500 mt-1">

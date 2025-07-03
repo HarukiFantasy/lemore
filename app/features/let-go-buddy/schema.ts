@@ -1,5 +1,4 @@
 import { 
-  bigint, 
   pgEnum, 
   pgTable, 
   text, 
@@ -17,6 +16,7 @@ import {
   ITEM_CONDITIONS,
   ENVIRONMENTAL_IMPACT_LEVELS
 } from "./constants";
+import { userProfiles } from '../users/schema';
 
 // Enums
 export const declutterSituations = pgEnum(
@@ -47,7 +47,7 @@ export const environmentalImpactLevels = pgEnum(
 // Main tables
 export const letGoBuddySessions = pgTable("let_go_buddy_sessions", {
   session_id: uuid().primaryKey().defaultRandom(),
-  user_id: bigint({ mode: "number" }).notNull(), // Reference to users table
+  user_id: uuid().notNull().references(() => userProfiles.profile_id),
   situation: declutterSituations().notNull(),
   created_at: timestamp().notNull().defaultNow(),
   updated_at: timestamp().notNull().defaultNow(),
@@ -129,14 +129,3 @@ export const aiListingSuggestions = pgTable("ai_listing_suggestions", {
   is_selected: boolean().notNull().default(false),
   created_at: timestamp().notNull().defaultNow(),
 });
-
-// Let Go Buddy 관련 스키마
-// 현재 이 기능에 대한 스키마가 정의되지 않았습니다.
-// 필요에 따라 스키마를 추가하세요.
-
-// 예시 스키마 (필요시 사용):
-// export const letGoBuddySchema = z.object({
-//   // 스키마 정의
-// });
-
-// export type LetGoBuddyData = z.infer<typeof letGoBuddySchema>; 

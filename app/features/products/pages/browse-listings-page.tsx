@@ -1,14 +1,113 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import type { Route } from './+types/browse-listings-page';
-import { RadioGroup, RadioGroupItem } from "~/common/components/ui/radio-group";
 import { ProductCard } from '../components/product-card';
 import { Form, useSearchParams, useLoaderData, useRouteError, isRouteErrorResponse, useSubmit } from 'react-router';
 import { Input } from '~/common/components/ui/input';
 import { Button } from '~/common/components/ui/button';
-import { productFiltersSchema, productListSchema, type ProductFilters, type ProductList } from "~/lib/schemas";
-import { PRODUCT_CATEGORIES } from "../categories";
-import { searchProducts, fetchProductsByLocation } from "../queries";
+import { PRODUCT_CATEGORIES } from "../constants";
 import { BlurFade } from 'components/magicui/blur-fade';
+import { z } from "zod";
+
+// Mock search products function (임시)
+async function searchProducts(query: string, filters: any = {}) {
+  const conditions = ["New", "Like New", "Good", "Fair", "Poor"] as const;
+  const categories = ["Electronics", "Clothing", "Home goods", "Sports & Outdoor", "Books", "Toys and games"];
+  const locations = ["Bangkok", "ChiangMai", "Phuket", "Pattaya"];
+  
+  return Array.from({ length: 20 }, (_, index) => ({
+    id: `product-${index + 1}`,
+    title: `Sample Product ${index + 1}`,
+    price: Math.floor(Math.random() * 5000) + 100,
+    currency: "THB",
+    condition: conditions[Math.floor(Math.random() * conditions.length)],
+    category: categories[Math.floor(Math.random() * categories.length)],
+    location: locations[Math.floor(Math.random() * locations.length)],
+    images: ["/sample.png"],
+    image: "/sample.png",
+    priceType: Math.random() > 0.85 ? ("free" as const) : ("fixed" as const),
+    sellerId: `seller-${index + 1}`,
+    isSold: Math.random() > 0.8,
+    createdAt: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000),
+    seller: {
+      id: `seller-${index + 1}`,
+      name: `Seller ${index + 1}`,
+      avatar: "/sample.png",
+    },
+  }));
+}
+
+// Mock fetch products by location function (임시)
+async function fetchProductsByLocation(location: string, limit: number = 20) {
+  const conditions = ["New", "Like New", "Good", "Fair", "Poor"] as const;
+  const categories = ["Electronics", "Clothing", "Home goods", "Sports & Outdoor", "Books", "Toys and games"];
+  
+  return Array.from({ length: limit }, (_, index) => ({
+    id: `product-${index + 1}`,
+    title: `Sample Product ${index + 1}`,
+    price: Math.floor(Math.random() * 5000) + 100,
+    currency: "THB",
+    condition: conditions[Math.floor(Math.random() * conditions.length)],
+    category: categories[Math.floor(Math.random() * categories.length)],
+    location: location,
+    images: ["/sample.png"],
+    image: "/sample.png",
+    priceType: Math.random() > 0.85 ? ("free" as const) : ("fixed" as const),
+    sellerId: `seller-${index + 1}`,
+    isSold: Math.random() > 0.8,
+    createdAt: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000),
+    seller: {
+      id: `seller-${index + 1}`,
+      name: `Seller ${index + 1}`,
+      avatar: "/sample.png",
+    },
+  }));
+}
+
+// 상품 필터 검증 스키마
+const productFiltersSchema = z.object({
+  q: z.string().optional(),
+  category: z.string().optional(),
+  condition: z.enum(["new", "like_new", "good", "fair", "poor"]).optional(),
+  priceMin: z.string().optional(),
+  priceMax: z.string().optional(),
+  location: z.string().optional(),
+  page: z.coerce.number().min(1).default(1),
+  limit: z.coerce.number().min(1).max(100).default(20),
+  sortBy: z.enum(["date", "price", "title"]).default("date"),
+  sortOrder: z.enum(["asc", "desc"]).default("desc"),
+});
+
+// 상품 목록 응답 스키마
+const productListSchema = z.object({
+  products: z.array(z.object({
+    id: z.string(),
+    title: z.string(),
+    price: z.number(),
+    currency: z.string(),
+    condition: z.string(),
+    category: z.string(),
+    location: z.string(),
+    images: z.array(z.string()),
+    image: z.string().optional(), // 첫 번째 이미지
+    priceType: z.enum(["fixed", "free", "negotiable"]).default("fixed"),
+    sellerId: z.string(),
+    isSold: z.boolean().default(false),
+    createdAt: z.date(),
+    seller: z.object({
+      id: z.string(),
+      name: z.string(),
+      avatar: z.string().optional(),
+    }),
+  })),
+  totalCount: z.number(),
+  currentPage: z.number(),
+  totalPages: z.number(),
+  hasNextPage: z.boolean(),
+  hasPrevPage: z.boolean(),
+});
+
+type ProductFilters = z.infer<typeof productFiltersSchema>;
+type ProductList = z.infer<typeof productListSchema>;
 
 export const meta: Route.MetaFunction = () => {
   return [
@@ -52,8 +151,8 @@ export const loader = async ({ request }: { request: Request }) => {
     // 정렬 적용
     if (filters.sortBy === "price") {
       products.sort((a, b) => {
-        const priceA = parseInt(a.price.replace("THB ", ""));
-        const priceB = parseInt(b.price.replace("THB ", ""));
+        const priceA = a.price;
+        const priceB = b.price;
         return filters.sortOrder === "asc" ? priceA - priceB : priceB - priceA;
       });
     } else if (filters.sortBy === "date") {
@@ -266,17 +365,17 @@ export default function BrowseListingsPage() {
           <div className="flex space-x-2 sm:space-x-3 md:space-x-4 lg:space-x-5 xl:space-x-6">
             {PRODUCT_CATEGORIES.slice(0, 9).map((cat, index) => (
               <div 
-                key={cat.name} 
+                key={cat.value} 
                 className={`
                   flex flex-col items-center min-w-[65px] cursor-pointer hover:scale-105 transition-transform
                   ${index >= 4 ? 'hidden md:flex' : ''}
                 `}
-                onClick={() => handleCategoryClick(cat.name)}
+                onClick={() => handleCategoryClick(cat.label)}
               >
                 <div className="w-15 h-15 flex items-center justify-center rounded-full bg-purple-100 text-2xl mb-2 hover:bg-purple-200 transition-colors">
                   {cat.icon}
                 </div>
-                <span className="text-sm text-center">{cat.name}</span>
+                <span className="text-sm text-center">{cat.label}</span>
               </div>
             ))}
           </div>
@@ -293,7 +392,7 @@ export default function BrowseListingsPage() {
         </div>
 
         {/* 상품 카드 그리드 */}
-        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-4 items-start mx-auto sm:max-w-[100vw] md:max-w-[100vw]">
+        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-x-2 gap-y-10 items-start mx-auto sm:max-w-[100vw] md:max-w-[100vw]">
           {displayedProducts.map((product) => (
             <BlurFade key={product.id}>
               <ProductCard
@@ -301,6 +400,8 @@ export default function BrowseListingsPage() {
                 image={product.image || "/sample.png"}
                 title={product.title}
                 price={product.price}
+                currency={product.currency}
+                priceType={product.priceType || "fixed"}
                 seller={product.sellerId}
                 isSold={product.isSold || false}
               />

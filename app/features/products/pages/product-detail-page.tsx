@@ -1,11 +1,23 @@
 import React, { useState } from "react";
 import { Button } from "~/common/components/ui/button";
 import { Card } from "~/common/components/ui/card";
-import { Separator } from "~/common/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "~/common/components/ui/avatar";
-import { paramsSchema } from "~/lib/schemas";
-import { useParams } from "react-router";
+import { useParams, useLoaderData, useNavigate } from "react-router";
 import { HeartIcon } from "lucide-react";
+import { getCurrentUserId } from "~/lib/utils";
+import { z } from "zod";
+
+// Mock track product view function (임시)
+async function trackProductView(productId: string, userId?: string | null, request?: Request) {
+  // 실제로는 데이터베이스에 조회 기록을 저장
+  console.log(`Product view tracked: ${productId} by user: ${userId || 'anonymous'}`);
+  return Promise.resolve();
+}
+
+// URL 파라미터 검증 스키마
+const paramsSchema = z.object({
+  id: z.string().min(1, "Product ID is required"),
+});
 
 export const meta = () => {
   return [
@@ -14,13 +26,40 @@ export const meta = () => {
   ];
 };
 
+// Loader function for tracking product views
+export const loader = async ({ request, params }: { request: Request; params: any }) => {
+  try {
+    // URL 파라미터 검증
+    const validationResult = paramsSchema.safeParse(params);
+    
+    if (!validationResult.success) {
+      throw new Response("Invalid Product ID", { status: 400 });
+    }
+
+    const { id: productId } = validationResult.data;
+
+    // 실제 사용자 ID 가져오기 (비로그인 사용자는 null)
+    const userId = getCurrentUserId(request);
+
+    // 상품 조회 추적 (IP 주소 추적 없음)
+    await trackProductView(productId, userId, request);
+
+    return { productId, userId };
+  } catch (error) {
+    console.error("Product detail loader error:", error);
+    throw error;
+  }
+};
+
 export default function ProductDetailPage() {
   const params = useParams();
+  const navigate = useNavigate();
+  const loaderData = useLoaderData() as { productId: string; userId: string | null };
   const [selectedImage, setSelectedImage] = useState(0);
   const [isLiked, setIsLiked] = useState(false);
 
   // URL 파라미터 검증
-  const validationResult = paramsSchema.productId.safeParse(params);
+  const validationResult = paramsSchema.safeParse(params);
   
   if (!validationResult.success) {
     return (
@@ -46,6 +85,8 @@ export default function ProductDetailPage() {
     category: "Sports & Outdoor",
     location: "Bangkok, Thailand",
     postedDate: "2 days ago",
+    isSold: Math.random() > 0.7, // 30% 확률로 판매완료 (테스트용)
+    priceType: Math.random() > 0.8 ? "free" : "fixed", // 20% 확률로 무료 (테스트용)
     images: [
       "/sample.png",
       "/sample.png",
@@ -72,6 +113,22 @@ export default function ProductDetailPage() {
     tags: ["Vintage", "Well Maintained", "Includes Accessories", "Quick Sale"]
   };
 
+  const isFree = product.priceType === "free";
+
+  // Handle contact seller button click
+  const handleContactSeller = () => {
+    // Navigate to messages page with product context
+    navigate("/my/messages", {
+      state: {
+        productId: product.id,
+        productTitle: product.title,
+        sellerId: "seller-123", // Mock seller ID
+        sellerName: product.seller.name,
+        fromProduct: true
+      }
+    });
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 py-8">
@@ -79,12 +136,22 @@ export default function ProductDetailPage() {
           
           {/* Product Images */}
           <div className="space-y-4">
-            <div className="aspect-square bg-white rounded-lg overflow-hidden shadow-sm">
+            <div className="aspect-square bg-white rounded-lg overflow-hidden shadow-sm relative">
               <img 
                 src={product.images[selectedImage]} 
                 alt={product.title}
                 className="w-full h-full object-cover"
               />
+              {product.isSold && (
+                <div className="absolute top-4 right-4 bg-red-500 text-white text-sm px-3 py-1 rounded-full font-medium shadow-lg">
+                  SOLD
+                </div>
+              )}
+              {isFree && !product.isSold && (
+              <div className="absolute top-3 right-3 bg-green-500 text-white text-xs px-2 py-1 rounded-full font-medium shadow-lg">
+                FREE
+              </div>
+            )}
             </div>
             
             {/* Thumbnail Images */}
@@ -93,7 +160,7 @@ export default function ProductDetailPage() {
                 <button
                   key={index}
                   onClick={() => setSelectedImage(index)}
-                  className={`aspect-square bg-white rounded-lg overflow-hidden border-2 transition-colors ${
+                  className={`aspect-square bg-white rounded-lg overflow-hidden border-2 transition-colors relative ${
                     selectedImage === index ? 'border-purple-500' : 'border-gray-200'
                   }`}
                 >
@@ -102,6 +169,16 @@ export default function ProductDetailPage() {
                     alt={`${product.title} ${index + 1}`}
                     className="w-full h-full object-cover"
                   />
+                  {product.isSold && (
+                    <div className="absolute top-1 right-1 bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full font-medium shadow-sm">
+                      SOLD
+                    </div>
+                  )}
+                  {isFree && !product.isSold && (
+                    <div className="absolute top-1 right-1 bg-green-500 text-white text-xs px-1.5 py-0.5 rounded-full font-medium shadow-sm">
+                      FREE
+                    </div>
+                  )}
                 </button>
               ))}
             </div>
@@ -129,14 +206,21 @@ export default function ProductDetailPage() {
 
             {/* Action Buttons */}
             <div className="flex gap-3">
-              <Button size="lg" className="flex-1">
-                Contact Seller
+              <Button 
+                size="lg" 
+                className="flex-1"
+                disabled={product.isSold}
+                variant={product.isSold ? "secondary" : "default"}
+                onClick={handleContactSeller}
+              >
+                {product.isSold ? "Item Sold" : "Contact Seller"}
               </Button>
               <Button 
                 variant="outline" 
                 size="lg"
                 onClick={() => setIsLiked(!isLiked)}
                 className={isLiked ? "text-rose-500 border-primary" : ""}
+                disabled={product.isSold}
               >
                 <HeartIcon 
                   className={`w-5 h-5 ${isLiked ? 'fill-rose-500 text-rose-500' : 'text-gray-600'}`} 
@@ -174,19 +258,6 @@ export default function ProductDetailPage() {
               <p className="text-gray-700 leading-relaxed">
                 {product.description}
               </p>
-            </Card>
-
-            {/* Specifications */}
-            <Card className="p-6">
-              <h3 className="text-lg font-semibold mb-4">Specifications</h3>
-              <div className="grid grid-cols-2 gap-4">
-                {Object.entries(product.specifications).map(([key, value]) => (
-                  <div key={key} className="flex justify-between">
-                    <span className="text-gray-600 capitalize">{key}:</span>
-                    <span className="font-medium">{value}</span>
-                  </div>
-                ))}
-              </div>
             </Card>
 
             {/* Tags */}

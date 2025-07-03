@@ -4,8 +4,27 @@ import { Button } from "../../../common/components/ui/button";
 import { Badge } from "../../../common/components/ui/badge";
 import { Separator } from "../../../common/components/ui/separator";
 import { useLoaderData, useRouteError, isRouteErrorResponse, Link } from "react-router";
-import { fetchUserListings } from "../../products/queries";
 import { ProductCard } from "../../products/components/product-card";
+
+// Mock user listings function (임시)
+async function fetchUserListings(userId: string) {
+  const conditions = ["New", "Like New", "Good", "Fair", "Poor"] as const;
+  const categories = ["Electronics", "Clothing", "Home goods", "Sports & Outdoor", "Books", "Toys and games"];
+  
+  return Array.from({ length: 6 }, (_, index) => ({
+    id: `user-listing-${index + 1}`,
+    title: `My Product ${index + 1}`,
+    price: Math.floor(Math.random() * 5000) + 100,
+    currency: "THB",
+    condition: conditions[Math.floor(Math.random() * conditions.length)],
+    category: categories[Math.floor(Math.random() * categories.length)],
+    location: "Bangkok, Thailand",
+    image: "/sample.png",
+    sellerId: userId,
+    isSold: Math.random() > 0.7,
+    createdAt: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000),
+  }));
+}
 
 // Meta function for SEO
 export const meta = () => {
@@ -140,8 +159,11 @@ export default function UserListingsPage({ loaderData }: any) {
               image={listing.image}
               title={listing.title}
               price={listing.price}
+              currency={listing.currency}
+              priceType="fixed"
               seller={listing.sellerId}
               likes={0}
+              isSold={listing.isSold}
             />
           ))}
         </div>

@@ -192,6 +192,23 @@ export const SOCIAL_PLATFORMS = [
   "kakao",
 ] as const;
 
+// Message Types
+export const MESSAGE_TYPES = [
+  { value: "text", label: "Text" },
+  { value: "image", label: "Image" },
+  { value: "file", label: "File" },
+  { value: "audio", label: "Audio" },
+  { value: "video", label: "Video" },
+] as const;
+
+// Message Status
+export const MESSAGE_STATUS = [
+  { value: "sent", label: "Sent" },
+  { value: "delivered", label: "Delivered" },
+  { value: "read", label: "Read" },
+  { value: "failed", label: "Failed" },
+] as const;
+
 // User Profile Defaults
 export const USER_PROFILE_DEFAULTS = {
   LANGUAGE: "en",
@@ -224,3 +241,5 @@ export type Currency = typeof CURRENCY_OPTIONS[number]["value"];
 export type Timezone = typeof TIMEZONE_OPTIONS[number]["value"];
 export type NotificationPriority = typeof NOTIFICATION_PRIORITIES[number]["value"];
 export type SocialPlatform = typeof SOCIAL_PLATFORMS[number];
+export type MessageType = typeof MESSAGE_TYPES[number]["value"];
+export type MessageStatus = typeof MESSAGE_STATUS[number]["value"];

@@ -17,6 +17,7 @@ import {
 } from "@heroicons/react/24/outline";
 import { useNavigate, useSearchParams } from "react-router";
 import { EMOTIONAL_QUESTIONS, ENVIRONMENTAL_IMPACT, SITUATIONS } from '../constants';
+import { PRODUCT_LIMITS } from '../../products/constants';
 
 
 
@@ -78,6 +79,28 @@ export default function LetGoBuddyPage() {
     const files = Array.from(event.target.files || []);
     if (files.length > 5) {
       alert("You can upload maximum 5 files");
+      return;
+    }
+
+    // MIME 타입 검증
+    const invalidFiles = files.filter(file => 
+      !PRODUCT_LIMITS.ALLOWED_IMAGE_TYPES.includes(file.type as any)
+    );
+    
+    if (invalidFiles.length > 0) {
+      const invalidTypes = invalidFiles.map(file => file.type).join(", ");
+      alert(`Invalid file type(s): ${invalidTypes}. Only JPEG, PNG, and WebP images are allowed.`);
+      return;
+    }
+
+    // 파일 크기 검증
+    const oversizedFiles = files.filter(file => 
+      file.size > PRODUCT_LIMITS.MAX_FILE_SIZE
+    );
+    
+    if (oversizedFiles.length > 0) {
+      const maxSizeMB = PRODUCT_LIMITS.MAX_FILE_SIZE / (1024 * 1024);
+      alert(`File(s) too large. Maximum file size is ${maxSizeMB}MB.`);
       return;
     }
     
@@ -508,6 +531,9 @@ export default function LetGoBuddyPage() {
           {previewUrls.length > 0 && (
             <span className="text-xs text-neutral-500 mt-2">{previewUrls.length}/5 images</span>
           )}
+          <span className="text-xs text-gray-400 mt-1">
+            Supported formats: JPEG, PNG, WebP (max 10MB each)
+          </span>
         </CardContent>
       </Card>
 

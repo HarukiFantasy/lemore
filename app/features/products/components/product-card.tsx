@@ -5,27 +5,22 @@ import { HoverCard, HoverCardTrigger, HoverCardContent } from "~/common/componen
 import { Badge } from "~/common/components/ui/badge";
 import { ShineBorder } from "components/magicui/shine-border";
 
+// 가격 포맷팅 함수
+const formatPrice = (price: number, currency: string = "THB"): string => {
+  return `${currency} ${price.toLocaleString()}`;
+};
+
 // Props 검증 스키마
 const productCardSchema = z.object({
   productId: z.string().min(1, "Product ID is required"),
-  image: z.string().min(1, "Image is required").refine(
-    (value) => {
-      // 완전한 URL이거나 상대 경로인지 확인
-      try {
-        new URL(value);
-        return true;
-      } catch {
-        // 상대 경로인 경우 (예: "/sample.png")
-        return value.startsWith('/') || value.startsWith('./') || value.startsWith('../');
-      }
-    },
-    "Image URL must be valid (absolute URL or relative path)"
-  ),
+  image: z.string().min(1, "Image is required"),
   title: z.string().min(1, "Title is required").max(100, "Title must be less than 100 characters"),
-  price: z.string().min(1, "Price is required").regex(/^THB\s\d+/, "Price must be in format 'THB [number]'"),
+  price: z.number().min(0, "Price must be non-negative"),
+  currency: z.string().optional().default("THB"),
   seller: z.string().optional(),
   likes: z.number().min(0, "Likes cannot be negative").optional(),
   isSold: z.boolean().optional(),
+  priceType: z.string().optional().default("fixed"),
 });
 
 type ProductCardProps = z.infer<typeof productCardSchema>;
@@ -63,9 +58,11 @@ export function ProductCard({
   image, 
   title, 
   price, 
+  currency = "THB",
   seller = "Multiple Owners", 
   likes = 0,
-  isSold = false
+  isSold = false,
+  priceType = "fixed"
 }: ProductCardProps) {
   // Props 검증
   const validationResult = productCardSchema.safeParse({ 
@@ -73,9 +70,11 @@ export function ProductCard({
     image, 
     title, 
     price, 
+    currency,
     seller, 
     likes,
-    isSold
+    isSold,
+    priceType
   });
   
   if (!validationResult.success) {
@@ -91,6 +90,7 @@ export function ProductCard({
   }
 
   const sellerStats = getSellerStats(seller);
+  const isFree = priceType === "free";
 
     return (
     <Link to={`/secondhand/product/${productId}`}>
@@ -101,13 +101,18 @@ export function ProductCard({
           shineColor={["#fef3c7", "#fed7aa", "#fdba74"]}
           className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-lg"
         />
-        <div className="bg-white rounded-lg shadow h-full flex flex-col">
+        <div className="bg-white rounded-lg shadow h-full flex flex-col pb-2">
           <div className="relative w-full h-40 sm:h-48 md:h-60 overflow-hidden rounded-t-lg">
             <img src={image} className="object-cover w-full h-full group-hover:scale-110 group-hover:brightness-110 transition-all duration-300 ease-out" alt={title} />
             <button className="absolute top-3 left-3 bg-black/60 text-white text-xs px-3 py-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">Save</button>
             {isSold && (
               <div className="absolute top-3 right-3 bg-red-500 text-white text-xs px-2 py-1 rounded-full font-medium shadow-lg">
-                판매완료
+                SOLD
+              </div>
+            )}
+            {isFree && !isSold && (
+              <div className="absolute top-3 right-3 bg-green-500 text-white text-xs px-2 py-1 rounded-full font-medium shadow-lg">
+                FREE
               </div>
             )}
           </div>
@@ -165,8 +170,8 @@ export function ProductCard({
                 </div>
               </HoverCardContent>
             </HoverCard>
-            <span className="text-sm font-semibold text-purple-700 mt-1">{price}</span>
-            <div className="flex items-center gap-4 mt-2">
+            <div className="flex items-center justify-between mt-1">
+              <span className="text-sm font-semibold text-purple-700">{formatPrice(price, currency)}</span>
               <div className="flex items-center gap-1 text-neutral-500 text-xs">
                 <HeartIcon className="w-4 h-4" />
                 <span>{likes}</span>

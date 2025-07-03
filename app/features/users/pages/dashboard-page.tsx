@@ -1,11 +1,56 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../../common/components/ui/card";
 import { Button } from "../../../common/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "../../../common/components/ui/avatar";
-import { Badge } from "../../../common/components/ui/badge";
 import { Separator } from "../../../common/components/ui/separator";
-import { useLoaderData, useRouteError, isRouteErrorResponse, Link } from "react-router";
-import { fetchMockDashboardData } from "../queries";
-import { fetchUserListingsCount } from "../../products/queries";
+import { Link } from "react-router";
+// Mock user listings count function (임시)
+async function fetchUserListingsCount(userId: string) {
+  // 실제로는 데이터베이스에서 사용자의 활성 리스팅 개수를 가져옴
+  return Math.floor(Math.random() * 10) + 1; // 1-10 사이의 랜덤 값
+}
+
+// Mock dashboard data function (임시)
+async function fetchMockDashboardData() {
+  return {
+    success: true,
+    data: {
+      stats: {
+        activeListings: 0,
+        totalSales: 0,
+        unreadMessages: 0,
+        activeListingsChange: '+12%',
+        totalSalesChange: '+8%',
+        unreadMessagesChange: '-5%'
+      },
+      recentActivity: [
+        {
+          id: '1',
+          type: 'listing_created',
+          title: 'New listing created',
+          description: 'You created a new listing: Vintage Bicycle',
+          timestamp: '2 hours ago',
+          icon: '📦'
+        },
+        {
+          id: '2',
+          type: 'message_received',
+          title: 'New message received',
+          description: 'Sarah Johnson sent you a message about your listing',
+          timestamp: '4 hours ago',
+          icon: '💬'
+        },
+        {
+          id: '3',
+          type: 'listing_viewed',
+          title: 'Listing viewed',
+          description: 'Your Vintage Bicycle listing was viewed 15 times today',
+          timestamp: '1 day ago',
+          icon: '👁️'
+        }
+      ]
+    }
+  };
+}
 import { NumberTicker } from 'components/magicui/number-ticker';
 
 // Meta function for SEO
@@ -91,7 +136,7 @@ export const loader = async ({ request }: any) => {
     if (!dashboardResult.success || !dashboardResult.data) {
       throw new Response("Failed to load dashboard data", { 
         status: 500,
-        statusText: dashboardResult.errors?.join(", ") || "Unknown error"
+        statusText: "Unknown error"
       });
     }
 

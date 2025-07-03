@@ -3,16 +3,33 @@ import { Input } from "~/common/components/ui/input";
 import { Button } from "~/common/components/ui/button";
 import { Textarea } from "~/common/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/common/components/ui/select";
+import { Badge } from "~/common/components/ui/badge";
 import { useNavigate, useLocation } from "react-router";
-import { productFormSchema, type ProductFormData } from "~/lib/schemas";
-import { PRODUCT_CATEGORIES } from "../categories";
+import { PRODUCT_CATEGORIES, PRICE_TYPES, PRODUCT_LIMITS } from "../constants";
 import { LOCATIONS } from "~/common/data/locations";
+import { z } from "zod";
+
+// 상품 폼 검증 스키마
+const productFormSchema = z.object({
+  title: z.string().min(1, "Title is required").max(100, "Title must be less than 100 characters"),
+  price: z.string().min(1, "Price is required"),
+  currency: z.string().min(1, "Currency is required"),
+  description: z.string().min(10, "Description must be at least 10 characters").max(1000, "Description must be less than 1000 characters"),
+  condition: z.enum(["new", "like_new", "good", "fair", "poor"]),
+  category: z.string().min(1, "Category is required"),
+  location: z.string().min(1, "Location is required"),
+  images: z.array(z.instanceof(File)).min(1, "At least one image is required").max(5, "Maximum 5 images allowed"),
+});
+
+type ProductFormData = z.infer<typeof productFormSchema>;
 
 export default function SubmitAListingPage() {
   const [images, setImages] = useState<File[]>([]);
   const [previews, setPreviews] = useState<string[]>([]);
   const [title, setTitle] = useState("");
   const [price, setPrice] = useState("");
+  const [currency, setCurrency] = useState("THB");
+  const [priceType, setPriceType] = useState("fixed");
   const [description, setDescription] = useState("");
   const [condition, setCondition] = useState("");
   const [category, setCategory] = useState("");
@@ -28,11 +45,19 @@ export default function SubmitAListingPage() {
     if (prefillData && fromLetGoBuddy) {
       setTitle(prefillData.title || "");
       setPrice(prefillData.price !== undefined && prefillData.price !== null ? String(prefillData.price) : "");
+      setCurrency(prefillData.currency || "THB");
+      // 무료나눔 상태가 있으면 priceType을 free로 강제 세팅
+      if (prefillData.priceType) {
+        setPriceType(prefillData.priceType);
+      } else if (prefillData.isGiveaway) {
+        setPriceType("free");
+      } else {
+        setPriceType("fixed");
+      }
       setDescription(prefillData.description || "");
       setCondition(prefillData.condition || "");
       setCategory(prefillData.category || "");
       setLocation(prefillData.location || "");
-      
       // Handle images from Let Go Buddy
       if (prefillData.images && prefillData.images.length > 0) {
         setImages(prefillData.images);
@@ -41,16 +66,39 @@ export default function SubmitAListingPage() {
     }
   }, [prefillData, fromLetGoBuddy]);
 
-  // Check if this is a giveaway item
-  const isGiveaway = locationState.state?.isGiveaway || false;
+  const isFree = priceType === "free";
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files ? Array.from(e.target.files) : [];
     const totalFiles = images.length + files.length;
+    
     if (totalFiles > 5) {
       alert("You can upload up to 5 images.");
       return;
     }
+
+    // MIME 타입 검증
+    const invalidFiles = files.filter(file => 
+      !PRODUCT_LIMITS.ALLOWED_IMAGE_TYPES.includes(file.type as any)
+    );
+    
+    if (invalidFiles.length > 0) {
+      const invalidTypes = invalidFiles.map(file => file.type).join(", ");
+      alert(`Invalid file type(s): ${invalidTypes}. Only JPEG, PNG, and WebP images are allowed.`);
+      return;
+    }
+
+    // 파일 크기 검증
+    const oversizedFiles = files.filter(file => 
+      file.size > PRODUCT_LIMITS.MAX_FILE_SIZE
+    );
+    
+    if (oversizedFiles.length > 0) {
+      const maxSizeMB = PRODUCT_LIMITS.MAX_FILE_SIZE / (1024 * 1024);
+      alert(`File(s) too large. Maximum file size is ${maxSizeMB}MB.`);
+      return;
+    }
+
     setImages(prev => [...prev, ...files]);
     setPreviews(prev => [
       ...prev,
@@ -66,7 +114,8 @@ export default function SubmitAListingPage() {
   const validateForm = (): boolean => {
     const formData: ProductFormData = {
       title,
-      price,
+      price: isFree ? "0" : price, // Free items have price 0
+      currency,
       description,
       condition: condition as any,
       category,
@@ -78,7 +127,7 @@ export default function SubmitAListingPage() {
     
     if (!result.success) {
       const newErrors: Record<string, string> = {};
-      result.error.errors.forEach(error => {
+      result.error.errors.forEach((error: any) => {
         const field = error.path.join('.');
         newErrors[field] = error.message;
       });
@@ -136,6 +185,9 @@ export default function SubmitAListingPage() {
             disabled={images.length >= 5}
           />
           <span className="text-xs text-neutral-500 mt-2">{images.length}/5 images</span>
+          <span className="text-xs text-gray-400 mt-1">
+            Supported formats: JPEG, PNG, WebP (max 10MB each)
+          </span>
           {errors.images && <span className="text-xs text-red-500 mt-1">{errors.images}</span>}
         </label>
       </div>
@@ -154,21 +206,78 @@ export default function SubmitAListingPage() {
         </div>
         
         <div>
-          <Input
-            type="text"
-            placeholder="Price (e.g., THB 1000)"
-            value={price}
-            onChange={e => setPrice(e.target.value)}
-            className={`${errors.price ? "border-red-500" : ""} ${isGiveaway ? "bg-green-50 border-green-300" : ""}`}
-            disabled={isGiveaway}
-          />
-          {errors.price && <span className="text-xs text-red-500 mt-1">{errors.price}</span>}
-          {isGiveaway && <span className="text-xs text-green-600 mt-1">🎁 This is a free giveaway item</span>}
+          <Select value={priceType} onValueChange={setPriceType}>
+            <SelectTrigger className={errors.priceType ? "border-red-500" : ""}>
+              <SelectValue placeholder="Select Price Type" />
+            </SelectTrigger>
+            <SelectContent>
+              {PRICE_TYPES.map(type => (
+                <SelectItem key={type.value} value={type.value}>
+                  {type.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {errors.priceType && <span className="text-xs text-red-500 mt-1">{errors.priceType}</span>}
+        </div>
+        
+        <div className="space-y-3">
+          <div className="relative">
+            <div className="flex items-center gap-2">
+              <div className="relative flex-1">
+                <Input
+                  type="text"
+                  placeholder="0"
+                  value={isFree ? "0" : price}
+                  onChange={e => {
+                    if (!isFree) {
+                      // 숫자와 쉼표만 허용
+                      const value = e.target.value.replace(/[^0-9,]/g, '');
+                      setPrice(value);
+                    }
+                  }}
+                  className={`${errors.price ? "border-red-500" : ""} ${
+                    isFree ? "bg-green-50 border-green-300 text-green-700" : ""
+                  } pr-12 text-lg font-medium`}
+                  disabled={isFree}
+                />
+                {!isFree && price && (
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-500 font-medium" />
+                )}
+                {isFree && (
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-green-600 font-medium" />
+                )}
+              </div>
+              <Select value={currency} onValueChange={setCurrency} disabled={isFree}>
+                <SelectTrigger className={`w-20 ${isFree ? "bg-green-50 border-green-300" : ""}`}>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="THB">THB</SelectItem>
+                  <SelectItem value="USD">USD</SelectItem>
+                  <SelectItem value="EUR">EUR</SelectItem>
+                  <SelectItem value="KRW">KRW</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          
+          {errors.price && <span className="text-xs text-red-500">{errors.price}</span>}
+          {errors.currency && <span className="text-xs text-red-500">{errors.currency}</span>}
+          
+          {isFree && (
+            <div className="flex items-center gap-2">
+              <Badge variant="secondary" className="bg-green-100 text-green-700 border-green-200 hover:bg-green-100">
+                🎁 Free item
+              </Badge>
+              <span className="text-xs text-green-600">No payment required</span>
+            </div>
+          )}
         </div>
         
         <div>
           <Textarea
-            placeholder="Description"
+            placeholder="Description & Specifications"
             value={description}
             onChange={e => setDescription(e.target.value)}
             className={`min-h-[100px] ${errors.description ? "border-red-500" : ""}`}
@@ -199,8 +308,8 @@ export default function SubmitAListingPage() {
             </SelectTrigger>
             <SelectContent>
               {PRODUCT_CATEGORIES.map(cat => (
-                <SelectItem key={cat.name} value={cat.name}>
-                  {cat.icon} {cat.name}
+                <SelectItem key={cat.value} value={cat.value}>
+                  {cat.icon} {cat.label}
                 </SelectItem>
               ))}
             </SelectContent>

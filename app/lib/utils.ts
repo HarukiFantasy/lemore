@@ -187,3 +187,73 @@ export function getCategoryColors(category: string) {
     hover: "hover:bg-gray-200"
   };
 }
+
+/**
+ * 사용자 인증 상태를 확인하는 함수
+ * 실제 환경에서는 세션이나 토큰을 확인해야 함
+ */
+export function getCurrentUserId(request?: Request): string | null {
+  try {
+    // TODO: 실제 인증 로직 구현
+    // 1. 세션 쿠키 확인
+    // 2. JWT 토큰 확인
+    // 3. API 키 확인 등
+    
+    if (request) {
+      // 쿠키에서 세션 확인
+      const cookies = request.headers.get("cookie");
+      if (cookies) {
+        const sessionMatch = cookies.match(/session=([^;]+)/);
+        if (sessionMatch) {
+          // TODO: 세션 검증 로직
+          // return validateSession(sessionMatch[1]);
+        }
+      }
+      
+      // Authorization 헤더 확인
+      const authHeader = request.headers.get("authorization");
+      if (authHeader?.startsWith("Bearer ")) {
+        const token = authHeader.substring(7);
+        // TODO: JWT 토큰 검증 로직
+        // return validateJWT(token);
+      }
+    }
+    
+    // 개발 환경에서는 null 반환 (비로그인 상태)
+    return null;
+    
+  } catch (error) {
+    console.error("Error getting current user ID:", error);
+    return null;
+  }
+}
+
+/**
+ * 비로그인 사용자 여부 확인
+ */
+export function isAnonymousUser(userId: string | null): boolean {
+  return userId === null;
+}
+
+/**
+ * IP 주소 추출 함수
+ * 비활성화: 사이드 프로젝트에서는 불필요
+ */
+// export function getClientIP(request: Request): string {
+//   const forwarded = request.headers.get("x-forwarded-for");
+//   const realIp = request.headers.get("x-real-ip");
+//   const cfConnectingIp = request.headers.get("cf-connecting-ip");
+//   
+//   return forwarded?.split(",")[0] || 
+//          realIp || 
+//          cfConnectingIp || 
+//          "unknown";
+// }
+
+/**
+ * User Agent 추출 함수
+ * 비활성화: 사이드 프로젝트에서는 불필요
+ */
+// export function getClientUserAgent(request: Request): string {
+//   return request.headers.get("user-agent") || "unknown";
+// }

@@ -24,7 +24,9 @@ const mockLikedProducts = [
   {
     id: "product-1",
     title: "Vintage Bicycle - Perfect Condition",
-    price: "THB 2,500",
+    price: 2500,
+    currency: "THB",
+    priceType: "fixed",
     image: "/sample.png",
     seller: "Sarah Johnson",
     likes: 15,
@@ -36,7 +38,9 @@ const mockLikedProducts = [
   {
     id: "product-2",
     title: "MacBook Pro 2021 - Excellent Condition",
-    price: "THB 45,000",
+    price: 4500,
+    currency: "THB",
+    priceType: "fixed",
     image: "/sample.png",
     seller: "TechGuru",
     likes: 32,
@@ -48,7 +52,9 @@ const mockLikedProducts = [
   {
     id: "product-3",
     title: "Designer Handbag - Authentic",
-    price: "THB 8,500",
+    price: 8500,
+    currency: "THB",
+    priceType: "fixed",
     image: "/sample.png",
     seller: "Fashionista",
     likes: 8,
@@ -60,7 +66,9 @@ const mockLikedProducts = [
   {
     id: "product-4",
     title: "Gaming Console - Complete Set",
-    price: "THB 12,000",
+    price: 12000,
+    currency: "THB",
+    priceType: "fixed",
     image: "/sample.png",
     seller: "GameMaster",
     likes: 25,
@@ -72,7 +80,9 @@ const mockLikedProducts = [
   {
     id: "product-5",
     title: "Vintage Camera Collection",
-    price: "THB 15,000",
+    price: 15000,
+    currency: "THB",
+    priceType: "fixed",
     image: "/sample.png",
     seller: "PhotoPro",
     likes: 12,
@@ -84,7 +94,9 @@ const mockLikedProducts = [
   {
     id: "product-6",
     title: "Mountain Bike - Professional Grade",
-    price: "THB 18,500",
+    price: 18500,
+    currency: "THB",
+    priceType: "fixed",
     image: "/sample.png",
     seller: "BikeExpert",
     likes: 19,
@@ -114,8 +126,8 @@ export default function LikesPage() {
     .sort((a, b) => {
       switch (sortBy) {
         case "price":
-          const priceA = parseInt(a.price.replace("THB ", "").replace(",", ""));
-          const priceB = parseInt(b.price.replace("THB ", "").replace(",", ""));
+          const priceA = a.price;
+          const priceB = b.price;
           return priceA - priceB;
         case "likes":
           return b.likes - a.likes;
@@ -195,6 +207,8 @@ export default function LikesPage() {
                   price={product.price}
                   seller={product.seller}
                   likes={product.likes}
+                  currency={product.currency}
+                  priceType={product.priceType}
                 />
                 {/* Unlike Button */}
                 <Button

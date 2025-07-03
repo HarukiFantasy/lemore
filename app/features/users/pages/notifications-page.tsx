@@ -6,56 +6,99 @@ import { Card, CardContent, CardHeader, CardTitle } from "~/common/components/ui
 import { Badge } from "~/common/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "~/common/components/ui/avatar";
 import { AnimatedList } from "../../../../components/magicui/animated-list";
-import type { Notification } from "../schema";
+import { z } from "zod";
+
+// Notification schemas for data validation
+export const notificationFiltersSchema = z.object({
+  type: z.enum(["all", "message", "sale", "review", "system"]).optional(),
+  unreadOnly: z.boolean().optional(),
+  limit: z.number().min(1).max(100).default(20),
+  page: z.number().min(1).default(1),
+});
+
+export const notificationSchema = z.object({
+  id: z.string(),
+  type: z.enum(["message", "sale", "review", "system"]),
+  title: z.string(),
+  content: z.string(),
+  timestamp: z.string(),
+  isRead: z.boolean(),
+  avatar: z.string().optional(),
+  avatarFallback: z.string().optional(),
+  metadata: z.record(z.any()).optional(),
+  actions: z.array(z.object({
+    label: z.string(),
+    action: z.string(),
+    variant: z.enum(["default", "outline", "destructive"]),
+  })).optional(),
+});
+
+export const notificationListSchema = z.object({
+  notifications: z.array(notificationSchema),
+  totalCount: z.number(),
+  unreadCount: z.number(),
+  hasMore: z.boolean(),
+  filters: z.object({
+    type: z.enum(["all", "message", "sale", "review", "system"]),
+    unreadOnly: z.boolean(),
+    limit: z.number(),
+    page: z.number(),
+  }).optional(),
+});
+
+// TypeScript types
+export type NotificationFilters = z.infer<typeof notificationFiltersSchema>;
+export type Notification = z.infer<typeof notificationSchema>;
+export type NotificationList = z.infer<typeof notificationListSchema>;
 
 const mockNotifications: Notification[] = [
   {
     id: '1',
     type: 'message',
-    title: '새로운 메시지',
-    message: 'Sarah님이 당신에게 메시지를 보냈습니다.',
-    timestamp: '2분 전',
+    title: 'New Message',
+    content: 'Sarah sent you a message.',
+    timestamp: '2 minutes ago',
     isRead: false,
     avatar: 'https://github.com/shadcn.png',
-    username: 'Sarah'
+    avatarFallback: 'S'
   },
   {
     id: '2',
-    type: 'like',
-    title: '좋아요',
-    message: 'Mike님이 당신의 게시물을 좋아합니다.',
-    timestamp: '5분 전',
+    type: 'sale',
+    title: 'Sale Notification',
+    content: 'Mike is interested in your product.',
+    timestamp: '5 minutes ago',
     isRead: false,
     avatar: 'https://github.com/mike.png',
-    username: 'Mike'
+    avatarFallback: 'M'
   },
   {
     id: '3',
-    type: 'follow',
-    title: '새 팔로워',
-    message: 'Emma님이 당신을 팔로우하기 시작했습니다.',
-    timestamp: '10분 전',
+    type: 'review',
+    title: 'Review Notification',
+    content: 'Emma left a review on your product.',
+    timestamp: '10 minutes ago',
     isRead: true,
     avatar: 'https://github.com/emma.png',
-    username: 'Emma'
+    avatarFallback: 'E'
   },
   {
     id: '4',
     type: 'system',
-    title: '시스템 알림',
-    message: '새로운 기능이 추가되었습니다. 확인해보세요!',
-    timestamp: '1시간 전',
+    title: 'System Notification',
+    content: 'New features have been added. Check them out!',
+    timestamp: '1 hour ago',
     isRead: true
   },
   {
     id: '5',
     type: 'message',
-    title: '새로운 메시지',
-    message: 'John님이 당신에게 메시지를 보냈습니다.',
-    timestamp: '2시간 전',
+    title: 'New Message',
+    content: 'John sent you a message.',
+    timestamp: '2 hours ago',
     isRead: true,
     avatar: 'https://github.com/john.png',
-    username: 'John'
+    avatarFallback: 'J'
   }
 ];
 
@@ -63,9 +106,9 @@ const getNotificationIcon = (type: Notification['type']) => {
   switch (type) {
     case 'message':
       return <MessageCircle className="w-4 h-4 text-blue-500" />;
-    case 'like':
+    case 'sale':
       return <Heart className="w-4 h-4 text-red-500" />;
-    case 'follow':
+    case 'review':
       return <User className="w-4 h-4 text-green-500" />;
     case 'system':
       return <Bell className="w-4 h-4 text-purple-500" />;
@@ -133,9 +176,9 @@ export function NotificationsPage({ isOpen, onClose }: NotificationsPageProps) {
                     )}
                 </div>
               <div>
-                <h2 className="text-xl font-semibold">읽지 않은 알림</h2>
+                <h2 className="text-xl font-semibold">Unread Notifications</h2>
                 <p className="text-sm text-muted-foreground">
-                  {unreadCount > 0 ? `${unreadCount}개의 새 알림` : '모든 알림을 확인했습니다'}
+                  {unreadCount > 0 ? `${unreadCount} new notifications` : 'All notifications checked'}
                 </p>
                 </div>
               </div>
@@ -160,7 +203,7 @@ export function NotificationsPage({ isOpen, onClose }: NotificationsPageProps) {
                   onClick={markAllAsRead}
                   className="w-full hover:bg-blue-50 hover:border-blue-300 transition-colors"
                 >
-                  모두 읽음으로 표시
+                  Mark All as Read
                 </Button>
               </div>
             )}
@@ -171,10 +214,10 @@ export function NotificationsPage({ isOpen, onClose }: NotificationsPageProps) {
                 <div className="flex flex-col items-center justify-center h-full text-center p-6">
                   <Bell className="w-12 h-12 text-muted-foreground/50 mb-4" />
                   <h3 className="text-lg font-medium text-muted-foreground mb-2">
-                    읽지 않은 알림이 없습니다
+                    No unread notifications
                   </h3>
                   <p className="text-sm text-muted-foreground">
-                    모든 알림을 확인했습니다.
+                    All notifications have been checked.
                   </p>
                 </div>
               ) : (
@@ -188,19 +231,19 @@ export function NotificationsPage({ isOpen, onClose }: NotificationsPageProps) {
                       transition={{ duration: 0.4, ease: "easeInOut" }}
                       layout
                     >
-                                             <Card 
-                         className={`cursor-pointer transition-all duration-200 hover:shadow-md hover:scale-[1.02] active:scale-[0.98] ${
-                           'bg-blue-50 border-blue-200 hover:bg-blue-100'
-                         }`}
-                         onClick={() => markAsRead(notification.id)}
-                       >
+                    <Card 
+                      className={`cursor-pointer transition-all duration-200 hover:shadow-md hover:scale-[1.02] active:scale-[0.98] ${
+                      'bg-blue-50 border-blue-200 hover:bg-blue-100'
+                      }`}
+                      onClick={() => markAsRead(notification.id)}
+                    >
                         <CardContent className="p-4">
                           <div className="flex items-start space-x-3">
                             {notification.avatar ? (
                               <Avatar className="w-10 h-10">
                                 <AvatarImage src={notification.avatar} />
                                 <AvatarFallback>
-                                  {notification.username?.charAt(0)}
+                                  {notification.avatarFallback}
                                 </AvatarFallback>
                               </Avatar>
                             ) : (
@@ -216,21 +259,21 @@ export function NotificationsPage({ isOpen, onClose }: NotificationsPageProps) {
                                     {notification.title}
                                   </h4>
                                   <p className="text-sm text-muted-foreground mb-2">
-                                    {notification.message}
+                                    {notification.content}
                                   </p>
-                                                                     <div className="flex items-center justify-between">
-                                     <span className="text-xs text-muted-foreground">
-                                       {notification.timestamp}
-                                     </span>
-                                     {!notification.isRead && (
-                                       <div className="flex items-center space-x-2">
-                                         <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
-                                         <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-700">
-                                           새
-                                         </Badge>
-                                       </div>
-                                     )}
-                                   </div>
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-xs text-muted-foreground">
+                                      {notification.timestamp}
+                                    </span>
+                                    {!notification.isRead && (
+                                    <div className="flex items-center space-x-2">
+                                    <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
+                                    <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-700">
+                                      New
+                                      </Badge>
+                                    </div>
+                                    )}
+                                  </div>
                                 </div>
                               </div>
                             </div>

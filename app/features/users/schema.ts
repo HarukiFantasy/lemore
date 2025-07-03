@@ -12,13 +12,16 @@ import {
   index,
   pgSchema
 } from "drizzle-orm/pg-core";
+
 import { 
   USER_ROLES, 
   USER_STATUSES, 
   VERIFICATION_STATUSES,
   NOTIFICATION_TYPES,
-  PREFERENCE_CATEGORIES
+  PREFERENCE_CATEGORIES,
+  MESSAGE_TYPES
 } from "./constants";
+import { products } from '../products/schema';
 
 // Enums
 export const userRoles = pgEnum(
@@ -104,8 +107,8 @@ export const userActivityLogs = pgTable("user_activity_logs", {
   resource_type: text("resource_type"), // "profile", "listing", "message", etc.
   resource_id: text("resource_id"),
   details: jsonb().notNull().default({}), // Additional details
-  ip_address: text("ip_address"),
-  user_agent: text("user_agent"),
+  // ip_address: text("ip_address"), // 비활성화: 사이드 프로젝트에서는 불필요
+  // user_agent: text("user_agent"), // 비활성화: 사이드 프로젝트에서는 불필요
   created_at: timestamp("created_at").notNull().defaultNow(),
 }, (table) => ({
   userIdIdx: index("user_activity_logs_user_id_idx").on(table.user_id),
@@ -124,6 +127,47 @@ export const userLikes = pgTable("user_likes", {
   productIdIdx: index("user_likes_product_id_idx").on(table.product_id),
   uniqueUserProduct: index("user_likes_unique_user_product_idx").on(table.user_id, table.product_id),
   createdAtIdx: index("user_likes_created_at_idx").on(table.created_at),
+}));
+
+// User messages table (상품 문의 및 일반 메시지)
+export const userMessages = pgTable("user_messages", {
+  message_id: uuid().primaryKey().defaultRandom(),
+  conversation_id: uuid().notNull(), // 대화방 ID
+  sender_id: uuid().notNull().references(() => users.id),
+  receiver_id: uuid().notNull().references(() => users.id),
+  content: text("content").notNull(), // 메시지 내용
+  message_type: text("message_type").notNull().default(MESSAGE_TYPES[0].value), // text, image, file
+  media_url: text("media_url"), // 이미지/파일 URL
+  is_read: boolean().notNull().default(false),
+  read_at: timestamp("read_at"),
+  product_id: uuid().references(() => products.product_id), // 관련 상품 ID (상품 문의인 경우)
+  created_at: timestamp("created_at").notNull().defaultNow(),
+}, (table) => ({
+  conversationIdIdx: index("user_messages_conversation_id_idx").on(table.conversation_id),
+  senderIdIdx: index("user_messages_sender_id_idx").on(table.sender_id),
+  receiverIdIdx: index("user_messages_receiver_id_idx").on(table.receiver_id),
+  unreadIdx: index("user_messages_unread_idx").on(table.is_read),
+  productIdIdx: index("user_messages_product_id_idx").on(table.product_id),
+  createdAtIdx: index("user_messages_created_at_idx").on(table.created_at),
+}));
+
+// User conversations table (대화방)
+export const userConversations = pgTable("user_conversations", {
+  conversation_id: uuid().primaryKey().defaultRandom(),
+  participant_ids: jsonb().notNull(), // 참여자 ID 배열
+  last_message_id: uuid().references(() => userMessages.message_id),
+  last_message_content: text("last_message_content"),
+  last_message_at: timestamp("last_message_at"),
+  unread_count: integer().notNull().default(0),
+  product_id: uuid().references(() => products.product_id), // 관련 상품 ID (상품 문의인 경우)
+  created_at: timestamp("created_at").notNull().defaultNow(),
+  updated_at: timestamp("updated_at").notNull().defaultNow(),
+}, (table) => ({
+  participantIdsIdx: index("user_conversations_participant_ids_idx").on(table.participant_ids),
+  lastMessageAtIdx: index("user_conversations_last_message_at_idx").on(table.last_message_at),
+  unreadCountIdx: index("user_conversations_unread_count_idx").on(table.unread_count),
+  productIdIdx: index("user_conversations_product_id_idx").on(table.product_id),
+  updatedAtIdx: index("user_conversations_updated_at_idx").on(table.updated_at),
 }));
 
 // User statistics table
@@ -146,23 +190,16 @@ export const userStatistics = pgTable("user_statistics", {
   userIdIdx: index("user_statistics_user_id_idx").on(table.user_id),
 }));
 
-// TypeScript types for notifications
-export interface Notification {
-  id: string;
-  type: 'message' | 'like' | 'follow' | 'system';
-  title: string;
-  message: string;
-  timestamp: string;
-  isRead: boolean;
-  avatar?: string;
-  username?: string;
-}
 
 // Database types
 export type UserNotification = typeof userNotifications.$inferSelect;
 export type NewUserNotification = typeof userNotifications.$inferInsert;
 export type UserLike = typeof userLikes.$inferSelect;
 export type NewUserLike = typeof userLikes.$inferInsert;
+export type UserMessage = typeof userMessages.$inferSelect;
+export type NewUserMessage = typeof userMessages.$inferInsert;
+export type UserConversation = typeof userConversations.$inferSelect;
+export type NewUserConversation = typeof userConversations.$inferInsert;
 
 // Likes page interface
 export interface LikedProduct {

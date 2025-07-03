@@ -79,7 +79,21 @@ The "Today's Picks" feature on the home page uses a sophisticated scoring algori
 ### Usage
 
 ```typescript
-import { fetchTodaysPicks } from "~/features/products/queries";
+// Mock function (임시)
+async function fetchTodaysPicks(criteria: any = {}) {
+  // 실제로는 데이터베이스에서 상품들을 가져옴
+  return Array.from({ length: 4 }, (_, index) => ({
+    id: `product-${index + 1}`,
+    title: `Sample Product ${index + 1}`,
+    price: Math.floor(Math.random() * 5000) + 100,
+    currency: "THB",
+    priceType: Math.random() > 0.85 ? "free" : "fixed",
+    image: "/sample.png",
+    sellerId: `seller-${index + 1}`,
+    isSold: Math.random() > 0.8,
+    createdAt: new Date(),
+  }));
+}
 
 const todaysPicks = await fetchTodaysPicks({
   location: "ChiangMai",
@@ -92,19 +106,21 @@ const todaysPicks = await fetchTodaysPicks({
 
 ## Data Validation with Zod
 
-This project uses [Zod](https://zod.dev/) for runtime type validation. All form inputs, URL parameters, and API responses are validated using Zod schemas.
+This project uses [Zod](https://zod.dev/) for runtime type validation. All form inputs, URL parameters, and API responses are validated using Zod schemas defined within each feature module.
 
-### Available Schemas
+### Validation Examples
 
 #### URL Parameters
 
 ```typescript
-import { paramsSchema } from "~/lib/schemas";
+// Define schema locally in the component
+const paramsSchema = z.object({
+  id: z.string().min(1, "Product ID is required"),
+});
 
-// Product ID validation
-const validationResult = paramsSchema.productId.safeParse(params);
+// Validate parameters
+const validationResult = paramsSchema.safeParse(params);
 if (!validationResult.success) {
-  // Handle validation error
   return <ErrorComponent message={validationResult.error.errors[0]?.message} />;
 }
 const { id: productId } = validationResult.data;
@@ -113,8 +129,14 @@ const { id: productId } = validationResult.data;
 #### Form Data
 
 ```typescript
-import { productFormSchema } from "~/lib/schemas";
+// Define form schema locally
+const productFormSchema = z.object({
+  title: z.string().min(1, "Title is required"),
+  price: z.string().min(1, "Price is required"),
+  // ... other fields
+});
 
+// Validate form data
 const validateForm = (formData: unknown) => {
   const result = productFormSchema.safeParse(formData);
   if (!result.success) {
@@ -132,42 +154,28 @@ const validateForm = (formData: unknown) => {
 #### Search Parameters
 
 ```typescript
-import { searchParamsSchema, paginationSchema } from "~/lib/schemas";
+// Define search schema locally
+const searchParamsSchema = z.object({
+  q: z.string().optional(),
+  page: z.coerce.number().min(1).default(1),
+  limit: z.coerce.number().min(1).max(100).default(20),
+});
 
+// Validate search parameters
 const [searchParams] = useSearchParams();
 const searchValidation = searchParamsSchema.safeParse(
   Object.fromEntries(searchParams)
 );
-const paginationValidation = paginationSchema.safeParse(
-  Object.fromEntries(searchParams)
-);
 ```
 
-### Utility Functions
+### Schema Organization
 
-```typescript
-import {
-  validateWithZod,
-  getFieldErrors,
-  validateUrlParams,
-} from "~/lib/utils";
+Each feature module contains its own validation schemas:
 
-// Generic validation
-const result = validateWithZod(mySchema, data);
-
-// Get field-specific errors
-const errors = getFieldErrors(mySchema, data);
-
-// Validate URL parameters
-const validatedParams = validateUrlParams(mySchema, params);
-```
-
-### Schema Types
-
-- **Product Schemas**: `productFormSchema`, `paramsSchema.productId`
-- **User Schemas**: `userSchema`, `createUserSchema`, `loginSchema`
-- **Community Schemas**: `communityPostSchema`, `commentSchema`
-- **Search Schemas**: `searchParamsSchema`, `paginationSchema`
+- **Auth Schemas**: `app/features/auth/constants.ts` - Login, registration, OTP schemas
+- **Product Schemas**: Defined locally in each product page component
+- **User Schemas**: `app/features/users/constants.ts` - User profile and settings schemas
+- **Community Schemas**: `app/features/community/constants.ts` - Community post schemas
 
 ## Building for Production
 

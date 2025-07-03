@@ -5,8 +5,39 @@ import { Separator } from "../../../common/components/ui/separator";
 import { RadioGroup, RadioGroupItem } from "../../../common/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../../common/components/ui/select";
 import { useRouteError, isRouteErrorResponse } from "react-router";
-import { fetchMockUserSettings } from "../queries";
 import { z } from "zod";
+
+// Mock user settings function (임시)
+async function fetchMockUserSettings(userId: string) {
+  return {
+    success: true,
+    settings: {
+      notifications: {
+        email: "all" as const,
+        push: "important" as const,
+        marketing: true,
+        updates: true,
+      },
+      privacy: {
+        profileVisibility: "public" as const,
+        contactInfo: "buyers" as const,
+        locationSharing: "city" as const,
+        showOnlineStatus: true,
+      },
+      preferences: {
+        language: "en" as const,
+        timezone: "pst" as const,
+        currency: "USD" as const,
+        dateFormat: "MM/DD/YYYY" as const,
+      },
+      security: {
+        twoFactorEnabled: false,
+        loginNotifications: true,
+        sessionTimeout: 60,
+      },
+    }
+  };
+}
 
 // Settings loader data schema
 const settingsLoaderDataSchema = z.object({
@@ -53,8 +84,8 @@ export const loader = async ({ request }: { request: Request }) => {
     console.log("Settings loader: Mock data result:", result);
     
     if (!result.success) {
-      console.error("Settings loader: Failed to fetch user settings:", result.errors);
-      throw new Response(result.errors?.join(", ") || "Failed to load settings", { 
+      console.error("Settings loader: Failed to fetch user settings");
+      throw new Response("Failed to load settings", { 
         status: 500,
         statusText: "Failed to load settings"
       });

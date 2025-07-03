@@ -3,23 +3,36 @@ import { useSearchParams } from "react-router";
 import { Button } from "~/common/components/ui/button";
 import { Input } from "~/common/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "~/common/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "~/common/components/ui/avatar";
-import { Badge } from "~/common/components/ui/badge";
-import { Textarea } from "~/common/components/ui/textarea";
-import { Separator } from "~/common/components/ui/separator";
-import { HeartIcon, MessageCircleIcon, ShareIcon, SparklesIcon } from "lucide-react";
 import type { Route } from './+types/give-and-glow-page';
+import { z } from "zod";
 import { 
   type GiveAndGlowReview, 
-  type GiveAndGlowFilters,
-  type CreateGiveAndGlowReviewData,
-  giveAndGlowFiltersSchema,
-  createGiveAndGlowReviewSchema,
   VALID_GIVE_AND_GLOW_CATEGORIES,
   VALID_GIVE_AND_GLOW_LOCATIONS
-} from "~/lib/schemas";
+} from "../schema";
 import { validateWithZod, getFieldErrors, getCategoryColors } from "~/lib/utils";
-import { fetchGiveAndGlowReviewsFromDatabase, createGiveAndGlowReview } from "~/features/community/queries";
+import { GiveAndGlowCard } from '../components/give-and-glow-card';
+
+// Zod Schemas for Give & Glow
+export const giveAndGlowFiltersSchema = z.object({
+  category: z.enum(VALID_GIVE_AND_GLOW_CATEGORIES as unknown as [string, ...string[]]).default("All"),
+  location: z.enum(VALID_GIVE_AND_GLOW_LOCATIONS as unknown as [string, ...string[]]).default("Bangkok"),
+  search: z.string().optional().default(""),
+});
+
+export const createGiveAndGlowReviewSchema = z.object({
+  itemName: z.string().min(1, "Item name is required").max(100, "Item name must be less than 100 characters"),
+  itemCategory: z.enum(VALID_GIVE_AND_GLOW_CATEGORIES.filter(cat => cat !== "All") as unknown as [string, ...string[]]),
+  giverName: z.string().min(1, "Giver name is required").max(100, "Giver name must be less than 100 characters"),
+  rating: z.number().min(1, "Rating must be at least 1").max(5, "Rating must be at most 5"),
+  review: z.string().min(10, "Review must be at least 10 characters").max(2000, "Review must be less than 2000 characters"),
+  location: z.enum(VALID_GIVE_AND_GLOW_LOCATIONS.filter(loc => loc !== "All Cities") as unknown as [string, ...string[]]),
+  tags: z.array(z.string()).optional().default([]),
+});
+
+// Type definitions
+export type GiveAndGlowFilters = z.infer<typeof giveAndGlowFiltersSchema>;
+export type CreateGiveAndGlowReviewData = z.infer<typeof createGiveAndGlowReviewSchema>;
 
 // Loader function
 export const loader = async ({ request }: Route.LoaderArgs) => {
@@ -42,17 +55,68 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
 
     const validatedFilters = validationResult.data;
 
-    // 데이터베이스에서 리뷰 가져오기
-    const reviews = await fetchGiveAndGlowReviewsFromDatabase({
-      category: validatedFilters.category || "All",
-      location: validatedFilters.location || "Bangkok", 
-      search: validatedFilters.search || ""
-    });
+    // 하드코딩된 목업 데이터
+    const mockReviews: GiveAndGlowReview[] = [
+      {
+        id: "1",
+        item_name: "Vintage Bookshelf",
+        item_category: "Furniture",
+        giver_name: "Sarah Johnson",
+        giver_avatar: "/sample.png",
+        receiver_name: "Mike Chen",
+        receiver_avatar: "/sample.png",
+        rating: 5,
+        review: "Amazing bookshelf! Sarah was so kind to give it away for free. The quality is excellent and it fits perfectly in my study room.",
+        timestamp: "2 hours ago",
+        location: "Bangkok",
+        tags: ["Excellent Condition", "Friendly Giver", "Smooth Pickup"],
+        photos: [],
+        appreciation_badge: true,
+        created_at: new Date(),
+        updated_at: new Date()
+      },
+      {
+        id: "2",
+        item_name: "Kitchen Appliances Set",
+        item_category: "Kitchen",
+        giver_name: "Emma Wilson",
+        giver_avatar: "/sample.png",
+        receiver_name: "David Kim",
+        receiver_avatar: "/sample.png",
+        rating: 4,
+        review: "Great set of kitchen appliances! Emma was very generous to give away her barely used mixer, blender, and toaster.",
+        timestamp: "1 day ago",
+        location: "ChiangMai",
+        tags: ["Good Condition", "Multiple Items", "Quick Handover"],
+        photos: [],
+        appreciation_badge: true,
+        created_at: new Date(),
+        updated_at: new Date()
+      },
+      {
+        id: "3",
+        item_name: "Children's Toys",
+        item_category: "Toys",
+        giver_name: "Lisa Park",
+        giver_avatar: "/sample.png",
+        receiver_name: "Anna Rodriguez",
+        receiver_avatar: "/sample.png",
+        rating: 5,
+        review: "Wonderful collection of children's toys! Lisa was incredibly thoughtful and organized everything so well.",
+        timestamp: "3 days ago",
+        location: "Phuket",
+        tags: ["Clean Items", "Well Organized", "Kids Love It"],
+        photos: [],
+        appreciation_badge: false,
+        created_at: new Date(),
+        updated_at: new Date()
+      }
+    ];
 
     return {
-      reviews,
+      reviews: mockReviews,
       filters: validatedFilters,
-      totalCount: reviews.length,
+      totalCount: mockReviews.length,
       validCategories: VALID_GIVE_AND_GLOW_CATEGORIES,
       validLocations: VALID_GIVE_AND_GLOW_LOCATIONS
     };
@@ -61,18 +125,9 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
     console.error("Loader error:", error);
     
     if (error instanceof Response) {
-      // 이미 Response 객체인 경우 그대로 던지기
       throw error;
     }
     
-    if (error instanceof Error) {
-      // 데이터베이스 에러인 경우 500 Internal Server Error 반환
-      if (error.message.includes("Failed to fetch give-and-glow reviews from database")) {
-        throw new Response("Database connection failed", { status: 500 });
-      }
-    }
-    
-    // 기타 에러는 500 Internal Server Error 반환
     throw new Response("Internal server error", { status: 500 });
   }
 };
@@ -128,7 +183,7 @@ export default function GiveAndGlowPage({ loaderData }: Route.ComponentProps) {
     rating: 5,
     review: "",
     location: urlLocation as any,
-    tags: ""
+    tags: []
   });
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -176,10 +231,10 @@ export default function GiveAndGlowPage({ loaderData }: Route.ComponentProps) {
 
   // Filter reviews based on search and filters
   const filteredReviews = reviews.filter((review) => {
-    const matchesSearch = review.itemName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         review.giverName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         review.review.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = selectedCategory === "All" || review.itemCategory === selectedCategory;
+    const matchesSearch = review.item_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      review.giver_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      review.review.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesCategory = selectedCategory === "All" || review.item_category === selectedCategory;
     const matchesLocation = urlLocation === "All Cities" || review.location === urlLocation;
     
     return matchesSearch && matchesCategory && matchesLocation;
@@ -195,13 +250,12 @@ export default function GiveAndGlowPage({ loaderData }: Route.ComponentProps) {
     }
 
     // Validate tags separately
-    if (newReview.tags) {
-      const tags = newReview.tags.split(",").map(tag => tag.trim()).filter(tag => tag);
-      if (tags.length > 10) {
+    if (newReview.tags && newReview.tags.length > 0) {
+      if (newReview.tags.length > 10) {
         setFormErrors({ ...formErrors, tags: "Maximum 10 tags allowed" });
         return false;
       }
-      for (const tag of tags) {
+      for (const tag of newReview.tags) {
         if (tag.length > 20) {
           setFormErrors({ ...formErrors, tags: "Each tag must be less than 20 characters" });
           return false;
@@ -220,23 +274,30 @@ export default function GiveAndGlowPage({ loaderData }: Route.ComponentProps) {
 
     setIsSubmitting(true);
     
-    try {
-      const tags = newReview.tags.split(",").map(tag => tag.trim()).filter(tag => tag);
-      
+    try { 
       const reviewData = {
-        itemName: newReview.itemName,
-        itemCategory: newReview.itemCategory,
-        giverName: newReview.giverName,
-        receiverName: "Current User", // In real app, this would be the logged-in user
-        receiverAvatar: "/sample.png", // In real app, this would be the user's avatar
+        item_name: newReview.itemName,
+        item_category: newReview.itemCategory,
+        giver_name: newReview.giverName,
+        giver_avatar: "/sample.png", // In real app, this would be the giver's avatar
+        receiver_name: "Current User", // In real app, this would be the logged-in user
+        receiver_avatar: "/sample.png", // In real app, this would be the user's avatar
         rating: newReview.rating,
         review: newReview.review,
         location: newReview.location,
-        tags,
-        photos: [] // In real app, this would be uploaded photos
+        tags: newReview.tags,
+        photos: [], // In real app, this would be uploaded photos
+        appreciation_badge: true, // New reviews get appreciation badge
+        created_at: new Date(),
+        updated_at: new Date()
       };
 
-      const newReviewData = await createGiveAndGlowReview(reviewData);
+      // 하드코딩된 새 리뷰 생성
+      const newReviewData: GiveAndGlowReview = {
+        id: Date.now().toString(),
+        ...reviewData,
+        timestamp: "Just now"
+      };
       setReviews([newReviewData, ...reviews]);
       setShowReviewForm(false);
       setNewReview({
@@ -246,7 +307,7 @@ export default function GiveAndGlowPage({ loaderData }: Route.ComponentProps) {
         rating: 5,
         review: "",
         location: urlLocation as any,
-        tags: ""
+        tags: []
       });
       setFormErrors({});
     } catch (error) {
@@ -278,15 +339,15 @@ export default function GiveAndGlowPage({ loaderData }: Route.ComponentProps) {
     <div className="max-w-7xl mx-auto px-0 py-6 md:p-6 space-y-6">
       {/* Header */}
       <div className="text-center space-y-2">
-        <h1 className="text-3xl font-bold text-gray-900">Give and Glow</h1>
-        <p className="text-gray-600">
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">Give and Glow</h1>
+        <p className="text-muted-foreground pb-6">
           Share appreciation for free items received and spread kindness in our community
           {urlLocation === "All Cities" ? " across all cities" : ` in ${urlLocation}`}
         </p>
       </div>
 
       {/* Search and Filters */}
-      <Card>
+      <Card className="mb-6">
         <CardHeader>
           <CardTitle className="text-lg">Search & Filters</CardTitle>
         </CardHeader>
@@ -295,10 +356,10 @@ export default function GiveAndGlowPage({ loaderData }: Route.ComponentProps) {
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Search Reviews</label>
             <Input
+              type="text"
               placeholder="Search by item name, giver name, or review content..."
               value={searchQuery}
               onChange={(e) => handleSearchChange(e.target.value)}
-              className="max-w-md"
             />
           </div>
 
@@ -337,90 +398,25 @@ export default function GiveAndGlowPage({ loaderData }: Route.ComponentProps) {
       </div>
 
       {/* Reviews List */}
-      <div className="space-y-6">
-        {filteredReviews.length > 0 ? (
-          filteredReviews.map((review) => (
-            <Card key={review.id} className="hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 transition-all duration-300 hover:scale-[1.02] hover:shadow-lg">
-              <CardContent className="py-1">
-                <div className="flex items-start gap-4">
-                  {/* Giver Avatar */}
-                  <div className="flex items-center space-x-3 mb-4">
-                    <Avatar className="h-10 w-10">
-                      <AvatarImage src="/sample.png" alt="Emma Wilson" />
-                      <AvatarFallback>EW</AvatarFallback>
-                    </Avatar>
-                  </div>
-                  
-                  <div className="flex-1">
-                    {/* Review Header */}
-                    <div className="flex items-center justify-between mb-3">
-                      <div>
-                        <h3 className="text-lg font-semibold text-gray-900">{review.itemName}</h3>
-                        <div className="flex items-center gap-2 text-sm text-gray-600">
-                          <span>Given by {review.giverName}</span>
-                          <span>•</span>
-                          <span>{review.location}</span>
-                          <span>•</span>
-                          <span>{review.timestamp}</span>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    {/* Rating and Category */}
-                    <div className="flex items-center gap-4 mb-3">
-                      <div className="flex items-center gap-2">
-                        {renderStars(review.rating)}
-                        <span className="text-sm text-gray-600">{review.rating}/5</span>
-                      </div>
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${(() => {
-                        const colors = getCategoryColors(review.itemCategory);
-                        return `${colors.bg} ${colors.text} ${colors.border}`;
-                      })()}`}>
-                        {review.itemCategory}
-                      </span>
-                    </div>
-                    
-                    {/* Review Content */}
-                    <p className="text-gray-700 mb-4 leading-relaxed">{review.review}</p>
-                    
-                    {/* Tags */}
-                    {review.tags.length > 0 && (
-                      <div className="flex flex-wrap gap-1 mb-4">
-                        {review.tags.map((tag, index) => (
-                          <span 
-                            key={index}
-                            className="bg-purple-100 text-purple-700 px-2 py-1 rounded-full text-xs"
-                          >
-                            {tag}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                    
-                    {/* Receiver Info */}
-                    <div className="flex items-center gap-2 text-sm text-gray-500">
-                      <div className="flex items-center gap-2">
-                        <div className="relative">
-                          <Avatar className="h-7 w-7">
-                            <AvatarImage src="/sample.png" alt="David Chen" />
-                            <AvatarFallback>DC</AvatarFallback>
-                          </Avatar>
-                        </div>
-                        <span>Reviewed by {review.receiverName}</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))
-        ) : (
-          <Card>
-            <CardContent className="p-8 text-center">
-              <p className="text-gray-500">No reviews found matching your search criteria.</p>
-            </CardContent>
-          </Card>
-        )}
+      <div className="flex flex-col gap-4">
+        {filteredReviews.map((review) => (
+          <GiveAndGlowCard 
+            key={review.id}
+            id={review.id}
+            itemName={review.item_name}
+            itemCategory={review.item_category}
+            giverName={review.giver_name}
+            giverAvatar={review.giver_avatar || undefined}
+            receiverName={review.receiver_name}
+            receiverAvatar={review.receiver_avatar || undefined}
+            rating={review.rating}
+            review={review.review}
+            timestamp={review.timestamp}
+            location={review.location}
+            tags={review.tags as string[]}
+            appreciationBadge={review.appreciation_badge}
+          />
+        ))}
       </div>
 
       {/* Review Form Modal */}
@@ -537,7 +533,7 @@ export default function GiveAndGlowPage({ loaderData }: Route.ComponentProps) {
                 <Input
                   placeholder="excellent condition, friendly giver, smooth pickup (comma separated)"
                   value={newReview.tags}
-                  onChange={(e) => setNewReview({ ...newReview, tags: e.target.value })}
+                  onChange={(e) => setNewReview({ ...newReview, tags: e.target.value.split(",").map(tag => tag.trim()).filter(tag => tag) })}
                   className={formErrors.tags ? "border-red-500" : ""}
                 />
                 {formErrors.tags && (
@@ -564,7 +560,7 @@ export default function GiveAndGlowPage({ loaderData }: Route.ComponentProps) {
                       rating: 5,
                       review: "",
                       location: urlLocation as any,
-                      tags: ""
+                      tags: []
                     });
                     setFormErrors({});
                   }}

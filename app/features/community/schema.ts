@@ -1,292 +1,150 @@
-import { z } from "zod";
+import {
+  pgTable,
+  uuid,
+  text,
+  integer,
+  boolean,
+  timestamp,
+  jsonb,
+  index,
+  decimal
+} from "drizzle-orm/pg-core";
+import { 
+  GIVE_AND_GLOW_CATEGORIES, 
+  LOCATIONS_WITH_ALL,
+  LOCAL_TIP_CATEGORIES
+} from "./constants";
+import {users, userProfiles} from "~/features/users/schema"
 
-// 커뮤니티 포스트 스키마
-export const communityPostSchema = z.object({
-  title: z.string().min(1, "Title is required").max(100, "Title must be less than 100 characters"),
-  content: z.string().min(10, "Content must be at least 10 characters").max(2000, "Content must be less than 2000 characters"),
-  category: z.enum(["question", "review", "tip", "discussion"], {
-    errorMap: () => ({ message: "Please select a valid category" }),
-  }),
-  tags: z.array(z.string()).max(5, "Maximum 5 tags allowed").optional(),
-});
 
-// 댓글 스키마
-export const commentSchema = z.object({
-  content: z.string().min(1, "Comment cannot be empty").max(500, "Comment must be less than 500 characters"),
-  parentId: z.string().optional(), // 대댓글을 위한 부모 댓글 ID
-});
-
-// 로컬 팁 관련 스키마
-export const localTipCategorySchema = z.enum([
-  "All", 
-  "Visa/Immigration", 
-  "Healthcare/Insurance", 
-  "Transportation", 
-  "Banking/Finance", 
-  "Housing", 
-  "Education", 
-  "Other"
-], {
-  errorMap: () => ({ message: "Please select a valid category" }),
-});
-
-export const localTipLocationSchema = z.enum([
-  "Bangkok", 
-  "ChiangMai", 
-  "HuaHin", 
-  "Phuket", 
-  "Pattaya", 
-  "Koh Phangan", 
-  "Koh Tao", 
-  "Koh Samui", 
-  "All Cities"
-], {
-  errorMap: () => ({ message: "Please select a valid location" }),
-});
-
-export const localTipSearchSchema = z.string()
-  .max(100, "Search query is too long. Maximum length is 100 characters")
-  .transform((val) => val.replace(/[<>]/g, "").trim()) // XSS 방지를 위한 특수 문자 필터링
-  .optional()
-  .default("");
-
-export const localTipFiltersSchema = z.object({
-  category: localTipCategorySchema,
-  location: localTipLocationSchema,
-  search: localTipSearchSchema,
-}).transform((data) => ({
-  category: data.category || "All",
-  location: data.location || "Bangkok",
-  search: data.search || "",
+// Give & Glow 리뷰 테이블
+export const giveAndGlowReviews = pgTable("give_and_glow_reviews", {
+  id: uuid().primaryKey().defaultRandom(),
+  item_name: text("item_name").notNull(),
+  item_category: text("item_category").notNull(), // enum 아님(유연성)
+  giver_name: text("giver_name").notNull(),
+  giver_avatar: text("giver_avatar"),
+  receiver_name: text("receiver_name").notNull(),
+  receiver_avatar: text("receiver_avatar"),
+  rating: integer("rating").notNull(), // 1~5
+  review: text("review").notNull(),
+  timestamp: text("timestamp").notNull(), // 상대적 시간(예: "2 hours ago")
+  location: text("location").notNull(),
+  tags: jsonb("tags").notNull().default([]), // string[]
+  photos: jsonb("photos").notNull().default([]), // string[]
+  appreciation_badge: boolean("appreciation_badge").notNull().default(false),
+  created_at: timestamp("created_at").notNull().defaultNow(),
+  updated_at: timestamp("updated_at").notNull().defaultNow(),
+}, (table) => ({
+  categoryIdx: index("give_and_glow_reviews_category_idx").on(table.item_category),
+  locationIdx: index("give_and_glow_reviews_location_idx").on(table.location),
+  createdAtIdx: index("give_and_glow_reviews_created_at_idx").on(table.created_at),
 }));
 
-export const localTipPostSchema = z.object({
-  id: z.number().positive("Post ID must be positive"),
-  title: z.string().min(1, "Title is required").max(200, "Title must be less than 200 characters"),
-  content: z.string().min(1, "Content is required").max(5000, "Content must be less than 5000 characters"),
-  category: localTipCategorySchema,
-  location: localTipLocationSchema,
-  author: z.string().min(1, "Author is required").max(100, "Author name must be less than 100 characters"),
-  createdAt: z.date(),
-  likes: z.number().min(0, "Likes cannot be negative"),
-  comments: z.number().min(0, "Comments cannot be negative"),
-  reviews: z.number().min(0, "Reviews cannot be negative"),
-});
-
-export const localTipCreateSchema = z.object({
-  title: z.string().min(1, "Title is required").max(200, "Title must be less than 200 characters"),
-  content: z.string().min(10, "Content must be at least 10 characters").max(5000, "Content must be less than 5000 characters"),
-  category: localTipCategorySchema.exclude(["All"]), // "All"은 생성 시 제외
-  location: localTipLocationSchema.exclude(["All Cities"]), // "All Cities"는 생성 시 제외
-});
-
-// Ask & Answer 관련 스키마
-export const questionCategorySchema = z.enum([
-  "All",
-  "Furniture",
-  "Electronics", 
-  "Clothing",
-  "Books",
-  "Sports",
-  "Home & Garden",
-  "Other"
-], {
-  errorMap: () => ({ message: "Please select a valid category" }),
-});
-
-export const questionFiltersSchema = z.object({
-  category: questionCategorySchema.optional().default("All"),
-  search: z.string()
-    .max(100, "Search query is too long. Maximum length is 100 characters")
-    .transform((val) => val.replace(/[<>]/g, "").trim()) // XSS 방지를 위한 특수 문자 필터링
-    .optional()
-    .default(""),
-  sortBy: z.enum(["newest", "oldest", "mostAnswers", "mostLiked"]).optional().default("newest"),
-});
-
-export const questionSchema = z.object({
-  id: z.string().min(1, "Question ID is required"),
-  title: z.string().min(1, "Title is required").max(200, "Title must be less than 200 characters"),
-  content: z.string().min(10, "Content must be at least 10 characters").max(5000, "Content must be less than 5000 characters"),
-  author: z.string().min(1, "Author is required").max(100, "Author name must be less than 100 characters"),
-  timestamp: z.string().min(1, "Timestamp is required"),
-  tags: z.array(z.string().max(20, "Tag must be less than 20 characters")).max(5, "Maximum 5 tags allowed"),
-  answers: z.array(z.object({
-    id: z.string().min(1, "Answer ID is required"),
-    content: z.string().min(1, "Answer content is required").max(2000, "Answer must be less than 2000 characters"),
-    author: z.string().min(1, "Author is required").max(100, "Author name must be less than 100 characters"),
-    timestamp: z.string().min(1, "Timestamp is required"),
-    isAccepted: z.boolean(),
-  })),
-});
-
-export const answerSchema = z.object({
-  id: z.string().min(1, "Answer ID is required"),
-  content: z.string().min(1, "Answer content is required").max(2000, "Answer must be less than 2000 characters"),
-  author: z.string().min(1, "Author is required").max(100, "Author name must be less than 100 characters"),
-  timestamp: z.string().min(1, "Timestamp is required"),
-  isAccepted: z.boolean(),
-});
-
-export const createQuestionSchema = z.object({
-  title: z.string().min(1, "Title is required").max(200, "Title must be less than 200 characters"),
-  content: z.string().min(10, "Content must be at least 10 characters").max(5000, "Content must be less than 5000 characters"),
-  tags: z.string().optional().default(""),
-});
-
-export const createAnswerSchema = z.object({
-  content: z.string().min(1, "Answer content is required").max(2000, "Answer must be less than 2000 characters"),
-});
-
-// Give and Glow 관련 스키마
-export const giveAndGlowCategorySchema = z.enum([
-  "All",
-  "Furniture",
-  "Electronics", 
-  "Clothing",
-  "Books",
-  "Kitchen",
-  "Toys",
-  "Garden",
-  "Sports",
-  "Other"
-], {
-  errorMap: () => ({ message: "Please select a valid category" }),
-});
-
-export const giveAndGlowLocationSchema = z.enum([
-  "Bangkok",
-  "ChiangMai",
-  "HuaHin",
-  "Phuket",
-  "Pattaya",
-  "Koh Phangan",
-  "Koh Tao",
-  "Koh Samui",
-  "All Cities"
-], {
-  errorMap: () => ({ message: "Please select a valid location" }),
-});
-
-export const giveAndGlowSearchSchema = z.string()
-  .max(100, "Search query is too long. Maximum length is 100 characters")
-  .transform((val) => val.replace(/[<>]/g, "").trim()) // XSS 방지를 위한 특수 문자 필터링
-  .optional()
-  .default("");
-
-export const giveAndGlowFiltersSchema = z.object({
-  category: giveAndGlowCategorySchema.optional().default("All"),
-  location: giveAndGlowLocationSchema,
-  search: giveAndGlowSearchSchema,
-}).transform((data) => ({
-  category: data.category || "All",
-  location: data.location || "Bangkok",
-  search: data.search || "",
+// Local Reviews 비즈니스 테이블
+export const localBusinesses = pgTable("local_businesses", {
+  id: uuid().primaryKey().defaultRandom(),
+  name: text("name").notNull(),
+  type: text("type").notNull(), // business type
+  location: text("location").notNull(),
+  average_rating: decimal("average_rating", { precision: 3, scale: 2 }).notNull().default("0.00"),
+  total_reviews: integer("total_reviews").notNull().default(0),
+  price_range: text("price_range").notNull(), // price range
+  tags: jsonb("tags").notNull().default([]), // string[]
+  image: text("image"),
+  address: text("address"),
+  phone: text("phone"),
+  website: text("website"),
+  description: text("description"),
+  created_at: timestamp("created_at").notNull().defaultNow(),
+  updated_at: timestamp("updated_at").notNull().defaultNow(),
+}, (table) => ({
+  typeIdx: index("local_businesses_type_idx").on(table.type),
+  locationIdx: index("local_businesses_location_idx").on(table.location),
+  priceRangeIdx: index("local_businesses_price_range_idx").on(table.price_range),
+  createdAtIdx: index("local_businesses_created_at_idx").on(table.created_at),
 }));
 
-export const giveAndGlowReviewSchema = z.object({
-  id: z.string().min(1, "Review ID is required"),
-  itemName: z.string().min(1, "Item name is required").max(100, "Item name must be less than 100 characters"),
-  itemCategory: giveAndGlowCategorySchema.exclude(["All"]),
-  giverName: z.string().min(1, "Giver name is required").max(100, "Giver name must be less than 100 characters"),
-  giverAvatar: z.string().optional(),
-  receiverName: z.string().min(1, "Receiver name is required").max(100, "Receiver name must be less than 100 characters"),
-  receiverAvatar: z.string().optional(),
-  rating: z.number().min(1, "Rating must be at least 1").max(5, "Rating must be at most 5"),
-  review: z.string().min(10, "Review must be at least 10 characters").max(2000, "Review must be less than 2000 characters"),
-  timestamp: z.string().min(1, "Timestamp is required"),
-  location: giveAndGlowLocationSchema,
-  tags: z.array(z.string().max(20, "Tag must be less than 20 characters")).max(10, "Maximum 10 tags allowed"),
-  photos: z.array(z.string().url("Photo URL must be valid")).max(5, "Maximum 5 photos allowed").optional(),
-  appreciationBadge: z.boolean(),
-});
+// Local Reviews 리뷰 테이블
+export const localBusinessReviews = pgTable("local_business_reviews", {
+  id: uuid().primaryKey().defaultRandom(),
+  business_id: uuid().notNull().references(() => localBusinesses.id),
+  business_name: text("business_name").notNull(),
+  business_type: text("business_type").notNull(),
+  location: text("location").notNull(),
+  rating: integer("rating").notNull(), // 1~5
+  review: text("review").notNull(),
+  author: text("author").notNull().references(() => userProfiles.display_name),
+  author_avatar: text("author_avatar").references(() => userProfiles.avatar_url),
+  timestamp: text("timestamp").notNull(), // 상대적 시간
+  photos: jsonb("photos").notNull().default([]), // string[]
+  price_range: text("price_range").notNull(),
+  tags: jsonb("tags").notNull().default([]), // string[]
+  created_at: timestamp("created_at").notNull().defaultNow(),
+}, (table) => ({
+  businessIdIdx: index("local_business_reviews_business_id_idx").on(table.business_id),
+  businessTypeIdx: index("local_business_reviews_business_type_idx").on(table.business_type),
+  locationIdx: index("local_business_reviews_location_idx").on(table.location),
+  ratingIdx: index("local_business_reviews_rating_idx").on(table.rating),
+  createdAtIdx: index("local_business_reviews_created_at_idx").on(table.created_at),
+}));
 
-export const createGiveAndGlowReviewSchema = z.object({
-  itemName: z.string().min(1, "Item name is required").max(100, "Item name must be less than 100 characters"),
-  itemCategory: giveAndGlowCategorySchema.exclude(["All"]),
-  giverName: z.string().min(1, "Giver name is required").max(100, "Giver name must be less than 100 characters"),
-  rating: z.number().min(1, "Rating must be at least 1").max(5, "Rating must be at most 5"),
-  review: z.string().min(10, "Review must be at least 10 characters").max(2000, "Review must be less than 2000 characters"),
-  location: giveAndGlowLocationSchema,
-  tags: z.string().max(200, "Tags string must be less than 200 characters").optional().default(""),
-});
+// Local Tips 포스트 테이블
+export const localTipPosts = pgTable("local_tip_posts", {
+  id: uuid().primaryKey().defaultRandom(),
+  title: text("title").notNull(),
+  content: text("content").notNull(),
+  category: text("category").notNull(), // tip category
+  location: text("location").notNull(),
+  author: text("author").notNull().references(() => users.id),
+  likes: integer("likes").notNull().default(0),
+  comments: integer("comments").notNull().default(0),
+  reviews: integer("reviews").notNull().default(0),
+  created_at: timestamp("created_at").notNull().defaultNow(),
+  updated_at: timestamp("updated_at").notNull().defaultNow(),
+}, (table) => ({
+  categoryIdx: index("local_tip_posts_category_idx").on(table.category),
+  locationIdx: index("local_tip_posts_location_idx").on(table.location),
+  authorIdx: index("local_tip_posts_author_idx").on(table.author),
+  createdAtIdx: index("local_tip_posts_created_at_idx").on(table.created_at),
+}));
 
-// 유효한 카테고리와 위치 목록을 상수로 정의
-export const VALID_LOCAL_TIP_CATEGORIES = [
-  "All", 
-  "Visa/Immigration", 
-  "Healthcare/Insurance", 
-  "Transportation", 
-  "Banking/Finance", 
-  "Housing", 
-  "Education", 
-  "Other"
-] as const;
+// Local Tips 코멘트 테이블
+export const localTipComments = pgTable("local_tip_comments", {
+  id: uuid().primaryKey().defaultRandom(),
+  post_id: uuid().notNull().references(() => localTipPosts.id),
+  author: uuid().notNull().references(() => userProfiles.profile_id),
+  content: text("content").notNull(),
+  likes: integer("likes").notNull().default(0),
+  created_at: timestamp("created_at").notNull().defaultNow(),
+}, (table) => ({
+  postIdIdx: index("local_tip_comments_post_id_idx").on(table.post_id),
+  authorIdx: index("local_tip_comments_author_idx").on(table.author),
+  createdAtIdx: index("local_tip_comments_created_at_idx").on(table.created_at),
+}));
 
-export const VALID_LOCAL_TIP_LOCATIONS = [
-  "Bangkok", 
-  "ChiangMai", 
-  "HuaHin", 
-  "Phuket", 
-  "Pattaya", 
-  "Koh Phangan", 
-  "Koh Tao", 
-  "Koh Samui", 
-  "All Cities"
-] as const;
 
-export const VALID_QUESTION_CATEGORIES = [
-  "All",
-  "Furniture",
-  "Electronics", 
-  "Clothing",
-  "Books",
-  "Sports",
-  "Home & Garden",
-  "Other"
-] as const;
-
-export const VALID_GIVE_AND_GLOW_CATEGORIES = [
-  "All",
-  "Furniture",
-  "Electronics", 
-  "Clothing",
-  "Books",
-  "Kitchen",
-  "Toys",
-  "Garden",
-  "Sports",
-  "Other"
-] as const;
-
-export const VALID_GIVE_AND_GLOW_LOCATIONS = [
-  "Bangkok",
-  "ChiangMai",
-  "HuaHin",
-  "Phuket",
-  "Pattaya",
-  "Koh Phangan",
-  "Koh Tao",
-  "Koh Samui",
-  "All Cities"
-] as const;
 
 // 타입 추론
-export type CommunityPostData = z.infer<typeof communityPostSchema>;
-export type CommentData = z.infer<typeof commentSchema>;
-export type LocalTipCategory = z.infer<typeof localTipCategorySchema>;
-export type LocalTipLocation = z.infer<typeof localTipLocationSchema>;
-export type LocalTipFilters = z.infer<typeof localTipFiltersSchema>;
-export type LocalTipPost = z.infer<typeof localTipPostSchema>;
-export type LocalTipCreateData = z.infer<typeof localTipCreateSchema>;
-export type QuestionCategory = z.infer<typeof questionCategorySchema>;
-export type QuestionFilters = z.infer<typeof questionFiltersSchema>;
-export type Question = z.infer<typeof questionSchema>;
-export type Answer = z.infer<typeof answerSchema>;
-export type CreateQuestionData = z.infer<typeof createQuestionSchema>;
-export type CreateAnswerData = z.infer<typeof createAnswerSchema>;
-export type GiveAndGlowCategory = z.infer<typeof giveAndGlowCategorySchema>;
-export type GiveAndGlowLocation = z.infer<typeof giveAndGlowLocationSchema>;
-export type GiveAndGlowFilters = z.infer<typeof giveAndGlowFiltersSchema>;
-export type GiveAndGlowReview = z.infer<typeof giveAndGlowReviewSchema>;
-export type CreateGiveAndGlowReviewData = z.infer<typeof createGiveAndGlowReviewSchema>; 
+export type GiveAndGlowReview = typeof giveAndGlowReviews.$inferSelect;
+export type NewGiveAndGlowReview = typeof giveAndGlowReviews.$inferInsert;
+
+export type LocalBusiness = typeof localBusinesses.$inferSelect;
+export type NewLocalBusiness = typeof localBusinesses.$inferInsert;
+
+export type LocalBusinessReview = typeof localBusinessReviews.$inferSelect;
+export type NewLocalBusinessReview = typeof localBusinessReviews.$inferInsert;
+
+export type LocalTipPost = typeof localTipPosts.$inferSelect;
+export type NewLocalTipPost = typeof localTipPosts.$inferInsert;
+
+export type LocalTipComment = typeof localTipComments.$inferSelect;
+export type NewLocalTipComment = typeof localTipComments.$inferInsert;
+
+// Type definitions from constants
+export type LocalTipCategory = typeof LOCAL_TIP_CATEGORIES[number];
+
+// Constants for backward compatibility
+export const VALID_GIVE_AND_GLOW_CATEGORIES = GIVE_AND_GLOW_CATEGORIES;
+export const VALID_GIVE_AND_GLOW_LOCATIONS = LOCATIONS_WITH_ALL;
+export const VALID_LOCAL_TIP_CATEGORIES = LOCAL_TIP_CATEGORIES;

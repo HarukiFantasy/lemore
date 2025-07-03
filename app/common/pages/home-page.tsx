@@ -4,10 +4,32 @@ import type { Route } from "../../+types/root";
 import { Button } from '../components/ui/button';
 import { ProductCard } from "../../features/products/components/product-card";
 import { CommunityPostCard } from "../../features/community/components/community-post-card";
-import { fetchTodaysPicks } from "../../features/products/queries";
-import { fetchLatestLocalTips, fetchLatestGiveAndGlowReviews, fetchLatestLocalReviews } from "../../features/community/queries";
 import { useLoaderData } from "react-router";
 import { BlurFade } from 'components/magicui/blur-fade';
+
+// Mock today's picks function (임시)
+async function fetchTodaysPicks(criteria: any = {}) {
+  const conditions = ["New", "Like New", "Good", "Fair", "Poor"] as const;
+  const categories = ["Electronics", "Clothing", "Home goods", "Sports & Outdoor", "Books", "Toys and games"];
+  const locations = ["Bangkok", "ChiangMai", "Phuket", "Pattaya"];
+  
+  return Array.from({ length: 4 }, (_, index) => ({
+    id: `product-${index + 1}`,
+    title: `Sample Product ${index + 1}`,
+    price: Math.floor(Math.random() * 5000) + 100,
+    currency: "THB",
+    priceType: Math.random() > 0.85 ? "free" : "fixed",
+    description: `This is a sample product description for item ${index + 1}.`,
+    condition: conditions[Math.floor(Math.random() * conditions.length)],
+    category: categories[Math.floor(Math.random() * categories.length)],
+    location: locations[Math.floor(Math.random() * locations.length)],
+    image: "/sample.png",
+    sellerId: `seller-${index + 1}`,
+    isSold: Math.random() > 0.8,
+    createdAt: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000),
+    updatedAt: new Date(),
+  }));
+}
 
 export const meta: Route.MetaFunction = () => {
   return [
@@ -30,45 +52,65 @@ export const loader = async ({ request }: { request: Request }) => {
       includeQuality: true,
     });
 
-    // Community 최신 글들을 가져오기 (local-tips, give-and-glow, local-reviews)
-    const [latestLocalTips, latestGiveAndGlowReviews, latestLocalReviews] = await Promise.all([
-      fetchLatestLocalTips(4),
-      fetchLatestGiveAndGlowReviews(3),
-      fetchLatestLocalReviews(3)
-    ]);
-
-    // 모든 데이터를 community posts 형식으로 변환
+    // 하드코딩된 Community 최신 글들
     const communityPosts = [
       // Local tips
-      ...latestLocalTips.map(tip => ({
-        id: `tip-${tip.id}`,
-        title: tip.title,
-        timeAgo: getTimeAgo(tip.createdAt),
+      {
+        id: 'tip-1',
+        title: 'Best places to donate clothes in Chiang Mai',
+        timeAgo: '2 hours ago',
         type: 'tip' as const,
-        author: tip.author,
-        likes: tip.likes,
-        comments: tip.comments
-      })),
+        author: 'Sarah Johnson',
+        likes: 15,
+        comments: 8
+      },
+      {
+        id: 'tip-2',
+        title: 'How to get a Thai SIM card as a foreigner',
+        timeAgo: '4 hours ago',
+        type: 'tip' as const,
+        author: 'Mike Chen',
+        likes: 23,
+        comments: 12
+      },
       // Give and Glow reviews
-      ...latestGiveAndGlowReviews.map(review => ({
-        id: `give-and-glow-${review.id}`,
-        title: review.title,
-        timeAgo: review.timestamp,
+      {
+        id: 'give-and-glow-1',
+        title: 'Vintage Bookshelf - Amazing quality!',
+        timeAgo: '2 hours ago',
         type: 'give-and-glow' as const,
-        author: review.giverName,
-        likes: review.rating,
+        author: 'Sarah Johnson',
+        likes: 5,
         comments: 0
-      })),
+      },
+      {
+        id: 'give-and-glow-2',
+        title: 'Kitchen Appliances Set - Great condition!',
+        timeAgo: '1 day ago',
+        type: 'give-and-glow' as const,
+        author: 'Emma Wilson',
+        likes: 4,
+        comments: 0
+      },
       // Local reviews
-      ...latestLocalReviews.map(review => ({
-        id: `local-review-${review.id}`,
-        title: review.title,
-        timeAgo: review.timestamp,
+      {
+        id: 'local-review-1',
+        title: 'Sukhumvit Thai Restaurant - Amazing authentic Thai food!',
+        timeAgo: '2 hours ago',
         type: 'local-review' as const,
-        author: review.author,
-        likes: review.rating,
+        author: 'Sarah Johnson',
+        likes: 5,
         comments: 0
-      }))
+      },
+      {
+        id: 'local-review-2',
+        title: 'Chiang Mai Coffee House - Great coffee and atmosphere!',
+        timeAgo: '5 hours ago',
+        type: 'local-review' as const,
+        author: 'Mike Chen',
+        likes: 4,
+        comments: 0
+      }
     ];
 
     // 시간순으로 정렬 (최신순)
@@ -163,6 +205,8 @@ export default function HomePage() {
                 image={product.image}
                 title={product.title}
                 price={product.price}
+                currency="THB"
+                priceType="fixed"
                 seller={product.sellerId}
                 isSold={product.isSold || false}
               />
@@ -176,7 +220,9 @@ export default function HomePage() {
               productId={`${index}`}
               image="/sample.png"
               title="Bicycle for sale"
-              price="THB 1000"
+              price={1000}
+              currency="THB"
+              priceType="fixed"
               seller={`seller-${index + 1}`}
               isSold={index === 1} // 두 번째 상품만 판매완료로 표시
             />

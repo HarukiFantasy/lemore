@@ -1,6 +1,7 @@
 import { useParams, Link } from "react-router";
 import { Button } from "../../../common/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../../common/components/ui/card";
+import { AnimatedGradientText } from 'components/magicui/animated-gradient-text';
 
 export default function SocialCompletePage() {
   const { provider } = useParams();
@@ -23,7 +24,7 @@ export default function SocialCompletePage() {
           </div>
           <div className="text-center text-sm">
             <Link to="/auth/login" className="text-primary hover:underline">
-              Back to login
+            <AnimatedGradientText>Sign in with email</AnimatedGradientText>
             </Link>
           </div>
         </CardContent>

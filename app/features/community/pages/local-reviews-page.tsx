@@ -603,11 +603,11 @@ export default function LocalReviewsPage({ loaderData }: Route.ComponentProps) {
       </div>
 
       {/* Search and Filters */}
-      <Card>
+      <Card className="mb-6">
         <CardHeader>
           <CardTitle className="text-lg">Search & Filters</CardTitle>
         </CardHeader>
-        <CardContent className="py-1">
+        <CardContent className="space-y-4">
           {/* Search */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Search Businesses</label>

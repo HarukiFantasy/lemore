@@ -52,6 +52,7 @@
     "dotenv": "^17.0.0",
     "drizzle-orm": "^0.44.2",
     "embla-carousel-react": "^8.6.0",
+    "emoji-picker-react": "^4.12.3",
     "isbot": "^5.1.27",
     "lucide-react": "^0.522.0",
     "motion": "^12.23.0",
