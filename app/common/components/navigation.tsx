@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { Link, useSearchParams } from 'react-router';
-import { Separator } from './ui/separator';
 import { NavigationMenu, NavigationMenuContent, NavigationMenuItem, NavigationMenuLink, NavigationMenuList, NavigationMenuTrigger, navigationMenuTriggerStyle } from './ui/navigation-menu';
 import { Button } from './ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from './ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { BarChart3Icon, BellIcon, LogOutIcon, MenuIcon, MessageCircleIcon, SettingsIcon, UserIcon, MapPin, ChevronDown, HeartIcon } from 'lucide-react';
 import { LOCATIONS } from '../data/locations';
+import { NotificationsPage } from '../../features/users/pages/notifications-page';
 
 const menus = [
   {
@@ -63,6 +63,7 @@ export function Navigation({
 }) {
   const [searchParams, setSearchParams] = useSearchParams();
   const [location, setLocation] = useState(searchParams.get("location") || "Bangkok");
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
 
   const updateLocation = (newLocation: string) => {
     setLocation(newLocation);
@@ -104,6 +105,20 @@ export function Navigation({
               ))}
             </div>
           ))}
+          {isLoggedIn && (
+            <>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem 
+                className="cursor-pointer text-sm text-neutral-800"
+                onClick={() => setIsNotificationsOpen(true)}
+              >
+                <BellIcon className="size-4 mr-2" />알림
+                {hasNotifications && (
+                  <div className="ml-auto size-2 bg-red-500 rounded-full" />
+                )}
+              </DropdownMenuItem>
+            </>
+          )}
         </DropdownMenuContent>
       </DropdownMenu>
       <NavigationMenu className="hidden md:flex">
@@ -178,13 +193,16 @@ export function Navigation({
 
         {isLoggedIn ? (
           <>
-            <Button variant="ghost" size="icon" asChild className="hidden md:flex cursor-pointer relative">
-              <Link to="/my/notifications">
-                <BellIcon className="size-4" />
-                {hasNotifications && (
-                  <div className="absolute top-1 right-1 size-2 bg-red-500 rounded-full" />
-                )}
-              </Link>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="hidden md:flex cursor-pointer relative"
+              onClick={() => setIsNotificationsOpen(true)}
+            >
+              <BellIcon className="size-4" />
+              {hasNotifications && (
+                <div className="absolute top-1 right-1 size-2 bg-red-500 rounded-full" />
+              )}
             </Button>
             <Button variant="ghost" size="icon" asChild className="hidden md:flex cursor-pointer relative">
               <Link to="/my/messages">
@@ -228,10 +246,11 @@ export function Navigation({
                       <SettingsIcon className="size-4 mr-2" />Settings
                     </Link>
                   </DropdownMenuItem>
-                  <DropdownMenuItem asChild className="cursor-pointer md:hidden">
-                    <Link to="/my/notifications">
-                      <BellIcon className="size-4 mr-2" />Notifications
-                    </Link>
+                  <DropdownMenuItem 
+                    className="cursor-pointer md:hidden"
+                    onClick={() => setIsNotificationsOpen(true)}
+                  >
+                    <BellIcon className="size-4 mr-2" />Notifications
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild className="cursor-pointer md:hidden">
                     <Link to="/my/messages">
@@ -259,6 +278,12 @@ export function Navigation({
           </div>
         )}
       </div>
+      
+      {/* Notifications Sidebar */}
+      <NotificationsPage 
+        isOpen={isNotificationsOpen} 
+        onClose={() => setIsNotificationsOpen(false)} 
+      />
     </nav>
   );
 }

@@ -1,4 +1,4 @@
-export const DECLUTTER_SITUATIONS = [
+export const SITUATIONS = [
   {
     label: "I'm moving soon",
     value: "moving",
@@ -191,3 +191,13 @@ export const EMOTIONAL_QUESTIONS = [
   "Do you feel guilty about getting rid of it?",
   "Does this item represent who you are or want to be?",
 ] as const;
+
+
+// Environmental impact data
+export const ENVIRONMENTAL_IMPACT: Record<string, { co2: number; landfill: string; recyclable: boolean }> = {
+  "Electronics": { co2: 25, landfill: "High", recyclable: true },
+  "Clothing": { co2: 15, landfill: "Medium", recyclable: true },
+  "Books": { co2: 5, landfill: "Low", recyclable: true },
+  "Furniture": { co2: 30, landfill: "High", recyclable: false },
+  "Kitchen Items": { co2: 10, landfill: "Medium", recyclable: true },
+};

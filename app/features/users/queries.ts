@@ -305,7 +305,7 @@ export async function fetchMessages(userId: string, filters: Partial<MessageFilt
     if (filtersValidation.data.unreadOnly) {
       queryParams.append('unreadOnly', 'true');
     }
-    queryParams.append('limit', filtersValidation.data.limit.toString());
+    queryParams.append('limit', filtersValidation.data?.limit?.toString() || '20');
 
     const response = await fetch(`/api/users/${userId}/messages?${queryParams}`);
     
@@ -463,7 +463,7 @@ export async function fetchNotifications(userId: string, filters: Partial<Notifi
       return { success: false, errors: validation.errors };
     }
 
-    return { success: true, data: validation.data };
+    return { success: true, data: validation.data as NotificationList };
   } catch (error) {
     return { success: false, errors: [error instanceof Error ? error.message : 'Unknown error'] };
   }
@@ -570,7 +570,7 @@ export async function fetchMockNotifications(userId: string, filters: Partial<No
     const paginatedNotifications = filteredNotifications.slice(startIndex, endIndex);
 
     const result: NotificationList = {
-      notifications: paginatedNotifications,
+      notifications: paginatedNotifications as unknown as NotificationList['notifications'],
       totalCount: filteredNotifications.length,
       unreadCount: mockNotifications.filter(n => !n.isRead).length,
       hasMore: endIndex < filteredNotifications.length,

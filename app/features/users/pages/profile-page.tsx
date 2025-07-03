@@ -210,6 +210,20 @@ export default function ProfilePage({ loaderData }: { loaderData: ProfileLoaderD
                 </div>
 
                 <div>
+                  <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-2">
+                    Username
+                  </label>
+                  <Input 
+                    id="username" 
+                    defaultValue={user?.name?.toLowerCase().replace(/\s+/g, '.') || "john.doe"} 
+                    placeholder="Enter your username"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    This will be your unique identifier on the platform
+                  </p>
+                </div>
+
+                <div>
                   <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
                     Email Address
                   </label>
@@ -250,7 +264,7 @@ export default function ProfilePage({ loaderData }: { loaderData: ProfileLoaderD
             </CardContent>
           </Card>
 
-          {/* Preferences */}
+          {/* Preferences (TODO: Add preferences)
           <Card className="mt-6">
             <CardHeader>
               <CardTitle>Preferences</CardTitle>
@@ -284,6 +298,7 @@ export default function ProfilePage({ loaderData }: { loaderData: ProfileLoaderD
               </div>
             </CardContent>
           </Card>
+          */}
         </div>
       </div>
     </div>

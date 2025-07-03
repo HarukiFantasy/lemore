@@ -7,9 +7,10 @@
     "dev": "react-router dev",
     "start": "react-router-serve ./build/server/index.js",
     "typecheck": "react-router typegen && tsc",
-    "db:generate": "drizzle-kit generate",
-    "db:migrate": "drizzle-kit migrate",
-    "db:studio": "drizzle-kit studio"
+    "db:generate": "drizzle-kit --config=app/drizzle.config.ts generate",
+    "db:push": "drizzle-kit --config=app/drizzle.config.ts push",
+    "db:studio": "drizzle-kit --config=app/drizzle.config.ts studio",
+    "db:migrate": "drizzle-kit --config=app/drizzle.config.ts migrate"
   },
   "dependencies": {
     "@floating-ui/react": "^0.27.13",

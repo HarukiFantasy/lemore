@@ -176,7 +176,7 @@ export default function SettingsPage({ loaderData }: { loaderData: SettingsLoade
           </CardContent>
         </Card>
 
-        {/* Notification Settings */}
+        {/* Notification Settings (TODO: Add notification settings) 
         <Card>
           <CardHeader>
             <CardTitle>Notification Settings</CardTitle>
@@ -228,8 +228,9 @@ export default function SettingsPage({ loaderData }: { loaderData: SettingsLoade
             </div>
           </CardContent>
         </Card>
+        */}
 
-        {/* Privacy Settings */}
+        {/* Privacy Settings (TODO: Add privacy settings) 
         <Card>
           <CardHeader>
             <CardTitle>Privacy Settings</CardTitle>
@@ -294,8 +295,9 @@ export default function SettingsPage({ loaderData }: { loaderData: SettingsLoade
             </div>
           </CardContent>
         </Card>
-
-        {/* Language & Region */}
+        */}
+        
+        {/* Language & Region (TODO: Add language & region)
         <Card>
           <CardHeader>
             <CardTitle>Language & Region</CardTitle>
@@ -339,6 +341,7 @@ export default function SettingsPage({ loaderData }: { loaderData: SettingsLoade
             </div>
           </CardContent>
         </Card>
+        */}
       </div>
     </div>
   );

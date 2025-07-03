@@ -11,7 +11,7 @@ import {
   uuid
 } from "drizzle-orm/pg-core";
 import { 
-  DECLUTTER_SITUATIONS, 
+  SITUATIONS, 
   ITEM_CATEGORIES, 
   RECOMMENDATION_ACTIONS, 
   ITEM_CONDITIONS,
@@ -21,7 +21,7 @@ import {
 // Enums
 export const declutterSituations = pgEnum(
   "declutter_situation",
-  DECLUTTER_SITUATIONS.map((situation) => situation.value) as [string, ...string[]]
+  SITUATIONS.map((situation) => situation.value) as [string, ...string[]]
 );
 
 export const itemCategories = pgEnum(
@@ -64,13 +64,13 @@ export const itemAnalyses = pgTable("item_analyses", {
   ai_suggestion: text().notNull(),
   emotional_score: integer().notNull(), // 1-5 scale
   environmental_impact: environmentalImpactLevels().notNull(),
-  co2_impact: decimal(10, 2).notNull(), // CO2 emissions in kg
+  co2_impact: decimal({ precision: 10, scale: 2 }).notNull(), // CO2 emissions in kg
   landfill_impact: text().notNull(), // "Low", "Medium", "High"
   is_recyclable: boolean().notNull(),
-  original_price: decimal(10, 2),
-  current_value: decimal(10, 2),
-  maintenance_cost: decimal(10, 2).default("0"),
-  space_value: decimal(10, 2).default("0"),
+  original_price: decimal({ precision: 10, scale: 2 }),
+  current_value: decimal({ precision: 10, scale: 2 }),
+  maintenance_cost: decimal({ precision: 10, scale: 2 }).default("0"),
+  space_value: decimal({ precision: 10, scale: 2 }).default("0"),
   ai_listing_title: text(),
   ai_listing_description: text(),
   ai_listing_price: text(),
@@ -92,21 +92,10 @@ export const emotionalAssessments = pgTable("emotional_assessments", {
   created_at: timestamp().notNull().defaultNow(),
 });
 
-export const declutterPlans = pgTable("declutter_plans", {
-  plan_id: uuid().primaryKey().defaultRandom(),
-  session_id: uuid().notNull().references(() => letGoBuddySessions.session_id),
-  day_number: integer().notNull(),
-  title: text().notNull(),
-  description: text().notNull(),
-  is_completed: boolean().notNull().default(false),
-  completed_at: timestamp(),
-  created_at: timestamp().notNull().defaultNow(),
-});
-
 export const environmentalImpactData = pgTable("environmental_impact_data", {
   impact_id: uuid().primaryKey().defaultRandom(),
   category: itemCategories().notNull(),
-  co2_emissions: decimal(10, 2).notNull(), // CO2 in kg
+  co2_emissions: decimal({ precision: 10, scale: 2 }).notNull(), // CO2 in kg
   landfill_impact: text().notNull(),
   is_recyclable: boolean().notNull(),
   recycling_instructions: text(),
@@ -117,13 +106,13 @@ export const environmentalImpactData = pgTable("environmental_impact_data", {
 export const costBenefitAnalyses = pgTable("cost_benefit_analyses", {
   analysis_id: uuid().primaryKey().defaultRandom(),
   item_analysis_id: uuid().notNull().references(() => itemAnalyses.analysis_id),
-  original_price: decimal(10, 2).notNull(),
-  current_value: decimal(10, 2).notNull(),
-  maintenance_cost: decimal(10, 2).notNull().default("0"),
-  space_value: decimal(10, 2).notNull().default("0"),
-  depreciation_rate: decimal(5, 2).notNull(), // Percentage
-  roi_if_sold: decimal(5, 2).notNull(), // Return on investment percentage
-  monthly_storage_cost: decimal(10, 2).notNull().default("0"),
+  original_price: decimal({ precision: 10, scale: 2 }).notNull(),
+  current_value: decimal({ precision: 10, scale: 2 }).notNull(),
+  maintenance_cost: decimal({ precision: 10, scale: 2 }).notNull().default("0"),
+  space_value: decimal({ precision: 10, scale: 2 }).notNull().default("0"),
+  depreciation_rate: decimal({ precision: 5, scale: 2 }).notNull(), // Percentage
+  roi_if_sold: decimal({ precision: 5, scale: 2 }).notNull(), // Return on investment percentage
+  monthly_storage_cost: decimal({ precision: 10, scale: 2 }).notNull().default("0"),
   created_at: timestamp().notNull().defaultNow(),
 });
 

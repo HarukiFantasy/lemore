@@ -10,41 +10,15 @@ import {
   SparklesIcon, 
   HeartIcon, 
   GiftIcon, 
-  LightBulbIcon,
   XMarkIcon,
   CheckCircleIcon,
-  GlobeAltIcon,
-  CogIcon,
   MagnifyingGlassIcon,
   LightBulbIcon as TipsIcon
 } from "@heroicons/react/24/outline";
 import { useNavigate, useSearchParams } from "react-router";
+import { EMOTIONAL_QUESTIONS, ENVIRONMENTAL_IMPACT, SITUATIONS } from '../constants';
 
-const situations = [
-  "I'm moving soon",
-  "I need more space",
-  "I'm just tidying up",
-  "I'm downsizing",
-  "I'm going minimalist",
-];
 
-// Emotional attachment questions
-const emotionalQuestions = [
-  "When was the last time you used this item?",
-  "Does this item remind you of a special memory?",
-  "Would you buy this item again if you lost it?",
-  "Do you feel guilty about getting rid of it?",
-  "Does this item represent who you are or want to be?",
-];
-
-// Environmental impact data
-const environmentalImpact: Record<string, { co2: number; landfill: string; recyclable: boolean }> = {
-  "Electronics": { co2: 25, landfill: "High", recyclable: true },
-  "Clothing": { co2: 15, landfill: "Medium", recyclable: true },
-  "Books": { co2: 5, landfill: "Low", recyclable: true },
-  "Furniture": { co2: 30, landfill: "High", recyclable: false },
-  "Kitchen Items": { co2: 10, landfill: "Medium", recyclable: true },
-};
 
 const mockAnalysis = [
   {
@@ -69,28 +43,6 @@ const mockAnalysis = [
   },
 ];
 
-const creativeIdeas = [
-  {
-    icon: "🪴",
-    title: "Planter Pot",
-    desc: "Turn it into a quirky herb planter for your kitchen."
-  },
-  {
-    icon: "🖼️",
-    title: "Art Piece",
-    desc: "Use as base for a DIY lamp or sculpture."
-  },
-  {
-    icon: "\uD83D\uDD27",
-    title: "Watering Can",
-    desc: "Repurpose it for watering your garden (if it's no longer functional)."
-  },
-  {
-    icon: "🖼️",
-    title: "Prop for Photos",
-    desc: "Vintage kettles make great styling props!"
-  }
-];
 
 export default function LetGoBuddyPage() {
   const navigate = useNavigate();
@@ -104,7 +56,6 @@ export default function LetGoBuddyPage() {
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisComplete, setAnalysisComplete] = useState(false);
-  const [showCreativeIdeas, setShowCreativeIdeas] = useState(false);
   const [showEmotionalAssessment, setShowEmotionalAssessment] = useState(false);
   const [showCostBenefit, setShowCostBenefit] = useState(false);
   const [showEnvironmentalImpact, setShowEnvironmentalImpact] = useState(false);
@@ -188,7 +139,7 @@ export default function LetGoBuddyPage() {
   // Handle emotional assessment
   const handleEmotionalAssessment = () => {
     setShowEmotionalAssessment(true);
-    setEmotionalAnswers(new Array(emotionalQuestions.length).fill(0));
+    setEmotionalAnswers(new Array(EMOTIONAL_QUESTIONS.length).fill(0));
   };
 
   // Handle emotional answer change
@@ -201,7 +152,7 @@ export default function LetGoBuddyPage() {
   // Calculate emotional score
   const calculateEmotionalScore = () => {
     const total = emotionalAnswers.reduce((sum, answer) => sum + answer, 0);
-    return Math.round((total / (emotionalQuestions.length * 5)) * 100);
+    return Math.round((total / (EMOTIONAL_QUESTIONS.length * 5)) * 100);
   };
 
   // Handle cost-benefit analysis
@@ -565,14 +516,14 @@ export default function LetGoBuddyPage() {
         <div className="font-semibold text-lg mb-2">Step 2</div>
         <div className="mb-2">Select your current situation</div>
         <div className="flex flex-wrap gap-3 mb-4">
-          {situations.map((s) => (
+          {SITUATIONS.map((s) => (
             <Button
-              key={s}
-              variant={selectedSituation === s ? "default" : "outline"}
+              key={s.value}
+              variant={selectedSituation === s.value ? "default" : "outline"}
               size="sm"
-              onClick={() => setSelectedSituation(s)}
+              onClick={() => setSelectedSituation(s.value)}
             >
-              {s}
+              {s.label}
             </Button>
           ))}
         </div>
@@ -807,7 +758,7 @@ export default function LetGoBuddyPage() {
               Emotional Attachment Assessment
             </div>
             <div className="space-y-4">
-              {emotionalQuestions.map((question, index) => (
+              {EMOTIONAL_QUESTIONS.map((question, index) => (
                 <div key={index} className="border rounded-lg p-4">
                   <div className="font-medium mb-3">{question}</div>
                   <div className="flex gap-2">
@@ -893,7 +844,7 @@ export default function LetGoBuddyPage() {
               <div className="p-4 bg-green-50 rounded-lg">
                 <div className="font-medium mb-2">By donating/selling this item:</div>
                 <div className="text-sm space-y-1">
-                  <div>• Saves {environmentalImpact[mockAnalysis[0].category].co2}kg CO2 emissions</div>
+                  <div>• Saves {ENVIRONMENTAL_IMPACT[mockAnalysis[0].category].co2}kg CO2 emissions</div>
                   <div>• Reduces landfill waste</div>
                   <div>• Extends item's useful life</div>
                   <div>• Supports circular economy</div>
@@ -902,7 +853,7 @@ export default function LetGoBuddyPage() {
               <div className="p-4 bg-blue-50 rounded-lg">
                 <div className="font-medium mb-2">Best disposal method:</div>
                 <div className="text-sm">
-                  {environmentalImpact[mockAnalysis[0].category].recyclable 
+                  {ENVIRONMENTAL_IMPACT[mockAnalysis[0].category].recyclable 
                     ? "♻️ Recycle or donate to extend life"
                     : "🔄 Repurpose or upcycle if possible"}
                 </div>
@@ -1003,39 +954,6 @@ export default function LetGoBuddyPage() {
                 <div className="text-sm text-gray-600">You've completed this step successfully.</div>
               </div>
             </div>
-          </div>
-        </div>
-      )}
-
-      {/* Creative Ideas Popup */}
-      {showCreativeIdeas && (
-          <div className="fixed inset-0 bg-primary/2 backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-8 max-w-md w-full relative shadow-lg text-center">
-            <button className="absolute top-3 right-3 p-1 hover:bg-gray-100 rounded-full" onClick={() => { setShowCreativeIdeas(false); setSelectedAction(null); }}>
-              <XMarkIcon className="w-5 h-5 text-gray-500" />
-            </button>
-            <div className="flex flex-col items-center mb-4">
-              <LightBulbIcon className="w-10 h-10 mb-2 text-yellow-500" />
-              <div className="text-2xl font-bold mb-1">Creative Ideas for:</div>
-              <div className="text-xl font-semibold mb-4">{mockAnalysis[0].name || "Your Item"}</div>
-            </div>
-            <div className="space-y-4 mb-4 text-left">
-              {creativeIdeas.map((idea, i) => (
-                <div key={i} className="flex items-start gap-3">
-                  <div className="w-8 h-8 mt-0.5 flex items-center justify-center">
-                    {i === 0 && <GlobeAltIcon className="w-6 h-6 text-green-500" />}
-                    {i === 1 && <LightBulbIcon className="w-6 h-6 text-yellow-500" />}
-                    {i === 2 && <CogIcon className="w-6 h-6 text-blue-500" />}
-                    {i === 3 && <CameraIcon className="w-6 h-6 text-purple-500" />}
-                  </div>
-                  <div>
-                    <div className="font-semibold">{i + 1}. {idea.title}</div>
-                    <div className="text-gray-700 text-sm">{idea.desc}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-            <Button className="w-full" onClick={() => { setShowCreativeIdeas(false); setSelectedAction(null); }}>Close</Button>
           </div>
         </div>
       )}

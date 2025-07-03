@@ -1,160 +1,179 @@
-import { z } from "zod";
+import { 
+  bigint, 
+  pgEnum, 
+  pgTable, 
+  text, 
+  timestamp, 
+  integer, 
+  boolean, 
+  jsonb,
+  decimal,
+  uuid,
+  index,
+  pgSchema
+} from "drizzle-orm/pg-core";
+import { 
+  USER_ROLES, 
+  USER_STATUSES, 
+  VERIFICATION_STATUSES,
+  NOTIFICATION_TYPES,
+  PREFERENCE_CATEGORIES
+} from "./constants";
 
-// 사용자 관련 스키마
-// 현재 사용자 기능에 대한 Zod 스키마가 정의되지 않았습니다.
-// 필요에 따라 스키마를 추가하세요.
+// Enums
+export const userRoles = pgEnum(
+  "user_role",
+  USER_ROLES.map((role) => role.value) as [string, ...string[]]
+);
 
-// 예시 스키마 (필요시 사용):
-// export const userSchema = z.object({
-//   id: z.string().min(1, "User ID is required"),
-//   name: z.string().min(1, "Name is required").max(50, "Name must be less than 50 characters"),
-//   email: z.string().email("Invalid email address"),
-//   // 기타 사용자 필드들
-// });
+export const userStatuses = pgEnum(
+  "user_status",
+  USER_STATUSES.map((status) => status.value) as [string, ...string[]]
+);
 
-// export type User = z.infer<typeof userSchema>;
+export const verificationStatuses = pgEnum(
+  "verification_status",
+  VERIFICATION_STATUSES.map((status) => status.value) as [string, ...string[]]
+);
 
-// 사용자 기본 정보 스키마
-export const userSchema = z.object({
-  id: z.string().min(1, "User ID is required"),
-  name: z.string().min(1, "Name is required").max(50, "Name must be less than 50 characters"),
-  email: z.string().email("Invalid email address"),
-  avatar: z.string().url("Avatar URL must be valid").optional(),
-  bio: z.string().max(200, "Bio must be less than 200 characters").optional(),
-  location: z.string().optional(),
-  memberSince: z.string().optional(),
-  rating: z.number().min(0).max(5).optional(),
-  totalSales: z.number().min(0).optional(),
-  responseTime: z.string().optional(),
+export const notificationTypes = pgEnum(
+  "notification_type",
+  NOTIFICATION_TYPES.map((type) => type.value) as [string, ...string[]]
+);
+
+export const preferenceCategories = pgEnum(
+  "preference_category",
+  PREFERENCE_CATEGORIES.map((category) => category.value) as [string, ...string[]]
+);
+
+// Main users table
+export const users = pgSchema("auth").table("users", {
+  id: uuid().primaryKey()
 });
 
-// 사용자 통계 정보 스키마
-export const userStatsSchema = z.object({
-  itemsSold: z.number().min(0, "Items sold must be non-negative"),
-  averageRating: z.number().min(0).max(5, "Average rating must be between 0 and 5"),
-  responseRate: z.string().regex(/^\d+%$/, "Response rate must be in percentage format (e.g., '89%')"),
-});
+// User profiles table
+export const userProfiles = pgTable("user_profiles", {
+  profile_id: uuid().primaryKey().references(() => users.id),
+  first_name: text("first_name").notNull(),
+  last_name: text("last_name").notNull(),
+  display_name: text("display_name").notNull(),
+  avatar_url: text("avatar_url").notNull(),
+  bio: text("bio"),
+  location: text("location").notNull(),
+  created_at: timestamp("created_at").notNull().defaultNow(),
+  updated_at: timestamp("updated_at").notNull().defaultNow(),
+}, (table) => ({
+  userIdIdx: index("user_profiles_user_id_idx").on(table.profile_id),
+}));
 
-// 사용자 생성 스키마
-export const createUserSchema = z.object({
-  name: z.string().min(1, "Name is required").max(50, "Name must be less than 50 characters"),
-  email: z.string().email("Invalid email address"),
-  password: z.string().min(8, "Password must be at least 8 characters"),
-  avatar: z.instanceof(File).optional(),
-  bio: z.string().max(200, "Bio must be less than 200 characters").optional(),
-  location: z.string().optional(),
-});
+// User verification table 
+// User sessions table
+// User preferences table 
+// User security settings table
+// User privacy settings table
 
-// 사용자 업데이트 스키마
-export const updateUserSchema = z.object({
-  name: z.string().min(1, "Name is required").max(50, "Name must be less than 50 characters").optional(),
-  email: z.string().email("Invalid email address").optional(),
-  bio: z.string().max(200, "Bio must be less than 200 characters").optional(),
-  location: z.string().optional(),
-  avatar: z.instanceof(File).optional(),
-});
 
-// 로그인 스키마
-export const loginSchema = z.object({
-  email: z.string().email("Invalid email address"),
-  password: z.string().min(1, "Password is required"),
-});
+// User notifications table
+export const userNotifications = pgTable("user_notifications", {
+  notification_id: uuid().primaryKey().defaultRandom(),
+  user_id: uuid().notNull().references(() => users.id),
+  type: notificationTypes().notNull(),
+  title: text("title").notNull(),
+  message: text("message").notNull(), // content를 message로 변경하여 인터페이스와 일치
+  timestamp: text("timestamp").notNull(), // 상대적 시간 표시 (예: "2분 전", "1시간 전")
+  is_read: boolean().notNull().default(false),
+  read_at: timestamp("read_at"),
+  avatar_url: text("avatar_url"), // 발신자 아바타 URL
+  username: text("username"), // 발신자 사용자명
+  data: jsonb().notNull().default({}), // Additional data (예: 관련 리소스 ID, 링크 등)
+  priority: integer().notNull().default(1), // 1=low, 2=medium, 3=high
+  expires_at: timestamp("expires_at"),
+  created_at: timestamp("created_at").notNull().defaultNow(),
+}, (table) => ({
+  userIdIdx: index("user_notifications_user_id_idx").on(table.user_id),
+  unreadIdx: index("user_notifications_unread_idx").on(table.is_read),
+  typeIdx: index("user_notifications_type_idx").on(table.type),
+  createdAtIdx: index("user_notifications_created_at_idx").on(table.created_at),
+}));
 
-// 비밀번호 재설정 스키마
-export const resetPasswordSchema = z.object({
-  email: z.string().email("Invalid email address"),
-});
+// User activity log table
+export const userActivityLogs = pgTable("user_activity_logs", {
+  log_id: uuid().primaryKey().defaultRandom(),
+  user_id: uuid().notNull().references(() => users.id),
+  action: text("action").notNull(), // "login", "logout", "profile_update", etc.
+  resource_type: text("resource_type"), // "profile", "listing", "message", etc.
+  resource_id: text("resource_id"),
+  details: jsonb().notNull().default({}), // Additional details
+  ip_address: text("ip_address"),
+  user_agent: text("user_agent"),
+  created_at: timestamp("created_at").notNull().defaultNow(),
+}, (table) => ({
+  userIdIdx: index("user_activity_logs_user_id_idx").on(table.user_id),
+  actionIdx: index("user_activity_logs_action_idx").on(table.action),
+  createdAtIdx: index("user_activity_logs_created_at_idx").on(table.created_at),
+}));
 
-// 새 비밀번호 설정 스키마
-export const newPasswordSchema = z.object({
-  password: z.string().min(8, "Password must be at least 8 characters"),
-  confirmPassword: z.string(),
-}).refine((data) => data.password === data.confirmPassword, {
-  message: "Passwords don't match",
-  path: ["confirmPassword"],
-});
+// User likes table
+export const userLikes = pgTable("user_likes", {
+  like_id: uuid().primaryKey().defaultRandom(),
+  user_id: uuid().notNull().references(() => users.id),
+  product_id: uuid().notNull(), // 상품 ID (products 테이블 참조)
+  created_at: timestamp("created_at").notNull().defaultNow(),
+}, (table) => ({
+  userIdIdx: index("user_likes_user_id_idx").on(table.user_id),
+  productIdIdx: index("user_likes_product_id_idx").on(table.product_id),
+  uniqueUserProduct: index("user_likes_unique_user_product_idx").on(table.user_id, table.product_id),
+  createdAtIdx: index("user_likes_created_at_idx").on(table.created_at),
+}));
 
-// 메시지 스키마
-export const messageSchema = z.object({
-  id: z.string().min(1, "Message ID is required"),
-  content: z.string().min(1, "Message content is required").max(1000, "Message content must be less than 1000 characters"),
-  senderId: z.string().min(1, "Sender ID is required"),
-  receiverId: z.string().min(1, "Receiver ID is required"),
-  timestamp: z.string().datetime("Invalid timestamp"),
-  isRead: z.boolean(),
-  attachments: z.array(z.string().url("Attachment URL must be valid")).optional(),
-});
+// User statistics table
+export const userStatistics = pgTable("user_statistics", {
+  stat_id: uuid().primaryKey().defaultRandom(),
+  user_id: uuid().notNull().references(() => users.id),
+  total_listings: integer().notNull().default(0),
+  active_listings: integer().notNull().default(0),
+  sold_items: integer().notNull().default(0),
+  total_sales: decimal({ precision: 10, scale: 2 }).notNull().default("0"),
+  total_purchases: integer().notNull().default(0),
+  total_spent: decimal({ precision: 10, scale: 2 }).notNull().default("0"),
+  positive_reviews: integer().notNull().default(0),
+  negative_reviews: integer().notNull().default(0),
+  member_since_days: integer().notNull().default(0),
+  last_activity_days: integer().notNull().default(0),
+  created_at: timestamp("created_at").notNull().defaultNow(),
+  updated_at: timestamp("updated_at").notNull().defaultNow(),
+}, (table) => ({
+  userIdIdx: index("user_statistics_user_id_idx").on(table.user_id),
+}));
 
-// 대화 스키마
-export const conversationSchema = z.object({
-  id: z.string().min(1, "Conversation ID is required"),
-  participantIds: z.array(z.string().min(1, "Participant ID is required")).length(2, "Conversation must have exactly 2 participants"),
-  lastMessage: messageSchema.optional(),
-  unreadCount: z.number().min(0, "Unread count must be non-negative"),
-  updatedAt: z.string().datetime("Invalid timestamp"),
-});
+// TypeScript types for notifications
+export interface Notification {
+  id: string;
+  type: 'message' | 'like' | 'follow' | 'system';
+  title: string;
+  message: string;
+  timestamp: string;
+  isRead: boolean;
+  avatar?: string;
+  username?: string;
+}
 
-// 메시지 필터 스키마
-export const messageFiltersSchema = z.object({
-  search: z.string().optional(),
-  unreadOnly: z.boolean().optional(),
-  limit: z.number().min(1).max(100).default(20),
-});
+// Database types
+export type UserNotification = typeof userNotifications.$inferSelect;
+export type NewUserNotification = typeof userNotifications.$inferInsert;
+export type UserLike = typeof userLikes.$inferSelect;
+export type NewUserLike = typeof userLikes.$inferInsert;
 
-// 메시지 목록 스키마
-export const messageListSchema = z.object({
-  conversations: z.array(conversationSchema),
-  totalCount: z.number().min(0),
-  hasMore: z.boolean(),
-});
-
-// 알림 스키마
-export const notificationSchema = z.object({
-  id: z.string().min(1, "Notification ID is required"),
-  type: z.enum(["message", "sale", "review", "system", "price_drop"]),
-  title: z.string().min(1, "Title is required"),
-  content: z.string().min(1, "Content is required"),
-  timestamp: z.string().datetime("Invalid timestamp"),
-  isRead: z.boolean(),
-  avatar: z.string().url("Avatar URL must be valid").optional(),
-  avatarFallback: z.string().optional(),
-  actions: z.array(z.object({
-    label: z.string(),
-    action: z.string(),
-    variant: z.enum(["default", "outline"]),
-  })).optional(),
-  metadata: z.record(z.any()).optional(),
-});
-
-// 알림 필터 스키마
-export const notificationFiltersSchema = z.object({
-  type: z.enum(["all", "message", "sale", "review", "system", "price_drop"]).default("all"),
-  unreadOnly: z.boolean().optional(),
-  limit: z.number().min(1).max(100).default(20),
-  page: z.number().min(1).default(1),
-});
-
-// 알림 목록 스키마
-export const notificationListSchema = z.object({
-  notifications: z.array(notificationSchema),
-  totalCount: z.number().min(0),
-  unreadCount: z.number().min(0),
-  hasMore: z.boolean(),
-  filters: notificationFiltersSchema,
-});
-
-// 타입 추론
-export type User = z.infer<typeof userSchema>;
-export type UserStats = z.infer<typeof userStatsSchema>;
-export type CreateUserData = z.infer<typeof createUserSchema>;
-export type UpdateUserData = z.infer<typeof updateUserSchema>;
-export type LoginData = z.infer<typeof loginSchema>;
-export type ResetPasswordData = z.infer<typeof resetPasswordSchema>;
-export type NewPasswordData = z.infer<typeof newPasswordSchema>;
-export type Message = z.infer<typeof messageSchema>;
-export type Conversation = z.infer<typeof conversationSchema>;
-export type MessageFilters = z.infer<typeof messageFiltersSchema>;
-export type MessageList = z.infer<typeof messageListSchema>;
-export type Notification = z.infer<typeof notificationSchema>;
-export type NotificationFilters = z.infer<typeof notificationFiltersSchema>;
-export type NotificationList = z.infer<typeof notificationListSchema>;
+// Likes page interface
+export interface LikedProduct {
+  id: string;
+  title: string;
+  price: string;
+  image: string;
+  seller: string;
+  likes: number;
+  category: string;
+  condition: string;
+  location: string;
+  postedDate: string;
+}
