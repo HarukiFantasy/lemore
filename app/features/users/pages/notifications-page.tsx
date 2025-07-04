@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { X, Bell, MessageCircle, Heart, User, Settings } from "lucide-react";
 import { Button } from "~/common/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "~/common/components/ui/card";
+import { Card, CardContent } from "~/common/components/ui/card";
 import { Badge } from "~/common/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "~/common/components/ui/avatar";
 import { AnimatedList } from "../../../../components/magicui/animated-list";
@@ -17,7 +17,7 @@ export const notificationFiltersSchema = z.object({
 });
 
 export const notificationSchema = z.object({
-  id: z.string(),
+  notification_id: z.number(),
   type: z.enum(["message", "sale", "review", "system"]),
   title: z.string(),
   content: z.string(),
@@ -53,7 +53,7 @@ export type NotificationList = z.infer<typeof notificationListSchema>;
 
 const mockNotifications: Notification[] = [
   {
-    id: '1',
+    notification_id: 1,
     type: 'message',
     title: 'New Message',
     content: 'Sarah sent you a message.',
@@ -63,7 +63,7 @@ const mockNotifications: Notification[] = [
     avatarFallback: 'S'
   },
   {
-    id: '2',
+    notification_id: 2,
     type: 'sale',
     title: 'Sale Notification',
     content: 'Mike is interested in your product.',
@@ -73,7 +73,7 @@ const mockNotifications: Notification[] = [
     avatarFallback: 'M'
   },
   {
-    id: '3',
+    notification_id: 3,
     type: 'review',
     title: 'Review Notification',
     content: 'Emma left a review on your product.',
@@ -83,7 +83,7 @@ const mockNotifications: Notification[] = [
     avatarFallback: 'E'
   },
   {
-    id: '4',
+    notification_id: 4,
     type: 'system',
     title: 'System Notification',
     content: 'New features have been added. Check them out!',
@@ -91,7 +91,7 @@ const mockNotifications: Notification[] = [
     isRead: true
   },
   {
-    id: '5',
+    notification_id: 5,
     type: 'message',
     title: 'New Message',
     content: 'John sent you a message.',
@@ -128,11 +128,11 @@ export function NotificationsPage({ isOpen, onClose }: NotificationsPageProps) {
   const unreadNotifications = notifications.filter(notification => !notification.isRead);
   const unreadCount = unreadNotifications.length;
 
-  const markAsRead = (id: string) => {
+  const markAsRead = (id: number) => {
     // 애니메이션을 위해 먼저 알림을 제거
     setNotifications(prev => 
       prev.map(notification => 
-        notification.id === id 
+        notification.notification_id === id 
           ? { ...notification, isRead: true }
           : notification
       )
@@ -224,7 +224,7 @@ export function NotificationsPage({ isOpen, onClose }: NotificationsPageProps) {
                 <AnimatedList className="p-4 space-y-3" delay={200}>
                   {unreadNotifications.map((notification: Notification) => (
                     <motion.div
-                      key={notification.id}
+                      key={notification.notification_id}
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, x: 100, scale: 0.8 }}
@@ -235,7 +235,7 @@ export function NotificationsPage({ isOpen, onClose }: NotificationsPageProps) {
                       className={`cursor-pointer transition-all duration-200 hover:shadow-md hover:scale-[1.02] active:scale-[0.98] ${
                       'bg-blue-50 border-blue-200 hover:bg-blue-100'
                       }`}
-                      onClick={() => markAsRead(notification.id)}
+                      onClick={() => markAsRead(notification.notification_id)}
                     >
                         <CardContent className="p-4">
                           <div className="flex items-start space-x-3">

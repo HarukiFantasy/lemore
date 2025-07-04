@@ -1,9 +1,8 @@
 import { Link } from "react-router";
 import { z } from "zod";
-import { HeartIcon, PackageIcon, EyeIcon } from "lucide-react";
-import { HoverCard, HoverCardTrigger, HoverCardContent } from "~/common/components/ui/hover-card";
-import { Badge } from "~/common/components/ui/badge";
+import { HeartIcon } from "lucide-react";
 import { ShineBorder } from "components/magicui/shine-border";
+import { UserStatsHoverCard } from "~/common/components/user-stats-hover-card";
 
 // 가격 포맷팅 함수
 const formatPrice = (price: number, currency: string = "THB"): string => {
@@ -28,14 +27,14 @@ type ProductCardProps = z.infer<typeof productCardSchema>;
 // Mock seller statistics - 실제로는 API에서 가져올 데이터
 const getSellerStats = (sellerId: string): {
   totalListings: number;
-  totalLikes: number;
-  totalViews: number;
+  rating: number;
+  responseRate: string;
 } => {
   // 실제 구현에서는 sellerId를 사용해서 API 호출
   return {
     totalListings: Math.floor(Math.random() * 50) + 5,
-    totalLikes: Math.floor(Math.random() * 200) + 20,
-    totalViews: Math.floor(Math.random() * 1000) + 100,
+    rating: Math.floor(Math.random() * 5) + 1,
+    responseRate: `${Math.floor(Math.random() * 100) + 1}%`,
   };
 };
 
@@ -118,58 +117,14 @@ export function ProductCard({
           </div>
           <div className="flex flex-col gap-1 p-3 pb-2 flex-grow">
             <span className="text-base font-semibold truncate">{title}</span>
-            <HoverCard>
-              <HoverCardTrigger asChild>
-                <span className="text-xs text-neutral-500 truncate cursor-pointer hover:text-neutral-700 transition-colors">
-                  {seller}
-                </span>
-              </HoverCardTrigger>
-              <HoverCardContent className="w-80">
-                <div className="flex flex-col gap-3">
-                  <div className="flex items-center gap-2">
-                    <span className="font-semibold text-sm">{getSellerName(seller)}</span>
-                    <Badge variant="secondary" className="text-xs">Seller</Badge>
-                  </div>
-                  
-                  <div className="text-xs text-neutral-500">
-                    ID: {seller}
-                  </div>
-                  
-                  {/* Seller Stats */}
-                  <div className="grid grid-cols-3 gap-3">
-                    <div className="flex flex-col items-center gap-1">
-                      <PackageIcon className="w-4 h-4 text-blue-500" />
-                      <span className="text-xs text-neutral-600">Total Listings</span>
-                      <span className="text-sm font-semibold">{sellerStats.totalListings}</span>
-                    </div>
-                    <div className="flex flex-col items-center gap-1">
-                      <HeartIcon className="w-4 h-4 text-red-500" />
-                      <span className="text-xs text-neutral-600">Total Likes</span>
-                      <span className="text-sm font-semibold">{sellerStats.totalLikes}</span>
-                    </div>
-                    <div className="flex flex-col items-center gap-1">
-                      <EyeIcon className="w-4 h-4 text-green-500" />
-                      <span className="text-xs text-neutral-600">Total Views</span>
-                      <span className="text-sm font-semibold">{sellerStats.totalViews}</span>
-                    </div>
-                  </div>
-                  
-                  {/* Additional Seller Info */}
-                  <div className="pt-2 border-t border-gray-100">
-                    <div className="grid grid-cols-2 gap-2 text-xs text-neutral-600">
-                      <div>
-                        <span className="font-medium">Member since:</span> 
-                        <span className="ml-1">2023</span>
-                      </div>
-                      <div>
-                        <span className="font-medium">Response rate:</span> 
-                        <span className="ml-1">98%</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </HoverCardContent>
-            </HoverCard>
+            <UserStatsHoverCard
+              userId={seller}
+              userName={seller}
+              userType="Seller"
+              className="text-xs text-neutral-500 truncate"
+            >
+              {seller}
+            </UserStatsHoverCard>
             <div className="flex items-center justify-between mt-1">
               <span className="text-sm font-semibold text-purple-700">{formatPrice(price, currency)}</span>
               <div className="flex items-center gap-1 text-neutral-500 text-xs">

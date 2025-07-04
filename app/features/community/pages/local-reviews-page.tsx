@@ -6,20 +6,19 @@ import { Button } from "~/common/components/ui/button";
 import { Input } from "~/common/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "~/common/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "~/common/components/ui/avatar";
+import { ScrollArea } from "~/common/components/ui/scroll-area";
+import { Marquee } from "components/magicui/marquee";
 
 // Types
 interface Review {
   id: string;
-  businessName: string;
-  businessType: string;
-  location: string;
+  business_id: string;
   rating: number;
   review: string;
   author: string;
   authorAvatar?: string;
   timestamp: string;
-  photos?: string[];
-  priceRange: string;
+  photos: string[];
   tags: string[];
 }
 
@@ -210,82 +209,63 @@ async function fetchReviewsFromDatabase(filters: {
     const mockReviews: Review[] = [
       {
         id: "1",
-        businessName: "Sukhumvit Thai Restaurant",
-        businessType: "Restaurant",
-        location: "Bangkok",
+        business_id: "1",
         rating: 5,
-        review: "Amazing authentic Thai food! The pad thai was perfect and the service was excellent. Highly recommend for anyone visiting Bangkok.",
+        review: "Authentic Thai cuisine in a cozy atmosphere. The service was excellent and the food was delicious!",
         author: "Sarah Johnson",
         authorAvatar: "/sample.png",
         timestamp: "2 hours ago",
         photos: [],
-        priceRange: "$$",
         tags: ["authentic", "delicious", "friendly service"]
       },
       {
         id: "2",
-        businessName: "Chiang Mai Coffee House",
-        businessType: "Cafe",
-        location: "ChiangMai",
-        rating: 4,
-        review: "Great coffee and atmosphere! The local beans are fantastic and the staff is very knowledgeable about coffee.",
-        author: "Mike Chen",
+        business_id: "1",
+        rating: 5,
+        review: "Authentic Thai cuisine in a cozy atmosphere. The service was excellent and the food was delicious!",
+        author: "Sarah Johnson",
         authorAvatar: "/sample.png",
         timestamp: "5 hours ago",
         photos: [],
-        priceRange: "$",
-        tags: ["great coffee", "local beans", "cozy atmosphere"]
+        tags: ["authentic", "delicious", "friendly service"]
       },
       {
         id: "3",
-        businessName: "Phuket Beach Massage",
-        businessType: "Service",
-        location: "Phuket",
-        rating: 4,
-        review: "Relaxing massage right on the beach! The therapists are professional and the setting is perfect for relaxation.",
-        author: "Emma Wilson",
+        business_id: "1",
+        rating: 5,
+        review: "Authentic Thai cuisine in a cozy atmosphere. The service was excellent and the food was delicious!",
+        author: "Sarah Johnson",
         authorAvatar: "/sample.png",
-        timestamp: "1 day ago",
+        timestamp: "2 hours ago",
         photos: [],
-        priceRange: "$$",
-        tags: ["relaxing", "professional", "beach setting"]
+        tags: ["authentic", "delicious", "friendly service"]
       },
       {
         id: "4",
-        businessName: "Bangkok Electronics Store",
-        businessType: "Shop",
-        location: "Bangkok",
-        rating: 3,
-        review: "Good selection of electronics but prices are a bit high. Staff was helpful with my purchase.",
-        author: "David Kim",
+        business_id: "1",
+        rating: 5,
+        review: "Authentic Thai cuisine in a cozy atmosphere. The service was excellent and the food was delicious!",
+        author: "Sarah Johnson",
         authorAvatar: "/sample.png",
-        timestamp: "2 days ago",
+        timestamp: "2 hours ago",
         photos: [],
-        priceRange: "$$$",
-        tags: ["good selection", "helpful staff", "expensive"]
+        tags: ["authentic", "delicious", "friendly service"]
       },
       {
         id: "5",
-        businessName: "Hua Hin Yoga Studio",
-        businessType: "Entertainment",
-        location: "HuaHin",
+        business_id: "1",
         rating: 5,
-        review: "Beautiful yoga studio with ocean views! The instructors are excellent and the classes are perfect for all levels.",
-        author: "Lisa Park",
+        review: "Authentic Thai cuisine in a cozy atmosphere. The service was excellent and the food was delicious!",
+        author: "Sarah Johnson",
         authorAvatar: "/sample.png",
-        timestamp: "3 days ago",
+        timestamp: "2 hours ago",
         photos: [],
-        priceRange: "$$",
-        tags: ["beautiful setting", "excellent instructors", "ocean views"]
+        tags: ["authentic", "delicious", "friendly service"]
       }
     ];
 
     // 필터링 로직
     let filteredReviews = mockReviews;
-    
-    if (filters.location && filters.location !== "All Cities") {
-      filteredReviews = filteredReviews.filter(review => review.location === filters.location);
-    }
     
     return filteredReviews.slice(0, filters.limit);
     
@@ -379,16 +359,13 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
 
     const transformedReviews = reviews.map(review => ({
       id: review.id,
-      businessName: review.businessName,
-      businessType: review.businessType,
-      location: review.location,
+      business_id: review.business_id,
       rating: review.rating,
       review: review.review,
       author: review.author,
       authorAvatar: review.authorAvatar,
-      timestamp: formatTimeAgo(new Date(review.timestamp)),
+      timestamp: formatTimeAgo(new Date(review.timestamp)), 
       photos: review.photos,
-      priceRange: review.priceRange,
       tags: review.tags
     }));
 
@@ -475,7 +452,6 @@ export default function LocalReviewsPage({ loaderData }: Route.ComponentProps) {
   const [newReview, setNewReview] = useState({
     rating: 5,
     review: "",
-    priceRange: "$" as z.infer<typeof PriceRangeSchema>,
     tags: [] as string[]
   });
   const [showBusinessForm, setShowBusinessForm] = useState(false);
@@ -490,6 +466,17 @@ export default function LocalReviewsPage({ loaderData }: Route.ComponentProps) {
     website: "",
     description: ""
   });
+
+  // 상태 추가
+  const [reviewStep, setReviewStep] = useState<'select' | 'newBusiness' | 'review'>('select');
+  const [selectedOrNewBusiness, setSelectedOrNewBusiness] = useState<Business | null>(null);
+  const [businessSearch, setBusinessSearch] = useState('');
+  const [isAddingNewBusiness, setIsAddingNewBusiness] = useState(false);
+
+  // 예시 태그 배열 추가
+  const EXAMPLE_TAGS = [
+    "Kind service", "Good value", "Clean", "Nice atmosphere", "Delicious", "Would revisit", "Recommend", "Fast service"
+  ];
 
   useEffect(() => {
     setNewBusiness(prev => ({ ...prev, location: urlLocation as z.infer<typeof LocationSchema> }));
@@ -552,7 +539,7 @@ export default function LocalReviewsPage({ loaderData }: Route.ComponentProps) {
       console.log("Submitting review:", { business: selectedBusiness, review: newReview });
       setShowReviewForm(false);
       setSelectedBusiness(null);
-      setNewReview({ rating: 5, review: "", priceRange: "$" as z.infer<typeof PriceRangeSchema>, tags: [] });
+      setNewReview({ rating: 5, review: "", tags: [] });
     }
   };
 
@@ -664,77 +651,98 @@ export default function LocalReviewsPage({ loaderData }: Route.ComponentProps) {
           Found <span className="font-semibold text-blue-600">{filteredBusinesses.length}</span> businesses
           {urlLocation === "All Cities" ? " across all cities" : ` in ${urlLocation}`}
         </p>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={() => setShowBusinessForm(true)}>
-            Add Business
-          </Button>
-          <Button onClick={() => setShowReviewForm(true)}>
-            Write a Review
+        <div>
+          <Button variant="outline" onClick={() => setShowReviewForm(true)}>
+            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+            </svg>
+            Write Review
           </Button>
         </div>
       </div>
 
-      {/* Business List */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {/* Business List (카드 통합) */}
+      <div className="mt-10 space-y-6">
         {filteredBusinesses.length > 0 ? (
-          filteredBusinesses.map((business) => (
-            <Card key={business.id} className="hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 transition-all duration-300 hover:scale-[1.02] hover:shadow-lg cursor-pointer">
-              <div className="aspect-video overflow-hidden rounded-t-lg">
-                <img 
-                  src={business.image || "/sample.png"} 
-                  alt={business.name}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              <CardContent className="py-1">
-                <div className="flex justify-between items-start mb-2">
-                  <h3 className="font-semibold text-lg text-gray-900">{business.name}</h3>
-                  <span className="text-sm text-gray-500">{business.priceRange}</span>
-                </div>
-                
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="flex items-center">
-                    {renderStars(business.averageRating)}
+          filteredBusinesses.map((business) => {
+            const businessReviews = reviews
+              .filter((r) => r.business_id === business.id)
+              .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+              .slice(0, 3);
+            // 모든 리뷰에서 태그를 모아 중복 없이 badge로 표시
+            const allReviewTags = Array.from(new Set(
+              reviews.filter(r => r.business_id === business.id).flatMap(r => r.tags)
+            ));
+            return (
+              <Card
+                key={business.id}
+                className="flex flex-row hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 transition-all duration-300 hover:scale-[1.02] hover:shadow-lg cursor-pointer overflow-hidden"
+              >
+                {/* 왼쪽: 비즈니스 사진/정보 */}
+                <div className="w-56 min-w-[14rem] bg-gray-50 flex flex-col items-center border-r border-gray-100 relative overflow-hidden p-0 -mt-6 -mb-6">
+                  {/* 이미지: 높이 고정, 위에 배치, 상단 라운드 */}
+                  <div className="w-full h-40 overflow-hidden flex-shrink-0 p-0">
+                    <img
+                      src={business.image || "/sample.png"}
+                      alt={business.name}
+                      className="object-cover w-full h-full rounded-t-lg"
+                    />
                   </div>
-                  <span className="text-sm text-gray-600">
-                    {business.averageRating} ({business.totalReviews} reviews)
-                  </span>
+                  {/* 정보: 이미지 아래, 배경 흰색 */}
+                  <div className="w-full bg-white/90 p-3 text-center z-10">
+                    <h3 className="font-bold text-lg text-gray-900 mb-1 truncate text-wrap">{business.name}</h3>
+                    <div className="flex items-center justify-center gap-1 mb-2">
+                      {renderStars(business.averageRating)}
+                      <span className="ml-1 text-sm text-gray-600 font-medium">{business.averageRating.toFixed(1)}</span>
+                    </div>
+                    {/* 리뷰 태그 badge */}
+                    <div className="flex flex-wrap justify-center gap-1 mt-2">
+                      {allReviewTags.length > 0 ? (
+                        allReviewTags.map((tag, idx) => (
+                          <span
+                            key={idx}
+                            className="bg-gradient-to-r from-purple-50 to-blue-50 text-purple-700 px-2 py-0.5 rounded-full text-xs font-medium border border-purple-100"
+                          >
+                            {tag}
+                          </span>
+                        ))
+                      ) : (
+                        <span className="text-xs text-gray-400 italic">No tags yet</span>
+                      )}
+                    </div>
+                  </div>
                 </div>
-
-                <div className="flex items-center gap-2 mb-3">
-                  <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-medium">
-                    {business.type}
-                  </span>
-                  <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-medium">
-                    {business.location}
-                  </span>
-                </div>
-
-                <div className="flex flex-wrap gap-1 mb-3">
-                  {business.tags.map((tag, index) => (
-                    <span 
-                      key={index}
-                      className="bg-gray-100 text-gray-700 px-2 py-1 rounded-full text-xs"
-                    >
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="w-full"
-                  onClick={() => {
-                    setSelectedBusiness(business);
-                    setShowReviewForm(true);
-                  }}
-                >
-                  Write Review
-                </Button>
-              </CardContent>
-            </Card>
-          ))
+                {/* 오른쪽: 리뷰 리스트 */}
+                <ScrollArea className="flex-1 max-h-64">
+                  <Marquee vertical repeat={2} className="h-full">
+                    <div className="flex flex-col gap-6 justify-center p-6 -mt-6 -mb-6">
+                      {businessReviews.length > 0 ? (
+                        businessReviews.map((review) => (
+                          <div key={review.id} className="border-b pb-4 last:border-b-0 last:pb-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <Avatar className="w-7 h-7">
+                                <AvatarImage src={review.authorAvatar} alt={review.author} />
+                                <AvatarFallback>{review.author.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+                              </Avatar>
+                              <span className="font-medium text-sm text-gray-800">{review.author}</span>
+                              <span className="text-xs text-gray-400">•</span>
+                              <span className="text-xs text-gray-500">{review.timestamp}</span>
+                              <span className="ml-2 flex items-center">{renderStars(review.rating)}</span>
+                            </div>
+                            <div className="text-gray-700 text-sm mb-1">{review.review}</div>  
+                              <div className="flex flex-wrap gap-1 mt-1">
+                              </div>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="text-gray-400 text-sm italic">No reviews yet for this business.</div>
+                      )}
+                    </div>
+                  </Marquee>
+                </ScrollArea>
+              </Card>
+            );
+          })
         ) : (
           <div className="col-span-full">
             <Card>
@@ -746,76 +754,12 @@ export default function LocalReviewsPage({ loaderData }: Route.ComponentProps) {
                 <p className="text-sm text-gray-400">
                   {urlLocation === "All Cities" 
                     ? "Try adjusting your filters or search terms."
-                    : "Try changing the location in the navigation bar above or adjust your filters."
-                  }
+                    : "Try changing the location in the navigation bar above or adjust your filters."}
                 </p>
               </CardContent>
             </Card>
           </div>
         )}
-      </div>
-
-      {/* Recent Reviews Section */}
-      <div className="mt-12">
-        <h2 className="text-2xl font-bold mb-6">Recent Reviews</h2>
-        <div className="space-y-4">
-          {reviews.length > 0 ? (
-            reviews.map((review) => (
-              <Card key={review.id} className="hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 transition-all duration-300 hover:scale-[1.01] hover:shadow-md">
-                <CardContent className="py-1">
-                  <div className="flex items-start gap-4">
-                    <Avatar className="w-12 h-12">
-                      <AvatarImage src={review.authorAvatar} alt={review.author} />
-                      <AvatarFallback>{review.author.split(' ').map(n => n[0]).join('')}</AvatarFallback>
-                    </Avatar>
-                    
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
-                        <h3 className="font-semibold text-lg">{review.businessName}</h3>
-                        <span className="text-sm text-gray-500">•</span>
-                        <span className="text-sm text-gray-500">{review.businessType}</span>
-                        <span className="text-sm text-gray-500">•</span>
-                        <span className="text-sm text-gray-500">{review.location}</span>
-                      </div>
-                      
-                      <div className="flex items-center gap-2 mb-3">
-                        <div className="flex items-center">
-                          {renderStars(review.rating)}
-                        </div>
-                        <span className="text-sm text-gray-600">{review.priceRange}</span>
-                      </div>
-                      
-                      <p className="text-gray-700 mb-3 leading-relaxed">{review.review}</p>
-                      
-                      <div className="flex flex-wrap gap-1 mb-3">
-                        {review.tags.map((tag, index) => (
-                          <span 
-                            key={index}
-                            className="bg-purple-100 text-purple-700 px-2 py-1 rounded-full text-xs"
-                          >
-                            {tag}
-                          </span>
-                        ))}
-                      </div>
-                      
-                      <div className="flex items-center justify-between text-sm text-gray-500">
-                        <span>By {review.author}</span>
-                        <span>{review.timestamp}</span>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))
-          ) : (
-            <Card>
-              <CardContent className="p-8 text-center">
-                <p className="text-gray-500">No reviews found yet.</p>
-                <p className="text-sm text-gray-400 mt-2">Be the first to write a review!</p>
-              </CardContent>
-            </Card>
-          )}
-        </div>
       </div>
 
       {/* Business Registration Form Modal */}
@@ -969,87 +913,227 @@ export default function LocalReviewsPage({ loaderData }: Route.ComponentProps) {
         </div>
       )}
 
-      {/* Review Form Modal */}
+      {/* Review Form Modal (비즈니스 선택/등록/리뷰 작성 통합) */}
       {showReviewForm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div className="fixed inset-0 backdrop-blur-lg flex items-center justify-center p-4 z-50">
           <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <CardHeader>
               <CardTitle>
-                Write a Review {selectedBusiness && `for ${selectedBusiness.name}`}
+                {reviewStep === 'select' && 'Write a Review'}
+                {reviewStep === 'newBusiness' && 'Add New Business'}
+                {reviewStep === 'review' && `Write a Review for ${selectedOrNewBusiness?.name}`}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {!selectedBusiness && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Business Name</label>
-                  <Input placeholder="Enter business name..." />
-                </div>
-              )}
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Rating</label>
-                <div className="flex items-center gap-1">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <button
-                      key={star}
-                      type="button"
-                      onClick={() => setNewReview({ ...newReview, rating: star })}
-                      className="text-2xl hover:scale-110 transition-transform"
-                    >
-                      <svg
-                        className={`w-8 h-8 ${star <= newReview.rating ? "text-yellow-400" : "text-gray-300"}`}
-                        fill="currentColor"
-                        viewBox="0 0 20 20"
-                      >
-                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                      </svg>
-                    </button>
-                  ))}
-                  <span className="ml-2 text-sm text-gray-600">{newReview.rating}/5</span>
-                </div>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Review</label>
-                <textarea
-                  className="w-full min-h-[120px] p-3 border rounded-md resize-none focus:outline-none focus:ring-2 focus:ring-ring"
-                  placeholder="Share your experience..."
-                  value={newReview.review}
-                  onChange={(e) => setNewReview({ ...newReview, review: e.target.value })}
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Price Range</label>
-                <div className="flex gap-2">
-                  {validPriceRanges.slice(0, -1).map((range) => (
+              {/* 1단계: 비즈니스 선택 */}
+              {reviewStep === 'select' && (
+                <>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Select a Business</label>
+                  <Input
+                    placeholder="Search business name..."
+                    value={businessSearch}
+                    onChange={e => setBusinessSearch(e.target.value)}
+                    className="mb-2"
+                  />
+                  <div className="max-h-48 overflow-y-auto border rounded-md divide-y">
+                    {businesses
+                      .filter(b => b.name.toLowerCase().includes(businessSearch.toLowerCase()))
+                      .map(b => (
+                        <Button
+                          key={b.id}
+                          variant="ghost"
+                          className="w-full justify-start px-4 py-2 text-left hover:bg-blue-50"
+                          onClick={() => {
+                            setSelectedOrNewBusiness(b);
+                            setReviewStep('review');
+                          }}
+                        >
+                          <span className="font-medium text-gray-900">{b.name}</span>
+                          <span className="ml-2 text-xs text-gray-500">{b.location}</span>
+                        </Button>
+                      ))}
                     <Button
-                      key={range}
-                      variant={newReview.priceRange === range ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => setNewReview({ ...newReview, priceRange: range })}
+                      variant="ghost"
+                      className="w-full justify-start px-4 py-2 text-left hover:bg-purple-50 text-purple-700 font-semibold"
+                      onClick={() => {
+                        setIsAddingNewBusiness(true);
+                        setReviewStep('newBusiness');
+                      }}
                     >
-                      {range}
+                      + Add a new business
                     </Button>
-                  ))}
-                </div>
-              </div>
-              
-              <div className="flex gap-2">
-                <Button onClick={handleSubmitReview} className="flex-1">
-                  Submit Review
-                </Button>
-                <Button 
-                  variant="outline" 
-                  onClick={() => {
-                    setShowReviewForm(false);
-                    setSelectedBusiness(null);
-                    setNewReview({ rating: 5, review: "", priceRange: "$" as z.infer<typeof PriceRangeSchema>, tags: [] });
-                  }}
-                >
-                  Cancel
-                </Button>
-              </div>
+                  </div>
+                  <div className="flex gap-2 mt-4">
+                    <Button variant="outline" onClick={() => { setShowReviewForm(false); setReviewStep('select'); setSelectedOrNewBusiness(null); }}>Cancel</Button>
+                  </div>
+                </>
+              )}
+              {/* 2단계: 새 비즈니스 등록 */}
+              {reviewStep === 'newBusiness' && (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Business Name *</label>
+                    <Input
+                      placeholder="Enter business name..."
+                      value={newBusiness.name}
+                      onChange={e => setNewBusiness({ ...newBusiness, name: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Type</label>
+                    <div className="flex flex-wrap gap-2">
+                      {BUSINESS_TYPES.slice(0, -1).map(type => (
+                        <Button
+                          key={type}
+                          variant={newBusiness.type === type ? 'default' : 'outline'}
+                          size="sm"
+                          onClick={() => setNewBusiness({ ...newBusiness, type })}
+                        >
+                          {type}
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Location</label>
+                    <select
+                      className="w-full border rounded-md p-2"
+                      value={newBusiness.location}
+                      onChange={e => setNewBusiness({ ...newBusiness, location: e.target.value as typeof VALID_LOCATIONS[number] })}
+                    >
+                      {VALID_LOCATIONS.slice(0, -1).map(loc => (
+                        <option key={loc} value={loc}>{loc}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Address *</label>
+                    <Input
+                      placeholder="Enter business address..."
+                      value={newBusiness.address}
+                      onChange={e => setNewBusiness({ ...newBusiness, address: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Price Range</label>
+                    <div className="flex gap-2">
+                      {PRICE_RANGES.slice(0, -1).map(range => (
+                        <Button
+                          key={range}
+                          variant={newBusiness.priceRange === range ? 'default' : 'outline'}
+                          size="sm"
+                          onClick={() => setNewBusiness({ ...newBusiness, priceRange: range })}
+                        >
+                          {range}
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                    <textarea
+                      className="w-full min-h-[80px] p-3 border rounded-md resize-none focus:outline-none focus:ring-2 focus:ring-ring"
+                      placeholder="Describe the business..."
+                      value={newBusiness.description}
+                      onChange={e => setNewBusiness({ ...newBusiness, description: e.target.value })}
+                    />
+                  </div>
+                  <div className="flex gap-2 mt-4">
+                    <Button
+                      onClick={() => {
+                        // 실제로는 DB에 비즈니스 등록 후, 등록된 business 객체를 setSelectedOrNewBusiness로 지정해야 함
+                        setSelectedOrNewBusiness({ ...newBusiness, id: `new-${Date.now()}`, averageRating: 0, totalReviews: 0, tags: [] });
+                        setReviewStep('review');
+                      }}
+                      className="flex-1"
+                    >
+                      Next: Write Review
+                    </Button>
+                    <Button variant="outline" onClick={() => { setReviewStep('select'); setIsAddingNewBusiness(false); }}>Back</Button>
+                  </div>
+                </>
+              )}
+              {/* 3단계: 리뷰 작성 */}
+              {reviewStep === 'review' && selectedOrNewBusiness && (
+                <>
+                  <div className="mb-2">
+                    <span className="block text-sm text-gray-500 mb-1">Business</span>
+                    <span className="font-semibold text-gray-900">{selectedOrNewBusiness.name}</span>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Rating</label>
+                    <div className="flex items-center gap-1">
+                      {[1, 2, 3, 4, 5].map(star => (
+                        <button
+                          key={star}
+                          type="button"
+                          onClick={() => setNewReview({ ...newReview, rating: star })}
+                          className="text-2xl hover:scale-110 transition-transform"
+                        >
+                          <svg
+                            className={`w-8 h-8 ${star <= newReview.rating ? 'text-yellow-400' : 'text-gray-300'}`}
+                            fill="currentColor"
+                            viewBox="0 0 20 20"
+                          >
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                          </svg>
+                        </button>
+                      ))}
+                      <span className="ml-2 text-sm text-gray-600">{newReview.rating}/5</span>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Review</label>
+                    <textarea
+                      className="w-full min-h-[120px] p-3 border rounded-md resize-none focus:outline-none focus:ring-2 focus:ring-ring"
+                      placeholder="Share your experience..."
+                      value={newReview.review}
+                      onChange={e => setNewReview({ ...newReview, review: e.target.value })}
+                    />
+                  </div>
+                  {/* 예시 태그 badge */}
+                  <div className="mb-2">
+                    <div className="flex flex-wrap gap-2">
+                      {EXAMPLE_TAGS.map(tag => {
+                        const selected = newReview.tags.includes(tag);
+                        return (
+                          <Button
+                            key={tag}
+                            type="button"
+                            variant={selected ? "default" : "outline"}
+                            size="sm"
+                            className={selected ? "bg-gradient-to-r from-purple-200 to-blue-200 text-gray-700 border-none shadow" : ""}
+                            onClick={() => {
+                              if (selected) {
+                                setNewReview({ ...newReview, tags: newReview.tags.filter(t => t !== tag) });
+                              } else {
+                                setNewReview({ ...newReview, tags: [...newReview.tags, tag] });
+                              }
+                            }}
+                          >
+                            {tag}
+                          </Button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                  <div className="flex gap-2 mt-4">
+                    <Button
+                      onClick={() => {
+                        // 실제로는 리뷰 등록 및 비즈니스 등록(필요시) 처리
+                        setShowReviewForm(false);
+                        setReviewStep('select');
+                        setSelectedOrNewBusiness(null);
+                        setNewReview({ rating: 5, review: '', tags: [] });
+                      }}
+                      className="flex-1"
+                    >
+                      Submit Review
+                    </Button>
+                    <Button variant="outline" onClick={() => { setReviewStep(isAddingNewBusiness ? 'newBusiness' : 'select'); }}>Back</Button>
+                  </div>
+                </>
+              )}
             </CardContent>
           </Card>
         </div>

@@ -4,7 +4,7 @@ import { ProductCard } from '../components/product-card';
 import { Form, useSearchParams, useLoaderData, useRouteError, isRouteErrorResponse, useSubmit } from 'react-router';
 import { Input } from '~/common/components/ui/input';
 import { Button } from '~/common/components/ui/button';
-import { PRODUCT_CATEGORIES } from "../constants";
+import { PRODUCT_CATEGORIES } from "~/common/constants";
 import { BlurFade } from 'components/magicui/blur-fade';
 import { z } from "zod";
 
@@ -363,19 +363,12 @@ export default function BrowseListingsPage() {
         {/* 카테고리 */}
         <div className="flex justify-center mb-8">
           <div className="flex space-x-2 sm:space-x-3 md:space-x-4 lg:space-x-5 xl:space-x-6">
-            {PRODUCT_CATEGORIES.slice(0, 9).map((cat, index) => (
-              <div 
-                key={cat.value} 
-                className={`
-                  flex flex-col items-center min-w-[65px] cursor-pointer hover:scale-105 transition-transform
-                  ${index >= 4 ? 'hidden md:flex' : ''}
-                `}
-                onClick={() => handleCategoryClick(cat.label)}
-              >
+            {PRODUCT_CATEGORIES.slice(0, 9).map(category => (
+              <div key={category} className="flex flex-col items-center min-w-[65px] cursor-pointer hover:scale-105 transition-transform">
                 <div className="w-15 h-15 flex items-center justify-center rounded-full bg-purple-100 text-2xl mb-2 hover:bg-purple-200 transition-colors">
-                  {cat.icon}
+                  {category}
                 </div>
-                <span className="text-sm text-center">{cat.label}</span>
+                <span className="text-sm text-center">{category}</span>
               </div>
             ))}
           </div>

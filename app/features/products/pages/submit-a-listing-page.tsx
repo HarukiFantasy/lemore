@@ -5,7 +5,7 @@ import { Textarea } from "~/common/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/common/components/ui/select";
 import { Badge } from "~/common/components/ui/badge";
 import { useNavigate, useLocation } from "react-router";
-import { PRODUCT_CATEGORIES, PRICE_TYPES, PRODUCT_LIMITS } from "../constants";
+import { PRODUCT_CATEGORIES, PRICE_TYPES, PRODUCT_LIMITS, PRODUCT_CONDITIONS } from "~/common/constants";
 import { LOCATIONS } from "~/common/data/locations";
 import { z } from "zod";
 
@@ -212,8 +212,8 @@ export default function SubmitAListingPage() {
             </SelectTrigger>
             <SelectContent>
               {PRICE_TYPES.map(type => (
-                <SelectItem key={type.value} value={type.value}>
-                  {type.label}
+                <SelectItem key={type} value={type}>
+                  {type}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -291,11 +291,11 @@ export default function SubmitAListingPage() {
               <SelectValue placeholder="Select Condition" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="New">New</SelectItem>
-              <SelectItem value="Like New">Like New</SelectItem>
-              <SelectItem value="Good">Good</SelectItem>
-              <SelectItem value="Fair">Fair</SelectItem>
-              <SelectItem value="Poor">Poor</SelectItem>
+              {PRODUCT_CONDITIONS.map(condition => (
+                <SelectItem key={condition} value={condition}>
+                  {condition}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
           {errors.condition && <span className="text-xs text-red-500 mt-1">{errors.condition}</span>}
@@ -307,9 +307,9 @@ export default function SubmitAListingPage() {
               <SelectValue placeholder="Select Category" />
             </SelectTrigger>
             <SelectContent>
-              {PRODUCT_CATEGORIES.map(cat => (
-                <SelectItem key={cat.value} value={cat.value}>
-                  {cat.icon} {cat.label}
+              {PRODUCT_CATEGORIES.map(category => (
+                <SelectItem key={category} value={category}>
+                  {category}
                 </SelectItem>
               ))}
             </SelectContent>

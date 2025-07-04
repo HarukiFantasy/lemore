@@ -5,6 +5,9 @@ import { Avatar, AvatarFallback, AvatarImage } from "../../../common/components/
 import { Separator } from "../../../common/components/ui/separator";
 import { useLoaderData, useRouteError, isRouteErrorResponse } from "react-router";
 import { z } from "zod";
+import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '~/common/components/ui/select';
+import { LOCATIONS } from '~/common/constants';
+import { Badge } from '~/common/components/ui/badge';
 
 // Mock user profile function (임시)
 async function fetchMockUserProfile(userId: string) {
@@ -12,13 +15,16 @@ async function fetchMockUserProfile(userId: string) {
     success: true,
     user: {
       id: userId,
-      displayName: "John Doe",
+      username: "John Doe",
       email: "john.doe@example.com",
       avatarUrl: "/sample.png",
       bio: "Passionate about sustainable living and finding great deals on secondhand items.",
       location: "Bangkok, Thailand",
       createdAt: "2024-01-01T00:00:00Z",
       updatedAt: "2024-01-15T00:00:00Z",
+      rating: 4.8,
+      responseRate: "89%",
+      appreciationBadge: true,
     }
   };
 }
@@ -34,7 +40,7 @@ const profileStatsSchema = z.object({
 const profileLoaderDataSchema = z.object({
   user: z.object({
     id: z.string(),
-    displayName: z.string(),
+    username: z.string(),
     email: z.string(),
     avatarUrl: z.string().optional(),
     bio: z.string().optional(),
@@ -43,10 +49,11 @@ const profileLoaderDataSchema = z.object({
     updatedAt: z.string(),
   }).optional(),
   stats: z.object({
-    // 기본 통계 정보만 유지
     totalListings: z.number(),
     totalLikes: z.number(),
-    totalViews: z.number(),
+    rating: z.number(),
+    responseRate: z.string().regex(/^\d+%$/, "Response rate must be in percentage format (e.g., '89%')"),
+    appreciationBadge: z.boolean(),
   }),
 });
 
@@ -78,7 +85,9 @@ export const loader = async ({ request }: { request: Request }) => {
       stats: {
         totalListings: 127, // Mock data
         totalLikes: 4.8, // Mock data
-        totalViews: 89 // Mock data
+        rating: 4.8, // Mock data
+        responseRate: "89%", // Mock data
+        appreciationBadge: true, // Mock data
       }
     };
 
@@ -171,11 +180,11 @@ export default function ProfilePage({ loaderData }: { loaderData: ProfileLoaderD
                 <Avatar className="h-24 w-24">
                   <AvatarImage src={user?.avatarUrl || "/sample.png"} />
                   <AvatarFallback className="text-2xl">
-                    {user?.displayName?.split(' ').map((n: string) => n[0]).join('').toUpperCase() || "JD"}
+                    {user?.username?.split(' ').map((n: string) => n[0]).join('').toUpperCase() || "JD"}
                   </AvatarFallback>
                 </Avatar>
               </div>
-              <CardTitle>{user?.displayName || "John Doe"}</CardTitle>
+              <CardTitle>{user?.username || "John Doe"}</CardTitle>
               <CardDescription>Member since {user?.createdAt ? new Date(user.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long' }) : "January 2024"}</CardDescription>
             </CardHeader>
             <CardContent>
@@ -186,13 +195,17 @@ export default function ProfilePage({ loaderData }: { loaderData: ProfileLoaderD
                 </div>
                 <Separator />
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-green-600">{stats.totalLikes}</div>
-                  <div className="text-sm text-gray-500">Total Likes</div>
+                  <div className="text-2xl font-bold text-rose-500">{stats.rating}</div>
+                  <div className="text-sm text-gray-500">Rating</div>
                 </div>
                 <Separator />
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-orange-600">{stats.totalViews}</div>
-                  <div className="text-sm text-gray-500">Total Views</div>
+                  <div className="text-2xl font-bold text-amber-600">{stats.responseRate}</div>
+                  <div className="text-sm text-gray-500">Response Rate</div>
+                </div>
+                <Separator />
+                <div className="text-center">
+                  <Badge variant="outline" className="text-sm bg-green-100 text-green-700 ">{stats.appreciationBadge ? "Appreciation" : "No Badge"}</Badge>
                 </div>
               </div>
             </CardContent>
@@ -213,13 +226,13 @@ export default function ProfilePage({ loaderData }: { loaderData: ProfileLoaderD
                     <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-2">
                       First Name
                     </label>
-                    <Input id="firstName" defaultValue={user?.displayName?.split(' ')[0] || "John"} />
+                    <Input id="firstName" defaultValue={user?.username?.split(' ')[0] || "John"} />
                   </div>
                   <div>
                     <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-2">
                       Last Name
                     </label>
-                    <Input id="lastName" defaultValue={user?.displayName?.split(' ').slice(1).join(' ') || "Doe"} />
+                    <Input id="lastName" defaultValue={user?.username?.split(' ').slice(1).join(' ') || "Doe"} />
                   </div>
                 </div>
 
@@ -229,7 +242,7 @@ export default function ProfilePage({ loaderData }: { loaderData: ProfileLoaderD
                   </label>
                   <Input 
                     id="username" 
-                    defaultValue={user?.displayName?.toLowerCase().replace(/\s+/g, '.') || "john.doe"} 
+                      defaultValue={user?.username?.toLowerCase().replace(/\s+/g, '.') || "john.doe"} 
                     placeholder="Enter your username"
                   />
                   <p className="text-xs text-gray-500 mt-1">
@@ -245,17 +258,19 @@ export default function ProfilePage({ loaderData }: { loaderData: ProfileLoaderD
                 </div>
 
                 <div>
-                  <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-2">
-                    Phone Number
-                  </label>
-                  <Input id="phone" type="tel" defaultValue="+1 (555) 123-4567" />
-                </div>
-
-                <div>
                   <label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-2">
                     Location
                   </label>
-                  <Input id="location" defaultValue={user?.location || "San Francisco, CA"} />
+                    <Select>
+                        <SelectTrigger>
+                            <SelectValue placeholder="Select a location" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {LOCATIONS.map((location) => (
+                                <SelectItem value={location}>{location}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
                 </div>
 
                 <div>

@@ -1,9 +1,7 @@
 import React from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../../common/components/ui/card";
+import { Card, CardContent } from "../../../common/components/ui/card";
 import { Button } from "../../../common/components/ui/button";
-import { Badge } from "../../../common/components/ui/badge";
-import { Separator } from "../../../common/components/ui/separator";
-import { useLoaderData, useRouteError, isRouteErrorResponse, Link } from "react-router";
+import { Link } from "react-router";
 import { ProductCard } from "../../products/components/product-card";
 
 // Mock user listings function (임시)

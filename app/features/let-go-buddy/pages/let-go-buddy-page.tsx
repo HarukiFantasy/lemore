@@ -16,8 +16,7 @@ import {
   LightBulbIcon as TipsIcon
 } from "@heroicons/react/24/outline";
 import { useNavigate, useSearchParams } from "react-router";
-import { EMOTIONAL_QUESTIONS, ENVIRONMENTAL_IMPACT, SITUATIONS } from '../constants';
-import { PRODUCT_LIMITS } from '../../products/constants';
+import { EMOTIONAL_QUESTIONS, DECLUTTER_SITUATIONS, PRODUCT_LIMITS} from '~/common/constants';
 
 
 
@@ -542,14 +541,14 @@ export default function LetGoBuddyPage() {
         <div className="font-semibold text-lg mb-2">Step 2</div>
         <div className="mb-2">Select your current situation</div>
         <div className="flex flex-wrap gap-3 mb-4">
-          {SITUATIONS.map((s) => (
+          {DECLUTTER_SITUATIONS.map((s) => (
             <Button
-              key={s.value}
-              variant={selectedSituation === s.value ? "default" : "outline"}
+              key={s}
+              variant={selectedSituation === s ? "default" : "outline"}
               size="sm"
-              onClick={() => setSelectedSituation(s.value)}
+              onClick={() => setSelectedSituation(s)}
             >
-              {s.label}
+              {s}
             </Button>
           ))}
         </div>
@@ -870,7 +869,7 @@ export default function LetGoBuddyPage() {
               <div className="p-4 bg-green-50 rounded-lg">
                 <div className="font-medium mb-2">By donating/selling this item:</div>
                 <div className="text-sm space-y-1">
-                  <div>• Saves {ENVIRONMENTAL_IMPACT[mockAnalysis[0].category].co2}kg CO2 emissions</div>
+                  <div>• Saves 2.5kg CO2 emissions</div>
                   <div>• Reduces landfill waste</div>
                   <div>• Extends item's useful life</div>
                   <div>• Supports circular economy</div>
@@ -879,9 +878,7 @@ export default function LetGoBuddyPage() {
               <div className="p-4 bg-blue-50 rounded-lg">
                 <div className="font-medium mb-2">Best disposal method:</div>
                 <div className="text-sm">
-                  {ENVIRONMENTAL_IMPACT[mockAnalysis[0].category].recyclable 
-                    ? "♻️ Recycle or donate to extend life"
-                    : "🔄 Repurpose or upcycle if possible"}
+                  {"♻️ Recycle or donate to extend life"}
                 </div>
               </div>
             </div>

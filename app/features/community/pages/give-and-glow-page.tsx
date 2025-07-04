@@ -6,12 +6,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "~/common/components/ui
 import type { Route } from './+types/give-and-glow-page';
 import { z } from "zod";
 import { 
-  type GiveAndGlowReview, 
   VALID_GIVE_AND_GLOW_CATEGORIES,
   VALID_GIVE_AND_GLOW_LOCATIONS
-} from "../schema";
+} from "~/common/constants";
 import { validateWithZod, getFieldErrors, getCategoryColors } from "~/lib/utils";
 import { GiveAndGlowCard } from '../components/give-and-glow-card';
+import { invalidateAppreciationBadgeCache } from "~/hooks/use-appreciation-badge";
 
 // Zod Schemas for Give & Glow
 export const giveAndGlowFiltersSchema = z.object({
@@ -33,6 +33,27 @@ export const createGiveAndGlowReviewSchema = z.object({
 // Type definitions
 export type GiveAndGlowFilters = z.infer<typeof giveAndGlowFiltersSchema>;
 export type CreateGiveAndGlowReviewData = z.infer<typeof createGiveAndGlowReviewSchema>;
+
+// GiveAndGlowReview type definition
+export interface GiveAndGlowReview {
+  id: string;
+  item_name: string;
+  item_category: string;
+  giver_id: string;
+  giver_name: string;
+  giver_avatar: string;
+  receiver_name: string;
+  receiver_avatar: string;
+  rating: number;
+  review: string;
+  timestamp: string;
+  location: string;
+  tags: string[];
+  photos: string[];
+  appreciation_badge: boolean;
+  created_at: Date;
+  updated_at: Date;
+}
 
 // Loader function
 export const loader = async ({ request }: Route.LoaderArgs) => {
@@ -61,6 +82,7 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
         id: "1",
         item_name: "Vintage Bookshelf",
         item_category: "Furniture",
+        giver_id: "user-1", // Mock user ID
         giver_name: "Sarah Johnson",
         giver_avatar: "/sample.png",
         receiver_name: "Mike Chen",
@@ -79,6 +101,7 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
         id: "2",
         item_name: "Kitchen Appliances Set",
         item_category: "Kitchen",
+        giver_id: "user-2", // Mock user ID
         giver_name: "Emma Wilson",
         giver_avatar: "/sample.png",
         receiver_name: "David Kim",
@@ -97,6 +120,7 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
         id: "3",
         item_name: "Children's Toys",
         item_category: "Toys",
+        giver_id: "user-3", // Mock user ID
         giver_name: "Lisa Park",
         giver_avatar: "/sample.png",
         receiver_name: "Anna Rodriguez",
@@ -278,6 +302,7 @@ export default function GiveAndGlowPage({ loaderData }: Route.ComponentProps) {
       const reviewData = {
         item_name: newReview.itemName,
         item_category: newReview.itemCategory,
+        giver_id: "new-user-" + Date.now(), // Generate a mock user ID for new reviews
         giver_name: newReview.giverName,
         giver_avatar: "/sample.png", // In real app, this would be the giver's avatar
         receiver_name: "Current User", // In real app, this would be the logged-in user
@@ -287,7 +312,7 @@ export default function GiveAndGlowPage({ loaderData }: Route.ComponentProps) {
         location: newReview.location,
         tags: newReview.tags,
         photos: [], // In real app, this would be uploaded photos
-        appreciation_badge: true, // New reviews get appreciation badge
+        appreciation_badge: newReview.rating > 4, // Set appreciation badge based on rating
         created_at: new Date(),
         updated_at: new Date()
       };
@@ -299,6 +324,12 @@ export default function GiveAndGlowPage({ loaderData }: Route.ComponentProps) {
         timestamp: "Just now"
       };
       setReviews([newReviewData, ...reviews]);
+      
+      // Invalidate appreciation badge cache for the giver
+      // In a real app, you would get the actual giver ID from the database
+      // For now, we'll invalidate all cache since we don't have the actual giver ID
+      invalidateAppreciationBadgeCache();
+      
       setShowReviewForm(false);
       setNewReview({
         itemName: "",
@@ -415,6 +446,7 @@ export default function GiveAndGlowPage({ loaderData }: Route.ComponentProps) {
             location={review.location}
             tags={review.tags as string[]}
             appreciationBadge={review.appreciation_badge}
+            giverId={review.giver_id || undefined}
           />
         ))}
       </div>
