@@ -156,9 +156,9 @@ export const userNotifications = pgTable("user_notifications", {
   type: notificationTypes().notNull(),
   sender_id: uuid().notNull().references(() => userProfiles.profile_id, {onDelete: "cascade"}),
   receiver_id: uuid().notNull().references(() => userProfiles.profile_id, {onDelete: "cascade"}),
-  product_id: uuid().references(() => products.product_id, {onDelete: "cascade"}),
-  message_id: uuid().references(() => userMessages.message_id, {onDelete: "cascade"}),
-  review_id: uuid().references(() => giveAndGlowReviews.id, {onDelete: "cascade"}),  
+  product_id: bigint("product_id", {mode: "number"}).references(() => products.product_id, {onDelete: "cascade"}),
+  message_id: bigint("message_id", {mode: "number"}).references(() => userMessages.message_id, {onDelete: "cascade"}),
+  review_id: bigint("review_id", {mode: "number"}).references(() => giveAndGlowReviews.id, {onDelete: "cascade"}),  
   
   is_read: boolean().notNull().default(false),
   read_at: timestamp("read_at"),
@@ -231,7 +231,7 @@ export const localBusinessReviews = pgTable("local_business_reviews", {
   business_id: bigint("business_id", {mode: "number"}).notNull().references(() => localBusinesses.id),
   rating: integer("rating").notNull(),
   author: uuid().notNull().references(() => userProfiles.profile_id),
-  author_avatar: text("author_avatar").references(() => userProfiles.avatar_url),
+  author_avatar: text("author_avatar"),
   timestamp: text("timestamp").notNull(),
   tags: jsonb("tags").notNull().default([]),
   created_at: timestamp("created_at").notNull().defaultNow(),
@@ -276,7 +276,7 @@ export const letGoBuddySessions = pgTable("let_go_buddy_sessions", {
 // Item analyses table
 export const itemAnalyses = pgTable("item_analyses", {
   analysis_id: uuid().primaryKey().defaultRandom(),
-  session_id: uuid().notNull().references(() => letGoBuddySessions.session_id),
+  session_id: bigint("session_id", {mode: "number"}).notNull().references(() => letGoBuddySessions.session_id),
   item_name: text().notNull(),
   item_category: productCategories().notNull(),
   item_condition: productConditions().notNull(),
