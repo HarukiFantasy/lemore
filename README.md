@@ -104,6 +104,41 @@ const todaysPicks = await fetchTodaysPicks({
 });
 ```
 
+## Database Schema Changes
+
+### Local Reviews - Data Normalization
+
+The local reviews feature has been updated to prevent data duplication by normalizing the database schema:
+
+#### Before (Denormalized)
+
+- `local_business_reviews` table contained duplicate business information:
+  - `business_name`, `business_type`, `location`, `price_range`
+- This led to data inconsistency and maintenance issues
+
+#### After (Normalized)
+
+- `local_business_reviews` table now only contains:
+  - `business_id` (foreign key to `local_businesses.id`)
+  - Review-specific data: `rating`, `review`, `author`, `tags`, etc.
+- Business information is retrieved via JOIN operations
+- Automatic triggers update business statistics (average_rating, total_reviews)
+
+#### Migration
+
+Run the migration script to update existing data:
+
+```sql
+-- Located at: app/sql/migrations/001_remove_duplicate_business_data.sql
+```
+
+#### Benefits
+
+- **Data Consistency**: Single source of truth for business information
+- **Reduced Storage**: Eliminates redundant data storage
+- **Easier Maintenance**: Business updates only need to be made in one place
+- **Better Performance**: Proper indexing on foreign keys
+
 ## Data Validation with Zod
 
 This project uses [Zod](https://zod.dev/) for runtime type validation. All form inputs, URL parameters, and API responses are validated using Zod schemas defined within each feature module.
@@ -228,3 +263,41 @@ This template comes with [Tailwind CSS](https://tailwindcss.com/) already config
 ---
 
 Built with ❤️ using React Router.
+
+# Lemore - Secondhand Marketplace
+
+A modern secondhand marketplace application built with React, TypeScript, and Drizzle ORM.
+
+## Features
+
+### Appreciation Badge System
+
+The application includes an appreciation badge system that recognizes users who have received high ratings in the Give & Glow community:
+
+- **Criteria**: Users receive an "Appreciation" badge when they have at least one review with a rating greater than 4 in the give-and-glow table
+- **Display**: The badge appears in product cards and user profiles to highlight generous community members
+- **Performance**: Uses caching to avoid repeated database queries
+- **Real-time**: Badge status updates automatically when new reviews are submitted
+
+#### How it works:
+
+1. **Database Query**: The system queries the `give_and_glow_reviews` table for reviews where:
+
+   - The user is the giver (`giver_id` matches the user)
+   - The rating is greater than 4 (`rating > 4`)
+
+2. **Caching**: Results are cached to improve performance and reduce database load
+
+3. **Display**: The appreciation badge appears as a green badge with "Appreciation" text
+
+4. **Cache Invalidation**: When new reviews are submitted, the cache is invalidated to ensure fresh data
+
+#### Components using the appreciation badge:
+
+- `ProductCard`: Shows appreciation badge in seller hover card
+- `GiveAndGlowCard`: Shows appreciation badge for reviews with rating > 4
+- Custom hook: `useAppreciationBadge` for reusable badge logic
+
+## Getting Started
+
+// ... existing content ...

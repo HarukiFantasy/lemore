@@ -23,7 +23,6 @@ export default function ProductDetailPage() {
     id: "1",
     title: "Vintage Bicycle - Perfect Condition",
     price: "THB 2,500",
-    originalPrice: "THB 3,500",
     description: "Beautiful vintage bicycle in excellent condition. Perfect for daily commuting or weekend rides. Includes basket and bell. Only used for 6 months before I moved to a smaller apartment.",
     condition: "Like New",
     category: "Sports & Outdoor",
@@ -45,14 +44,6 @@ export default function ProductDetailPage() {
       memberSince: "2022",
       responseRate: "98%",
       responseTime: "< 1 hour"
-    },
-    specifications: {
-      brand: "Trek",
-      model: "FX 2",
-      year: "2021",
-      color: "Matte Black",
-      size: "Medium (54cm)",
-      material: "Aluminum"
     },
     tags: ["Vintage", "Well Maintained", "Includes Accessories", "Quick Sale"]
   };
@@ -138,12 +129,6 @@ export default function ProductDetailPage() {
               <div className="flex items-center gap-3 mb-4">
                 <span className="text-3xl font-bold text-purple-700">
                   {product.price}
-                </span>
-                <span className="text-lg text-gray-500 line-through">
-                  {product.originalPrice}
-                </span>
-                <span className="bg-red-100 text-red-700 px-2 py-1 rounded-full text-sm font-medium">
-                  29% OFF
                 </span>
               </div>
             </div>
@@ -263,24 +248,6 @@ export default function ProductDetailPage() {
               <Button variant="outline">View Profile</Button>
             </div>
           </Card>
-        </div>
-
-        {/* Similar Items */}
-        <div className="mt-12">
-          <h3 className="text-2xl font-bold mb-6">Similar Items</h3>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {Array.from({ length: 4 }).map((_, index) => (
-              <div key={index} className="bg-white rounded-lg shadow-sm overflow-hidden">
-                <div className="aspect-square">
-                  <img src="/sample.png" alt="Similar item" className="w-full h-full object-cover" />
-                </div>
-                <div className="p-4">
-                  <h4 className="font-semibold text-sm mb-1">Similar Bicycle {index + 1}</h4>
-                  <p className="text-purple-700 font-semibold">THB {1500 + index * 200}</p>
-                </div>
-              </div>
-            ))}
-          </div>
         </div>
       </div>
     </div>

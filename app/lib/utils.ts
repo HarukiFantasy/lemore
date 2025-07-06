@@ -257,3 +257,40 @@ export function isAnonymousUser(userId: string | null): boolean {
 // export function getClientUserAgent(request: Request): string {
 //   return request.headers.get("user-agent") || "unknown";
 // }
+
+// Check if user has appreciation badge based on give-and-glow reviews
+export const checkAppreciationBadge = async (sellerId: string): Promise<boolean> => {
+  try {
+    const { db } = await import("~/db");
+    const { userProfiles, giveAndGlowReviews } = await import("~/schema");
+    const { eq, gt, and } = await import("drizzle-orm");
+    
+    // First, check if the user already has the appreciation_badge set in their profile
+    const userProfile = await db
+      .select({ appreciation_badge: userProfiles.appreciation_badge })
+      .from(userProfiles)
+      .where(eq(userProfiles.profile_id, sellerId))
+      .limit(1);
+    
+    if (userProfile.length > 0 && userProfile[0].appreciation_badge) {
+      return true;
+    }
+    
+    // If not found in profile or badge is false, check the give-and-glow reviews
+    const highRatingReviews = await db
+      .select()
+      .from(giveAndGlowReviews)
+      .where(
+        and(
+          eq(giveAndGlowReviews.giver_id, sellerId),
+          gt(giveAndGlowReviews.rating, 4)
+        )
+      );
+    
+    // User gets appreciation badge if they have at least one review with rating > 4
+    return highRatingReviews.length > 0;
+  } catch (error) {
+    console.error("Error checking appreciation badge:", error);
+    return false;
+  }
+};
