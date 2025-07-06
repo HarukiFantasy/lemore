@@ -1,121 +1,33 @@
+import { declutterSituations, recommendationActions, environmentalImpactLevels } from "~/schema";
+
+// UI 전용 상수들
 export const DECLUTTER_SITUATIONS = [
-  {
-    label: "I'm moving soon",
-    value: "moving",
-  },
-  {
-    label: "I need more space",
-    value: "need-space",
-  },
-  {
-    label: "I'm just tidying up",
-    value: "tidying",
-  },
-  {
-    label: "I'm downsizing",
-    value: "downsizing",
-  },
-  {
-    label: "I'm going minimalist",
-    value: "minimalist",
-  },
-] as const;
-
-
-export const RECOMMENDATION_ACTIONS = [
-  {
-    label: "Sell",
-    value: "sell",
-  },
-  {
-    label: "Keep",
-    value: "keep",
-  },
-  {
-    label: "Give Away",
-    value: "give-away",
-  },
-] as const;
-
-export const ITEM_CONDITIONS = [
-  {
-    label: "New",
-    value: "new",
-  },
-  {
-    label: "Like New",
-    value: "like-new",
-  },
-  {
-    label: "Excellent",
-    value: "excellent",
-  },
-  {
-    label: "Good",
-    value: "good",
-  },
-  {
-    label: "Fair",
-    value: "fair",
-  },
-  {
-    label: "Poor",
-    value: "poor",
-  },
-] as const;
-
-export const EMOTIONAL_ATTACHMENT_LEVELS = [
-  {
-    label: "Very Low",
-    value: 1,
-  },
-  {
-    label: "Low",
-    value: 2,
-  },
-  {
-    label: "Medium",
-    value: 3,
-  },
-  {
-    label: "High",
-    value: 4,
-  },
-  {
-    label: "Very High",
-    value: 5,
-  },
-] as const;
-
-export const ENVIRONMENTAL_IMPACT_LEVELS = [
-  {
-    label: "Low",
-    value: "low",
-  },
-  {
-    label: "Medium",
-    value: "medium",
-  },
-  {
-    label: "High",
-    value: "high",
-  },
+  { value: "moving", label: "Moving" },
+  { value: "downsizing", label: "Downsizing" },
+  { value: "spring_cleaning", label: "Spring Cleaning" },
+  { value: "digital_declutter", label: "Digital Declutter" },
+  { value: "minimalism", label: "Minimalism" },
+  { value: "inheritance", label: "Inheritance" },
+  { value: "relationship_change", label: "Relationship Change" },
+  { value: "other", label: "Other" }
 ] as const;
 
 export const EMOTIONAL_QUESTIONS = [
-  "When was the last time you used this item?",
-  "Does this item remind you of a special memory?",
-  "Would you buy this item again if you lost it?",
-  "Do you feel guilty about getting rid of it?",
-  "Does this item represent who you are or want to be?",
+  "How attached are you to this item?",
+  "How often do you use this item?",
+  "Does this item bring you joy?",
+  "Would you miss this item if it were gone?",
+  "Does this item represent a memory or milestone?"
 ] as const;
 
+export const ENVIRONMENTAL_IMPACT = [
+  { level: "low", description: "Minimal environmental impact", color: "text-green-600" },
+  { level: "medium", description: "Moderate environmental impact", color: "text-yellow-600" },
+  { level: "high", description: "High environmental impact", color: "text-orange-600" },
+  { level: "critical", description: "Critical environmental impact", color: "text-red-600" }
+] as const;
 
-// Environmental impact data
-export const ENVIRONMENTAL_IMPACT: Record<string, { co2: number; landfill: string; recyclable: boolean }> = {
-  "Electronics": { co2: 25, landfill: "High", recyclable: true },
-  "Clothing": { co2: 15, landfill: "Medium", recyclable: true },
-  "Books": { co2: 5, landfill: "Low", recyclable: true },
-  "Furniture": { co2: 30, landfill: "High", recyclable: false },
-  "Kitchen Items": { co2: 10, landfill: "Medium", recyclable: true },
-};
+// 타입 정의
+export type DeclutterSituation = typeof declutterSituations.enumValues[number];
+export type RecommendationAction = typeof recommendationActions.enumValues[number];
+export type EnvironmentalImpactLevel = typeof environmentalImpactLevels.enumValues[number]; 

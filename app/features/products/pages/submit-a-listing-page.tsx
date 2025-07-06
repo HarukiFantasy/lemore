@@ -5,8 +5,8 @@ import { Textarea } from "~/common/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/common/components/ui/select";
 import { Badge } from "~/common/components/ui/badge";
 import { useNavigate, useLocation } from "react-router";
-import { PRODUCT_CATEGORIES, PRICE_TYPES, PRODUCT_LIMITS } from "../constants";
-import { LOCATIONS } from "~/features/common-constants";
+import { PRODUCT_CATEGORIES, PRICE_TYPES, PRODUCT_LIMITS, ALLOWED_IMAGE_TYPES, MAX_FILE_SIZE } from "../constants";
+import { LOCATIONS } from "~/constants";
 
 // Mock data for form validation
 const mockFormData = {
@@ -76,7 +76,7 @@ export default function SubmitAListingPage() {
 
     // MIME 타입 검증
     const invalidFiles = files.filter(file => 
-      !PRODUCT_LIMITS.ALLOWED_IMAGE_TYPES.includes(file.type as any)
+      !ALLOWED_IMAGE_TYPES.includes(file.type as any)
     );
     
     if (invalidFiles.length > 0) {
@@ -87,11 +87,11 @@ export default function SubmitAListingPage() {
 
     // 파일 크기 검증
     const oversizedFiles = files.filter(file => 
-      file.size > PRODUCT_LIMITS.MAX_FILE_SIZE
+      file.size > MAX_FILE_SIZE
     );
     
     if (oversizedFiles.length > 0) {
-      const maxSizeMB = PRODUCT_LIMITS.MAX_FILE_SIZE / (1024 * 1024);
+      const maxSizeMB = MAX_FILE_SIZE / (1024 * 1024);
       alert(`File(s) too large. Maximum file size is ${maxSizeMB}MB.`);
       return;
     }
@@ -355,8 +355,8 @@ export default function SubmitAListingPage() {
             </SelectTrigger>
             <SelectContent>
               {PRODUCT_CATEGORIES.map(cat => (
-                <SelectItem key={cat.value} value={cat.value}>
-                  {cat.icon} {cat.label}
+                <SelectItem key={cat} value={cat}>
+                  {cat}
                 </SelectItem>
               ))}
             </SelectContent>

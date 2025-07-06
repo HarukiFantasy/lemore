@@ -4,7 +4,7 @@ import { ProductCard } from '../components/product-card';
 import { Form, useSearchParams, useSubmit } from 'react-router';
 import { Input } from '~/common/components/ui/input';
 import { Button } from '~/common/components/ui/button';
-import { PRODUCT_CATEGORIES } from "~/common/constants";
+import { PRODUCT_CATEGORIES, CATEGORY_ICONS } from "../constants";
 import { BlurFade } from 'components/magicui/blur-fade';
 
 export const meta: Route.MetaFunction = () => {
@@ -157,7 +157,7 @@ export default function BrowseListingsPage() {
             {PRODUCT_CATEGORIES.slice(0, 9).map(category => (
               <div key={category} className="flex flex-col items-center min-w-[65px] cursor-pointer hover:scale-105 transition-transform">
                 <div className="w-15 h-15 flex items-center justify-center rounded-full bg-purple-100 text-2xl mb-2 hover:bg-purple-200 transition-colors">
-                  {category}
+                  {CATEGORY_ICONS[category] || "📦"}
                 </div>
                 <span className="text-sm text-center">{category}</span>
               </div>

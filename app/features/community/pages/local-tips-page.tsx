@@ -6,10 +6,16 @@ import { HandThumbUpIcon, ChatBubbleLeftEllipsisIcon, ChevronDownIcon, ChevronUp
 import { useSearchParams } from "react-router";
 import { AvatarCircles } from "../../../../components/magicui/avatar-circles";
 import { z } from "zod";
-import { LOCAL_TIP_CATEGORIES, LocalTipCategory } from "../constants";
-import {  getFieldErrors, getCategoryColors, formatTimeAgo } from "~/lib/utils";
+import { localTipCategories } from "~/schema";
+import { getFieldErrors, getCategoryColors, formatTimeAgo } from "~/lib/utils";
+import { 
+  LOCAL_TIP_CATEGORIES_WITH_ALL, 
+  LocalTipCategoryWithAll, 
+  LocalTipCategory 
+} from "../constants";
 
 // Types
+
 interface LocalTipPost {
   id: string;
   title: string;
@@ -45,7 +51,7 @@ interface Comment {
 const localTipCreateSchema = z.object({
   title: z.string().min(1, "Title is required").max(100, "Title must be less than 100 characters"),
   content: z.string().min(1, "Content is required").max(2000, "Content must be less than 2000 characters"),
-  category: z.enum(LOCAL_TIP_CATEGORIES.filter(cat => cat !== "All") as [string, ...string[]]),
+  category: z.enum(localTipCategories.enumValues as [string, ...string[]]),
   location: z.string().min(1, "Location is required")
 });
 
@@ -60,7 +66,7 @@ export default function LocalTipsPage() {
       id: "1",
       title: "Best Visa Extension Process in Bangkok",
       content: "I recently extended my tourist visa at Chaengwattana. Here's what you need to know: 1) Arrive early (before 8 AM), 2) Bring all required documents including TM.30, 3) The process takes about 2-3 hours. Pro tip: Bring a book or work on your laptop while waiting!",
-      category: "Visa/Immigration",
+      category: "Visa",
       location: "Bangkok",
       author: "user1",
       likes: 24,
@@ -73,7 +79,7 @@ export default function LocalTipsPage() {
       id: "2",
       title: "Affordable Healthcare Options in Chiang Mai",
       content: "For those looking for quality healthcare without breaking the bank, I recommend McCormick Hospital. They have English-speaking staff and reasonable prices. Also, check out the government hospitals - they're much cheaper and the quality is surprisingly good.",
-      category: "Healthcare/Insurance",
+      category: "Health",
       location: "ChiangMai",
       author: "user2",
       likes: 18,
@@ -99,7 +105,7 @@ export default function LocalTipsPage() {
       id: "4",
       title: "Opening a Bank Account as a Foreigner",
       content: "I successfully opened a bank account at Bangkok Bank. Requirements: passport, visa, proof of address (rental contract), and sometimes a letter from your embassy. The process took about 2 hours. They also offer good mobile banking apps.",
-      category: "Banking/Finance",
+      category: "Bank",
       location: "Bangkok",
       author: "user4",
       likes: 42,
@@ -112,7 +118,7 @@ export default function LocalTipsPage() {
       id: "5",
       title: "Finding Long-term Housing in Hua Hin",
       content: "Hua Hin is great for long-term stays! I found my apartment through Facebook groups and local real estate agents. Monthly rentals range from 15,000-30,000 THB for a decent 1-bedroom. Pro tip: Visit in person before signing any contracts.",
-      category: "Housing",
+      category: "Other",
       location: "HuaHin",
       author: "user5",
       likes: 15,
@@ -185,7 +191,7 @@ export default function LocalTipsPage() {
     return newPost;
   };
 
-  const [selectedCategory, setSelectedCategory] = useState<LocalTipCategory>("All");
+  const [selectedCategory, setSelectedCategory] = useState<LocalTipCategoryWithAll>("All");
   const [searchQuery, setSearchQuery] = useState("");
   const [posts, setPosts] = useState<LocalTipPost[]>(mockPosts);
   const [showPostForm, setShowPostForm] = useState(false);
@@ -198,15 +204,15 @@ export default function LocalTipsPage() {
   const [newPost, setNewPost] = useState<LocalTipCreateData>({
     title: "",
     content: "",
-    category: "Visa/Immigration",
+    category: "Visa",
     location: urlLocation
   });
 
   // URL 파라미터와 상태 동기화
   useEffect(() => {
     const categoryParam = searchParams.get("category");
-    const category = LOCAL_TIP_CATEGORIES.includes(categoryParam as any) 
-      ? (categoryParam as LocalTipCategory) 
+    const category = LOCAL_TIP_CATEGORIES_WITH_ALL.includes(categoryParam as any) 
+      ? (categoryParam as LocalTipCategoryWithAll) 
       : "All";
     const search = searchParams.get("search") || "";
     
@@ -256,32 +262,29 @@ export default function LocalTipsPage() {
     loadCommentAvatars();
   }, [posts]);
 
-  const updateFilters = (newCategory: LocalTipCategory, newSearch: string) => {
+  const updateFilters = (newCategory: LocalTipCategoryWithAll, newSearch: string) => {
     const params = new URLSearchParams(searchParams);
-    
     if (newCategory !== "All") {
-      params.set("category", newCategory);
+      params.set("category", newCategory as LocalTipCategory);
     } else {
       params.delete("category");
     }
-    
     if (newSearch.trim()) {
       params.set("search", newSearch.trim());
     } else {
       params.delete("search");
     }
-    
     setSearchParams(params);
   };
 
   const handleCategoryChange = (category: LocalTipCategory) => {
-    setSelectedCategory(category);
-    updateFilters(category, searchQuery);
+    setSelectedCategory(category as LocalTipCategoryWithAll);
+    updateFilters(category as LocalTipCategoryWithAll, searchQuery);
   };
 
   const handleSearchChange = (search: string) => {
     setSearchQuery(search);
-    updateFilters(selectedCategory, search);
+    updateFilters(selectedCategory as LocalTipCategoryWithAll, search);
   };
 
   const validateForm = (): boolean => {
@@ -316,7 +319,7 @@ export default function LocalTipsPage() {
       setNewPost({
         title: "",
         content: "",
-        category: "Visa/Immigration",
+        category: "Visa",
         location: urlLocation
       });
       setFormErrors({});
@@ -406,7 +409,7 @@ export default function LocalTipsPage() {
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
             <div className="flex flex-wrap gap-2">
-              {LOCAL_TIP_CATEGORIES.map((category) => {
+              {LOCAL_TIP_CATEGORIES_WITH_ALL.map((category: LocalTipCategoryWithAll) => {
                 const colors = getCategoryColors(category);
                 return (
                   <Button
@@ -601,7 +604,7 @@ export default function LocalTipsPage() {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Category *</label>
                 <div className="flex flex-wrap gap-2">
-                  {LOCAL_TIP_CATEGORIES.filter(cat => cat !== "All").map((category) => {
+                  {localTipCategories.enumValues.map((category: LocalTipCategory) => {
                     const colors = getCategoryColors(category);
                     return (
                       <Button
@@ -650,7 +653,7 @@ export default function LocalTipsPage() {
                     setNewPost({
                       title: "",
                       content: "",
-                      category: "Visa/Immigration",
+                      category: "Visa",
                       location: urlLocation
                     });
                     setFormErrors({});
