@@ -6,22 +6,19 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~
 import { Badge } from "~/common/components/ui/badge";
 import { useNavigate, useLocation } from "react-router";
 import { PRODUCT_CATEGORIES, PRICE_TYPES, PRODUCT_LIMITS } from "../constants";
-import { LOCATIONS } from "~/common/data/locations";
-import { z } from "zod";
+import { LOCATIONS } from "~/features/common-constants";
 
-// 상품 폼 검증 스키마
-const productFormSchema = z.object({
-  title: z.string().min(1, "Title is required").max(100, "Title must be less than 100 characters"),
-  price: z.string().min(1, "Price is required"),
-  currency: z.string().min(1, "Currency is required"),
-  description: z.string().min(10, "Description must be at least 10 characters").max(1000, "Description must be less than 1000 characters"),
-  condition: z.enum(["new", "like_new", "good", "fair", "poor"]),
-  category: z.string().min(1, "Category is required"),
-  location: z.string().min(1, "Location is required"),
-  images: z.array(z.instanceof(File)).min(1, "At least one image is required").max(5, "Maximum 5 images allowed"),
-});
-
-type ProductFormData = z.infer<typeof productFormSchema>;
+// Mock data for form validation
+const mockFormData = {
+  title: "",
+  price: "",
+  currency: "THB",
+  description: "",
+  condition: "",
+  category: "",
+  location: "",
+  images: [] as File[],
+};
 
 export default function SubmitAListingPage() {
   const [images, setImages] = useState<File[]>([]);
@@ -112,31 +109,62 @@ export default function SubmitAListingPage() {
   };
 
   const validateForm = (): boolean => {
-    const formData: ProductFormData = {
-      title,
-      price: isFree ? "0" : price, // Free items have price 0
-      currency,
-      description,
-      condition: condition as any,
-      category,
-      location,
-      images,
-    };
+    const newErrors: Record<string, string> = {};
 
-    const result = productFormSchema.safeParse(formData);
-    
-    if (!result.success) {
-      const newErrors: Record<string, string> = {};
-      result.error.errors.forEach((error: any) => {
-        const field = error.path.join('.');
-        newErrors[field] = error.message;
-      });
-      setErrors(newErrors);
-      return false;
+    // Title validation
+    if (!title.trim()) {
+      newErrors.title = "Title is required";
+    } else if (title.length > 100) {
+      newErrors.title = "Title must be less than 100 characters";
     }
-    
-    setErrors({});
-    return true;
+
+    // Price validation (only for non-free items)
+    if (!isFree) {
+      if (!price.trim()) {
+        newErrors.price = "Price is required";
+      } else if (isNaN(Number(price.replace(/,/g, '')))) {
+        newErrors.price = "Price must be a valid number";
+      }
+    }
+
+    // Currency validation
+    if (!currency) {
+      newErrors.currency = "Currency is required";
+    }
+
+    // Description validation
+    if (!description.trim()) {
+      newErrors.description = "Description is required";
+    } else if (description.length < 10) {
+      newErrors.description = "Description must be at least 10 characters";
+    } else if (description.length > 1000) {
+      newErrors.description = "Description must be less than 1000 characters";
+    }
+
+    // Condition validation
+    if (!condition) {
+      newErrors.condition = "Condition is required";
+    }
+
+    // Category validation
+    if (!category) {
+      newErrors.category = "Category is required";
+    }
+
+    // Location validation
+    if (!location) {
+      newErrors.location = "Location is required";
+    }
+
+    // Images validation
+    if (images.length === 0) {
+      newErrors.images = "At least one image is required";
+    } else if (images.length > 5) {
+      newErrors.images = "Maximum 5 images allowed";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -145,6 +173,25 @@ export default function SubmitAListingPage() {
     if (!validateForm()) {
       return;
     }
+
+    // Mock data for submission
+    const mockProductData = {
+      id: Date.now().toString(),
+      title,
+      price: isFree ? 0 : Number(price.replace(/,/g, '')),
+      currency,
+      priceType,
+      description,
+      condition,
+      category,
+      location,
+      images: images.length,
+      createdAt: new Date().toISOString(),
+      sellerId: "mock-seller-123",
+      isSold: false,
+    };
+
+    console.log("Submitting product:", mockProductData);
 
     // Here you would normally upload the product and get its ID
     // For now, redirect to a sample product detail page

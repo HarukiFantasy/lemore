@@ -16,9 +16,7 @@ import {
   LightBulbIcon as TipsIcon
 } from "@heroicons/react/24/outline";
 import { useNavigate, useSearchParams } from "react-router";
-import { EMOTIONAL_QUESTIONS, ENVIRONMENTAL_IMPACT, SITUATIONS } from '../constants';
-import { PRODUCT_LIMITS } from '../../products/constants';
-
+import { EMOTIONAL_QUESTIONS, ENVIRONMENTAL_IMPACT, DECLUTTER_SITUATIONS } from '../constants';
 
 
 const mockAnalysis = [
@@ -83,8 +81,9 @@ export default function LetGoBuddyPage() {
     }
 
     // MIME 타입 검증
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
     const invalidFiles = files.filter(file => 
-      !PRODUCT_LIMITS.ALLOWED_IMAGE_TYPES.includes(file.type as any)
+      !allowedTypes.includes(file.type)
     );
     
     if (invalidFiles.length > 0) {
@@ -94,12 +93,13 @@ export default function LetGoBuddyPage() {
     }
 
     // 파일 크기 검증
+    const maxFileSize = 10 * 1024 * 1024; // 10MB
     const oversizedFiles = files.filter(file => 
-      file.size > PRODUCT_LIMITS.MAX_FILE_SIZE
+      file.size > maxFileSize
     );
     
     if (oversizedFiles.length > 0) {
-      const maxSizeMB = PRODUCT_LIMITS.MAX_FILE_SIZE / (1024 * 1024);
+      const maxSizeMB = maxFileSize / (1024 * 1024);
       alert(`File(s) too large. Maximum file size is ${maxSizeMB}MB.`);
       return;
     }
@@ -542,7 +542,7 @@ export default function LetGoBuddyPage() {
         <div className="font-semibold text-lg mb-2">Step 2</div>
         <div className="mb-2">Select your current situation</div>
         <div className="flex flex-wrap gap-3 mb-4">
-          {SITUATIONS.map((s) => (
+          {DECLUTTER_SITUATIONS.map((s) => (
             <Button
               key={s.value}
               variant={selectedSituation === s.value ? "default" : "outline"}

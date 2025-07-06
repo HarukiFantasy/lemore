@@ -4,7 +4,7 @@ import { Input } from "../../../common/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "../../../common/components/ui/avatar";
 import { Badge } from "../../../common/components/ui/badge";
 import { Popover, PopoverContent, PopoverTrigger } from "../../../common/components/ui/popover";
-import { useLoaderData, useRouteError, isRouteErrorResponse, useLocation } from "react-router";
+import { useRouteError, isRouteErrorResponse, useLocation } from "react-router";
 import { useState, useRef, useEffect } from "react";
 import { z } from "zod";
 import type { Route } from './+types/messages-page';
@@ -265,33 +265,51 @@ export function ErrorBoundary() {
 }
 
 export default function MessagesPage() {
-  const { conversations, totalCount, hasMore, filters } = useLoaderData<typeof loader>();
   const location = useLocation();
   const productContext = location.state;
 
-  // State for messages and input
-  const [messages, setMessages] = useState<Array<{
-    id: string;
-    content: string;
-    senderId: string;
-    receiverId: string;
-    timestamp: string;
-    isRead: boolean;
-    isFromUser: boolean;
-    type?: 'text' | 'image';
-    imageUrl?: string;
-  }>>([]);
-  const [inputMessage, setInputMessage] = useState("");
-  const [isTyping, setIsTyping] = useState(false);
+  // Mock data for messages
+  const userId = "current-user-id";
+  
+  const conversations = [
+    {
+      id: '1',
+      participantIds: [userId, 'user-2'],
+      lastMessage: {
+        id: 'msg-1',
+        content: 'Is this still available?',
+        senderId: 'user-2',
+        receiverId: userId,
+        timestamp: '2024-01-15T10:30:00Z',
+        isRead: false,
+        type: 'text' as const,
+      },
+      unreadCount: 1,
+      updatedAt: '2024-01-15T10:30:00Z',
+    },
+    {
+      id: '2',
+      participantIds: [userId, 'user-3'],
+      lastMessage: {
+        id: 'msg-2',
+        content: 'Can you send me more photos?',
+        senderId: userId,
+        receiverId: 'user-3',
+        timestamp: '2024-01-14T15:45:00Z',
+        isRead: true,
+        type: 'text' as const,
+      },
+      unreadCount: 0,
+      updatedAt: '2024-01-14T15:45:00Z',
+    }
+  ];
+
   const [selectedConversation, setSelectedConversation] = useState<any>(null);
-  const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
-  const [isImageUploadOpen, setIsImageUploadOpen] = useState(false);
-  const [isCameraMode, setIsCameraMode] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [messageInput, setMessageInput] = useState("");
   const [isMobile, setIsMobile] = useState(false);
-  const [selectedImage, setSelectedImage] = useState<string | null>(null);
-  const [isImageModalOpen, setIsImageModalOpen] = useState(false);
+  const [showConversationList, setShowConversationList] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Check if user came from product detail page
   const isFromProduct = productContext?.fromProduct;
@@ -301,242 +319,74 @@ export default function MessagesPage() {
     sellerName: productContext.sellerName
   } : null;
 
-  // Auto-scroll to bottom when new messages arrive
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
-
-  // Initialize messages if coming from product
-  useEffect(() => {
-    if (isFromProduct && productInfo && messages.length === 0) {
-      // Add initial message from seller
-      setMessages([{
-        id: "initial-1",
-        content: `Hi! I'm interested in your ${productInfo.title}. Is it still available?`,
-        senderId: productContext.sellerId || "seller-123",
-        receiverId: "current-user-id",
-        timestamp: new Date().toISOString(),
-        isRead: true,
-        isFromUser: false,
-        type: 'text'
-      }]);
+  const filteredConversations = conversations.filter(conversation => {
+    if (searchTerm) {
+      return conversation.lastMessage?.content.toLowerCase().includes(searchTerm.toLowerCase());
     }
-  }, [isFromProduct, productInfo, productContext]);
+    return true;
+  });
 
-  // Load conversation messages
-  const loadConversationMessages = (conversation: any) => {
-    setSelectedConversation(conversation);
-    
-    // Mock messages for the selected conversation
-    const mockMessages = [
-      {
-        id: "msg-1",
-        content: "Hi there! How are you?",
-        senderId: conversation.participantIds[1],
-        receiverId: "current-user-id",
-        timestamp: new Date(Date.now() - 3600000).toISOString(), // 1 hour ago
-        isRead: true,
-        isFromUser: false,
-        type: 'text' as const
-      },
-      {
-        id: "msg-2",
-        content: "I'm good, thanks! How about you?",
-        senderId: "current-user-id",
-        receiverId: conversation.participantIds[1],
-        timestamp: new Date(Date.now() - 3000000).toISOString(), // 50 minutes ago
-        isRead: true,
-        isFromUser: true,
-        type: 'text' as const
-      },
-      {
-        id: "msg-3",
-        content: "Great! I was wondering about the item you listed.",
-        senderId: conversation.participantIds[1],
-        receiverId: "current-user-id",
-        timestamp: new Date(Date.now() - 2400000).toISOString(), // 40 minutes ago
-        isRead: true,
-        isFromUser: false,
-        type: 'text' as const
-      },
-      {
-        id: "msg-4",
-        content: "Yes, it's still available! Would you like to see it?",
-        senderId: "current-user-id",
-        receiverId: conversation.participantIds[1],
-        timestamp: new Date(Date.now() - 1800000).toISOString(), // 30 minutes ago
-        isRead: true,
-        isFromUser: true,
-        type: 'text' as const
-      }
-    ];
-
-    // Add some recent messages if there are unread messages
-    if (conversation.unreadCount > 0) {
-      mockMessages.push({
-        id: "msg-5",
-        content: "Perfect! When can we meet?",
-        senderId: conversation.participantIds[1],
-        receiverId: "current-user-id",
-        timestamp: new Date(Date.now() - 600000).toISOString(), // 10 minutes ago
-        isRead: false,
-        isFromUser: false,
-        type: 'text' as const
-      });
-    }
-
-    setMessages(mockMessages);
-  };
-
-  // Handle conversation click
   const handleConversationClick = (conversation: any) => {
-    loadConversationMessages(conversation);
-  };
-
-  // Handle message input
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setInputMessage(e.target.value);
-  };
-
-  // Handle emoji selection
-  const handleEmojiSelect = (emoji: string) => {
-    setInputMessage(prev => prev + emoji);
-    setIsEmojiPickerOpen(false);
-  };
-
-  // Handle image upload
-  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file && selectedConversation) {
-      // Create a mock image URL (in real app, you'd upload to server)
-      const imageUrl = URL.createObjectURL(file);
-      
-      const imageMessage = {
-        id: `img-${Date.now()}`,
-        content: "Image",
-        senderId: "current-user-id",
-        receiverId: selectedConversation.participantIds[1],
-        timestamp: new Date().toISOString(),
-        isRead: false,
-        isFromUser: true,
-        type: 'image' as const,
-        imageUrl: imageUrl
-      };
-
-      setMessages(prev => [...prev, imageMessage]);
-      setIsImageUploadOpen(false);
-      
-      // Reset file input and camera mode
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
-      setIsCameraMode(false);
+    setSelectedConversation(conversation);
+    if (isMobile) {
+      setShowConversationList(false);
     }
   };
 
-  // Handle message submission
-  const handleSendMessage = async () => {
-    if (!inputMessage.trim() || !selectedConversation) return;
-
-    const newMessage = {
-      id: `msg-${Date.now()}`,
-      content: inputMessage.trim(),
-      senderId: "current-user-id",
-      receiverId: selectedConversation.participantIds[1],
-      timestamp: new Date().toISOString(),
-      isRead: false,
-      isFromUser: true,
-      type: 'text' as const
-    };
-
-    // Add user message
-    setMessages(prev => [...prev, newMessage]);
-    setInputMessage("");
-
-    // Simulate seller response after 1-3 seconds
-    setTimeout(() => {
-      const sellerResponses = [
-        "Thanks for your message! Yes, it's still available.",
-        "Great question! Let me check the details for you.",
-        "I'm glad you're interested! When would you like to see it?",
-        "Perfect timing! I just updated the listing.",
-        "Thanks for reaching out! What would you like to know?",
-        "Hi there! Yes, it's still available. Would you like to meet up?",
-        "Thanks for your interest! The item is in great condition.",
-        "Hello! Yes, it's still available. Are you local to the area?"
+  // Mock messages for selected conversation
+  const getConversationMessages = (conversationId: string) => {
+    if (conversationId === '1') {
+      return [
+        {
+          id: 'msg-1-1',
+          content: 'Hi! I saw your iPhone listing. Is it still available?',
+          senderId: 'user-2',
+          receiverId: userId,
+          timestamp: '2024-01-15T10:25:00Z',
+          isRead: true,
+          type: 'text' as const,
+        },
+        {
+          id: 'msg-1-2',
+          content: 'Yes, it is! Are you interested?',
+          senderId: userId,
+          receiverId: 'user-2',
+          timestamp: '2024-01-15T10:28:00Z',
+          isRead: true,
+          type: 'text' as const,
+        },
+        {
+          id: 'msg-1-3',
+          content: 'Is this still available?',
+          senderId: 'user-2',
+          receiverId: userId,
+          timestamp: '2024-01-15T10:30:00Z',
+          isRead: false,
+          type: 'text' as const,
+        }
       ];
-
-      const randomResponse = sellerResponses[Math.floor(Math.random() * sellerResponses.length)];
-      
-      const sellerMessage = {
-        id: `seller-${Date.now()}`,
-        content: randomResponse,
-        senderId: selectedConversation.participantIds[1],
-        receiverId: "current-user-id",
-        timestamp: new Date().toISOString(),
-        isRead: false,
-        isFromUser: false,
-        type: 'text' as const
-      };
-
-      setMessages(prev => [...prev, sellerMessage]);
-    }, 1000 + Math.random() * 2000); // Random delay between 1-3 seconds
-  };
-
-  // Handle Enter key press
-  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      handleSendMessage();
     }
+    return [];
   };
 
-  // Format timestamp
+  const handleSendMessage = () => {
+    if (!messageInput.trim() || !selectedConversation) return;
+    
+    // Mock sending message
+    console.log('Sending message:', messageInput);
+    setMessageInput("");
+  };
+
   const formatTime = (timestamp: string) => {
-    const date = new Date(timestamp);
-    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    return new Date(timestamp).toLocaleTimeString('en-US', { 
+      hour: '2-digit', 
+      minute: '2-digit' 
+    });
   };
 
-  // Get current chat participant info
-  const getCurrentChatInfo = () => {
-    if (isFromProduct && productInfo) {
-      return {
-        name: productContext.sellerName,
-        avatar: "/sample.png",
-        status: "Online",
-        about: productInfo.title
-      };
-    }
-    
-    if (selectedConversation) {
-      return {
-        name: `User ${selectedConversation.participantIds[1]?.slice(-2) || "Unknown"}`,
-        avatar: "/sample.png",
-        status: "Online",
-        about: null
-      };
-    }
-    
-    return {
-      name: "Sarah Miller",
-      avatar: "/sample.png", 
-      status: "Online",
-      about: null
-    };
-  };
-
-  const currentChatInfo = getCurrentChatInfo();
-
-  // Common emojis
-  const commonEmojis = [
-    "😊", "😂", "❤️", "👍", "🎉", "🔥", "😍", "🤔", "😭", "😎",
-    "👋", "🙏", "💪", "✨", "🌟", "💯", "👏", "🙌", "🤝", "💖"
-  ];
-
-  // Add mobile detection hook
   useEffect(() => {
     const checkMobile = () => {
-      setIsMobile(/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent));
+      setIsMobile(window.innerWidth < 1024);
     };
     
     checkMobile();
@@ -544,18 +394,6 @@ export default function MessagesPage() {
     
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
-
-  // Handle image click to open modal
-  const handleImageClick = (imageUrl: string) => {
-    setSelectedImage(imageUrl);
-    setIsImageModalOpen(true);
-  };
-
-  // Handle modal close
-  const handleCloseModal = () => {
-    setIsImageModalOpen(false);
-    setSelectedImage(null);
-  };
 
   return (
     <div className="container mx-auto px-0 py-8 md:px-8">
@@ -585,304 +423,157 @@ export default function MessagesPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 h-[600px]">
         {/* Conversations List */}
-        <div className="lg:col-span-1">
+        <div className={`lg:col-span-1 ${!showConversationList && isMobile ? 'hidden' : 'block'}`}>
           <Card className="h-full">
             <CardHeader>
               <CardTitle>Conversations</CardTitle>
-              <CardDescription>Your active chats ({totalCount})</CardDescription>
-              <div className="relative">
-                <Input placeholder="Search conversations..." className="pl-8" />
-                <span className="absolute left-2.5 top-2.5 text-gray-400">🔍</span>
-              </div>
+              <CardDescription>Your recent conversations</CardDescription>
+              <Input
+                placeholder="Search conversations..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
             </CardHeader>
             <CardContent className="p-0">
               <div className="space-y-1">
-                {conversations.length === 0 ? (
-                  <div className="p-4 text-center text-gray-500">
-                    <p>No conversations found</p>
-                    {isFromProduct && (
-                      <Button 
-                        className="mt-2"
-                        onClick={() => {
-                          // Create new conversation with seller
-                          console.log("Creating new conversation with seller for product:", productInfo?.id);
-                        }}
-                      >
-                        Start Conversation
-                      </Button>
+                {filteredConversations.map((conversation) => (
+                  <div
+                    key={conversation.id}
+                    className={`flex items-center space-x-3 p-4 cursor-pointer hover:bg-gray-50 ${
+                      selectedConversation?.id === conversation.id ? 'bg-blue-50' : ''
+                    }`}
+                    onClick={() => handleConversationClick(conversation)}
+                  >
+                    <Avatar className="h-10 w-10">
+                      <AvatarImage src="/sample.png" />
+                      <AvatarFallback>U</AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between">
+                        <p className="text-sm font-medium truncate">User {conversation.participantIds.find((id: string) => id !== userId)?.slice(-1)}</p>
+                        <span className="text-xs text-gray-500">
+                          {formatTime(conversation.lastMessage?.timestamp || '')}
+                        </span>
+                      </div>
+                      <p className="text-xs text-gray-500 truncate">
+                        {conversation.lastMessage?.content}
+                      </p>
+                    </div>
+                    {conversation.unreadCount > 0 && (
+                      <Badge variant="destructive" className="ml-2">
+                        {conversation.unreadCount}
+                      </Badge>
                     )}
                   </div>
-                ) : (
-                  conversations.map((conversation: any) => (
-                    <div 
-                      key={conversation.id} 
-                      className={`flex items-center space-x-3 p-4 hover:bg-gray-50 cursor-pointer border-l-4 transition-colors ${
-                        selectedConversation?.id === conversation.id 
-                          ? 'bg-blue-50 border-blue-500' 
-                          : 'border-transparent hover:border-blue-500'
-                      }`}
-                      onClick={() => handleConversationClick(conversation)}
-                    >
-                      <Avatar className="h-10 w-10">
-                        <AvatarImage src="/sample.png" alt={`User ${conversation.participantIds[1]?.slice(-2) || "Unknown"}`} />
-                        <AvatarFallback>
-                          {conversation.participantIds[1]?.slice(-2) || "U"}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between">
-                          <p className="text-sm font-medium text-gray-900 truncate">
-                            {isFromProduct && conversation.participantIds[1] === productContext.sellerId 
-                              ? productContext.sellerName 
-                              : `User ${conversation.participantIds[1]?.slice(-2) || "Unknown"}`
-                            }
-                          </p>
-                          {conversation.unreadCount > 0 && (
-                            <Badge variant="destructive" className="ml-2">
-                              {conversation.unreadCount}
-                            </Badge>
-                          )}
-                        </div>
-                        <p className="text-xs text-gray-500 truncate">
-                          {conversation.lastMessage?.content || "No messages yet"}
-                        </p>
-                      </div>
-                    </div>
-                  ))
-                )}
+                ))}
               </div>
             </CardContent>
           </Card>
         </div>
 
         {/* Chat Area */}
-        <div className="lg:col-span-2">
+        <div className={`lg:col-span-2 ${!showConversationList && isMobile ? 'block' : 'hidden lg:block'}`}>
           <Card className="h-full flex flex-col">
-            <CardHeader className="border-b">
-              <div className="flex items-center space-x-3">
-                <Avatar className="h-10 w-10">
-                  <AvatarImage src={currentChatInfo.avatar} alt={currentChatInfo.name} />
-                  <AvatarFallback>
-                    {currentChatInfo.name?.slice(0, 2)}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="flex-1">
-                  <h3 className="font-semibold">
-                    {currentChatInfo.name}
-                  </h3>
-                  <p className="text-sm text-gray-500">{currentChatInfo.status}</p>
-                  {currentChatInfo.about && (
-                    <p className="text-xs text-blue-600">About: {currentChatInfo.about}</p>
-                  )}
-                </div>
-              </div>
-            </CardHeader>
-
-            <CardContent className="flex-1 p-0 overflow-hidden">
-              {/* Messages */}
-              <div className="h-full flex flex-col">
-                <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                  {selectedConversation || isFromProduct ? (
-                    <>
-                      {/* Dynamic Messages */}
-                      {messages.map((message) => (
-                        <div key={message.id} className={`flex items-start space-x-3 ${message.isFromUser ? 'justify-end' : ''}`}>
-                          {!message.isFromUser && (
-                            <Avatar className="h-8 w-8">
-                              <AvatarImage src={currentChatInfo.avatar} alt={currentChatInfo.name} />
-                              <AvatarFallback>
-                                {currentChatInfo.name?.slice(0, 2)}
-                              </AvatarFallback>
-                            </Avatar>
-                          )}
-                          <div className={`flex-1 ${message.isFromUser ? 'text-right' : ''}`}>
-                            <div className={`rounded-lg p-3 max-w-xs ${message.isFromUser ? 'bg-blue-500 text-white ml-auto' : 'bg-gray-100'}`}>
-                              {message.type === 'image' ? (
-                                <img 
-                                  src={message.imageUrl} 
-                                  alt="Shared image" 
-                                  className="max-w-full h-auto rounded cursor-pointer hover:opacity-90 transition-opacity"
-                                  style={{ maxHeight: '200px' }}
-                                  onClick={() => handleImageClick(message.imageUrl!)}
-                                />
-                              ) : (
-                                <p className="text-sm">{message.content}</p>
-                              )}
-                            </div>
-                            <p className="text-xs text-gray-500 mt-1">
-                              {formatTime(message.timestamp)}
-                            </p>
-                          </div>
-                          {message.isFromUser && (
-                            <Avatar className="h-8 w-8">
-                              <AvatarImage src="/sample.png" alt="You" />
-                              <AvatarFallback>Y</AvatarFallback>
-                            </Avatar>
-                          )}
-                        </div>
-                      ))}
-
-                      {/* Typing Indicator */}
-                      {isTyping && (
-                        <div className="flex items-start space-x-3">
-                          <Avatar className="h-8 w-8">
-                            <AvatarImage src={currentChatInfo.avatar} alt={currentChatInfo.name} />
-                            <AvatarFallback>
-                              {currentChatInfo.name?.slice(0, 2)}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="flex-1">
-                            <div className="bg-gray-100 rounded-lg p-3 max-w-xs">
-                              <div className="flex space-x-1">
-                                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Auto-scroll anchor */}
-                      <div ref={messagesEndRef} />
-                    </>
-                  ) : (
-                    <div className="flex items-center justify-center h-full">
-                      <div className="text-center text-gray-500">
-                        <p className="text-lg mb-2">Select a conversation</p>
-                        <p className="text-sm">Choose a conversation from the list to start chatting</p>
+            {selectedConversation ? (
+              <>
+                <CardHeader className="border-b">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <Avatar className="h-10 w-10">
+                        <AvatarImage src="/sample.png" />
+                        <AvatarFallback>U</AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <h3 className="font-medium">User {selectedConversation.participantIds.find((id: string) => id !== userId)?.slice(-1)}</h3>
+                        <p className="text-sm text-gray-500">Online</p>
                       </div>
                     </div>
-                  )}
-                </div>
-
-                {/* Message Input */}
-                {(selectedConversation || isFromProduct) && (
-                  <div className="border-t p-4">
                     <div className="flex space-x-2">
-                      <Input 
-                        placeholder={isFromProduct ? "Ask about the product..." : "Type your message..."} 
-                        className="flex-1"
-                        value={inputMessage}
-                        onChange={handleInputChange}
-                        onKeyPress={handleKeyPress}
-                      />
-                      <Button 
-                        onClick={handleSendMessage}
-                        disabled={!inputMessage.trim()}
-                      >
-                        Send
+                      <Button variant="ghost" size="icon">
+                        <PhoneIcon className="h-4 w-4" />
+                      </Button>
+                      <Button variant="ghost" size="icon">
+                        <VideoCameraIcon className="h-4 w-4" />
+                      </Button>
+                      <Button variant="ghost" size="icon">
+                        <Cog6ToothIcon className="h-4 w-4" />
                       </Button>
                     </div>
-                    <div className="flex items-center justify-between mt-2 text-xs text-gray-500">
-                      <span>Press Enter to send</span>
-                      <div className="flex space-x-2">
-                        {/* Emoji Picker */}
-                        <Popover open={isEmojiPickerOpen} onOpenChange={setIsEmojiPickerOpen}>
-                          <PopoverTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8">
-                              <FaceSmileIcon className="h-4 w-4" />
-                            </Button>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-64 p-2">
-                            <div className="grid grid-cols-8 gap-1">
-                              {commonEmojis.map((emoji, index) => (
-                                <Button
-                                  key={index}
-                                  variant="ghost"
-                                  size="sm"
-                                  className="p-2 h-auto text-lg"
-                                  onClick={() => handleEmojiSelect(emoji)}
-                                >
-                                  {emoji}
-                                </Button>
-                              ))}
-                            </div>
-                          </PopoverContent>
-                        </Popover>
-
-                        {/* Image Upload */}
-                        <Popover open={isImageUploadOpen} onOpenChange={setIsImageUploadOpen}>
-                          <PopoverTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8">
-                              <PhotoIcon className="h-4 w-4" />
-                            </Button>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-48 p-2">
-                            <div className="space-y-2">
-                              {isMobile && (
-                                <Button
-                                  variant="ghost"
-                                  className="w-full justify-start text-sm"
-                                  onClick={() => {
-                                    setIsCameraMode(true);
-                                    fileInputRef.current?.click();
-                                    setIsImageUploadOpen(false);
-                                  }}
-                                >
-                                  📷 Take Photo
-                                </Button>
-                              )}
-                              <Button
-                                variant="ghost"
-                                className="w-full justify-start text-sm"
-                                onClick={() => {
-                                  setIsCameraMode(false);
-                                  fileInputRef.current?.click();
-                                  setIsImageUploadOpen(false);
-                                }}
-                              >
-                                📁 Choose from Library
-                              </Button>
-                            </div>
-                          </PopoverContent>
-                        </Popover>
-
-                        {/* Hidden file input */}
-                        <input
-                          ref={fileInputRef}
-                          type="file"
-                          accept="image/*"
-                          capture={isCameraMode ? "environment" : undefined}
-                          onChange={handleImageUpload}
-                          className="hidden"
-                        />
+                  </div>
+                </CardHeader>
+                
+                <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                  {getConversationMessages(selectedConversation.id).map((message) => (
+                    <div
+                      key={message.id}
+                      className={`flex ${message.senderId === userId ? 'justify-end' : 'justify-start'}`}
+                    >
+                      <div
+                        className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
+                          message.senderId === userId
+                            ? 'bg-blue-600 text-white'
+                            : 'bg-gray-100 text-gray-900'
+                        }`}
+                      >
+                        <p className="text-sm">{message.content}</p>
+                        <p className={`text-xs mt-1 ${
+                          message.senderId === userId ? 'text-blue-100' : 'text-gray-500'
+                        }`}>
+                          {formatTime(message.timestamp)}
+                        </p>
                       </div>
                     </div>
+                  ))}
+                  <div ref={messagesEndRef} />
+                </div>
+
+                <div className="border-t p-4">
+                  <div className="flex items-center space-x-2">
+                    <Input
+                      placeholder="Type a message..."
+                      value={messageInput}
+                      onChange={(e) => setMessageInput(e.target.value)}
+                      onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+                    />
+                    <Button variant="ghost" size="icon">
+                      <PhotoIcon className="h-4 w-4" />
+                    </Button>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button variant="ghost" size="icon">
+                          <FaceSmileIcon className="h-4 w-4" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-80">
+                        <div className="grid grid-cols-8 gap-1">
+                          {['😀', '😃', '😄', '😁', '😆', '😅', '😂', '🤣'].map((emoji) => (
+                            <button
+                              key={emoji}
+                              className="p-2 hover:bg-gray-100 rounded"
+                              onClick={() => setMessageInput(prev => prev + emoji)}
+                            >
+                              {emoji}
+                            </button>
+                          ))}
+                        </div>
+                      </PopoverContent>
+                    </Popover>
+                    <Button onClick={handleSendMessage}>Send</Button>
                   </div>
-                )}
+                </div>
+              </>
+            ) : (
+              <div className="flex-1 flex items-center justify-center">
+                <div className="text-center">
+                  <div className="text-6xl mb-4">💬</div>
+                  <h3 className="text-xl font-medium text-gray-900 mb-2">No conversation selected</h3>
+                  <p className="text-gray-500">Choose a conversation from the list to start messaging</p>
+                </div>
               </div>
-            </CardContent>
+            )}
           </Card>
         </div>
       </div>
-
-      {/* Image Modal */}
-      {isImageModalOpen && selectedImage && (
-        <div 
-          className="fixed inset-0 bg-black bg-opacity-75 z-50 overflow-auto"
-          onClick={handleCloseModal}
-        >
-          <div className="min-h-full flex items-center justify-center p-4">
-            <div className="relative">
-              <button
-                onClick={handleCloseModal}
-                className="fixed top-4 right-4 bg-black bg-opacity-50 text-white rounded-full p-2 hover:bg-opacity-75 transition-colors z-10"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-              <img 
-                src={selectedImage} 
-                alt="Enlarged image" 
-                className="max-w-none rounded-lg"
-                onClick={(e) => e.stopPropagation()}
-              />
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 } 

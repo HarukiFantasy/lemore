@@ -21,65 +21,11 @@ export const DECLUTTER_SITUATIONS = [
   },
 ] as const;
 
-export const ITEM_CATEGORIES = [
-  {
-    label: "Electronics",
-    value: "electronics",
-  },
-  {
-    label: "Clothing",
-    value: "clothing",
-  },
-  {
-    label: "Books",
-    value: "books",
-  },
-  {
-    label: "Furniture",
-    value: "furniture",
-  },
-  {
-    label: "Kitchen Items",
-    value: "kitchen",
-  },
-  {
-    label: "Home Decor",
-    value: "home-decor",
-  },
-  {
-    label: "Sports Equipment",
-    value: "sports",
-  },
-  {
-    label: "Toys & Games",
-    value: "toys",
-  },
-  {
-    label: "Jewelry & Accessories",
-    value: "jewelry",
-  },
-  {
-    label: "Other",
-    value: "other",
-  },
-] as const;
 
 export const RECOMMENDATION_ACTIONS = [
   {
-    label: "Donate",
-    value: "donate",
-  },
-  {
     label: "Sell",
     value: "sell",
-  },
-  {
-    label: "Recycle",
-    value: "recycle",
-  },
-  {
-    label: "Repair",
-    value: "repair",
   },
   {
     label: "Keep",

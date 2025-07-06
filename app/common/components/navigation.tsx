@@ -5,7 +5,7 @@ import { Button } from './ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from './ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { BarChart3Icon, BellIcon, LogOutIcon, MenuIcon, MessageCircleIcon, SettingsIcon, UserIcon, MapPin, ChevronDown, HeartIcon } from 'lucide-react';
-import { LOCATIONS } from '../data/locations';
+import { LOCATIONS } from '../../features/common-constants';
 import { NotificationsPage } from '../../features/users/pages/notifications-page';
 
 const menus = [
@@ -162,7 +162,7 @@ export function Navigation({
 
       {/* 중앙 타이틀 */}
       <div className="flex-1 flex justify-center">
-        <Link to="/" className="text-2xl font-bold">LEMORE</Link>
+        <Link to="/" className="text-2xl font-bold">LE:MORE</Link>
       </div>
 
       {/* 오른쪽 (필요시 아이콘/버튼) */}

@@ -165,8 +165,41 @@ export function ErrorBoundary() {
   );
 }
 
-export default function SettingsPage({ loaderData }: { loaderData: SettingsLoaderData }) {
-  const { settings } = loaderData;
+// Meta function for SEO
+export const meta = () => {
+  return [
+    { title: "Settings | Lemore" },
+    { name: "description", content: "Manage your account settings and preferences on Lemore" },
+  ];
+};
+
+export default function SettingsPage() {
+  // Mock data for settings
+  const settings = {
+    notifications: {
+      email: "all" as const,
+      push: "important" as const,
+      marketing: true,
+      updates: true,
+    },
+    privacy: {
+      profileVisibility: "public" as const,
+      contactInfo: "buyers" as const,
+      locationSharing: "city" as const,
+      showOnlineStatus: true,
+    },
+    preferences: {
+      language: "en" as const,
+      timezone: "pst" as const,
+      currency: "USD" as const,
+      dateFormat: "MM/DD/YYYY" as const,
+    },
+    security: {
+      twoFactorEnabled: false,
+      loginNotifications: true,
+      sessionTimeout: 60,
+    },
+  };
 
   return (
     <div className="container mx-auto px-0 py-8 md:px-8">
@@ -207,139 +240,94 @@ export default function SettingsPage({ loaderData }: { loaderData: SettingsLoade
           </CardContent>
         </Card>
 
-        {/* Notification Settings (TODO: Add notification settings) 
+        {/* Notification Settings */}
         <Card>
           <CardHeader>
             <CardTitle>Notification Settings</CardTitle>
-            <CardDescription>Choose how and when you want to be notified.</CardDescription>
+            <CardDescription>Choose how you want to be notified about activities.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h4 className="font-medium">Email Notifications</h4>
-                  <p className="text-sm text-gray-500">Receive notifications via email</p>
-                </div>
-                <RadioGroup defaultValue={settings.notifications.email} className="flex space-x-4">
+            <div>
+              <label className="text-sm font-medium text-gray-700 mb-3 block">Email Notifications</label>
+              <RadioGroup defaultValue={settings.notifications.email}>
+                <div className="space-y-2">
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="all" id="email-all" />
-                    <label htmlFor="email-all" className="text-sm">All</label>
+                    <label htmlFor="email-all" className="text-sm">All notifications</label>
                   </div>
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="important" id="email-important" />
-                    <label htmlFor="email-important" className="text-sm">Important Only</label>
+                    <label htmlFor="email-important" className="text-sm">Important only</label>
                   </div>
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="none" id="email-none" />
                     <label htmlFor="email-none" className="text-sm">None</label>
                   </div>
-                </RadioGroup>
-              </div>
-              <Separator />
-              <div className="flex items-center justify-between">
-                <div>
-                  <h4 className="font-medium">Push Notifications</h4>
-                  <p className="text-sm text-gray-500">Receive notifications on your device</p>
                 </div>
-                <RadioGroup defaultValue={settings.notifications.push} className="flex space-x-4">
+              </RadioGroup>
+            </div>
+            <Separator />
+            <div>
+              <label className="text-sm font-medium text-gray-700 mb-3 block">Push Notifications</label>
+              <RadioGroup defaultValue={settings.notifications.push}>
+                <div className="space-y-2">
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="all" id="push-all" />
-                    <label htmlFor="push-all" className="text-sm">All</label>
+                    <label htmlFor="push-all" className="text-sm">All notifications</label>
                   </div>
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="important" id="push-important" />
-                    <label htmlFor="push-important" className="text-sm">Important Only</label>
+                    <label htmlFor="push-important" className="text-sm">Important only</label>
                   </div>
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="none" id="push-none" />
                     <label htmlFor="push-none" className="text-sm">None</label>
                   </div>
-                </RadioGroup>
-              </div>
+                </div>
+              </RadioGroup>
             </div>
           </CardContent>
         </Card>
-        */}
 
-        {/* Privacy Settings (TODO: Add privacy settings) 
+        {/* Privacy Settings */}
         <Card>
           <CardHeader>
             <CardTitle>Privacy Settings</CardTitle>
-            <CardDescription>Control your privacy and data sharing preferences.</CardDescription>
+            <CardDescription>Control who can see your profile and contact you.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h4 className="font-medium">Profile Visibility</h4>
-                  <p className="text-sm text-gray-500">Who can see your profile information</p>
-                </div>
-                <Select defaultValue={settings.privacy.profileVisibility}>
-                  <SelectTrigger className="w-48">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="public">Public</SelectItem>
-                    <SelectItem value="friends">Friends Only</SelectItem>
-                    <SelectItem value="private">Private</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <Separator />
-              <div className="flex items-center justify-between">
-                <div>
-                  <h4 className="font-medium">Contact Information</h4>
-                  <p className="text-sm text-gray-500">Who can contact you directly</p>
-                </div>
-                <Select defaultValue={settings.privacy.contactInfo}>
-                  <SelectTrigger className="w-48">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="everyone">Everyone</SelectItem>
-                    <SelectItem value="buyers">Buyers Only</SelectItem>
-                    <SelectItem value="verified">Verified Users Only</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <Separator />
-              <div className="flex items-center justify-between">
-                <div>
-                  <h4 className="font-medium">Location Sharing</h4>
-                  <p className="text-sm text-gray-500">Share your general location with other users</p>
-                </div>
-                <RadioGroup defaultValue={settings.privacy.locationSharing} className="flex space-x-4">
+            <div>
+              <label className="text-sm font-medium text-gray-700 mb-3 block">Profile Visibility</label>
+              <RadioGroup defaultValue={settings.privacy.profileVisibility}>
+                <div className="space-y-2">
                   <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="city" id="location-city" />
-                    <label htmlFor="location-city" className="text-sm">City Only</label>
+                    <RadioGroupItem value="public" id="profile-public" />
+                    <label htmlFor="profile-public" className="text-sm">Public</label>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="region" id="location-region" />
-                    <label htmlFor="location-region" className="text-sm">Region</label>
+                    <RadioGroupItem value="friends" id="profile-friends" />
+                    <label htmlFor="profile-friends" className="text-sm">Friends only</label>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="none" id="location-none" />
-                    <label htmlFor="location-none" className="text-sm">None</label>
+                    <RadioGroupItem value="private" id="profile-private" />
+                    <label htmlFor="profile-private" className="text-sm">Private</label>
                   </div>
-                </RadioGroup>
-              </div>
+                </div>
+              </RadioGroup>
             </div>
           </CardContent>
         </Card>
-        */}
-        
-        {/* Language & Region (TODO: Add language & region)
+
+        {/* Preferences */}
         <Card>
           <CardHeader>
-            <CardTitle>Language & Region</CardTitle>
-            <CardDescription>Set your preferred language and regional settings.</CardDescription>
+            <CardTitle>Preferences</CardTitle>
+            <CardDescription>Customize your experience.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label htmlFor="language" className="block text-sm font-medium text-gray-700 mb-2">
-                  Language
-                </label>
+                <label className="text-sm font-medium text-gray-700 mb-2 block">Language</label>
                 <Select defaultValue={settings.preferences.language}>
                   <SelectTrigger>
                     <SelectValue />
@@ -353,26 +341,22 @@ export default function SettingsPage({ loaderData }: { loaderData: SettingsLoade
                 </Select>
               </div>
               <div>
-                <label htmlFor="timezone" className="block text-sm font-medium text-gray-700 mb-2">
-                  Timezone
-                </label>
-                <Select defaultValue={settings.preferences.timezone}>
+                <label className="text-sm font-medium text-gray-700 mb-2 block">Currency</label>
+                <Select defaultValue={settings.preferences.currency}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="pst">Pacific Time (PST)</SelectItem>
-                    <SelectItem value="est">Eastern Time (EST)</SelectItem>
-                    <SelectItem value="cst">Central Time (CST)</SelectItem>
-                    <SelectItem value="mst">Mountain Time (MST)</SelectItem>
-                    <SelectItem value="gmt">Greenwich Mean Time (GMT)</SelectItem>
+                    <SelectItem value="USD">USD ($)</SelectItem>
+                    <SelectItem value="EUR">EUR (€)</SelectItem>
+                    <SelectItem value="GBP">GBP (£)</SelectItem>
+                    <SelectItem value="JPY">JPY (¥)</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             </div>
           </CardContent>
         </Card>
-        */}
       </div>
     </div>
   );

@@ -9,5 +9,3 @@ export const LOCATIONS = [
   "Koh Samui",
   "All Cities"
 ] as const;
-
-export type Location = typeof LOCATIONS[number]; 

@@ -2,22 +2,9 @@ import React, { useState } from "react";
 import { Button } from "~/common/components/ui/button";
 import { Card } from "~/common/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "~/common/components/ui/avatar";
-import { useParams, useLoaderData, useNavigate } from "react-router";
+import { useNavigate } from "react-router";
 import { HeartIcon } from "lucide-react";
-import { getCurrentUserId } from "~/lib/utils";
-import { z } from "zod";
 
-// Mock track product view function (임시)
-async function trackProductView(productId: string, userId?: string | null, request?: Request) {
-  // 실제로는 데이터베이스에 조회 기록을 저장
-  console.log(`Product view tracked: ${productId} by user: ${userId || 'anonymous'}`);
-  return Promise.resolve();
-}
-
-// URL 파라미터 검증 스키마
-const paramsSchema = z.object({
-  id: z.string().min(1, "Product ID is required"),
-});
 
 export const meta = () => {
   return [
@@ -26,57 +13,14 @@ export const meta = () => {
   ];
 };
 
-// Loader function for tracking product views
-export const loader = async ({ request, params }: { request: Request; params: any }) => {
-  try {
-    // URL 파라미터 검증
-    const validationResult = paramsSchema.safeParse(params);
-    
-    if (!validationResult.success) {
-      throw new Response("Invalid Product ID", { status: 400 });
-    }
-
-    const { id: productId } = validationResult.data;
-
-    // 실제 사용자 ID 가져오기 (비로그인 사용자는 null)
-    const userId = getCurrentUserId(request);
-
-    // 상품 조회 추적 (IP 주소 추적 없음)
-    await trackProductView(productId, userId, request);
-
-    return { productId, userId };
-  } catch (error) {
-    console.error("Product detail loader error:", error);
-    throw error;
-  }
-};
-
 export default function ProductDetailPage() {
-  const params = useParams();
   const navigate = useNavigate();
-  const loaderData = useLoaderData() as { productId: string; userId: string | null };
   const [selectedImage, setSelectedImage] = useState(0);
   const [isLiked, setIsLiked] = useState(false);
 
-  // URL 파라미터 검증
-  const validationResult = paramsSchema.safeParse(params);
-  
-  if (!validationResult.success) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-red-600 mb-2">Invalid Product ID</h1>
-          <p className="text-gray-600">{validationResult.error.errors[0]?.message}</p>
-        </div>
-      </div>
-    );
-  }
-
-  const { id: productId } = validationResult.data;
-
   // Mock product data - in a real app this would come from the loader
   const product = {
-    id: productId,
+    id: "1",
     title: "Vintage Bicycle - Perfect Condition",
     price: "THB 2,500",
     originalPrice: "THB 3,500",

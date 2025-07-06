@@ -1,484 +1,65 @@
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router";
-import { z } from "zod";
-import type { Route } from './+types/local-reviews-page';
+import { z } from "zod";;
 import { Button } from "~/common/components/ui/button";
 import { Input } from "~/common/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "~/common/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "~/common/components/ui/avatar";
+import { Marquee } from "components/magicui/marquee";
 
-// Types
-interface Review {
+// Schema definitions
+const BusinessTypeSchema = z.enum(["All", "Restaurant", "Cafe", "Bar", "Shop", "Service", "Other"]);
+const PriceRangeSchema = z.enum(["All", "$", "$$", "$$$", "$$$$"]);
+const LocationSchema = z.enum(["Bangkok", "Chiang Mai", "Phuket", "Pattaya", "Krabi", "All Cities"]);
+
+// Mock data types
+interface MockBusiness {
+  id: string;
+  name: string;
+  type: z.infer<typeof BusinessTypeSchema>;
+  location: z.infer<typeof LocationSchema>;
+  priceRange: z.infer<typeof PriceRangeSchema>;
+  tags: string[];
+  address: string;
+  phone: string;
+  website: string;
+  description: string;
+  image?: string;
+  averageRating: number;
+  totalReviews: number;
+}
+
+interface MockReview {
   id: string;
   businessName: string;
   businessType: string;
   location: string;
-  rating: number;
-  review: string;
   author: string;
   authorAvatar?: string;
+  rating: number;
+  priceRange: string;
+  review: string;
+  tags: string[];
   timestamp: string;
-  photos?: string[];
-  priceRange: string;
-  tags: string[];
-}
-
-interface Business {
-  id: string;
-  name: string;
-  type: string;
-  location: string;
-  averageRating: number;
-  totalReviews: number;
-  priceRange: string;
-  tags: string[];
-  image?: string;
-  address?: string;
-  phone?: string;
-  website?: string;
-  description?: string;
-}
-
-// Constants
-const BUSINESS_TYPES = ["Restaurant", "Cafe", "Shop", "Service", "Entertainment", "All"] as const;
-const PRICE_RANGES = ["$", "$$", "$$$", "$$$$", "All"] as const;
-const VALID_LOCATIONS = ["Bangkok", "ChiangMai", "HuaHin", "Phuket", "Pattaya", "Koh Phangan", "Koh Tao", "Koh Samui", "All Cities"] as const;
-
-// Zod Schemas
-const BusinessTypeSchema = z.enum(BUSINESS_TYPES);
-const PriceRangeSchema = z.enum(PRICE_RANGES);
-const LocationSchema = z.enum(VALID_LOCATIONS);
-
-const SearchQuerySchema = z.string()
-  .max(100, "Search query is too long. Maximum length is 100 characters.")
-  .transform(val => val.replace(/[<>]/g, "").trim())
-  .optional()
-  .default("");
-
-const FilterSchema = z.object({
-  type: BusinessTypeSchema.default("All"),
-  location: LocationSchema.default("Bangkok"),
-  search: SearchQuerySchema,
-  priceRange: PriceRangeSchema.default("All")
-});
-
-// Database connection function (replace with actual database client)
-async function fetchBusinessesFromDatabase(filters: {
-  type: string;
-  location: string;
-  search: string;
-  priceRange: string;
-}): Promise<Business[]> {
-  try {
-    // TODO: Replace with actual database connection code
-    // Example: const businesses = await db.businesses.findMany({ where: filters });
-    
-    // 목업 데이터 반환
-    const mockBusinesses: Business[] = [
-      {
-        id: "1",
-        name: "Sukhumvit Thai Restaurant",
-        type: "Restaurant",
-        location: "Bangkok",
-        averageRating: 4.5,
-        totalReviews: 127,
-        priceRange: "$$",
-        tags: ["thai food", "authentic", "family-friendly"],
-        image: "/sample.png",
-        address: "123 Sukhumvit Road, Bangkok",
-        phone: "+66 2 123 4567",
-        website: "https://sukhumvit-thai.com",
-        description: "Authentic Thai cuisine in a cozy atmosphere"
-      },
-      {
-        id: "2",
-        name: "Chiang Mai Coffee House",
-        type: "Cafe",
-        location: "ChiangMai",
-        averageRating: 4.8,
-        totalReviews: 89,
-        priceRange: "$",
-        tags: ["coffee", "organic", "local beans"],
-        image: "/sample.png",
-        address: "456 Nimman Road, Chiang Mai",
-        phone: "+66 53 987 6543",
-        website: "https://chiangmai-coffee.com",
-        description: "Specialty coffee shop with locally sourced beans"
-      },
-      {
-        id: "3",
-        name: "Phuket Beach Massage",
-        type: "Service",
-        location: "Phuket",
-        averageRating: 4.3,
-        totalReviews: 203,
-        priceRange: "$$",
-        tags: ["massage", "beach", "relaxation"],
-        image: "/sample.png",
-        address: "789 Patong Beach Road, Phuket",
-        phone: "+66 76 555 1234",
-        website: "https://phuket-massage.com",
-        description: "Professional massage services on the beach"
-      },
-      {
-        id: "4",
-        name: "Bangkok Electronics Store",
-        type: "Shop",
-        location: "Bangkok",
-        averageRating: 4.1,
-        totalReviews: 156,
-        priceRange: "$$$",
-        tags: ["electronics", "gadgets", "repair"],
-        image: "/sample.png",
-        address: "321 Silom Road, Bangkok",
-        phone: "+66 2 789 0123",
-        website: "https://bangkok-electronics.com",
-        description: "Complete electronics store with repair services"
-      },
-      {
-        id: "5",
-        name: "Hua Hin Yoga Studio",
-        type: "Entertainment",
-        location: "HuaHin",
-        averageRating: 4.7,
-        totalReviews: 67,
-        priceRange: "$$",
-        tags: ["yoga", "wellness", "meditation"],
-        image: "/sample.png",
-        address: "654 Hua Hin Beach Road",
-        phone: "+66 32 456 7890",
-        website: "https://huahin-yoga.com",
-        description: "Peaceful yoga studio with ocean views"
-      },
-      {
-        id: "6",
-        name: "Pattaya Seafood Market",
-        type: "Shop",
-        location: "Pattaya",
-        averageRating: 4.4,
-        totalReviews: 234,
-        priceRange: "$$",
-        tags: ["seafood", "fresh", "local market"],
-        image: "/sample.png",
-        address: "987 Walking Street, Pattaya",
-        phone: "+66 38 123 4567",
-        website: "https://pattaya-seafood.com",
-        description: "Fresh seafood market with local specialties"
-      }
-    ];
-
-    // 필터링 로직
-    let filteredBusinesses = mockBusinesses;
-    
-    if (filters.type && filters.type !== "All") {
-      filteredBusinesses = filteredBusinesses.filter(business => business.type === filters.type);
-    }
-    
-    if (filters.location && filters.location !== "All Cities") {
-      filteredBusinesses = filteredBusinesses.filter(business => business.location === filters.location);
-    }
-    
-    if (filters.search) {
-      const searchLower = filters.search.toLowerCase();
-      filteredBusinesses = filteredBusinesses.filter(business => 
-        business.name.toLowerCase().includes(searchLower) ||
-        business.tags.some(tag => tag.toLowerCase().includes(searchLower))
-      );
-    }
-    
-    if (filters.priceRange && filters.priceRange !== "All") {
-      filteredBusinesses = filteredBusinesses.filter(business => business.priceRange === filters.priceRange);
-    }
-    
-    return filteredBusinesses;
-    
-  } catch (error) {
-    console.error("Database error:", error);
-    throw new Error("Failed to fetch businesses from database");
-  }
-}
-
-async function fetchReviewsFromDatabase(filters: {
-  location: string;
-  limit: number;
-}): Promise<Review[]> {
-  try {
-    // TODO: Replace with actual database connection code
-    // Example: const reviews = await db.reviews.findMany({ where: filters, take: limit });
-    
-    // 목업 데이터 반환
-    const mockReviews: Review[] = [
-      {
-        id: "1",
-        businessName: "Sukhumvit Thai Restaurant",
-        businessType: "Restaurant",
-        location: "Bangkok",
-        rating: 5,
-        review: "Amazing authentic Thai food! The pad thai was perfect and the service was excellent. Highly recommend for anyone visiting Bangkok.",
-        author: "Sarah Johnson",
-        authorAvatar: "/sample.png",
-        timestamp: "2 hours ago",
-        photos: [],
-        priceRange: "$$",
-        tags: ["authentic", "delicious", "friendly service"]
-      },
-      {
-        id: "2",
-        businessName: "Chiang Mai Coffee House",
-        businessType: "Cafe",
-        location: "ChiangMai",
-        rating: 4,
-        review: "Great coffee and atmosphere! The local beans are fantastic and the staff is very knowledgeable about coffee.",
-        author: "Mike Chen",
-        authorAvatar: "/sample.png",
-        timestamp: "5 hours ago",
-        photos: [],
-        priceRange: "$",
-        tags: ["great coffee", "local beans", "cozy atmosphere"]
-      },
-      {
-        id: "3",
-        businessName: "Phuket Beach Massage",
-        businessType: "Service",
-        location: "Phuket",
-        rating: 4,
-        review: "Relaxing massage right on the beach! The therapists are professional and the setting is perfect for relaxation.",
-        author: "Emma Wilson",
-        authorAvatar: "/sample.png",
-        timestamp: "1 day ago",
-        photos: [],
-        priceRange: "$$",
-        tags: ["relaxing", "professional", "beach setting"]
-      },
-      {
-        id: "4",
-        businessName: "Bangkok Electronics Store",
-        businessType: "Shop",
-        location: "Bangkok",
-        rating: 3,
-        review: "Good selection of electronics but prices are a bit high. Staff was helpful with my purchase.",
-        author: "David Kim",
-        authorAvatar: "/sample.png",
-        timestamp: "2 days ago",
-        photos: [],
-        priceRange: "$$$",
-        tags: ["good selection", "helpful staff", "expensive"]
-      },
-      {
-        id: "5",
-        businessName: "Hua Hin Yoga Studio",
-        businessType: "Entertainment",
-        location: "HuaHin",
-        rating: 5,
-        review: "Beautiful yoga studio with ocean views! The instructors are excellent and the classes are perfect for all levels.",
-        author: "Lisa Park",
-        authorAvatar: "/sample.png",
-        timestamp: "3 days ago",
-        photos: [],
-        priceRange: "$$",
-        tags: ["beautiful setting", "excellent instructors", "ocean views"]
-      }
-    ];
-
-    // 필터링 로직
-    let filteredReviews = mockReviews;
-    
-    if (filters.location && filters.location !== "All Cities") {
-      filteredReviews = filteredReviews.filter(review => review.location === filters.location);
-    }
-    
-    return filteredReviews.slice(0, filters.limit);
-    
-  } catch (error) {
-    console.error("Database error:", error);
-    throw new Error("Failed to fetch reviews from database");
-  }
-}
-
-// Database filtering function
-function buildDatabaseFilters(validatedType: string, validatedLocation: string, validatedSearch: string, validatedPriceRange: string) {
-  const filters: any = {};
-  
-  if (validatedType !== "All") {
-    filters.type = validatedType;
-  }
-  
-  if (validatedLocation !== "All Cities") {
-    filters.location = validatedLocation;
-  }
-  
-  if (validatedSearch) {
-    filters.search = validatedSearch;
-  }
-  
-  if (validatedPriceRange !== "All") {
-    filters.priceRange = validatedPriceRange;
-  }
-  
-  return filters;
-}
-
-// Time formatting utility
-function formatTimeAgo(date: Date): string {
-  const now = new Date();
-  const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
-  
-  if (diffInSeconds < 60) return `${diffInSeconds} seconds ago`;
-  if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} minutes ago`;
-  if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} hours ago`;
-  if (diffInSeconds < 2592000) return `${Math.floor(diffInSeconds / 86400)} days ago`;
-  if (diffInSeconds < 31536000) return `${Math.floor(diffInSeconds / 2592000)} months ago`;
-  return `${Math.floor(diffInSeconds / 31536000)} years ago`;
-}
-
-// Loader function
-export const loader = async ({ request }: Route.LoaderArgs) => {
-  try {
-    const url = new URL(request.url);
-    const type = url.searchParams.get("type") || undefined;
-    const location = url.searchParams.get("location") || undefined;
-    const search = url.searchParams.get("search") || undefined;
-    const priceRange = url.searchParams.get("priceRange") || undefined;
-
-    // Data validation using Zod
-    const validationResult = FilterSchema.safeParse({
-      type,
-      location,
-      search,
-      priceRange
-    });
-
-    if (!validationResult.success) {
-      const errorMessage = validationResult.error.errors.map(err => err.message).join(", ");
-      throw new Response(errorMessage, { status: 400 });
-    }
-
-    const { type: validatedType, location: validatedLocation, search: validatedSearch, priceRange: validatedPriceRange } = validationResult.data;
-
-    // Fetch data from database
-    const databaseFilters = buildDatabaseFilters(validatedType, validatedLocation, validatedSearch, validatedPriceRange);
-    const businesses = await fetchBusinessesFromDatabase(databaseFilters);
-    const reviews = await fetchReviewsFromDatabase({ location: validatedLocation, limit: 10 });
-
-    // Transform data for client
-    const transformedBusinesses = businesses.map(business => ({
-      id: business.id,
-      name: business.name,
-      type: business.type,
-      location: business.location,
-      averageRating: business.averageRating,
-      totalReviews: business.totalReviews,
-      priceRange: business.priceRange,
-      tags: business.tags,
-      image: business.image,
-      address: business.address,
-      phone: business.phone,
-      website: business.website,
-      description: business.description
-    }));
-
-    const transformedReviews = reviews.map(review => ({
-      id: review.id,
-      businessName: review.businessName,
-      businessType: review.businessType,
-      location: review.location,
-      rating: review.rating,
-      review: review.review,
-      author: review.author,
-      authorAvatar: review.authorAvatar,
-      timestamp: formatTimeAgo(new Date(review.timestamp)),
-      photos: review.photos,
-      priceRange: review.priceRange,
-      tags: review.tags
-    }));
-
-    return {
-      businesses: transformedBusinesses,
-      reviews: transformedReviews,
-      filters: {
-        type: validatedType,
-        location: validatedLocation,
-        search: validatedSearch,
-        priceRange: validatedPriceRange
-      },
-      totalCount: transformedBusinesses.length,
-      validBusinessTypes: BUSINESS_TYPES,
-      validPriceRanges: PRICE_RANGES
-    };
-
-  } catch (error) {
-    console.error("Loader error:", error);
-    
-    if (error instanceof Response) {
-      // Re-throw validation and other HTTP errors
-      throw error;
-    }
-    
-    if (error instanceof Error) {
-      // Database errors return 500 Internal Server Error
-      if (error.message.includes("Failed to fetch")) {
-        throw new Response("Database connection failed", { status: 500 });
-      }
-    }
-    
-    // Other errors return 500 Internal Server Error
-    throw new Response("Internal server error", { status: 500 });
-  }
-};
-
-// Error Boundary
-export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
-  let message = "Something went wrong";
-  let details = "An unexpected error occurred while loading local reviews.";
-
-  if (error instanceof Response) {
-    if (error.status === 400) {
-      message = "Invalid Request";
-      details = error.statusText || "The request contains invalid parameters.";
-    } else if (error.status === 500) {
-      message = "Server Error";
-      details = "An internal server error occurred. Please try again later.";
-    }
-  } else if (error instanceof Error) {
-    details = error.message;
-  }
-
-  return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-      <div className="max-w-md mx-auto px-4 py-8">
-        <Card>
-          <CardContent className="p-8 text-center">
-            <h1 className="text-2xl font-bold text-red-600 mb-4">{message}</h1>
-            <p className="text-gray-600 mb-6">{details}</p>
-            <Button onClick={() => window.location.reload()}>
-              Try Again
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
-  );
 }
 
 // Main component
-export default function LocalReviewsPage({ loaderData }: Route.ComponentProps) {
-  const { businesses, reviews, filters, totalCount, validBusinessTypes, validPriceRanges } = loaderData;
-  
+export default function LocalReviewsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const urlLocation = searchParams.get("location") || filters.location;
+  const urlLocation = searchParams.get("location") || "Bangkok";
   
-  const [searchQuery, setSearchQuery] = useState(filters.search);
-  const [selectedType, setSelectedType] = useState<z.infer<typeof BusinessTypeSchema>>(filters.type);
-  const [selectedPriceRange, setSelectedPriceRange] = useState<z.infer<typeof PriceRangeSchema>>(filters.priceRange);
+  // State variables
+  const [searchQuery, setSearchQuery] = useState(searchParams.get("search") || "");
+  const [selectedType, setSelectedType] = useState<z.infer<typeof BusinessTypeSchema>>(
+    (searchParams.get("type") as z.infer<typeof BusinessTypeSchema>) || "All"
+  );
+  const [selectedPriceRange, setSelectedPriceRange] = useState<z.infer<typeof PriceRangeSchema>>(
+    (searchParams.get("priceRange") as z.infer<typeof PriceRangeSchema>) || "All"
+  );
   const [showReviewForm, setShowReviewForm] = useState(false);
-  const [selectedBusiness, setSelectedBusiness] = useState<Business | null>(null);
-  const [newReview, setNewReview] = useState({
-    rating: 5,
-    review: "",
-    priceRange: "$" as z.infer<typeof PriceRangeSchema>,
-    tags: [] as string[]
-  });
-  const [showBusinessForm, setShowBusinessForm] = useState(false);
+  const [selectedBusiness, setSelectedBusiness] = useState<MockBusiness | null>(null);
+  const [reviewStep, setReviewStep] = useState<'select-business' | 'write-review'>('select-business');
+  const [businessSearchQuery, setBusinessSearchQuery] = useState("");
   const [newBusiness, setNewBusiness] = useState({
     name: "",
     type: "Restaurant" as z.infer<typeof BusinessTypeSchema>,
@@ -490,6 +71,171 @@ export default function LocalReviewsPage({ loaderData }: Route.ComponentProps) {
     website: "",
     description: ""
   });
+  const [newReview, setNewReview] = useState({
+    rating: 5,
+    review: "",
+    priceRange: "$" as z.infer<typeof PriceRangeSchema>,
+    tags: [] as string[]
+  });
+
+  // Mock data
+  const mockBusinesses: MockBusiness[] = [
+    {
+      id: "1",
+      name: "Siam Street Food",
+      type: "Restaurant",
+      location: "Bangkok",
+      priceRange: "$",
+      tags: ["street food", "local", "authentic", "quick"],
+      address: "123 Sukhumvit Road, Bangkok",
+      phone: "+66 2 123 4567",
+      website: "https://siamstreetfood.com",
+      description: "Authentic Thai street food in a casual setting. Famous for pad thai and tom yum soup.",
+      image: "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=400&h=300&fit=crop",
+      averageRating: 4.5,
+      totalReviews: 127
+    },
+    {
+      id: "2",
+      name: "Blue Moon Cafe",
+      type: "Cafe",
+      location: "Bangkok",
+      priceRange: "$$",
+      tags: ["coffee", "brunch", "wifi", "quiet"],
+      address: "456 Silom Road, Bangkok",
+      phone: "+66 2 234 5678",
+      website: "https://bluemooncafe.com",
+      description: "Cozy cafe with excellent coffee and brunch options. Perfect for remote work.",
+      image: "https://images.unsplash.com/photo-1501339847302-ac426a4a87c8?w=400&h=300&fit=crop",
+      averageRating: 4.2,
+      totalReviews: 89
+    },
+    {
+      id: "3",
+      name: "Riverside Bar",
+      type: "Bar",
+      location: "Bangkok",
+      priceRange: "$$$",
+      tags: ["cocktails", "river view", "live music", "romantic"],
+      address: "789 Chao Phraya Road, Bangkok",
+      phone: "+66 2 345 6789",
+      website: "https://riversidebar.com",
+      description: "Elegant bar with stunning river views. Perfect for sunset cocktails and live jazz.",
+      image: "https://images.unsplash.com/photo-1514933651103-005eec06c04b?w=400&h=300&fit=crop",
+      averageRating: 4.7,
+      totalReviews: 203
+    },
+    {
+      id: "4",
+      name: "Thai Craft Market",
+      type: "Shop",
+      location: "Chiang Mai",
+      priceRange: "$$",
+      tags: ["handicrafts", "local artisans", "souvenirs", "unique"],
+      address: "321 Nimman Road, Chiang Mai",
+      phone: "+66 53 123 4567",
+      website: "https://thaicraftmarket.com",
+      description: "Local handicrafts and souvenirs from northern Thailand artisans.",
+      image: "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=400&h=300&fit=crop",
+      averageRating: 4.3,
+      totalReviews: 156
+    },
+    {
+      id: "5",
+      name: "Beach Massage Spa",
+      type: "Service",
+      location: "Phuket",
+      priceRange: "$$",
+      tags: ["massage", "spa", "relaxation", "beachfront"],
+      address: "654 Patong Beach Road, Phuket",
+      phone: "+66 76 234 5678",
+      website: "https://beachmassagespa.com",
+      description: "Relaxing massage and spa services with beautiful beach views.",
+      image: "https://images.unsplash.com/photo-1544161512-84f9c86cbeb4?w=400&h=300&fit=crop",
+      averageRating: 4.6,
+      totalReviews: 342
+    }
+  ];
+
+  const mockReviews: MockReview[] = [
+    {
+      id: "1",
+      businessName: "Siam Street Food",
+      businessType: "Restaurant",
+      location: "Bangkok",
+      author: "Sarah Johnson",
+      authorAvatar: "https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face",
+      rating: 5,
+      priceRange: "$",
+      review: "Amazing pad thai! The flavors are authentic and the portion size is generous. The staff is friendly and the atmosphere is perfect for a quick lunch. Highly recommend!",
+      tags: ["authentic", "friendly staff", "generous portions"],
+      timestamp: "2024-01-15T10:30:00Z"
+    },
+    {
+      id: "1b",
+      businessName: "Siam Street Food",
+      businessType: "Restaurant",
+      location: "Bangkok",
+      author: "Leo Kim",
+      authorAvatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face",
+      rating: 4,
+      priceRange: "$",
+      review: "Quick service and delicious noodles. The place is always busy but worth the wait!",
+      tags: ["quick", "busy", "worth it"],
+      timestamp: "2024-01-16T12:00:00Z"
+    },
+    {
+      id: "1c",
+      businessName: "Siam Street Food",
+      businessType: "Restaurant",
+      location: "Bangkok",
+      author: "Mina Park",
+      authorAvatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face",
+      rating: 5,
+      priceRange: "$",
+      review: "Best street food in Bangkok! Loved the spicy soup and the friendly staff.",
+      tags: ["spicy", "best in town", "friendly staff"],
+      timestamp: "2024-01-17T09:45:00Z"
+    },
+    {
+      id: "2",
+      businessName: "Blue Moon Cafe",
+      businessType: "Cafe",
+      location: "Bangkok",
+      author: "Mike Chen",
+      authorAvatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face",
+      rating: 4,
+      priceRange: "$$",
+      review: "Great coffee and excellent wifi for working. The avocado toast is delicious. A bit pricey but worth it for the quality and atmosphere.",
+      tags: ["good coffee", "wifi", "quiet"],
+      timestamp: "2024-01-14T14:20:00Z"
+    },
+    {
+      id: "3",
+      businessName: "Riverside Bar",
+      businessType: "Bar",
+      location: "Bangkok",
+      author: "Emma Wilson",
+      authorAvatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face",
+      rating: 5,
+      priceRange: "$$$",
+      review: "Stunning views and amazing cocktails! The live jazz band was incredible. Perfect for a romantic evening or special celebration.",
+      tags: ["beautiful views", "live music", "romantic"],
+      timestamp: "2024-01-13T19:15:00Z"
+    }
+  ];
+
+  const businesses = mockBusinesses;
+  const reviews = mockReviews;
+  const validBusinessTypes: z.infer<typeof BusinessTypeSchema>[] = ["All", "Restaurant", "Cafe", "Bar", "Shop", "Service", "Other"];
+  const validPriceRanges: z.infer<typeof PriceRangeSchema>[] = ["All", "$", "$$", "$$$", "$$$$"];
+
+  // Filter businesses for the selection modal
+  const filteredBusinessesForSelection = businesses.filter(business => 
+    business.name.toLowerCase().includes(businessSearchQuery.toLowerCase()) ||
+    business.type.toLowerCase().includes(businessSearchQuery.toLowerCase()) ||
+    business.location.toLowerCase().includes(businessSearchQuery.toLowerCase())
+  );
 
   useEffect(() => {
     setNewBusiness(prev => ({ ...prev, location: urlLocation as z.infer<typeof LocationSchema> }));
@@ -505,6 +251,22 @@ export default function LocalReviewsPage({ loaderData }: Route.ComponentProps) {
     
     return matchesSearch && matchesType && matchesLocation && matchesPrice;
   });
+
+  // Handlers
+  const handleSearchChange = (value: string) => {
+    setSearchQuery(value);
+    updateFilters(selectedType, value, selectedPriceRange);
+  };
+
+  const handleTypeChange = (type: z.infer<typeof BusinessTypeSchema>) => {
+    setSelectedType(type);
+    updateFilters(type, searchQuery, selectedPriceRange);
+  };
+
+  const handlePriceRangeChange = (range: z.infer<typeof PriceRangeSchema>) => {
+    setSelectedPriceRange(range);
+    updateFilters(selectedType, searchQuery, range);
+  };
 
   // Update filters and URL
   const updateFilters = (newType: z.infer<typeof BusinessTypeSchema>, newSearch: string, newPriceRange: z.infer<typeof PriceRangeSchema>) => {
@@ -531,21 +293,6 @@ export default function LocalReviewsPage({ loaderData }: Route.ComponentProps) {
     setSearchParams(newSearchParams);
   };
 
-  const handleTypeChange = (type: z.infer<typeof BusinessTypeSchema>) => {
-    setSelectedType(type);
-    updateFilters(type, searchQuery, selectedPriceRange);
-  };
-
-  const handleSearchChange = (search: string) => {
-    setSearchQuery(search);
-    updateFilters(selectedType, search, selectedPriceRange);
-  };
-
-  const handlePriceRangeChange = (priceRange: z.infer<typeof PriceRangeSchema>) => {
-    setSelectedPriceRange(priceRange);
-    updateFilters(selectedType, searchQuery, priceRange);
-  };
-
   const handleSubmitReview = () => {
     if (selectedBusiness && newReview.review.trim()) {
       // TODO: Submit to backend
@@ -560,7 +307,6 @@ export default function LocalReviewsPage({ loaderData }: Route.ComponentProps) {
     if (newBusiness.name.trim() && newBusiness.address.trim()) {
       // TODO: Submit to backend
       console.log("Submitting business:", newBusiness);
-      setShowBusinessForm(false);
       setNewBusiness({
         name: "",
         type: "Restaurant" as z.infer<typeof BusinessTypeSchema>,
@@ -591,6 +337,12 @@ export default function LocalReviewsPage({ loaderData }: Route.ComponentProps) {
       </div>
     );
   };
+
+  // 비즈니스별 리뷰 매핑
+  const businessReviewPairs = businesses.map((business) => {
+    const businessReviews = reviews.filter(r => r.businessName === business.name);
+    return { business, reviews: businessReviews };
+  });
 
   return (
     <div className="max-w-7xl mx-auto px-0 py-6 md:p-6 space-y-6">
@@ -658,296 +410,361 @@ export default function LocalReviewsPage({ loaderData }: Route.ComponentProps) {
         </CardContent>
       </Card>
 
-      {/* Results Statistics */}
-      <div className="flex justify-between items-center">
-        <p className="text-sm text-gray-600">
-          Found <span className="font-semibold text-blue-600">{filteredBusinesses.length}</span> businesses
-          {urlLocation === "All Cities" ? " across all cities" : ` in ${urlLocation}`}
-        </p>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={() => setShowBusinessForm(true)}>
-            Add Business
-          </Button>
-          <Button onClick={() => setShowReviewForm(true)}>
-            Write a Review
-          </Button>
-        </div>
+      {/* Write a Review 버튼 - 리뷰 리스트 위, 우측 정렬 */}
+      <div className="flex justify-end mb-4">
+        <Button onClick={() => {
+          setShowReviewForm(true);
+          setReviewStep('select-business');
+          setSelectedBusiness(null);
+        }}>
+          Write a Review
+        </Button>
       </div>
 
-      {/* Business List */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredBusinesses.length > 0 ? (
-          filteredBusinesses.map((business) => (
-            <Card key={business.id} className="hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 transition-all duration-300 hover:scale-[1.02] hover:shadow-lg cursor-pointer">
-              <div className="aspect-video overflow-hidden rounded-t-lg">
-                <img 
-                  src={business.image || "/sample.png"} 
-                  alt={business.name}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              <CardContent className="py-1">
-                <div className="flex justify-between items-start mb-2">
-                  <h3 className="font-semibold text-lg text-gray-900">{business.name}</h3>
-                  <span className="text-sm text-gray-500">{business.priceRange}</span>
-                </div>
-                
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="flex items-center">
-                    {renderStars(business.averageRating)}
+      {/* 비즈니스별 리뷰 매핑 */}
+      <div className="space-y-4">
+        {businessReviewPairs.length > 0 ? (
+          businessReviewPairs.map(({ business, reviews }) => (
+            <Card key={business.id} className="w-full">
+              <div className="flex flex-col md:flex-row">
+                {/* 좌측: 비즈니스 정보 */}
+                <div className="flex-shrink-0 w-full md:w-1/3 flex flex-col items-center md:items-start -mb-6 -mt-6">
+                  {/* 비즈니스 사진 - 카드 상단에 여백 없이 */}
+                  <div className="w-full">
+                    <img
+                      src={business.image || "/sample.png"}
+                      alt={business.name}
+                      className="w-full h-32 object-cover rounded-t-lg mb-0"
+                    />
                   </div>
-                  <span className="text-sm text-gray-600">
-                    {business.averageRating} ({business.totalReviews} reviews)
-                  </span>
+                  {/* 비즈니스 정보 */}
+                  <div className="space-y-1 w-full p-4">
+                    <h3 className="font-semibold text-lg text-gray-900">{business.name}</h3>
+                    <div className="flex flex-wrap gap-2 text-xs text-gray-600">
+                      <span>{business.type}</span>
+                      <span>•</span>
+                      <span>{business.location}</span>
+                      <span>•</span>
+                      <span>{business.priceRange}</span>
+                    </div>
+                    <div className="flex items-center gap-2 mt-1">
+                      {renderStars(business.averageRating)}
+                      <span className="text-xs text-gray-500">
+                        {business.averageRating} ({business.totalReviews} reviews)
+                      </span>
+                    </div>
+                    {business.tags && (
+                      <div className="flex flex-wrap gap-1 mt-2">
+                        {business.tags.map((tag, idx) => (
+                          <span key={idx} className="bg-gray-100 text-gray-700 px-2 py-1 rounded-full text-xs">{tag}</span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
-
-                <div className="flex items-center gap-2 mb-3">
-                  <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-medium">
-                    {business.type}
-                  </span>
-                  <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-medium">
-                    {business.location}
-                  </span>
-                </div>
-
-                <div className="flex flex-wrap gap-1 mb-3">
-                  {business.tags.map((tag, index) => (
-                    <span 
-                      key={index}
-                      className="bg-gray-100 text-gray-700 px-2 py-1 rounded-full text-xs"
-                    >
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="w-full"
-                  onClick={() => {
-                    setSelectedBusiness(business);
-                    setShowReviewForm(true);
-                  }}
-                >
-                  Write Review
-                </Button>
-              </CardContent>
+                {/* 우측: 해당 비즈니스의 모든 리뷰 */}
+                <CardContent className="flex-1 flex flex-col justify-between p-4 -mt-5 -mb-5">
+                  <div className="max-h-64 overflow-y-auto pr-2">
+                    <Marquee pauseOnHover vertical className="w-full">
+                      <div className="flex flex-col gap-4 w-full">
+                        {reviews.length > 0 ? reviews.map((review) => (
+                          <div key={review.id} className="border-b last:border-b-0 pb-4 last:pb-0">
+                            <div className="flex items-start gap-3">
+                              <Avatar className="w-10 h-10">
+                                <AvatarImage src={review.authorAvatar} alt={review.author} />
+                                <AvatarFallback>{review.author.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+                              </Avatar>
+                              <div>
+                                <div className="font-semibold text-md text-gray-900">{review.author}</div>
+                                <div className="text-xs text-gray-500">{new Date(review.timestamp).toLocaleDateString()}</div>
+                                <div className="flex items-center gap-2">
+                                  {renderStars(review.rating)}
+                                </div>
+                              </div>
+                              <div className="text-gray-700 mb-2 leading-relaxed">{review.review}</div>
+                            </div>
+                          </div>
+                        )) : (
+                          <div className="text-gray-500 text-center">No reviews yet for this business.</div>
+                        )}
+                      </div>
+                    </Marquee>
+                  </div>
+                </CardContent>
+              </div>
             </Card>
           ))
         ) : (
-          <div className="col-span-full">
-            <Card>
-              <CardContent className="p-8 text-center">
-                <p className="text-gray-500 mb-2">
-                  No businesses found matching your search criteria
-                  {urlLocation === "All Cities" ? " across all cities." : ` in ${urlLocation}.`}
-                </p>
-                <p className="text-sm text-gray-400">
-                  {urlLocation === "All Cities" 
-                    ? "Try adjusting your filters or search terms."
-                    : "Try changing the location in the navigation bar above or adjust your filters."
-                  }
-                </p>
-              </CardContent>
-            </Card>
-          </div>
+          <Card className="w-full">
+            <CardContent className="p-8 text-center">
+              <p className="text-gray-500">No reviews found yet.</p>
+              <p className="text-sm text-gray-400 mt-2">Be the first to write a review!</p>
+            </CardContent>
+          </Card>
         )}
       </div>
 
-      {/* Recent Reviews Section */}
-      <div className="mt-12">
-        <h2 className="text-2xl font-bold mb-6">Recent Reviews</h2>
-        <div className="space-y-4">
-          {reviews.length > 0 ? (
-            reviews.map((review) => (
-              <Card key={review.id} className="hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 transition-all duration-300 hover:scale-[1.01] hover:shadow-md">
-                <CardContent className="py-1">
-                  <div className="flex items-start gap-4">
-                    <Avatar className="w-12 h-12">
-                      <AvatarImage src={review.authorAvatar} alt={review.author} />
-                      <AvatarFallback>{review.author.split(' ').map(n => n[0]).join('')}</AvatarFallback>
-                    </Avatar>
-                    
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
-                        <h3 className="font-semibold text-lg">{review.businessName}</h3>
-                        <span className="text-sm text-gray-500">•</span>
-                        <span className="text-sm text-gray-500">{review.businessType}</span>
-                        <span className="text-sm text-gray-500">•</span>
-                        <span className="text-sm text-gray-500">{review.location}</span>
-                      </div>
-                      
-                      <div className="flex items-center gap-2 mb-3">
-                        <div className="flex items-center">
-                          {renderStars(review.rating)}
-                        </div>
-                        <span className="text-sm text-gray-600">{review.priceRange}</span>
-                      </div>
-                      
-                      <p className="text-gray-700 mb-3 leading-relaxed">{review.review}</p>
-                      
-                      <div className="flex flex-wrap gap-1 mb-3">
-                        {review.tags.map((tag, index) => (
-                          <span 
-                            key={index}
-                            className="bg-purple-100 text-purple-700 px-2 py-1 rounded-full text-xs"
-                          >
-                            {tag}
-                          </span>
-                        ))}
-                      </div>
-                      
-                      <div className="flex items-center justify-between text-sm text-gray-500">
-                        <span>By {review.author}</span>
-                        <span>{review.timestamp}</span>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))
-          ) : (
-            <Card>
-              <CardContent className="p-8 text-center">
-                <p className="text-gray-500">No reviews found yet.</p>
-                <p className="text-sm text-gray-400 mt-2">Be the first to write a review!</p>
-              </CardContent>
-            </Card>
-          )}
-        </div>
-      </div>
-
-      {/* Business Registration Form Modal */}
-      {showBusinessForm && (
+      {/* Write a Review Modal */}
+      {showReviewForm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <CardHeader>
-              <CardTitle>Add New Business</CardTitle>
+              <CardTitle>
+                {reviewStep === 'select-business' ? 'Select Business' : `Write a Review for ${selectedBusiness?.name}`}
+              </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {/* Business Name */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Business Name *</label>
-                <Input
-                  placeholder="Enter business name..."
-                  value={newBusiness.name}
-                  onChange={(e) => setNewBusiness({ ...newBusiness, name: e.target.value })}
-                />
-              </div>
+              {reviewStep === 'select-business' ? (
+                <>
+                  {/* Step 1: Business Selection */}
+                  <div className="space-y-4">
+                    <div className="text-sm text-gray-600 mb-4">
+                      Choose an existing business or add a new one to write a review.
+                    </div>
+                    
+                    {/* Existing Businesses */}
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                      <h3 className="font-medium text-blue-900 mb-3 flex items-center gap-2">
+                        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
+                        </svg>
+                        Existing Businesses
+                      </h3>
+                      
+                      {/* Search Input */}
+                      <div className="mb-3">
+                        <Input
+                          placeholder="Search businesses by name, type, or location..."
+                          value={businessSearchQuery}
+                          onChange={(e) => setBusinessSearchQuery(e.target.value)}
+                          className="w-full border-slate-300 focus:border-slate-400"
+                        />
+                      </div>
+                      
+                      <div className="space-y-2 max-h-60 overflow-y-auto">
+                        {filteredBusinessesForSelection.length > 0 ? (
+                          filteredBusinessesForSelection.map((business) => (
+                            <div
+                              key={business.id}
+                              className="p-3 bg-white border border-blue-200 rounded-lg cursor-pointer hover:bg-blue-100 transition-colors"
+                              onClick={() => {
+                                setSelectedBusiness(business);
+                                setReviewStep('write-review');
+                              }}
+                            >
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <h4 className="font-medium text-gray-900">{business.name}</h4>
+                                  <p className="text-sm text-gray-600">{business.type} • {business.location}</p>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-sm text-gray-500">{business.priceRange}</span>
+                                  <div className="flex items-center">
+                                    {renderStars(business.averageRating)}
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          ))
+                        ) : (
+                          <div className="p-4 text-center text-gray-500 bg-white border border-blue-200 rounded-lg">
+                            <p className="mb-2">No businesses found matching "{businessSearchQuery}"</p>
+                            <p className="text-sm">Try adding a new business below</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
 
-              {/* Business Type */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Business Type</label>
-                <div className="flex flex-wrap gap-2">
-                  {validBusinessTypes.slice(0, -1).map((type) => (
-                    <Button
-                      key={type}
-                      variant={newBusiness.type === type ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => setNewBusiness({ ...newBusiness, type })}
-                    >
-                      {type}
-                    </Button>
-                  ))}
-                </div>
-              </div>
+                    {/* Divider */}
+                    <div className="relative">
+                      <div className="absolute inset-0 flex items-center">
+                        <span className="w-full border-t" />
+                      </div>
+                      <div className="relative flex justify-center text-xs uppercase">
+                        <span className="bg-white px-2 text-gray-500">Or</span>
+                      </div>
+                    </div>
 
-              {/* Location Display */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Location</label>
-                <div className="p-3 bg-gray-50 border rounded-md">
-                  <span className="text-sm text-gray-700">
-                    {urlLocation === "All Cities" ? "Please select a specific city" : urlLocation}
-                  </span>
-                  <p className="text-xs text-gray-500 mt-1">
-                    {urlLocation === "All Cities" 
-                      ? "You need to select a specific city to add a business. Please change the location in the navigation bar above."
-                      : "Location is automatically set based on your current selection"
+                    {/* Add New Business */}
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                      <h3 className="font-medium text-blue-900 mb-3 flex items-center gap-2">
+                        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
+                        </svg>
+                        Add New Business
+                      </h3>
+                      <div className="space-y-4">
+                        {/* Business Name */}
+                        <div>
+                          <label className="block text-sm font-medium text-blue-800 mb-2">Business Name *</label>
+                          <Input
+                            placeholder="Enter business name..."
+                            value={newBusiness.name}
+                            onChange={(e) => setNewBusiness({ ...newBusiness, name: e.target.value })}
+                            className="border-slate-300 focus:border-slate-400 focus:ring-slate-400"
+                          />
+                        </div>
+
+                        {/* Business Type */}
+                        <div>
+                          <label className="block text-sm font-medium text-blue-800 mb-2">Business Type</label>
+                          <div className="flex flex-wrap gap-2">
+                            {validBusinessTypes.filter(type => type !== "All").map((type) => (
+                              <Button
+                                key={type}
+                                variant={newBusiness.type === type ? "default" : "outline"}
+                                size="sm"
+                                onClick={() => setNewBusiness({ ...newBusiness, type })}
+                                className={newBusiness.type === type ? "bg-slate-300  text-slate-800 hover:bg-slate-300" : "border-slate-300 text-slate-600 hover:bg-slate-50"}
+                              >
+                                {type}
+                              </Button>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Address */}
+                        <div>
+                          <label className="block text-sm font-medium text-blue-800 mb-2">Address *</label>
+                          <Input
+                            placeholder="Enter business address..."
+                            value={newBusiness.address}
+                            onChange={(e) => setNewBusiness({ ...newBusiness, address: e.target.value })}
+                            className="border-slate-300 focus:border-slate-400 focus:ring-slate-400"
+                          />
+                        </div>
+
+                        {/* Price Range */}
+                        <div>
+                          <label className="block text-sm font-medium text-blue-800 mb-2">Price Range</label>
+                          <div className="flex gap-2">
+                            {validPriceRanges.filter(range => range !== "All").map((range) => (
+                              <Button
+                                key={range}
+                                variant={newBusiness.priceRange === range ? "default" : "outline"}
+                                size="sm"
+                                onClick={() => setNewBusiness({ ...newBusiness, priceRange: range })}
+                                className={newBusiness.priceRange === range ? "bg-slate-300  text-slate-800 hover:bg-slate-300" : "border-slate-300 text-slate-600 hover:bg-slate-50"}
+                              >
+                                {range}
+                              </Button>
+                            ))}
+                          </div>
+                        </div>
+
+
+                      </div>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <>
+                  {/* Step 2: Write Review */}
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Rating</label>
+                      <div className="flex items-center gap-1">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <button
+                            key={star}
+                            type="button"
+                            onClick={() => setNewReview({ ...newReview, rating: star })}
+                            className="text-2xl hover:scale-110 transition-transform"
+                          >
+                            <svg
+                              className={`w-8 h-8 ${star <= newReview.rating ? "text-yellow-400" : "text-gray-300"}`}
+                              fill="currentColor"
+                              viewBox="0 0 20 20"
+                            >
+                              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                            </svg>
+                          </button>
+                        ))}
+                        <span className="ml-2 text-sm text-gray-600">{newReview.rating}/5</span>
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Review</label>
+                      <textarea
+                        className="w-full min-h-[120px] p-3 border rounded-md resize-none focus:outline-none focus:ring-2 focus:ring-ring"
+                        placeholder="Share your experience..."
+                        value={newReview.review}
+                        onChange={(e) => setNewReview({ ...newReview, review: e.target.value })}
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Price Range</label>
+                      <div className="flex gap-2">
+                        {validPriceRanges.filter(range => range !== "All").map((range) => (
+                          <Button
+                            key={range}
+                            variant={newReview.priceRange === range ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => setNewReview({ ...newReview, priceRange: range })}
+                          >
+                            {range}
+                          </Button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
+              
+              <div className="flex gap-2 pt-4">
+                {reviewStep === 'write-review' && (
+                  <Button 
+                    variant="outline"
+                    onClick={() => setReviewStep('select-business')}
+                  >
+                    Back
+                  </Button>
+                )}
+                <Button 
+                  onClick={() => {
+                    if (reviewStep === 'select-business') {
+                      // If we're in select-business step and have a new business filled out, create temp business
+                      if (newBusiness.name.trim() && newBusiness.address.trim()) {
+                        const tempBusiness: MockBusiness = {
+                          id: `temp-${Date.now()}`,
+                          name: newBusiness.name,
+                          type: newBusiness.type,
+                          location: newBusiness.location,
+                          priceRange: newBusiness.priceRange,
+                          tags: newBusiness.tags,
+                          address: newBusiness.address,
+                          phone: newBusiness.phone,
+                          website: newBusiness.website,
+                          description: newBusiness.description,
+                          averageRating: 0,
+                          totalReviews: 0
+                        };
+                        setSelectedBusiness(tempBusiness);
+                        setReviewStep('write-review');
+                      }
+                    } else {
+                      // If we're in write-review step, submit the review
+                      handleSubmitReview();
                     }
-                  </p>
-                </div>
-              </div>
-
-              {/* Address */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Address *</label>
-                <Input
-                  placeholder="Enter business address..."
-                  value={newBusiness.address}
-                  onChange={(e) => setNewBusiness({ ...newBusiness, address: e.target.value })}
-                />
-              </div>
-
-              {/* Phone */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
-                <Input
-                  placeholder="Enter phone number..."
-                  value={newBusiness.phone}
-                  onChange={(e) => setNewBusiness({ ...newBusiness, phone: e.target.value })}
-                />
-              </div>
-
-              {/* Website */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Website</label>
-                <Input
-                  placeholder="Enter website URL..."
-                  value={newBusiness.website}
-                  onChange={(e) => setNewBusiness({ ...newBusiness, website: e.target.value })}
-                />
-              </div>
-
-              {/* Price Range */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Price Range</label>
-                <div className="flex gap-2">
-                  {validPriceRanges.slice(0, -1).map((range) => (
-                    <Button
-                      key={range}
-                      variant={newBusiness.priceRange === range ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => setNewBusiness({ ...newBusiness, priceRange: range })}
-                    >
-                      {range}
-                    </Button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Description */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
-                <textarea
-                  className="w-full min-h-[100px] p-3 border rounded-md resize-none focus:outline-none focus:ring-2 focus:ring-ring"
-                  placeholder="Describe the business..."
-                  value={newBusiness.description}
-                  onChange={(e) => setNewBusiness({ ...newBusiness, description: e.target.value })}
-                />
-              </div>
-
-              {/* Tags */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Tags</label>
-                <Input
-                  placeholder="Enter tags separated by commas..."
-                  value={newBusiness.tags.join(", ")}
-                  onChange={(e) => setNewBusiness({ 
-                    ...newBusiness, 
-                    tags: e.target.value.split(",").map(tag => tag.trim()).filter(tag => tag)
-                  })}
-                />
-              </div>
-
-              <div className="flex gap-2">
-                <Button onClick={handleSubmitBusiness} className="flex-1">
-                  Add Business
+                  }}
+                  className="flex-1"
+                  disabled={
+                    (reviewStep === 'select-business' && (!newBusiness.name.trim() || !newBusiness.address.trim())) ||
+                    (reviewStep === 'write-review' && !newReview.review.trim())
+                  }
+                >
+                  {reviewStep === 'select-business' ? 'Continue' : 'Submit Review'}
                 </Button>
                 <Button 
                   variant="outline" 
                   onClick={() => {
-                    setShowBusinessForm(false);
+                    setShowReviewForm(false);
+                    setSelectedBusiness(null);
+                    setReviewStep('select-business');
+                    setBusinessSearchQuery("");
+                    setNewReview({ rating: 5, review: "", priceRange: "$" as z.infer<typeof PriceRangeSchema>, tags: [] });
                     setNewBusiness({
                       name: "",
                       type: "Restaurant" as z.infer<typeof BusinessTypeSchema>,
@@ -959,92 +776,6 @@ export default function LocalReviewsPage({ loaderData }: Route.ComponentProps) {
                       website: "",
                       description: ""
                     });
-                  }}
-                >
-                  Cancel
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
-
-      {/* Review Form Modal */}
-      {showReviewForm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <CardHeader>
-              <CardTitle>
-                Write a Review {selectedBusiness && `for ${selectedBusiness.name}`}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {!selectedBusiness && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Business Name</label>
-                  <Input placeholder="Enter business name..." />
-                </div>
-              )}
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Rating</label>
-                <div className="flex items-center gap-1">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <button
-                      key={star}
-                      type="button"
-                      onClick={() => setNewReview({ ...newReview, rating: star })}
-                      className="text-2xl hover:scale-110 transition-transform"
-                    >
-                      <svg
-                        className={`w-8 h-8 ${star <= newReview.rating ? "text-yellow-400" : "text-gray-300"}`}
-                        fill="currentColor"
-                        viewBox="0 0 20 20"
-                      >
-                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                      </svg>
-                    </button>
-                  ))}
-                  <span className="ml-2 text-sm text-gray-600">{newReview.rating}/5</span>
-                </div>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Review</label>
-                <textarea
-                  className="w-full min-h-[120px] p-3 border rounded-md resize-none focus:outline-none focus:ring-2 focus:ring-ring"
-                  placeholder="Share your experience..."
-                  value={newReview.review}
-                  onChange={(e) => setNewReview({ ...newReview, review: e.target.value })}
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Price Range</label>
-                <div className="flex gap-2">
-                  {validPriceRanges.slice(0, -1).map((range) => (
-                    <Button
-                      key={range}
-                      variant={newReview.priceRange === range ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => setNewReview({ ...newReview, priceRange: range })}
-                    >
-                      {range}
-                    </Button>
-                  ))}
-                </div>
-              </div>
-              
-              <div className="flex gap-2">
-                <Button onClick={handleSubmitReview} className="flex-1">
-                  Submit Review
-                </Button>
-                <Button 
-                  variant="outline" 
-                  onClick={() => {
-                    setShowReviewForm(false);
-                    setSelectedBusiness(null);
-                    setNewReview({ rating: 5, review: "", priceRange: "$" as z.infer<typeof PriceRangeSchema>, tags: [] });
                   }}
                 >
                   Cancel
