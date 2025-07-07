@@ -241,7 +241,7 @@ export const localTipPosts = pgTable("local_tip_posts", {
   id: bigint("id", {mode: "number"}).primaryKey().generatedAlwaysAsIdentity(),
   title: text("title").notNull(),
   content: text("content").notNull(),
-  category: text("category").notNull(),
+  category: localTipCategories("category").notNull(),
   location: text("location").notNull(),
   author: uuid().notNull().references(() => userProfiles.profile_id),
   likes: integer("likes").notNull().default(0),
@@ -253,13 +253,13 @@ export const localTipPosts = pgTable("local_tip_posts", {
 
 // Local tip comments table
 export const localTipComments = pgTable("local_tip_comments", {
-  comment_id: bigint("comment_id", {mode: "number"}).generatedAlwaysAsIdentity(),
+  comment_id: bigint("comment_id", {mode: "number"}).primaryKey().generatedAlwaysAsIdentity(),
   post_id: bigint("post_id", {mode: "number"}).notNull().references(() => localTipPosts.id),
   author: uuid().notNull().references(() => userProfiles.profile_id),
   content: text("content").notNull(),
   likes: integer("likes").notNull().default(0),
   created_at: timestamp("created_at").notNull().defaultNow(),
-}, (table) => [primaryKey({ columns: [table.comment_id, table.post_id, table.author] })]);
+});
 
 // Let Go Buddy sessions table
 export const letGoBuddySessions = pgTable("let_go_buddy_sessions", {

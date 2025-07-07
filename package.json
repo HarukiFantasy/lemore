@@ -10,7 +10,8 @@
     "db:generate": "drizzle-kit --config=app/drizzle.config.ts generate",
     "db:push": "drizzle-kit --config=app/drizzle.config.ts push",
     "db:studio": "drizzle-kit --config=app/drizzle.config.ts studio",
-    "db:migrate": "drizzle-kit --config=app/drizzle.config.ts migrate"
+    "db:migrate": "drizzle-kit --config=app/drizzle.config.ts migrate",
+    "db:typegen": "supabase gen types typescript --project-id vyzdklycsuzzgmnuzvnn > database.types.ts"
   },
   "dependencies": {
     "@floating-ui/react": "^0.27.13",
@@ -28,6 +29,7 @@
     "@radix-ui/react-slot": "^1.2.3",
     "@react-router/node": "^7.5.3",
     "@react-router/serve": "^7.5.3",
+    "@supabase/supabase-js": "^2.50.3",
     "@tiptap/extension-blockquote": "^2.23.1",
     "@tiptap/extension-bullet-list": "^2.23.1",
     "@tiptap/extension-highlight": "^2.23.1",
