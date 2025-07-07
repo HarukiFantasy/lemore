@@ -1442,6 +1442,7 @@ INSERT INTO
         receiver_id,
         category,
         rating,
+        review,
         timestamp,
         tags
     )
@@ -1451,6 +1452,7 @@ VALUES (
         '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
         'electronics',
         5,
+        'Amazing laptop! Works perfectly and the giver was so kind. Everything is in excellent condition.',
         '2024-01-15T10:30:00Z',
         '["helpful", "professional"]'
     ),
@@ -1460,6 +1462,7 @@ VALUES (
         '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
         'sports',
         4,
+        'Great yoga mat! Very comfortable and durable. Perfect for my daily practice.',
         '2024-01-16T14:20:00Z',
         '["quality", "comfortable"]'
     ),
@@ -1469,6 +1472,7 @@ VALUES (
         '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
         'clothing',
         5,
+        'Beautiful vintage dress! Authentic and in perfect condition. The giver was very thoughtful.',
         '2024-01-17T09:15:00Z',
         '["authentic", "beautiful"]'
     ),
@@ -1478,6 +1482,7 @@ VALUES (
         '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
         'books',
         4,
+        'Complete Harry Potter collection! All books are in great condition. My kids are thrilled!',
         '2024-01-18T16:45:00Z',
         '["complete", "collectible"]'
     ),
@@ -1487,6 +1492,7 @@ VALUES (
         '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
         'home',
         3,
+        'Solid coffee table. Minor scratches but very functional. Good for my apartment.',
         '2024-01-19T11:30:00Z',
         '["solid", "functional"]'
     ),
@@ -1496,6 +1502,7 @@ VALUES (
         '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
         'beauty',
         5,
+        'Luxury skincare set! All products are unopened and high quality. So grateful!',
         '2024-01-20T13:20:00Z',
         '["effective", "luxurious"]'
     ),
@@ -1505,6 +1512,7 @@ VALUES (
         '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
         'toys',
         4,
+        'Fun LEGO set! Complete with instructions. My children love building with it.',
         '2024-01-21T15:10:00Z',
         '["fun", "educational"]'
     ),
@@ -1514,6 +1522,7 @@ VALUES (
         '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
         'automotive',
         4,
+        'Quality car seat covers! Easy to install and fit perfectly. Great protection.',
         '2024-01-22T12:00:00Z',
         '["quality", "easy_install"]'
     ),
@@ -1523,6 +1532,7 @@ VALUES (
         '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
         'health',
         5,
+        'Comfortable ergonomic chair! Perfect for my home office. Very durable construction.',
         '2024-01-23T17:30:00Z',
         '["comfortable", "durable"]'
     ),
@@ -1532,6 +1542,7 @@ VALUES (
         '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
         'other',
         4,
+        'Vintage camera collection! All cameras are in working condition. Great for photography enthusiasts.',
         '2024-01-24T08:45:00Z',
         '["vintage", "collectible"]'
     );

@@ -38,6 +38,7 @@ export type Database = {
           product_id: number | null
           rating: number
           receiver_id: string
+          review: string
           tags: Json
           timestamp: string
           updated_at: string
@@ -50,6 +51,7 @@ export type Database = {
           product_id?: number | null
           rating: number
           receiver_id: string
+          review: string
           tags?: Json
           timestamp: string
           updated_at?: string
@@ -62,6 +64,7 @@ export type Database = {
           product_id?: number | null
           rating?: number
           receiver_id?: string
+          review?: string
           tags?: Json
           timestamp?: string
           updated_at?: string
@@ -307,6 +310,39 @@ export type Database = {
         }
         Relationships: []
       }
+      local_tip_comment_likes: {
+        Row: {
+          comment_id: number
+          created_at: string
+          user_id: string
+        }
+        Insert: {
+          comment_id: number
+          created_at?: string
+          user_id: string
+        }
+        Update: {
+          comment_id?: number
+          created_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "local_tip_comment_likes_comment_id_local_tip_comments_comment_i"
+            columns: ["comment_id"]
+            isOneToOne: false
+            referencedRelation: "local_tip_comments"
+            referencedColumns: ["comment_id"]
+          },
+          {
+            foreignKeyName: "local_tip_comment_likes_user_id_user_profiles_profile_id_fk"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["profile_id"]
+          },
+        ]
+      }
       local_tip_comments: {
         Row: {
           author: string
@@ -347,45 +383,86 @@ export type Database = {
             referencedRelation: "local_tip_posts"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "local_tip_comments_post_id_local_tip_posts_id_fk"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "local_tips_list_view"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      local_tip_post_likes: {
+        Row: {
+          created_at: string
+          post_id: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          post_id: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          post_id?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "local_tip_post_likes_post_id_local_tip_posts_id_fk"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "local_tip_posts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "local_tip_post_likes_post_id_local_tip_posts_id_fk"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "local_tips_list_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "local_tip_post_likes_user_id_user_profiles_profile_id_fk"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["profile_id"]
+          },
         ]
       }
       local_tip_posts: {
         Row: {
           author: string
-          category: string
-          comments: number
+          category: Database["public"]["Enums"]["local_tip_categories"]
           content: string
           created_at: string
           id: number
-          likes: number
           location: string
-          reviews: number
+          stats: Json
           title: string
           updated_at: string
         }
         Insert: {
           author: string
-          category: string
-          comments?: number
+          category: Database["public"]["Enums"]["local_tip_categories"]
           content: string
           created_at?: string
           id?: never
-          likes?: number
           location: string
-          reviews?: number
+          stats?: Json
           title: string
           updated_at?: string
         }
         Update: {
           author?: string
-          category?: string
-          comments?: number
+          category?: Database["public"]["Enums"]["local_tip_categories"]
           content?: string
           created_at?: string
           id?: never
-          likes?: number
           location?: string
-          reviews?: number
+          stats?: Json
           title?: string
           updated_at?: string
         }
@@ -835,7 +912,28 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      local_tips_list_view: {
+        Row: {
+          author: string | null
+          category: Database["public"]["Enums"]["local_tip_categories"] | null
+          content: string | null
+          created_at: string | null
+          id: number | null
+          location: string | null
+          stats: Json | null
+          title: string | null
+          updated_at: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "local_tip_posts_author_user_profiles_profile_id_fk"
+            columns: ["author"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["profile_id"]
+          },
+        ]
+      }
     }
     Functions: {
       [_ in never]: never

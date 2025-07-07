@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "~/common/components/ui
 import type { Route } from './+types/give-and-glow-page';
 import { validateWithZod, getFieldErrors, getCategoryColors } from "~/lib/utils";
 import { GiveAndGlowCard } from '../components/give-and-glow-card';
+import { getGiveAndGlowReviews } from '../queries';
 
 // Error Boundary
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
@@ -41,24 +42,13 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
   );
 }
 
-// Mock data types
-interface MockReview {
-  id: string;
-  item_name: string;
-  item_category: string;
-  giver_name: string;
-  giver_avatar?: string;
-  receiver_name: string;
-  receiver_avatar?: string;
-  rating: number;
-  review: string;
-  timestamp: string;
-  location: string;
-  tags: string[];
-  appreciation_badge: string;
+export const loader = async () => {
+  const reviews = await getGiveAndGlowReviews();
+  return { reviews };
 }
 
-export default function GiveAndGlowPage() {
+export default function GiveAndGlowPage({ loaderData }: Route.ComponentProps) {
+  const { reviews } = loaderData;
   const [searchParams] = useSearchParams();
   const location = "Bangkok";
   const urlLocation = searchParams.get("location") || location;
@@ -79,96 +69,17 @@ export default function GiveAndGlowPage() {
     tags: [] as string[]
   });
 
-  // Mock data
-  const mockReviews: MockReview[] = [
-    {
-      id: "1",
-      item_name: "Vintage Coffee Table",
-      item_category: "Furniture",
-      giver_name: "Sarah Johnson",
-      giver_avatar: "https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face",
-      receiver_name: "Mike Chen",
-      receiver_avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face",
-      rating: 5,
-      review: "Absolutely love this coffee table! Sarah was so kind and the table is in perfect condition. It fits perfectly in my living room. The vintage style adds such character to my space. Thank you so much!",
-      timestamp: "2024-01-15T10:30:00Z",
-      location: "Bangkok",
-      tags: ["excellent condition", "friendly giver", "smooth pickup"],
-      appreciation_badge: "Heart of Gold"
-    },
-    {
-      id: "2",
-      item_name: "Bookshelf",
-      item_category: "Furniture",
-      giver_name: "David Kim",
-      giver_avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face",
-      receiver_name: "Emma Wilson",
-      receiver_avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face",
-      rating: 4,
-      review: "Great bookshelf! David was very helpful with the pickup. The shelf is sturdy and holds all my books perfectly. Minor scratches but nothing major. Very grateful for this generous gift!",
-      timestamp: "2024-01-14T14:20:00Z",
-      location: "Bangkok",
-      tags: ["sturdy", "helpful giver", "minor wear"],
-      appreciation_badge: "Community Hero"
-    },
-    {
-      id: "3",
-      item_name: "Kitchen Appliances Set",
-      item_category: "Kitchen",
-      giver_name: "Lisa Park",
-      giver_avatar: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&h=150&fit=crop&crop=face",
-      receiver_name: "Tom Anderson",
-      receiver_avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&h=150&fit=crop&crop=face",
-      rating: 5,
-      review: "Amazing kitchen set! Lisa was incredibly generous. Everything works perfectly and looks almost new. This has made cooking so much easier. The blender and toaster are my favorites!",
-      timestamp: "2024-01-13T09:15:00Z",
-      location: "Bangkok",
-      tags: ["like new", "generous giver", "fully functional"],
-      appreciation_badge: "Generosity Champion"
-    },
-    {
-      id: "4",
-      item_name: "Garden Tools",
-      item_category: "Garden",
-      giver_name: "Robert Martinez",
-      giver_avatar: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=150&h=150&fit=crop&crop=face",
-      receiver_name: "Anna Lee",
-      receiver_avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&h=150&fit=crop&crop=face",
-      rating: 4,
-      review: "Perfect timing! I was just starting my garden and these tools are exactly what I needed. Robert was very patient and showed me how to use each tool properly. Great quality!",
-      timestamp: "2024-01-12T16:45:00Z",
-      location: "Bangkok",
-      tags: ["perfect timing", "patient giver", "good quality"],
-      appreciation_badge: "Green Thumb"
-    },
-    {
-      id: "5",
-      item_name: "Children's Toys",
-      item_category: "Toys",
-      giver_name: "Maria Garcia",
-      giver_avatar: "https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?w=150&h=150&fit=crop&crop=face",
-      receiver_name: "James Brown",
-      receiver_avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face",
-      rating: 5,
-      review: "My kids are overjoyed! Maria was so thoughtful and included a variety of toys for different ages. Everything is clean and in great condition. The kids haven't stopped playing!",
-      timestamp: "2024-01-11T11:30:00Z",
-      location: "Bangkok",
-      tags: ["clean", "thoughtful", "kids love it"],
-      appreciation_badge: "Child's Joy"
-    }
-  ];
-
   const validCategories = ["All", "Furniture", "Kitchen", "Garden", "Toys", "Electronics", "Clothing", "Books", "Sports", "Other"];
 
   // Filter reviews based on search and category
-  const filteredReviews = mockReviews.filter(review => {
+  const filteredReviews = reviews.filter((review: any) => {
     const matchesSearch = searchQuery === "" || 
-      review.item_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      review.giver_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      review.review.toLowerCase().includes(searchQuery.toLowerCase());
+      review.product?.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      review.giver?.username?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      review.receiver?.username?.toLowerCase().includes(searchQuery.toLowerCase());
     
-    const matchesCategory = selectedCategory === "All" || review.item_category === selectedCategory;
-    const matchesLocation = urlLocation === "All Cities" || review.location === urlLocation;
+    const matchesCategory = selectedCategory === "All" || review.category === selectedCategory;
+    const matchesLocation = urlLocation === "All Cities" || review.product?.location === urlLocation;
     
     return matchesSearch && matchesCategory && matchesLocation;
   });
@@ -297,21 +208,24 @@ export default function GiveAndGlowPage() {
 
       {/* Reviews List */}
       <div className="flex flex-col gap-4">
-        {filteredReviews.map((review) => (
+        {filteredReviews.map((review: any) => (
           <GiveAndGlowCard 
             key={review.id}
-            id={review.id}
-            itemName={review.item_name}
-            itemCategory={review.item_category}
-            giverName={review.giver_name}
-            giverAvatar={review.giver_avatar || undefined}
-            receiverName={review.receiver_name}
-            receiverAvatar={review.receiver_avatar || undefined}
+            id={review.id.toString()}
+            itemName={review.product?.title || "Unknown Item"}
+            itemCategory={review.category}
+            giverName={review.giver?.username || "Unknown Giver"}
+            giverAvatar={review.giver?.avatar_url}
+            receiverName={review.receiver?.username || "Unknown Receiver"}
+            receiverAvatar={review.receiver?.avatar_url}
+            giverId={review.giver?.profile_id}
+            receiverId={review.receiver?.profile_id}
             rating={review.rating}
             review={review.review}
-            timestamp={review.timestamp}
-            location={review.location}
-            tags={review.tags as string[]}
+            timestamp={review.created_at}
+            location={review.product?.location || "Unknown Location"}
+            tags={review.tags || []}
+            appreciationBadge={review.rating > 4}
           />
         ))}
       </div>

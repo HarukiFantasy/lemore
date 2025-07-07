@@ -200,6 +200,7 @@ export const giveAndGlowReviews = pgTable("give_and_glow_reviews", {
   receiver_id: uuid().notNull().references(() => userProfiles.profile_id, {onDelete: "cascade"}),
   category: productCategories().notNull(),
   rating: integer("rating").notNull(),
+  review: text("review").notNull(),
   timestamp: text("timestamp").notNull(),
   tags: jsonb("tags").notNull().default([]),
   created_at: timestamp("created_at").notNull().defaultNow(),
@@ -244,9 +245,7 @@ export const localTipPosts = pgTable("local_tip_posts", {
   category: localTipCategories("category").notNull(),
   location: text("location").notNull(),
   author: uuid().notNull().references(() => userProfiles.profile_id),
-  likes: integer("likes").notNull().default(0),
-  comments: integer("comments").notNull().default(0),
-  reviews: integer("reviews").notNull().default(0),
+  stats: jsonb("stats").notNull().default({likes: 0, comments: 0, reviews: 0}),
   created_at: timestamp("created_at").notNull().defaultNow(),
   updated_at: timestamp("updated_at").notNull().defaultNow(),
 });
@@ -260,6 +259,24 @@ export const localTipComments = pgTable("local_tip_comments", {
   likes: integer("likes").notNull().default(0),
   created_at: timestamp("created_at").notNull().defaultNow(),
 });
+
+// Local tip post likes table
+export const localTipPostLikes = pgTable("local_tip_post_likes", {
+  post_id: bigint("post_id", {mode: "number"}).notNull().references(() => localTipPosts.id, {onDelete: "cascade"}),
+  user_id: uuid().notNull().references(() => userProfiles.profile_id, {onDelete: "cascade"}),
+  created_at: timestamp("created_at").notNull().defaultNow(),
+}, (table) => [
+  primaryKey({ columns: [table.post_id, table.user_id] }),
+]);
+
+// Local tip comment likes table
+export const localTipCommentLikes = pgTable("local_tip_comment_likes", {
+  comment_id: bigint("comment_id", {mode: "number"}).notNull().references(() => localTipComments.comment_id, {onDelete: "cascade"}),
+  user_id: uuid().notNull().references(() => userProfiles.profile_id, {onDelete: "cascade"}),
+  created_at: timestamp("created_at").notNull().defaultNow(),
+}, (table) => [
+  primaryKey({ columns: [table.comment_id, table.user_id] }),
+]);
 
 // Let Go Buddy sessions table
 export const letGoBuddySessions = pgTable("let_go_buddy_sessions", {

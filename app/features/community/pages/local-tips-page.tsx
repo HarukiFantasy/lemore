@@ -24,9 +24,7 @@ interface LocalTipPost {
   category: LocalTipCategory;
   location: string;
   author: string;
-  likes: number;
-  comments: number;
-  reviews: number;
+  stats: { likes: number; comments: number; reviews: number };
   created_at: Date;
   updated_at: Date;
 }
@@ -141,7 +139,7 @@ export default function LocalTipsPage({ loaderData }: Route.ComponentProps) {
                     </button>
                   </div>
                   <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                    <span>By {post.author.username}</span>
+                    <span>By {post.author}</span>
                     <span>•</span>
                     <span>{formatTimeAgo(new Date(post.created_at))}</span>
                     <span>•</span>
@@ -165,19 +163,18 @@ export default function LocalTipsPage({ loaderData }: Route.ComponentProps) {
                 <div className="flex items-center gap-4 text-sm text-muted-foreground">
                   <div className="flex items-center gap-1">
                     <EyeIcon className="h-4 w-4 text-muted-foreground" />
-                    <span>{post.reviews}</span>
+                    <span>{(post.stats as { likes: number; comments: number; reviews: number }).reviews }</span>
                   </div>
                   <div className="flex items-center gap-1">
                     <HandThumbUpIcon className="h-4 w-4 text-muted-foreground" />
-                    <span>{post.likes}</span>
+                    <span>{(post.stats as { likes: number; comments: number; reviews: number}).likes }</span>
                   </div>
                   <button
                     onClick={() => {}}
                     className="flex items-center gap-1 hover:text-foreground transition-colors cursor-pointer"
                   >
                     <ChatBubbleLeftEllipsisIcon className="h-4 w-4" />
-                    <span>{post.comments}</span>
-                    
+                    <span>{(post.stats as { likes: number; comments: number; reviews: number}).comments }</span>
                   </button>
                 </div>
               </div>
