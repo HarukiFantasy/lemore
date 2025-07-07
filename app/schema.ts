@@ -122,8 +122,6 @@ export const users = pgSchema("auth").table("users", {
 // User profiles table
 export const userProfiles = pgTable("user_profiles", {
   profile_id: uuid().primaryKey().unique().references(() => users.id, {onDelete: "cascade"}),
-  first_name: text("first_name").notNull(),
-  last_name: text("last_name").notNull(),
   username: text("username").notNull(),
   email: text("email").notNull(),
   avatar_url: text("avatar_url"),

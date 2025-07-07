@@ -10,7 +10,7 @@ export default function ProfilePage() {
   // Mock data for profile
   const user = {
     id: "current-user",
-    displayName: "John Doe",
+    username: "John Doe",
     email: "john.doe@example.com",
     avatarUrl: "/sample.png",
     bio: "Passionate about sustainable living and finding great deals on secondhand items.",
@@ -41,11 +41,11 @@ export default function ProfilePage() {
                 <Avatar className="h-24 w-24">
                   <AvatarImage src={user.avatarUrl} />
                   <AvatarFallback className="text-2xl">
-                    {user.displayName.split(' ').map((n: string) => n[0]).join('').toUpperCase()}
+                    {user.username.split(' ').map((n: string) => n[0]).join('').toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
               </div>
-              <CardTitle>{user.displayName}</CardTitle>
+              <CardTitle>{user.username}</CardTitle>
               <CardDescription>Member since {new Date(user.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long' })}</CardDescription>
             </CardHeader>
             <CardContent>
@@ -80,9 +80,9 @@ export default function ProfilePage() {
               <div className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="text-sm font-medium text-gray-700">Display Name</label>
+                    <label className="text-sm font-medium text-gray-700">User Name</label>
                     <Input 
-                      defaultValue={user.displayName}
+                      defaultValue={user.username}
                       className="mt-1"
                     />
                   </div>

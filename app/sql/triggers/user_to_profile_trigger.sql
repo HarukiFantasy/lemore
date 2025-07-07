@@ -7,14 +7,20 @@ as $$
 begin
     if new.raw_app_meta_data is not null then
         if new.raw_app_meta_data ? 'provider' AND new.raw_app_meta_data ->> 'provider' = 'email' then
-            insert into public.user_profiles (profile_id, first_name, last_name, display_name, avatar_url, location)
+            insert into public.user_profiles (profile_id, username, email, location, total_likes, total_views, total_listings, response_rate, response_time, rating, created_at, updated_at)
             values (
                 new.id,
-                'first_name' || substr(md5(random()::text), 1, 6),
-                'last_name' || substr(md5(random()::text), 1, 4),
-                'display_name' || substr(md5(random()::text), 1, 8),
-                'avatar_url' || substr(md5(random()::text), 1, 8),
-                'Bangkok'
+                'username' || substr(md5(random()::text), 1, 8),
+                new.email,
+                (ARRAY['Bangkok', 'ChiangMai', 'Huahin'])[floor(random() * 3 + 1)],
+                floor(random() * 100 + 1),
+                floor(random() * 100 + 1),
+                floor(random() * 100 + 1),
+                round((random() * 50 + 50)::numeric, 2),
+                '< 1 hour',
+                round((random() * 5 + 1)::numeric, 2),
+                now(),
+                now()
             );
         end if;
     end if;
