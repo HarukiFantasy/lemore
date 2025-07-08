@@ -870,7 +870,7 @@ export default function LetGoBuddyPage() {
               <div className="p-4 bg-green-50 rounded-lg">
                 <div className="font-medium mb-2">By donating/selling this item:</div>
                 <div className="text-sm space-y-1">
-                  <div>• Saves {ENVIRONMENTAL_IMPACT[mockAnalysis[0].category].co2}kg CO2 emissions</div>
+                  <div>• Saves co2 kg CO2 emissions</div>
                   <div>• Reduces landfill waste</div>
                   <div>• Extends item's useful life</div>
                   <div>• Supports circular economy</div>
@@ -879,9 +879,7 @@ export default function LetGoBuddyPage() {
               <div className="p-4 bg-blue-50 rounded-lg">
                 <div className="font-medium mb-2">Best disposal method:</div>
                 <div className="text-sm">
-                  {ENVIRONMENTAL_IMPACT[mockAnalysis[0].category].recyclable 
-                    ? "♻️ Recycle or donate to extend life"
-                    : "🔄 Repurpose or upcycle if possible"}
+                  {"♻️ Recycle or donate to extend life"}
                 </div>
               </div>
             </div>

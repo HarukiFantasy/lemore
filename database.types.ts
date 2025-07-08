@@ -915,6 +915,7 @@ export type Database = {
       local_tips_list_view: {
         Row: {
           author: string | null
+          avatar_url: string | null
           category: Database["public"]["Enums"]["local_tip_categories"] | null
           content: string | null
           created_at: string | null
@@ -923,6 +924,7 @@ export type Database = {
           stats: Json | null
           title: string | null
           updated_at: string | null
+          username: string | null
         }
         Relationships: [
           {

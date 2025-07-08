@@ -24,12 +24,12 @@ interface LocalTipPost {
   category: LocalTipCategory;
   location: string;
   author: string;
+  username: string | null;
+  avatar_url: string | null;
   stats: { likes: number; comments: number; reviews: number };
   created_at: Date;
   updated_at: Date;
 }
-
-
 
 interface Comment {
   id: string;
@@ -139,7 +139,7 @@ export default function LocalTipsPage({ loaderData }: Route.ComponentProps) {
                     </button>
                   </div>
                   <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                    <span>By {post.author}</span>
+                    <span>By {(post as any).username || 'Unknown User'}</span>
                     <span>•</span>
                     <span>{formatTimeAgo(new Date(post.created_at))}</span>
                     <span>•</span>
