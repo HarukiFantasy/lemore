@@ -1,1 +1,0 @@
-ALTER TABLE "local_tip_posts" ALTER COLUMN "category" SET DATA TYPE "public"."local_tip_categories" USING "category"::"public"."local_tip_categories";

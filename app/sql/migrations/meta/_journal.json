@@ -5,43 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1751775559282,
-      "tag": "0000_chemical_james_howlett",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1751887925125,
-      "tag": "0001_marvelous_brood",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1751893177849,
-      "tag": "0002_blushing_lady_bullseye",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "7",
-      "when": 1751895544602,
-      "tag": "0003_breezy_omega_red",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "7",
-      "when": 1751900755270,
-      "tag": "0004_breezy_red_shift",
-      "breakpoints": true
-    },
-    {
-      "idx": 5,
-      "version": "7",
-      "when": 1751902415859,
-      "tag": "0005_nervous_mandrill",
+      "when": 1751987253102,
+      "tag": "0000_pretty_starbolt",
       "breakpoints": true
     }
   ]

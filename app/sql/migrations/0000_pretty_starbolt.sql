@@ -32,6 +32,7 @@ CREATE TABLE "give_and_glow_reviews" (
 	"receiver_id" uuid NOT NULL,
 	"category" "product_category" NOT NULL,
 	"rating" integer NOT NULL,
+	"review" text NOT NULL,
 	"timestamp" text NOT NULL,
 	"tags" jsonb DEFAULT '[]'::jsonb NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
@@ -105,8 +106,15 @@ CREATE TABLE "local_businesses" (
 	"updated_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
+CREATE TABLE "local_tip_comment_likes" (
+    "comment_id" bigint NOT NULL,
+    "user_id" uuid NOT NULL,
+    "created_at" timestamp DEFAULT now() NOT NULL,
+    CONSTRAINT "local_tip_comment_likes_comment_id_user_id_pk" PRIMARY KEY ("comment_id", "user_id")
+);
+--> statement-breakpoint
 CREATE TABLE "local_tip_comments" (
-    "comment_id" bigint GENERATED ALWAYS AS IDENTITY (
+    "comment_id" bigint PRIMARY KEY GENERATED ALWAYS AS IDENTITY (
         sequence name "local_tip_comments_comment_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 9223372036854775807 START
         WITH
             1 CACHE 1
@@ -115,30 +123,26 @@ CREATE TABLE "local_tip_comments" (
     "author" uuid NOT NULL,
     "content" text NOT NULL,
     "likes" integer DEFAULT 0 NOT NULL,
+    "created_at" timestamp DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "local_tip_post_likes" (
+    "post_id" bigint NOT NULL,
+    "user_id" uuid NOT NULL,
     "created_at" timestamp DEFAULT now() NOT NULL,
-    CONSTRAINT "local_tip_comments_comment_id_post_id_author_pk" PRIMARY KEY (
-        "comment_id",
-        "post_id",
-        "author"
-    )
+    CONSTRAINT "local_tip_post_likes_post_id_user_id_pk" PRIMARY KEY ("post_id", "user_id")
 );
 --> statement-breakpoint
 CREATE TABLE "local_tip_posts" (
-    "id" bigint PRIMARY KEY GENERATED ALWAYS AS IDENTITY (
-        sequence name "local_tip_posts_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 9223372036854775807 START
-        WITH
-            1 CACHE 1
-    ),
-    "title" text NOT NULL,
-    "content" text NOT NULL,
-    "category" text NOT NULL,
-    "location" text NOT NULL,
-    "author" uuid NOT NULL,
-    "likes" integer DEFAULT 0 NOT NULL,
-    "comments" integer DEFAULT 0 NOT NULL,
-    "reviews" integer DEFAULT 0 NOT NULL,
-    "created_at" timestamp DEFAULT now() NOT NULL,
-    "updated_at" timestamp DEFAULT now() NOT NULL
+	"id" bigint PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "local_tip_posts_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 9223372036854775807 START WITH 1 CACHE 1),
+	"title" text NOT NULL,
+	"content" text NOT NULL,
+	"category" "local_tip_categories" NOT NULL,
+	"location" text NOT NULL,
+	"author" uuid NOT NULL,
+	"stats" jsonb DEFAULT '{"likes":0,"comments":0,"reviews":0}'::jsonb NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "message_participants" (
@@ -235,8 +239,6 @@ CREATE TABLE "user_notifications" (
 --> statement-breakpoint
 CREATE TABLE "user_profiles" (
     "profile_id" uuid PRIMARY KEY NOT NULL,
-    "first_name" text NOT NULL,
-    "last_name" text NOT NULL,
     "username" text NOT NULL,
     "email" text NOT NULL,
     "avatar_url" text,
@@ -285,9 +287,17 @@ ALTER TABLE "local_business_reviews" ADD CONSTRAINT "local_business_reviews_busi
 --> statement-breakpoint
 ALTER TABLE "local_business_reviews" ADD CONSTRAINT "local_business_reviews_author_user_profiles_profile_id_fk" FOREIGN KEY ("author") REFERENCES "public"."user_profiles"("profile_id") ON DELETE no action ON UPDATE no action;
 --> statement-breakpoint
+ALTER TABLE "local_tip_comment_likes" ADD CONSTRAINT "local_tip_comment_likes_comment_id_local_tip_comments_comment_id_fk" FOREIGN KEY ("comment_id") REFERENCES "public"."local_tip_comments"("comment_id") ON DELETE cascade ON UPDATE no action;
+--> statement-breakpoint
+ALTER TABLE "local_tip_comment_likes" ADD CONSTRAINT "local_tip_comment_likes_user_id_user_profiles_profile_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user_profiles"("profile_id") ON DELETE cascade ON UPDATE no action;
+--> statement-breakpoint
 ALTER TABLE "local_tip_comments" ADD CONSTRAINT "local_tip_comments_post_id_local_tip_posts_id_fk" FOREIGN KEY ("post_id") REFERENCES "public"."local_tip_posts"("id") ON DELETE no action ON UPDATE no action;
 --> statement-breakpoint
 ALTER TABLE "local_tip_comments" ADD CONSTRAINT "local_tip_comments_author_user_profiles_profile_id_fk" FOREIGN KEY ("author") REFERENCES "public"."user_profiles"("profile_id") ON DELETE no action ON UPDATE no action;
+--> statement-breakpoint
+ALTER TABLE "local_tip_post_likes" ADD CONSTRAINT "local_tip_post_likes_post_id_local_tip_posts_id_fk" FOREIGN KEY ("post_id") REFERENCES "public"."local_tip_posts"("id") ON DELETE cascade ON UPDATE no action;
+--> statement-breakpoint
+ALTER TABLE "local_tip_post_likes" ADD CONSTRAINT "local_tip_post_likes_user_id_user_profiles_profile_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user_profiles"("profile_id") ON DELETE cascade ON UPDATE no action;
 --> statement-breakpoint
 ALTER TABLE "local_tip_posts" ADD CONSTRAINT "local_tip_posts_author_user_profiles_profile_id_fk" FOREIGN KEY ("author") REFERENCES "public"."user_profiles"("profile_id") ON DELETE no action ON UPDATE no action;
 --> statement-breakpoint

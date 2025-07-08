@@ -1,5 +1,5 @@
 {
-  "id": "d77afb25-66b0-449d-bf22-8d991866f65f",
+  "id": "b9e37551-4675-43ec-98a1-62ca0fe2d704",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -90,6 +90,12 @@
         "rating": {
           "name": "rating",
           "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "review": {
+          "name": "review",
+          "type": "text",
           "primaryKey": false,
           "notNull": true
         },
@@ -627,6 +633,73 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
+    "public.local_tip_comment_likes": {
+      "name": "local_tip_comment_likes",
+      "schema": "",
+      "columns": {
+        "comment_id": {
+          "name": "comment_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "local_tip_comment_likes_comment_id_local_tip_comments_comment_id_fk": {
+          "name": "local_tip_comment_likes_comment_id_local_tip_comments_comment_id_fk",
+          "tableFrom": "local_tip_comment_likes",
+          "tableTo": "local_tip_comments",
+          "columnsFrom": [
+            "comment_id"
+          ],
+          "columnsTo": [
+            "comment_id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "local_tip_comment_likes_user_id_user_profiles_profile_id_fk": {
+          "name": "local_tip_comment_likes_user_id_user_profiles_profile_id_fk",
+          "tableFrom": "local_tip_comment_likes",
+          "tableTo": "user_profiles",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "profile_id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "local_tip_comment_likes_comment_id_user_id_pk": {
+          "name": "local_tip_comment_likes_comment_id_user_id_pk",
+          "columns": [
+            "comment_id",
+            "user_id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
     "public.local_tip_comments": {
       "name": "local_tip_comments",
       "schema": "",
@@ -634,7 +707,7 @@
         "comment_id": {
           "name": "comment_id",
           "type": "bigint",
-          "primaryKey": false,
+          "primaryKey": true,
           "notNull": true,
           "identity": {
             "type": "always",
@@ -710,13 +783,71 @@
           "onUpdate": "no action"
         }
       },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.local_tip_post_likes": {
+      "name": "local_tip_post_likes",
+      "schema": "",
+      "columns": {
+        "post_id": {
+          "name": "post_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "local_tip_post_likes_post_id_local_tip_posts_id_fk": {
+          "name": "local_tip_post_likes_post_id_local_tip_posts_id_fk",
+          "tableFrom": "local_tip_post_likes",
+          "tableTo": "local_tip_posts",
+          "columnsFrom": [
+            "post_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "local_tip_post_likes_user_id_user_profiles_profile_id_fk": {
+          "name": "local_tip_post_likes_user_id_user_profiles_profile_id_fk",
+          "tableFrom": "local_tip_post_likes",
+          "tableTo": "user_profiles",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "profile_id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
       "compositePrimaryKeys": {
-        "local_tip_comments_comment_id_post_id_author_pk": {
-          "name": "local_tip_comments_comment_id_post_id_author_pk",
+        "local_tip_post_likes_post_id_user_id_pk": {
+          "name": "local_tip_post_likes_post_id_user_id_pk",
           "columns": [
-            "comment_id",
             "post_id",
-            "author"
+            "user_id"
           ]
         }
       },
@@ -760,7 +891,8 @@
         },
         "category": {
           "name": "category",
-          "type": "text",
+          "type": "local_tip_categories",
+          "typeSchema": "public",
           "primaryKey": false,
           "notNull": true
         },
@@ -776,26 +908,12 @@
           "primaryKey": false,
           "notNull": true
         },
-        "likes": {
-          "name": "likes",
-          "type": "integer",
+        "stats": {
+          "name": "stats",
+          "type": "jsonb",
           "primaryKey": false,
           "notNull": true,
-          "default": 0
-        },
-        "comments": {
-          "name": "comments",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "default": 0
-        },
-        "reviews": {
-          "name": "reviews",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "default": 0
+          "default": "'{\"likes\":0,\"comments\":0,\"reviews\":0}'::jsonb"
         },
         "created_at": {
           "name": "created_at",
@@ -1562,18 +1680,6 @@
           "name": "profile_id",
           "type": "uuid",
           "primaryKey": true,
-          "notNull": true
-        },
-        "first_name": {
-          "name": "first_name",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "last_name": {
-          "name": "last_name",
-          "type": "text",
-          "primaryKey": false,
           "notNull": true
         },
         "username": {
