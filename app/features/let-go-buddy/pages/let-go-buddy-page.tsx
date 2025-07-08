@@ -17,33 +17,26 @@ import {
 } from "@heroicons/react/24/outline";
 import { useNavigate, useSearchParams } from "react-router";
 import { EMOTIONAL_QUESTIONS, ENVIRONMENTAL_IMPACT, DECLUTTER_SITUATIONS } from '../constants';
+import { getEnvironmentalImpactSummary, getLetGoBuddySessionsWithItems, getUserLetGoBuddyStats, getItemAnalysesDetailed } from '../queries';
+import { Route } from './+types/let-go-buddy-page';
 
 
-const mockAnalysis = [
-  {
-    photo: "/sample.png",
-    name: "Electric Kettle",
-    recommendation: "Donate (small + rarely used)",
-    suggestion: "Give & Glow recommended",
-    category: "Electronics",
-    emotionalScore: 3,
-    costBenefit: {
-      originalPrice: 800,
-      currentValue: 250,
-      maintenanceCost: 0,
-      spaceValue: 50,
-    },
-    aiListing: {
-      title: "Electric Kettle – Still in great shape!",
-      desc: "Used gently, perfect for daily tea or coffee. Clean and fully functional.",
-      price: "THB 250",
-      location: "Bangkok", // This will be dynamically updated
-    },
-  },
-];
+export async function loader() {
+  const [sessions, stats, analyses, impact] = await Promise.all([
+    getLetGoBuddySessionsWithItems(),
+    getUserLetGoBuddyStats(),
+    getItemAnalysesDetailed(),
+    getEnvironmentalImpactSummary()
+  ]);
+  return { sessions, stats, analyses, impact };
+}
 
-
-export default function LetGoBuddyPage() {
+export default function LetGoBuddyPage({ loaderData }: Route.ComponentProps) {
+  const { sessions, stats, analyses, impact } = loaderData;
+  console.log(sessions);
+  console.log(stats);
+  console.log(analyses);
+  console.log(impact);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const currentLocation = searchParams.get("location") || "Bangkok";
@@ -111,14 +104,23 @@ export default function LetGoBuddyPage() {
     setPreviewUrls(urls);
   };
 
-  // Placeholder for uploaded images and analysis
-  const items = mockAnalysis.map(item => ({
-    ...item,
+  // Current item being analyzed (single item mode)
+  const [currentItemIndex, setCurrentItemIndex] = useState(0);
+  const currentItem = analyses[currentItemIndex] ? {
+    ...analyses[currentItemIndex],
+    name: analyses[currentItemIndex].item_name,
+    photo: (Array.isArray(analyses[currentItemIndex].images) && analyses[currentItemIndex].images.length > 0 
+      ? String(analyses[currentItemIndex].images[0]) 
+      : '/sample.png'),
+    category: analyses[currentItemIndex].item_category,
+    recommendation: analyses[currentItemIndex].recommendation,
     aiListing: {
-      ...item.aiListing,
-      location: currentLocation
+      title: analyses[currentItemIndex].ai_listing_title || `${analyses[currentItemIndex].item_name} - Great condition!`,
+      desc: analyses[currentItemIndex].ai_listing_description ?? `Well-maintained ${analyses[currentItemIndex].item_name} in good condition.`,
+      price: analyses[currentItemIndex].ai_listing_price ? `THB ${analyses[currentItemIndex].ai_listing_price}` : 'THB 250',
+      location: currentLocation,
     }
-  }));
+  } as any : null;
 
   // Handle image removal
   const handleRemoveImage = (index: number) => {
@@ -620,22 +622,48 @@ export default function LetGoBuddyPage() {
               </div>
             </div>
           )}
-          {items.map((item, idx) => (
-            <div key={idx} className={`bg-white border rounded-xl p-5 flex gap-4 items-center shadow-sm relative ${
-              completedActions.has(`keep-${item.name}`) ? 'ring-2 ring-green-200 bg-green-50/30' : ''
-            }`}>
-              {completedActions.has(`keep-${item.name}`) && (
+          {currentItem && (
+            <>
+              {/* Item Navigation */}
+              {analyses.length > 1 && (
+                <div className="flex justify-between items-center mb-4">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentItemIndex(Math.max(0, currentItemIndex - 1))}
+                    disabled={currentItemIndex === 0}
+                  >
+                    ← Previous Item
+                  </Button>
+                  <span className="text-sm text-gray-600">
+                    Item {currentItemIndex + 1} of {analyses.length}
+                  </span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentItemIndex(Math.min(analyses.length - 1, currentItemIndex + 1))}
+                    disabled={currentItemIndex === analyses.length - 1}
+                  >
+                    Next Item →
+                  </Button>
+                </div>
+              )}
+              
+              <div className={`bg-white border rounded-xl p-5 flex gap-4 items-center shadow-sm relative ${
+                completedActions.has(`keep-${currentItem.name}`) ? 'ring-2 ring-green-200 bg-green-50/30' : ''
+              }`}>
+              {completedActions.has(`keep-${currentItem.name}`) && (
                 <div className="absolute top-2 right-2">
                   <div className="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center">
                     <CheckCircleIcon className="w-4 h-4 text-green-600" />
                   </div>
                 </div>
               )}
-              <img src={item.photo} alt={item.name} className="w-20 h-20 object-cover rounded-lg border" />
+              <img src={currentItem.photo} alt={currentItem.name} className="w-20 h-20 object-cover rounded-lg border" />
               <div className="flex-1">
-                <div className="font-semibold text-lg mb-1">Photo: {item.name}</div>
-                <div className="text-gray-600 mb-1">Recognition: <span className="font-medium">"{item.name}"</span></div>
-                <div className="mb-2">Recommendation: <span className="font-medium">{item.recommendation}</span></div>
+                <div className="font-semibold text-lg mb-1">Photo: {currentItem.name}</div>
+                <div className="text-gray-600 mb-1">Recognition: <span className="font-medium">"{currentItem.name}"</span></div>
+                <div className="mb-2">Recommendation: <span className="font-medium">{currentItem.recommendation}</span></div>
                 
                 {/* User Provided Details */}
                 {(itemDetails.usagePeriod || itemDetails.pros || itemDetails.cons) && (
@@ -664,17 +692,17 @@ export default function LetGoBuddyPage() {
                   <Button
                     size="sm"
                     variant={selectedAction === 'create' ? 'default' : 'outline'}
-                    onClick={() => { setShowListing(true); setSelectedItem(item); setSelectedAction('create'); }}
+                    onClick={() => { setShowListing(true); setSelectedItem(currentItem); setSelectedAction('create'); }}
                   >
                     Start Selling
                   </Button>
                   <Button
                     size="sm"
                     variant={selectedAction === 'keep' ? 'default' : 'outline'}
-                    onClick={() => { handleKeepWithLove(item); setSelectedAction('keep'); }}
-                    className={completedActions.has(`keep-${item.name}`) ? 'bg-green-100 text-green-700 border-green-300' : ''}
+                    onClick={() => { handleKeepWithLove(currentItem); setSelectedAction('keep'); }}
+                    className={completedActions.has(`keep-${currentItem.name}`) ? 'bg-green-100 text-green-700 border-green-300' : ''}
                   >
-                    {completedActions.has(`keep-${item.name}`) ? (
+                    {completedActions.has(`keep-${currentItem.name}`) ? (
                       <>
                         <CheckCircleIcon className="w-4 h-4 mr-1" />
                         Kept with Love
@@ -686,7 +714,7 @@ export default function LetGoBuddyPage() {
                   <Button
                     size="sm"
                     variant={selectedAction === 'giveaway' ? 'default' : 'outline'}
-                    onClick={() => { handleGiveawayStart(item); setSelectedItem(item); setSelectedAction('giveaway'); }}
+                    onClick={() => { handleGiveawayStart(currentItem); setSelectedItem(currentItem); setSelectedAction('giveaway'); }}
                   >
                     Free Giveaway
                   </Button>
@@ -722,7 +750,8 @@ export default function LetGoBuddyPage() {
                 </div>
               </div>
             </div>
-          ))}
+            </>
+          )}
         </div>
       )}
 
@@ -818,45 +847,6 @@ export default function LetGoBuddyPage() {
         </div>
       )}
 
-      {/* Cost-Benefit Analysis Popup */}
-      {showCostBenefit && (
-        <div className="fixed inset-0 bg-primary/2 backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-8 max-w-md w-full relative shadow-lg">
-            <button className="absolute top-3 right-3 p-1 hover:bg-gray-100 rounded-full" onClick={() => setShowCostBenefit(false)}>
-              <XMarkIcon className="w-5 h-5 text-gray-500" />
-            </button>
-            <div className="mb-6 text-lg font-bold flex items-center gap-2">Cost-Benefit Analysis</div>
-            <div className="space-y-3">
-              <div className="flex justify-between">
-                <span>Original Price:</span>
-                <span>THB {mockAnalysis[0].costBenefit.originalPrice}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Current Value:</span>
-                <span>THB {mockAnalysis[0].costBenefit.currentValue}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Maintenance Cost:</span>
-                <span>THB {mockAnalysis[0].costBenefit.maintenanceCost}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Space Value (per month):</span>
-                <span>THB {mockAnalysis[0].costBenefit.spaceValue}</span>
-              </div>
-              <hr />
-              <div className="flex justify-between font-bold">
-                <span>Net Loss:</span>
-                <span className="text-red-600">THB {mockAnalysis[0].costBenefit.originalPrice - mockAnalysis[0].costBenefit.currentValue}</span>
-              </div>
-              <div className="mt-4 p-3 bg-yellow-50 rounded">
-                <div className="text-sm">
-                  <strong>Recommendation:</strong> Selling now would recover {Math.round((mockAnalysis[0].costBenefit.currentValue / mockAnalysis[0].costBenefit.originalPrice) * 100)}% of your investment.
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Environmental Impact Popup */}
       {showEnvironmentalImpact && (

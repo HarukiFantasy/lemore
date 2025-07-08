@@ -174,7 +174,21 @@ export type Database = {
             foreignKeyName: "item_analyses_session_id_let_go_buddy_sessions_session_id_fk"
             columns: ["session_id"]
             isOneToOne: false
+            referencedRelation: "environmental_impact_summary_view"
+            referencedColumns: ["session_id"]
+          },
+          {
+            foreignKeyName: "item_analyses_session_id_let_go_buddy_sessions_session_id_fk"
+            columns: ["session_id"]
+            isOneToOne: false
             referencedRelation: "let_go_buddy_sessions"
+            referencedColumns: ["session_id"]
+          },
+          {
+            foreignKeyName: "item_analyses_session_id_let_go_buddy_sessions_session_id_fk"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "let_go_buddy_sessions_with_items_view"
             referencedColumns: ["session_id"]
           },
         ]
@@ -922,6 +936,162 @@ export type Database = {
       }
     }
     Views: {
+      environmental_impact_summary_view: {
+        Row: {
+          avg_co2_impact: number | null
+          critical_impact_items: number | null
+          high_impact_items: number | null
+          is_completed: boolean | null
+          items_to_donate: number | null
+          items_to_keep: number | null
+          items_to_recycle: number | null
+          items_to_sell: number | null
+          low_impact_items: number | null
+          medium_impact_items: number | null
+          recyclable_items: number | null
+          session_date: string | null
+          session_id: number | null
+          situation: Database["public"]["Enums"]["declutter_situation"] | null
+          total_co2_impact: number | null
+          total_items: number | null
+          total_original_value: number | null
+          total_value_created: number | null
+          user_id: string | null
+          username: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "let_go_buddy_sessions_user_id_user_profiles_profile_id_fk"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["profile_id"]
+          },
+        ]
+      }
+      item_analyses_detailed_view: {
+        Row: {
+          ai_listing_description: string | null
+          ai_listing_location: string | null
+          ai_listing_price: number | null
+          ai_listing_title: string | null
+          ai_suggestion: string | null
+          analysis_id: string | null
+          avatar_url: string | null
+          co2_impact: number | null
+          created_at: string | null
+          current_value: number | null
+          effective_value: number | null
+          emotional_attachment_level: string | null
+          emotional_score: number | null
+          environmental_impact:
+            | Database["public"]["Enums"]["environmental_impact_level"]
+            | null
+          environmental_impact_display: string | null
+          images: Json | null
+          is_decision_made: boolean | null
+          is_recyclable: boolean | null
+          item_category: Database["public"]["Enums"]["product_category"] | null
+          item_condition:
+            | Database["public"]["Enums"]["product_condition"]
+            | null
+          item_name: string | null
+          landfill_impact: string | null
+          maintenance_cost: number | null
+          original_price: number | null
+          recommendation:
+            | Database["public"]["Enums"]["recommendation_action"]
+            | null
+          recommendation_display: string | null
+          session_completed: boolean | null
+          session_created_at: string | null
+          session_id: number | null
+          situation: Database["public"]["Enums"]["declutter_situation"] | null
+          space_value: number | null
+          updated_at: string | null
+          user_location: string | null
+          username: string | null
+          value_change_percentage: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "item_analyses_session_id_let_go_buddy_sessions_session_id_fk"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "environmental_impact_summary_view"
+            referencedColumns: ["session_id"]
+          },
+          {
+            foreignKeyName: "item_analyses_session_id_let_go_buddy_sessions_session_id_fk"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "let_go_buddy_sessions"
+            referencedColumns: ["session_id"]
+          },
+          {
+            foreignKeyName: "item_analyses_session_id_let_go_buddy_sessions_session_id_fk"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "let_go_buddy_sessions_with_items_view"
+            referencedColumns: ["session_id"]
+          },
+        ]
+      }
+      let_go_buddy_sessions_with_items_view: {
+        Row: {
+          ai_listing_description: string | null
+          ai_listing_location: string | null
+          ai_listing_price: number | null
+          ai_listing_title: string | null
+          ai_suggestion: string | null
+          analysis_id: string | null
+          avatar_url: string | null
+          avg_emotional_score: number | null
+          co2_impact: number | null
+          completed_items_in_session: number | null
+          current_value: number | null
+          emotional_score: number | null
+          environmental_impact:
+            | Database["public"]["Enums"]["environmental_impact_level"]
+            | null
+          images: Json | null
+          is_completed: boolean | null
+          is_recyclable: boolean | null
+          item_category: Database["public"]["Enums"]["product_category"] | null
+          item_condition:
+            | Database["public"]["Enums"]["product_condition"]
+            | null
+          item_created_at: string | null
+          item_name: string | null
+          item_updated_at: string | null
+          landfill_impact: string | null
+          maintenance_cost: number | null
+          original_price: number | null
+          recommendation:
+            | Database["public"]["Enums"]["recommendation_action"]
+            | null
+          session_created_at: string | null
+          session_id: number | null
+          session_updated_at: string | null
+          situation: Database["public"]["Enums"]["declutter_situation"] | null
+          space_value: number | null
+          total_co2_impact: number | null
+          total_items_in_session: number | null
+          total_value_created: number | null
+          user_id: string | null
+          user_location: string | null
+          username: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "let_go_buddy_sessions_user_id_user_profiles_profile_id_fk"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["profile_id"]
+          },
+        ]
+      }
       local_businesses_list_view: {
         Row: {
           address: string | null
@@ -994,6 +1164,39 @@ export type Database = {
           {
             foreignKeyName: "local_tip_posts_author_user_profiles_profile_id_fk"
             columns: ["author"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["profile_id"]
+          },
+        ]
+      }
+      user_let_go_buddy_stats_view: {
+        Row: {
+          avatar_url: string | null
+          avg_emotional_score: number | null
+          avg_environmental_impact_score: number | null
+          avg_item_value: number | null
+          completed_sessions: number | null
+          last_item_analysis_date: string | null
+          last_session_date: string | null
+          most_common_recommendation:
+            | Database["public"]["Enums"]["recommendation_action"]
+            | null
+          most_common_situation:
+            | Database["public"]["Enums"]["declutter_situation"]
+            | null
+          total_co2_saved: number | null
+          total_items_analyzed: number | null
+          total_items_completed: number | null
+          total_sessions: number | null
+          total_value_created: number | null
+          user_id: string | null
+          username: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "let_go_buddy_sessions_user_id_user_profiles_profile_id_fk"
+            columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "user_profiles"
             referencedColumns: ["profile_id"]
