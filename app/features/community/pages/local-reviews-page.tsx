@@ -6,45 +6,30 @@ import { Input } from "~/common/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "~/common/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "~/common/components/ui/avatar";
 import { Marquee } from "components/magicui/marquee";
+import { getLocalBusinesses, getLocalReviews } from "../queries";
+import type { Route } from "./+types/local-reviews-page";
 
 // Schema definitions
 const BusinessTypeSchema = z.enum(["All", "Restaurant", "Cafe", "Bar", "Shop", "Service", "Other"]);
 const PriceRangeSchema = z.enum(["All", "$", "$$", "$$$", "$$$$"]);
 const LocationSchema = z.enum(["Bangkok", "Chiang Mai", "Phuket", "Pattaya", "Krabi", "All Cities"]);
 
-// Mock data types
-interface MockBusiness {
-  id: string;
-  name: string;
-  type: z.infer<typeof BusinessTypeSchema>;
-  location: z.infer<typeof LocationSchema>;
-  priceRange: z.infer<typeof PriceRangeSchema>;
-  tags: string[];
-  address: string;
-  phone: string;
-  website: string;
-  description: string;
-  image?: string;
-  averageRating: number;
-  totalReviews: number;
-}
 
-interface MockReview {
-  id: string;
-  businessName: string;
-  businessType: string;
-  location: string;
-  author: string;
-  authorAvatar?: string;
-  rating: number;
-  priceRange: string;
-  review: string;
-  tags: string[];
-  timestamp: string;
+export const loader = async () => {
+  const businesses = await getLocalBusinesses();
+  const reviews = await getLocalReviews();
+  console.log(businesses);
+  console.log(reviews);
+  return { businesses, reviews };
 }
 
 // Main component
-export default function LocalReviewsPage() {
+export default function LocalReviewsPage({ loaderData }: Route.ComponentProps) {
+  const { businesses, reviews } = loaderData;
+  
+  // Debug logging
+  console.log('Businesses data:', businesses);
+  console.log('Reviews data:', reviews);
   const [searchParams, setSearchParams] = useSearchParams();
   const urlLocation = searchParams.get("location") || "Bangkok";
   
@@ -57,7 +42,7 @@ export default function LocalReviewsPage() {
     (searchParams.get("priceRange") as z.infer<typeof PriceRangeSchema>) || "All"
   );
   const [showReviewForm, setShowReviewForm] = useState(false);
-  const [selectedBusiness, setSelectedBusiness] = useState<MockBusiness | null>(null);
+  const [selectedBusiness, setSelectedBusiness] = useState<any | null>(null);
   const [reviewStep, setReviewStep] = useState<'select-business' | 'write-review'>('select-business');
   const [businessSearchQuery, setBusinessSearchQuery] = useState("");
   const [newBusiness, setNewBusiness] = useState({
@@ -78,163 +63,162 @@ export default function LocalReviewsPage() {
     tags: [] as string[]
   });
 
-  // Mock data
-  const mockBusinesses: MockBusiness[] = [
-    {
-      id: "1",
-      name: "Siam Street Food",
-      type: "Restaurant",
-      location: "Bangkok",
-      priceRange: "$",
-      tags: ["street food", "local", "authentic", "quick"],
-      address: "123 Sukhumvit Road, Bangkok",
-      phone: "+66 2 123 4567",
-      website: "https://siamstreetfood.com",
-      description: "Authentic Thai street food in a casual setting. Famous for pad thai and tom yum soup.",
-      image: "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=400&h=300&fit=crop",
-      averageRating: 4.5,
-      totalReviews: 127
-    },
-    {
-      id: "2",
-      name: "Blue Moon Cafe",
-      type: "Cafe",
-      location: "Bangkok",
-      priceRange: "$$",
-      tags: ["coffee", "brunch", "wifi", "quiet"],
-      address: "456 Silom Road, Bangkok",
-      phone: "+66 2 234 5678",
-      website: "https://bluemooncafe.com",
-      description: "Cozy cafe with excellent coffee and brunch options. Perfect for remote work.",
-      image: "https://images.unsplash.com/photo-1501339847302-ac426a4a87c8?w=400&h=300&fit=crop",
-      averageRating: 4.2,
-      totalReviews: 89
-    },
-    {
-      id: "3",
-      name: "Riverside Bar",
-      type: "Bar",
-      location: "Bangkok",
-      priceRange: "$$$",
-      tags: ["cocktails", "river view", "live music", "romantic"],
-      address: "789 Chao Phraya Road, Bangkok",
-      phone: "+66 2 345 6789",
-      website: "https://riversidebar.com",
-      description: "Elegant bar with stunning river views. Perfect for sunset cocktails and live jazz.",
-      image: "https://images.unsplash.com/photo-1514933651103-005eec06c04b?w=400&h=300&fit=crop",
-      averageRating: 4.7,
-      totalReviews: 203
-    },
-    {
-      id: "4",
-      name: "Thai Craft Market",
-      type: "Shop",
-      location: "Chiang Mai",
-      priceRange: "$$",
-      tags: ["handicrafts", "local artisans", "souvenirs", "unique"],
-      address: "321 Nimman Road, Chiang Mai",
-      phone: "+66 53 123 4567",
-      website: "https://thaicraftmarket.com",
-      description: "Local handicrafts and souvenirs from northern Thailand artisans.",
-      image: "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=400&h=300&fit=crop",
-      averageRating: 4.3,
-      totalReviews: 156
-    },
-    {
-      id: "5",
-      name: "Beach Massage Spa",
-      type: "Service",
-      location: "Phuket",
-      priceRange: "$$",
-      tags: ["massage", "spa", "relaxation", "beachfront"],
-      address: "654 Patong Beach Road, Phuket",
-      phone: "+66 76 234 5678",
-      website: "https://beachmassagespa.com",
-      description: "Relaxing massage and spa services with beautiful beach views.",
-      image: "https://images.unsplash.com/photo-1544161512-84f9c86cbeb4?w=400&h=300&fit=crop",
-      averageRating: 4.6,
-      totalReviews: 342
-    }
-  ];
+  // const mockBusinesses: MockBusiness[] = [
+  //   {
+  //     id: "1",
+  //     name: "Siam Street Food",
+  //     type: "Restaurant",
+  //     location: "Bangkok",
+  //     priceRange: "$",
+  //     tags: ["street food", "local", "authentic", "quick"],
+  //     address: "123 Sukhumvit Road, Bangkok",
+  //     phone: "+66 2 123 4567",
+  //     website: "https://siamstreetfood.com",
+  //     description: "Authentic Thai street food in a casual setting. Famous for pad thai and tom yum soup.",
+  //     image: "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=400&h=300&fit=crop",
+  //     averageRating: 4.5,
+  //     totalReviews: 127
+  //   },
+  //   {
+  //     id: "2",
+  //     name: "Blue Moon Cafe",
+  //     type: "Cafe",
+  //     location: "Bangkok",
+  //     priceRange: "$$",
+  //     tags: ["coffee", "brunch", "wifi", "quiet"],
+  //     address: "456 Silom Road, Bangkok",
+  //     phone: "+66 2 234 5678",
+  //     website: "https://bluemooncafe.com",
+  //     description: "Cozy cafe with excellent coffee and brunch options. Perfect for remote work.",
+  //     image: "https://images.unsplash.com/photo-1501339847302-ac426a4a87c8?w=400&h=300&fit=crop",
+  //     averageRating: 4.2,
+  //     totalReviews: 89
+  //   },
+  //   {
+  //     id: "3",
+  //     name: "Riverside Bar",
+  //     type: "Bar",
+  //     location: "Bangkok",
+  //     priceRange: "$$$",
+  //     tags: ["cocktails", "river view", "live music", "romantic"],
+  //     address: "789 Chao Phraya Road, Bangkok",
+  //     phone: "+66 2 345 6789",
+  //     website: "https://riversidebar.com",
+  //     description: "Elegant bar with stunning river views. Perfect for sunset cocktails and live jazz.",
+  //     image: "https://images.unsplash.com/photo-1514933651103-005eec06c04b?w=400&h=300&fit=crop",
+  //     averageRating: 4.7,
+  //     totalReviews: 203
+  //   },
+  //   {
+  //     id: "4",
+  //     name: "Thai Craft Market",
+  //     type: "Shop",
+  //     location: "Chiang Mai",
+  //     priceRange: "$$",
+  //     tags: ["handicrafts", "local artisans", "souvenirs", "unique"],
+  //     address: "321 Nimman Road, Chiang Mai",
+  //     phone: "+66 53 123 4567",
+  //     website: "https://thaicraftmarket.com",
+  //     description: "Local handicrafts and souvenirs from northern Thailand artisans.",
+  //     image: "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=400&h=300&fit=crop",
+  //     averageRating: 4.3,
+  //     totalReviews: 156
+  //   },
+  //   {
+  //     id: "5",
+  //     name: "Beach Massage Spa",
+  //     type: "Service",
+  //     location: "Phuket",
+  //     priceRange: "$$",
+  //     tags: ["massage", "spa", "relaxation", "beachfront"],
+  //     address: "654 Patong Beach Road, Phuket",
+  //     phone: "+66 76 234 5678",
+  //     website: "https://beachmassagespa.com",
+  //     description: "Relaxing massage and spa services with beautiful beach views.",
+  //     image: "https://images.unsplash.com/photo-1544161512-84f9c86cbeb4?w=400&h=300&fit=crop",
+  //     averageRating: 4.6,
+  //     totalReviews: 342
+  //   }
+  // ];
 
-  const mockReviews: MockReview[] = [
-    {
-      id: "1",
-      businessName: "Siam Street Food",
-      businessType: "Restaurant",
-      location: "Bangkok",
-      author: "Sarah Johnson",
-      authorAvatar: "https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face",
-      rating: 5,
-      priceRange: "$",
-      review: "Amazing pad thai! The flavors are authentic and the portion size is generous. The staff is friendly and the atmosphere is perfect for a quick lunch. Highly recommend!",
-      tags: ["authentic", "friendly staff", "generous portions"],
-      timestamp: "2024-01-15T10:30:00Z"
-    },
-    {
-      id: "1b",
-      businessName: "Siam Street Food",
-      businessType: "Restaurant",
-      location: "Bangkok",
-      author: "Leo Kim",
-      authorAvatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face",
-      rating: 4,
-      priceRange: "$",
-      review: "Quick service and delicious noodles. The place is always busy but worth the wait!",
-      tags: ["quick", "busy", "worth it"],
-      timestamp: "2024-01-16T12:00:00Z"
-    },
-    {
-      id: "1c",
-      businessName: "Siam Street Food",
-      businessType: "Restaurant",
-      location: "Bangkok",
-      author: "Mina Park",
-      authorAvatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face",
-      rating: 5,
-      priceRange: "$",
-      review: "Best street food in Bangkok! Loved the spicy soup and the friendly staff.",
-      tags: ["spicy", "best in town", "friendly staff"],
-      timestamp: "2024-01-17T09:45:00Z"
-    },
-    {
-      id: "2",
-      businessName: "Blue Moon Cafe",
-      businessType: "Cafe",
-      location: "Bangkok",
-      author: "Mike Chen",
-      authorAvatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face",
-      rating: 4,
-      priceRange: "$$",
-      review: "Great coffee and excellent wifi for working. The avocado toast is delicious. A bit pricey but worth it for the quality and atmosphere.",
-      tags: ["good coffee", "wifi", "quiet"],
-      timestamp: "2024-01-14T14:20:00Z"
-    },
-    {
-      id: "3",
-      businessName: "Riverside Bar",
-      businessType: "Bar",
-      location: "Bangkok",
-      author: "Emma Wilson",
-      authorAvatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face",
-      rating: 5,
-      priceRange: "$$$",
-      review: "Stunning views and amazing cocktails! The live jazz band was incredible. Perfect for a romantic evening or special celebration.",
-      tags: ["beautiful views", "live music", "romantic"],
-      timestamp: "2024-01-13T19:15:00Z"
-    }
-  ];
+  // const mockReviews: MockReview[] = [
+  //   {
+  //     id: "1",
+  //     businessName: "Siam Street Food",
+  //     businessType: "Restaurant",
+  //     location: "Bangkok",
+  //     author: "Sarah Johnson",
+  //     authorAvatar: "https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face",
+  //     rating: 5,
+  //     priceRange: "$",
+  //     review: "",
+  //     tags: ["authentic", "friendly staff", "generous portions"],
+  //     timestamp: "2024-01-15T10:30:00Z"
+  //   },
+  //   {
+  //     id: "1b",
+  //     businessName: "Siam Street Food",
+  //     businessType: "Restaurant",
+  //     location: "Bangkok",
+  //     author: "Leo Kim",
+  //     authorAvatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face",
+  //     rating: 4,
+  //     priceRange: "$",
+  //     review: "Quick service and delicious noodles. The place is always busy but worth the wait!",
+  //     tags: ["quick", "busy", "worth it"],
+  //     timestamp: "2024-01-16T12:00:00Z"
+  //   },
+  //   {
+  //     id: "1c",
+  //     businessName: "Siam Street Food",
+  //     businessType: "Restaurant",
+  //     location: "Bangkok",
+  //     author: "Mina Park",
+  //     authorAvatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face",
+  //     rating: 5,
+  //     priceRange: "$",
+  //     review: "Best street food in Bangkok! Loved the spicy soup and the friendly staff.",
+  //     tags: ["spicy", "best in town", "friendly staff"],
+  //     timestamp: "2024-01-17T09:45:00Z"
+  //   },
+  //   {
+  //     id: "2",
+  //     businessName: "Blue Moon Cafe",
+  //     businessType: "Cafe",
+  //     location: "Bangkok",
+  //     author: "Mike Chen",
+  //     authorAvatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face",
+  //     rating: 4,
+  //     priceRange: "$$",
+  //     review: "Great coffee and excellent wifi for working. The avocado toast is delicious. A bit pricey but worth it for the quality and atmosphere.",
+  //     tags: ["good coffee", "wifi", "quiet"],
+  //     timestamp: "2024-01-14T14:20:00Z"
+  //   },
+  //   {
+  //     id: "3",
+  //     businessName: "Riverside Bar",
+  //     businessType: "Bar",
+  //     location: "Bangkok",
+  //     author: "Emma Wilson",
+  //     authorAvatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face",
+  //     rating: 5,
+  //     priceRange: "$$$",
+  //     review: "Stunning views and amazing cocktails! The live jazz band was incredible. Perfect for a romantic evening or special celebration.",
+  //     tags: ["beautiful views", "live music", "romantic"],
+  //     timestamp: "2024-01-13T19:15:00Z"
+  //   }
+  // ];
 
-  const businesses = mockBusinesses;
-  const reviews = mockReviews;
+  // const businesses = mockBusinesses;
+  // const reviews = mockReviews;
   const validBusinessTypes: z.infer<typeof BusinessTypeSchema>[] = ["All", "Restaurant", "Cafe", "Bar", "Shop", "Service", "Other"];
   const validPriceRanges: z.infer<typeof PriceRangeSchema>[] = ["All", "$", "$$", "$$$", "$$$$"];
 
   // Filter businesses for the selection modal
   const filteredBusinessesForSelection = businesses.filter(business => 
-    business.name.toLowerCase().includes(businessSearchQuery.toLowerCase()) ||
-    business.type.toLowerCase().includes(businessSearchQuery.toLowerCase()) ||
-    business.location.toLowerCase().includes(businessSearchQuery.toLowerCase())
+    (business.name ?? "").toLowerCase().includes(businessSearchQuery.toLowerCase()) ||
+    (business.type ?? "").toLowerCase().includes(businessSearchQuery.toLowerCase()) ||
+    (business.location ?? "").toLowerCase().includes(businessSearchQuery.toLowerCase())
   );
 
   useEffect(() => {
@@ -243,11 +227,16 @@ export default function LocalReviewsPage() {
 
   // Filter businesses based on current state
   const filteredBusinesses = businesses.filter(business => {
-    const matchesSearch = business.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          business.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()));
+    const matchesSearch = (business.name ?? "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          (
+                            Array.isArray(business.tags) &&
+                            business.tags.some(
+                              (tag) => typeof tag === "string" && tag.toLowerCase().includes(searchQuery.toLowerCase())
+                            )
+                          );
     const matchesType = selectedType === "All" || business.type === selectedType;
     const matchesLocation = urlLocation === "All Cities" || business.location === urlLocation;
-    const matchesPrice = selectedPriceRange === "All" || business.priceRange === selectedPriceRange;
+    const matchesPrice = selectedPriceRange === "All" || business.price_range === selectedPriceRange;
     
     return matchesSearch && matchesType && matchesLocation && matchesPrice;
   });
@@ -338,9 +327,10 @@ export default function LocalReviewsPage() {
     );
   };
 
-  // 비즈니스별 리뷰 매핑
-  const businessReviewPairs = businesses.map((business) => {
-    const businessReviews = reviews.filter(r => r.businessName === business.name);
+  // 비즈니스별 리뷰 매핑 - 필터링된 비즈니스만 사용
+  const businessReviewPairs = filteredBusinesses.map((business) => {
+    const businessReviews = reviews.filter((r: any) => r.business_id === business.id);
+    console.log(`Business ${business.name} (ID: ${business.id}) has ${businessReviews.length} reviews:`, businessReviews);
     return { business, reviews: businessReviews };
   });
 
@@ -410,8 +400,19 @@ export default function LocalReviewsPage() {
         </CardContent>
       </Card>
 
-      {/* Write a Review 버튼 - 리뷰 리스트 위, 우측 정렬 */}
-      <div className="flex justify-end mb-4">
+      {/* Results Statistics and Action Button */}
+      <div className="flex justify-between items-center mb-4">
+        <p className="text-sm text-gray-600">
+          Found <span className="font-semibold text-blue-600">{businessReviewPairs.length}</span> businesses
+          {urlLocation === "All Cities" ? " across all cities" : ` in ${urlLocation}`}
+          {(searchQuery || selectedType !== "All" || selectedPriceRange !== "All") && (
+            <span className="ml-2">
+              {searchQuery && ` for "${searchQuery}"`}
+              {selectedType !== "All" && ` in ${selectedType}`}
+              {selectedPriceRange !== "All" && ` (${selectedPriceRange})`}
+            </span>
+          )}
+        </p>
         <Button onClick={() => {
           setShowReviewForm(true);
           setReviewStep('select-business');
@@ -432,8 +433,8 @@ export default function LocalReviewsPage() {
                   {/* 비즈니스 사진 - 카드 상단에 여백 없이 */}
                   <div className="w-full">
                     <img
-                      src={business.image || "/sample.png"}
-                      alt={business.name}
+                      src="/cafe1.png"
+                      alt={business.name ?? ""}
                       className="w-full h-32 object-cover rounded-t-lg mb-0"
                     />
                   </div>
@@ -445,21 +446,21 @@ export default function LocalReviewsPage() {
                       <span>•</span>
                       <span>{business.location}</span>
                       <span>•</span>
-                      <span>{business.priceRange}</span>
+                      <span>{business.price_range}</span>
                     </div>
                     <div className="flex items-center gap-2 mt-1">
-                      {renderStars(business.averageRating)}
+                      {renderStars(business.average_rating ?? 0)}
                       <span className="text-xs text-gray-500">
-                        {business.averageRating} ({business.totalReviews} reviews)
+                        {business.average_rating} ({business.total_reviews} reviews)
                       </span>
                     </div>
-                    {business.tags && (
-                      <div className="flex flex-wrap gap-1 mt-2">
-                        {business.tags.map((tag, idx) => (
+                    {Array.isArray(business.tags) &&
+                      business.tags
+                        .filter((tag): tag is string => typeof tag === "string")
+                        .map((tag, idx) => (
                           <span key={idx} className="bg-gray-100 text-gray-700 px-2 py-1 rounded-full text-xs">{tag}</span>
-                        ))}
-                      </div>
-                    )}
+                        ))
+                    }
                   </div>
                 </div>
                 {/* 우측: 해당 비즈니스의 모든 리뷰 */}
@@ -468,20 +469,20 @@ export default function LocalReviewsPage() {
                     <Marquee pauseOnHover vertical className="w-full">
                       <div className="flex flex-col gap-4 w-full">
                         {reviews.length > 0 ? reviews.map((review) => (
-                          <div key={review.id} className="border-b last:border-b-0 pb-4 last:pb-0">
+                          <div key={`${review.business_id}-${review.author}`} className="border-b last:border-b-0 pb-4 last:pb-0">
                             <div className="flex items-start gap-3">
                               <Avatar className="w-10 h-10">
-                                <AvatarImage src={review.authorAvatar} alt={review.author} />
-                                <AvatarFallback>{review.author.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+                                <AvatarImage src={review.author_avatar ?? ""} alt={review.author_username ?? ""} />
+                                <AvatarFallback>{(review.author_username ?? "").split(' ').map(n => n[0]).join('')}</AvatarFallback>
                               </Avatar>
-                              <div>
-                                <div className="font-semibold text-md text-gray-900">{review.author}</div>
-                                <div className="text-xs text-gray-500">{new Date(review.timestamp).toLocaleDateString()}</div>
-                                <div className="flex items-center gap-2">
-                                  {renderStars(review.rating)}
+                              <div className="flex-1">
+                                <div className="font-semibold text-md text-gray-900">{review.author_username}</div>
+                                <div className="text-xs text-gray-500">{new Date(review.created_at ?? "").toLocaleDateString()}</div>
+                                <div className="flex items-center gap-2 mt-1">
+                                  {renderStars(review.rating ?? 0)}
                                 </div>
+                                <div className="text-gray-700 mt-2 leading-relaxed">{review.content}</div>
                               </div>
-                              <div className="text-gray-700 mb-2 leading-relaxed">{review.review}</div>
                             </div>
                           </div>
                         )) : (
@@ -497,8 +498,18 @@ export default function LocalReviewsPage() {
         ) : (
           <Card className="w-full">
             <CardContent className="p-8 text-center">
-              <p className="text-gray-500">No reviews found yet.</p>
-              <p className="text-sm text-gray-400 mt-2">Be the first to write a review!</p>
+              <p className="text-gray-500">
+                {searchQuery || selectedType !== "All" || selectedPriceRange !== "All" 
+                  ? `No businesses found matching your search criteria.` 
+                  : "No businesses found yet."
+                }
+              </p>
+              <p className="text-sm text-gray-400 mt-2">
+                {searchQuery || selectedType !== "All" || selectedPriceRange !== "All"
+                  ? "Try adjusting your search or filters."
+                  : "Be the first to add a business and write a review!"
+                }
+              </p>
             </CardContent>
           </Card>
         )}
@@ -558,9 +569,9 @@ export default function LocalReviewsPage() {
                                   <p className="text-sm text-gray-600">{business.type} • {business.location}</p>
                                 </div>
                                 <div className="flex items-center gap-2">
-                                  <span className="text-sm text-gray-500">{business.priceRange}</span>
+                                  <span className="text-sm text-gray-500">{business.price_range}</span>
                                   <div className="flex items-center">
-                                    {renderStars(business.averageRating)}
+                                    {renderStars(business.average_rating ?? 0)}
                                   </div>
                                 </div>
                               </div>
@@ -727,12 +738,12 @@ export default function LocalReviewsPage() {
                     if (reviewStep === 'select-business') {
                       // If we're in select-business step and have a new business filled out, create temp business
                       if (newBusiness.name.trim() && newBusiness.address.trim()) {
-                        const tempBusiness: MockBusiness = {
+                        const tempBusiness: any = {
                           id: `temp-${Date.now()}`,
                           name: newBusiness.name,
                           type: newBusiness.type,
                           location: newBusiness.location,
-                          priceRange: newBusiness.priceRange,
+                          price_range: newBusiness.priceRange,
                           tags: newBusiness.tags,
                           address: newBusiness.address,
                           phone: newBusiness.phone,

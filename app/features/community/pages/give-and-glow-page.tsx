@@ -49,13 +49,15 @@ export const loader = async () => {
 
 export default function GiveAndGlowPage({ loaderData }: Route.ComponentProps) {
   const { reviews } = loaderData;
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const location = "Bangkok";
   const urlLocation = searchParams.get("location") || location;
+  const urlSearchQuery = searchParams.get("search") || "";
+  const urlCategoryFilter = searchParams.get("category") || "All";
   
   // State variables
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("All");
+  const [searchQuery, setSearchQuery] = useState(urlSearchQuery);
+  const [selectedCategory, setSelectedCategory] = useState(urlCategoryFilter);
   const [showReviewForm, setShowReviewForm] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
@@ -73,12 +75,13 @@ export default function GiveAndGlowPage({ loaderData }: Route.ComponentProps) {
 
   // Filter reviews based on search and category
   const filteredReviews = reviews.filter((review: any) => {
-    const matchesSearch = searchQuery === "" || 
-      review.product?.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      review.giver?.username?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      review.receiver?.username?.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSearch = !urlSearchQuery || 
+      review.product?.title?.toLowerCase().includes(urlSearchQuery.toLowerCase()) ||
+      review.giver?.username?.toLowerCase().includes(urlSearchQuery.toLowerCase()) ||
+      review.receiver?.username?.toLowerCase().includes(urlSearchQuery.toLowerCase()) ||
+      review.review?.toLowerCase().includes(urlSearchQuery.toLowerCase());
     
-    const matchesCategory = selectedCategory === "All" || review.category === selectedCategory;
+    const matchesCategory = urlCategoryFilter === "All" || review.category === urlCategoryFilter;
     const matchesLocation = urlLocation === "All Cities" || review.product?.location === urlLocation;
     
     return matchesSearch && matchesCategory && matchesLocation;
@@ -89,8 +92,26 @@ export default function GiveAndGlowPage({ loaderData }: Route.ComponentProps) {
     setSearchQuery(value);
   };
 
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const newSearchParams = new URLSearchParams(searchParams);
+    if (searchQuery.trim()) {
+      newSearchParams.set("search", searchQuery.trim());
+    } else {
+      newSearchParams.delete("search");
+    }
+    setSearchParams(newSearchParams);
+  };
+
   const handleCategoryChange = (category: string) => {
     setSelectedCategory(category);
+    const newSearchParams = new URLSearchParams(searchParams);
+    if (category === "All") {
+      newSearchParams.delete("category");
+    } else {
+      newSearchParams.set("category", category);
+    }
+    setSearchParams(newSearchParams);
   };
 
   const handleSubmitReview = async () => {
@@ -162,15 +183,22 @@ export default function GiveAndGlowPage({ loaderData }: Route.ComponentProps) {
         </CardHeader>
         <CardContent className="space-y-4">
           {/* Search */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Search Reviews</label>
-            <Input
-              type="text"
-              placeholder="Search by item name, giver name, or review content..."
-              value={searchQuery}
-              onChange={(e) => handleSearchChange(e.target.value)}  
-            />
-          </div>
+          <form onSubmit={handleSearchSubmit}>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Search Reviews</label>
+              <div className="flex gap-2">
+                <Input
+                  type="text"
+                  placeholder="Search by item name, giver name, or review content..."
+                  value={searchQuery}
+                  onChange={(e) => handleSearchChange(e.target.value)}  
+                />
+                <Button type="submit" variant="outline" size="sm">
+                  Search
+                </Button>
+              </div>
+            </div>
+          </form>
 
           {/* Category Filter */}
           <div>
@@ -178,13 +206,14 @@ export default function GiveAndGlowPage({ loaderData }: Route.ComponentProps) {
             <div className="flex flex-wrap gap-2">
               {validCategories.map((category) => {
                 const colors = getCategoryColors(category);
+                const isActive = urlCategoryFilter === category;
                 return (
                   <Button
                     key={category}
-                    variant={selectedCategory === category ? "default" : "outline"}
+                    variant={isActive ? "default" : "outline"}
                     size="sm"
                     onClick={() => handleCategoryChange(category)}
-                    className={selectedCategory === category ? `${colors.bg} ${colors.text} ${colors.border} ${colors.hover}` : ""}
+                    className={isActive ? `${colors.bg} ${colors.text} ${colors.border} ${colors.hover}` : ""}
                   >
                     {category}
                   </Button>
@@ -200,6 +229,12 @@ export default function GiveAndGlowPage({ loaderData }: Route.ComponentProps) {
         <p className="text-sm text-gray-600">
           Found <span className="font-semibold text-blue-600">{filteredReviews.length}</span> reviews
           {urlLocation === "All Cities" ? " across all cities" : ` in ${urlLocation}`}
+          {(urlSearchQuery || urlCategoryFilter !== "All") && (
+            <span className="ml-2">
+              {urlSearchQuery && ` for "${urlSearchQuery}"`}
+              {urlCategoryFilter !== "All" && ` in ${urlCategoryFilter}`}
+            </span>
+          )}
         </p>
         <Button onClick={() => setShowReviewForm(true)} size="lg">
           Write a Review
@@ -229,6 +264,27 @@ export default function GiveAndGlowPage({ loaderData }: Route.ComponentProps) {
           />
         ))}
       </div>
+
+      {/* Empty State */}
+      {filteredReviews.length === 0 && (
+        <Card>
+          <CardContent className="p-8 text-center">
+            <p className="text-muted-foreground">
+              {urlSearchQuery || urlCategoryFilter !== "All" 
+                ? `No reviews found matching your search criteria.` 
+                : "No reviews found. Be the first to write a review!"
+              }
+            </p>
+            <Button 
+              onClick={() => setShowReviewForm(true)} 
+              className="mt-4"
+              size="lg"
+            >
+              Write a Review
+            </Button>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Review Form Modal */}
       {showReviewForm && (

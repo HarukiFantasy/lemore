@@ -53,7 +53,53 @@ export default function LocalTipsPage({ loaderData }: Route.ComponentProps) {
   const { tips, comments } = loaderData;
   const [searchParams, setSearchParams] = useSearchParams();
   const urlLocation = searchParams.get("location") || "Bangkok";
+  const searchQuery = searchParams.get("search") || "";
+  const categoryFilter = searchParams.get("category") || "All";
+  
+  // State for form inputs
+  const [searchInput, setSearchInput] = useState(searchQuery);
+  
+  // Filter tips based on search and category
+  const filteredTips = tips.filter((post) => {
+    const matchesSearch = !searchQuery || 
+      post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      post.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (post.username && post.username.toLowerCase().includes(searchQuery.toLowerCase()));
     
+    const matchesCategory = categoryFilter === "All" || post.category === categoryFilter;
+    const matchesLocation = urlLocation === "All Cities" || post.location === urlLocation;
+    
+    return matchesSearch && matchesCategory && matchesLocation;
+  });
+
+  // Handle search input change
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setSearchInput(value);
+  };
+
+  // Handle search form submission
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const newSearchParams = new URLSearchParams(searchParams);
+    if (searchInput.trim()) {
+      newSearchParams.set("search", searchInput.trim());
+    } else {
+      newSearchParams.delete("search");
+    }
+    setSearchParams(newSearchParams);
+  };
+
+  // Handle category filter click
+  const handleCategoryClick = (category: string) => {
+    const newSearchParams = new URLSearchParams(searchParams);
+    if (category === "All") {
+      newSearchParams.delete("category");
+    } else {
+      newSearchParams.set("category", category);
+    }
+    setSearchParams(newSearchParams);
+  };
   
   return (
     <div className="max-w-6xl mx-auto px-0 py-6 md:p-6">
@@ -74,26 +120,36 @@ export default function LocalTipsPage({ loaderData }: Route.ComponentProps) {
         </CardHeader>
         <CardContent className="space-y-4">
           {/* Search */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Search</label>
-            <Input
-              type="text"
-              placeholder="Search tips..."
-              value=""
-            />
-          </div>
+          <form onSubmit={handleSearchSubmit}>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Search</label>
+              <div className="flex gap-2">
+                <Input
+                  type="text"
+                  placeholder="Search tips..."
+                  value={searchInput}
+                  onChange={handleSearchChange}
+                />
+                <Button type="submit" variant="outline" size="sm">
+                  Search
+                </Button>
+              </div>
+            </div>
+          </form>
           {/* Category Filter */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
             <div className="flex flex-wrap gap-2">
               {LOCAL_TIP_CATEGORIES_WITH_ALL.map((category: LocalTipCategoryWithAll) => {
                 const colors = getCategoryColors(category);
+                const isActive = categoryFilter === category;
                 return (
                   <Button
                     key={category}
-                    variant="outline"
+                    variant={isActive ? "default" : "outline"}
                     size="sm"
-                    className=""
+                    className={isActive ? "" : ""}
+                    onClick={() => handleCategoryClick(category)}
                   >
                     {category}
                   </Button>
@@ -107,8 +163,14 @@ export default function LocalTipsPage({ loaderData }: Route.ComponentProps) {
       {/* Results and Action Button */}
       <div className="flex justify-between items-center mb-4">
         <p className="text-muted-foreground">
-          2 tips found 
+          {filteredTips.length} tip{filteredTips.length !== 1 ? 's' : ''} found 
           {urlLocation === "All Cities" ? " across all cities" : ` in ${urlLocation}`}
+          {(searchQuery || categoryFilter !== "All") && (
+            <span className="ml-2">
+              {searchQuery && ` for "${searchQuery}"`}
+              {categoryFilter !== "All" && ` in ${categoryFilter}`}
+            </span>
+          )}
         </p>
         <Button size="lg">
           Share a Tip
@@ -117,7 +179,7 @@ export default function LocalTipsPage({ loaderData }: Route.ComponentProps) {
 
       {/* Tips List */}
       <div className="space-y-4">
-        {tips.map((post) => (
+        {filteredTips.map((post) => (
           <Card key={post.id} className="hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 transition-all duration-300 hover:scale-[1.01] hover:shadow-md">
             <CardContent className="py-1">
               <div className="flex justify-between items-start mb-4">
@@ -218,10 +280,15 @@ export default function LocalTipsPage({ loaderData }: Route.ComponentProps) {
       </div>
 
       {/* Empty State */}
-      {tips.length === 0 && (
+      {filteredTips.length === 0 && (
         <Card>
           <CardContent className="p-8 text-center">
-            <p className="text-muted-foreground">No tips found. Be the first to share a tip!</p>
+            <p className="text-muted-foreground">
+              {searchQuery || categoryFilter !== "All" 
+                ? `No tips found matching your search criteria.` 
+                : "No tips found. Be the first to share a tip!"
+              }
+            </p>
             <Button 
               onClick={() => {}} 
               className="mt-4"

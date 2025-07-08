@@ -50,3 +50,14 @@ export const getGiveAndGlowReviews = async () => {
   return data;
 }
 
+export const getLocalBusinesses = async () => {
+  const { data, error } = await supaClient.from("local_businesses_list_view").select(`*`);
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+export const getLocalReviews = async () => {
+  const { data, error } = await supaClient.from("local_reviews_list_view").select(`*`);
+  if (error) throw new Error(error.message);
+  return data;
+}

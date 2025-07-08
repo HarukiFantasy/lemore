@@ -1,0 +1,1 @@
+ALTER TABLE "local_business_reviews" ADD COLUMN "content" text NOT NULL;

@@ -1,0 +1,1 @@
+ALTER TABLE "local_business_reviews" ALTER COLUMN "content" DROP NOT NULL;

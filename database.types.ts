@@ -219,6 +219,7 @@ export type Database = {
           author: string
           author_avatar: string | null
           business_id: number
+          content: string
           created_at: string
           rating: number
           tags: Json
@@ -228,6 +229,7 @@ export type Database = {
           author: string
           author_avatar?: string | null
           business_id: number
+          content: string
           created_at?: string
           rating: number
           tags?: Json
@@ -237,6 +239,7 @@ export type Database = {
           author?: string
           author_avatar?: string | null
           business_id?: number
+          content?: string
           created_at?: string
           rating?: number
           tags?: Json
@@ -255,6 +258,13 @@ export type Database = {
             columns: ["business_id"]
             isOneToOne: false
             referencedRelation: "local_businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "local_business_reviews_business_id_local_businesses_id_fk"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "local_businesses_list_view"
             referencedColumns: ["id"]
           },
         ]
@@ -912,6 +922,60 @@ export type Database = {
       }
     }
     Views: {
+      local_businesses_list_view: {
+        Row: {
+          address: string | null
+          average_rating: number | null
+          description: string | null
+          id: number | null
+          image: string | null
+          location: string | null
+          name: string | null
+          price_range: string | null
+          tags: Json | null
+          total_reviews: number | null
+          type: string | null
+          website: string | null
+        }
+        Relationships: []
+      }
+      local_reviews_list_view: {
+        Row: {
+          author: string | null
+          author_avatar: string | null
+          author_username: string | null
+          business_id: number | null
+          business_name: string | null
+          business_type: string | null
+          content: string | null
+          created_at: string | null
+          rating: number | null
+          tags: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "local_business_reviews_author_user_profiles_profile_id_fk"
+            columns: ["author"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "local_business_reviews_business_id_local_businesses_id_fk"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "local_businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "local_business_reviews_business_id_local_businesses_id_fk"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "local_businesses_list_view"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       local_tips_list_view: {
         Row: {
           author: string | null

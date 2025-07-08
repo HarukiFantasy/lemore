@@ -233,6 +233,7 @@ export const localBusinessReviews = pgTable("local_business_reviews", {
   author_avatar: text("author_avatar"),
   timestamp: text("timestamp").notNull(),
   tags: jsonb("tags").notNull().default([]),
+  content: text("content"),
   created_at: timestamp("created_at").notNull().defaultNow(),
 }, (table) => [primaryKey({ columns: [table.business_id, table.author] })] 
 );

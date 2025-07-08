@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import type { Route } from './+types/browse-listings-page';
 import { ProductCard } from '../components/product-card';
-import { Form, useSearchParams, useSubmit } from 'react-router';
+import { Form, useSearchParams, useSubmit, useNavigate } from 'react-router';
 import { Input } from '~/common/components/ui/input';
 import { Button } from '~/common/components/ui/button';
 import { PRODUCT_CATEGORIES, CATEGORY_ICONS } from "../constants";
@@ -99,7 +99,7 @@ const mockProducts = [
 ];
 
 export default function BrowseListingsPage() {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [searchInput, setSearchInput] = useState(searchParams.get("q") || "");
   const [currentPage, setCurrentPage] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
@@ -108,30 +108,52 @@ export default function BrowseListingsPage() {
   const observerRef = useRef<IntersectionObserver | null>(null);
   const loadingRef = useRef<HTMLDivElement>(null);
   const submit = useSubmit();
+  const navigate = useNavigate();
 
   // Get search query from URL params
   const searchQuery = searchParams.get("q") || "";
+  const categoryFilter = searchParams.get("category") || "";
 
-  // Filter products based on search query
+  // Filter products based on search query and category
   useEffect(() => {
+    let filtered = mockProducts;
+    
+    // Apply search filter
     if (searchQuery) {
-      const filtered = mockProducts.filter(product =>
+      filtered = filtered.filter(product =>
         product.title.toLowerCase().includes(searchQuery.toLowerCase())
       );
-      setDisplayedProducts(filtered);
-    } else {
-      setDisplayedProducts(mockProducts);
     }
-  }, [searchQuery]);
+    
+    // Apply category filter
+    if (categoryFilter) {
+      filtered = filtered.filter(product =>
+        product.title.toLowerCase().includes(categoryFilter.toLowerCase())
+      );
+    }
+    
+    setDisplayedProducts(filtered);
+  }, [searchQuery, categoryFilter]);
 
   // 카테고리 클릭 핸들러
   const handleCategoryClick = (categoryName: string) => {
     setSearchInput(categoryName);
-    // Filter products by category
-    const filtered = mockProducts.filter(product =>
-      product.title.toLowerCase().includes(categoryName.toLowerCase())
-    );
-    setDisplayedProducts(filtered);
+    
+    // Update URL parameters
+    const newSearchParams = new URLSearchParams(searchParams);
+    newSearchParams.set("q", categoryName);
+    newSearchParams.set("category", categoryName);
+    setSearchParams(newSearchParams);
+  };
+
+  // Handle search form submission
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const newSearchParams = new URLSearchParams(searchParams);
+    newSearchParams.set("q", searchInput);
+    // Clear category filter when manually searching
+    newSearchParams.delete("category");
+    setSearchParams(newSearchParams);
   };
 
   return (
@@ -140,22 +162,26 @@ export default function BrowseListingsPage() {
       {/* 메인 컨텐츠  */}
       <main className="mx-auto sm:max-w-[100vw] md:max-w-[100vw] lg:max-w-[100vw] xl:max-w-[100vw]">
         {/* 검색바 */}
-          <Form className="flex items-center justify-center max-w-screen-sm mx-auto mt-1 gap-2 mb-6 focus:ring-1 focus:ring-accent">
-            <Input 
-              name="q" 
-              type="text" 
-              placeholder="Search for items" 
-              value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
-            />
-            <Button type="submit" variant="outline">Search</Button>
-          </Form>
+        <form onSubmit={handleSearchSubmit} className="flex items-center justify-center max-w-screen-sm mx-auto mt-1 gap-2 mb-6 focus:ring-1 focus:ring-accent">
+          <Input 
+            name="q" 
+            type="text" 
+            placeholder="Search for items" 
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+          />
+          <Button type="submit" variant="outline">Search</Button>
+        </form>
 
         {/* 카테고리 */}
         <div className="flex justify-center mb-8">
           <div className="flex space-x-2 sm:space-x-3 md:space-x-4 lg:space-x-5 xl:space-x-6">
             {PRODUCT_CATEGORIES.slice(0, 9).map(category => (
-              <div key={category} className="flex flex-col items-center min-w-[65px] cursor-pointer hover:scale-105 transition-transform">
+              <div 
+                key={category} 
+                className="flex flex-col items-center min-w-[65px] cursor-pointer hover:scale-105 transition-transform"
+                onClick={() => handleCategoryClick(category)}
+              >
                 <div className="w-15 h-15 flex items-center justify-center rounded-full bg-purple-100 text-2xl mb-2 hover:bg-purple-200 transition-colors">
                   {CATEGORY_ICONS[category] || "📦"}
                 </div>
