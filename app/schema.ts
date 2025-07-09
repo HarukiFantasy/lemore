@@ -101,6 +101,7 @@ export const productImages = pgTable("product_images", {
 export const productLikes = pgTable("product_likes", {
   product_id: bigint("product_id", {mode: "number"}).notNull().references(() => products.product_id),
   user_id: uuid().notNull().references(() => userProfiles.profile_id, {onDelete: "cascade"}), 
+  created_at: timestamp("created_at").notNull().defaultNow(),
 }, (table) => [
   primaryKey({ columns: [table.product_id, table.user_id] }),
 ]);

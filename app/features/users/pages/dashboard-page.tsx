@@ -4,43 +4,16 @@ import { Avatar, AvatarFallback, AvatarImage } from "../../../common/components/
 import { Separator } from "../../../common/components/ui/separator";
 import { Link } from "react-router";
 import { NumberTicker } from 'components/magicui/number-ticker';
+import { getCurrentUser } from "../queries";
+import type { Route } from "./+types/dashboard-page";
 
+export const loader = async () => {
+  const user = await getCurrentUser();
+  return { user };
+};
 
-
-export default function DashboardPage({ }: any) {
-  // Mock data for dashboard stats
-  const stats = {
-    activeListings: 12,
-    totalSales: 2450,
-    totalSalesChange: "+15% from last month",
-    unreadMessages: 3,
-    unreadMessagesChange: "+2 from yesterday"
-  };
-
-  // Mock data for recent activity
-  const recentActivity = [
-    {
-      id: 1,
-      title: "New message from Sarah about your laptop listing",
-      timestamp: "2 hours ago"
-    },
-    {
-      id: 2,
-      title: "Your iPhone listing was viewed 15 times",
-      timestamp: "4 hours ago"
-    },
-    {
-      id: 3,
-      title: "Payment received for your camera sale",
-      timestamp: "1 day ago"
-    },
-    {
-      id: 4,
-      title: "New follower: @tech_enthusiast",
-      timestamp: "2 days ago"
-    }
-  ];
-  
+export default function DashboardPage({ loaderData }: Route.ComponentProps) {
+  const { user } = loaderData;
   return (
     <div className="container mx-auto px-0 py-8 md:px-8">
       <div className="mb-8">
@@ -57,7 +30,7 @@ export default function DashboardPage({ }: any) {
               <CardDescription>Items you've uploaded</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-blue-600">{stats.activeListings}</div>
+              <div className="text-3xl font-bold text-blue-600">{user.total_listings}</div>
               <p className="text-sm text-gray-500 mt-1">Click to view all</p>
             </CardContent>
           </Card>
@@ -69,8 +42,8 @@ export default function DashboardPage({ }: any) {
             <CardDescription>Your earnings this month</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-green-600">$<NumberTicker value={stats.totalSales} className="text-3xl font-bold text-green-600"/></div>
-            <p className="text-sm text-gray-500 mt-1">{stats.totalSalesChange}</p>
+            <div className="text-3xl font-bold text-green-600">$<NumberTicker value={user.total_sales} className="text-3xl font-bold text-green-600"/></div>
+            <p className="text-sm text-gray-500 mt-1">{user.total_sales_change}</p>
           </CardContent>
         </Card>
 
@@ -81,8 +54,8 @@ export default function DashboardPage({ }: any) {
               <CardDescription>Unread messages</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-orange-600">{stats.unreadMessages}</div>
-              <p className="text-sm text-gray-500 mt-1">{stats.unreadMessagesChange}</p>
+              <div className="text-3xl font-bold text-orange-600">{user.unread_messages}</div>
+              <p className="text-sm text-gray-500 mt-1">{user.unread_messages_change}</p>
             </CardContent>
           </Card>
         </Link>
@@ -97,7 +70,7 @@ export default function DashboardPage({ }: any) {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {(recentActivity || []).map((activity: any, index: number) => (
+              {(user.recent_activity || []).map((activity: any, index: number) => (
                 <div key={activity.id}>
                   <div className="flex items-center space-x-3">
                     <Avatar className="h-10 w-10">
@@ -109,7 +82,7 @@ export default function DashboardPage({ }: any) {
                       <p className="text-xs text-gray-500">{activity.timestamp}</p>
                     </div>
                   </div>
-                  {index < (recentActivity || []).length - 1 && <Separator className="mt-4" />}
+                  {index < (user.recent_activity || []).length - 1 && <Separator className="mt-4" />}
                 </div>
               ))}
             </div>
