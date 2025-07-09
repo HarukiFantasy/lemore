@@ -14,11 +14,11 @@ COUNT(items.analysis_id) as total_items_analyzed,
 COUNT(
     CASE
         WHEN items.recommendation IN (
-            'sell',
-            'donate',
-            'recycle',
-            'repurpose',
-            'discard'
+            'Sell',
+            'Donate',
+            'Recycle',
+            'Repurpose',
+            'Discard'
         ) THEN items.analysis_id
     END
 ) as total_items_completed,
@@ -27,10 +27,10 @@ COUNT(
 SUM(items.co2_impact) as total_co2_saved,
 AVG(
     CASE
-        WHEN items.environmental_impact = 'low' THEN 1
-        WHEN items.environmental_impact = 'medium' THEN 2
-        WHEN items.environmental_impact = 'high' THEN 3
-        WHEN items.environmental_impact = 'critical' THEN 4
+        WHEN items.environmental_impact = 'Low' THEN 1
+        WHEN items.environmental_impact = 'Medium' THEN 2
+        WHEN items.environmental_impact = 'High' THEN 3
+        WHEN items.environmental_impact = 'Critical' THEN 4
         ELSE 0
     END
 ) as avg_environmental_impact_score,

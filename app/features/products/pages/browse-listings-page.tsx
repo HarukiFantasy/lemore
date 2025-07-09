@@ -63,11 +63,11 @@ export default function BrowseListingsPage({ loaderData }: Route.ComponentProps)
 
   // 카테고리 클릭 핸들러
   const handleCategoryClick = (categoryName: string) => {
-    setSearchInput(categoryName);
+    setSearchInput("");
     
-    // Update URL parameters
+    // Update URL parameters - only set category, clear search query
     const newSearchParams = new URLSearchParams(searchParams);
-    newSearchParams.set("q", categoryName);
+    newSearchParams.delete("q");
     newSearchParams.set("category", categoryName);
     setSearchParams(newSearchParams);
   };
@@ -79,6 +79,25 @@ export default function BrowseListingsPage({ loaderData }: Route.ComponentProps)
     newSearchParams.set("q", searchInput);
     // Clear category filter when manually searching
     newSearchParams.delete("category");
+    setSearchParams(newSearchParams);
+  };
+
+  // Clear all filters
+  const handleClearFilters = () => {
+    setSearchInput("");
+    const newSearchParams = new URLSearchParams();
+    setSearchParams(newSearchParams);
+  };
+
+  // Clear specific filter
+  const handleClearFilter = (filterType: 'search' | 'category') => {
+    const newSearchParams = new URLSearchParams(searchParams);
+    if (filterType === 'search') {
+      newSearchParams.delete("q");
+      setSearchInput("");
+    } else if (filterType === 'category') {
+      newSearchParams.delete("category");
+    }
     setSearchParams(newSearchParams);
   };
 
@@ -102,24 +121,72 @@ export default function BrowseListingsPage({ loaderData }: Route.ComponentProps)
         {/* 카테고리 */}
         <div className="flex justify-center mb-8">
           <div className="flex space-x-2 sm:space-x-3 md:space-x-4 lg:space-x-5 xl:space-x-6">
-            {PRODUCT_CATEGORIES.slice(0, 9).map(category => (
-              <div 
-                key={category} 
-                className="flex flex-col items-center min-w-[65px] cursor-pointer hover:scale-105 transition-transform"
-                onClick={() => handleCategoryClick(category)}
-              >
-                <div className="w-15 h-15 flex items-center justify-center rounded-full bg-purple-100 text-2xl mb-2 hover:bg-purple-200 transition-colors">
-                  {CATEGORY_ICONS[category] || "📦"}
+            {PRODUCT_CATEGORIES.slice(0, 10).map(category => {
+              const isActive = categoryFilter.toLowerCase() === category.toLowerCase();
+              return (
+                <div 
+                  key={category} 
+                  className={`flex flex-col items-center min-w-[65px] cursor-pointer hover:scale-105 transition-transform ${
+                    isActive ? 'ring-2 ring-purple-500 ring-offset-2' : ''
+                  }`}
+                  onClick={() => handleCategoryClick(category)}
+                >
+                  <div className={`w-15 h-15 flex items-center justify-center rounded-full text-2xl mb-2 transition-colors ${
+                    isActive 
+                      ? 'bg-purple-500 text-white' 
+                      : 'bg-purple-100 hover:bg-purple-200'
+                  }`}>
+                    {CATEGORY_ICONS[category] || "📦"}
+                  </div>
+                  <span className={`text-sm text-center ${
+                    isActive ? 'font-semibold text-purple-600' : ''
+                  }`}>
+                    {category}
+                  </span>
                 </div>
-                <span className="text-sm text-center">{category}</span>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 
+        {/* 활성 필터 표시 및 해제 */}
+        {(searchQuery || categoryFilter) && (
+          <div className="mb-6 flex flex-wrap items-center gap-2 justify-center">
+            <span className="text-sm text-gray-600">Active filters:</span>
+            {searchQuery && (
+              <div className="flex items-center gap-1 bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-sm">
+                <span>Search: "{searchQuery}"</span>
+                <button
+                  onClick={() => handleClearFilter('search')}
+                  className="ml-1 text-purple-600 hover:text-purple-800"
+                >
+                  ×
+                </button>
+              </div>
+            )}
+            {categoryFilter && (
+              <div className="flex items-center gap-1 bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm">
+                <span>Category: {categoryFilter}</span>
+                <button
+                  onClick={() => handleClearFilter('category')}
+                  className="ml-1 text-blue-600 hover:text-blue-800"
+                >
+                  ×
+                </button>
+              </div>
+            )}
+            <button
+              onClick={handleClearFilters}
+              className="text-sm text-gray-500 hover:text-gray-700 underline"
+            >
+              Clear all
+            </button>
+          </div>
+        )}
+
         {/* 검색 결과 타이틀 */}
         <h2 className="text-3xl font-bold mb-6">
-          {searchQuery ? `"${searchQuery}" Search Results` : "All Listings"}
+          {searchQuery ? `"${searchQuery}" Search Results` : categoryFilter ? `${categoryFilter} Category` : "All Listings"}
         </h2>
 
         {/* 표시된 상품 수 정보 */}
@@ -134,13 +201,14 @@ export default function BrowseListingsPage({ loaderData }: Route.ComponentProps)
               <BlurFade key={product.product_id}>
                 <ProductCard
                   productId={product.product_id}
-                  image={product.primary_image?.startsWith('/') ? product.primary_image : `/sample.png`}
+                  image={product.primary_image?.startsWith('/') ? product.primary_image : `/toy1.png`}
                   title={product.title || "No title"}
                   price={product.price}
                   currency={product.currency || "THB"}
                   priceType={product.price_type || "fixed"}
                   seller={product.seller_name}
                   is_sold={product.is_sold || false}
+                  category={product.category_name || "electronics"}
                 />
               </BlurFade>
             ))

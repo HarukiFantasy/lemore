@@ -25,39 +25,39 @@ export const localTipCategories = pgEnum("local_tip_categories", [
 ]);
 
 export const notificationTypes = pgEnum("notification_type", [
-  "message", "like", "reply", "mention"
+  "Message", "Like", "Reply", "Mention"
 ]);
 
 export const messageTypes = pgEnum("message_type", [
-  "text", "image", "file", "audio", "video", "location"
+  "Text", "Image", "File", "Audio", "Video", "Location"
 ]);
 
 // Product related enums
 export const productCategories = pgEnum("product_category", [
-  "electronics", "clothing", "books", "home", "sports", 
-  "beauty", "toys", "automotive", "health", "other"
+  "Electronics", "Clothing", "Books", "Home", "Sports", 
+  "Beauty", "Toys", "Automotive", "Health", "Other"
 ]);
 
 export const productConditions = pgEnum("product_condition", [
-  "new", "like_new", "excellent", "good", "fair", "poor"
+  "New", "Like New", "Excellent", "Good", "Fair", "Poor"
 ]);
 
 export const priceTypes = pgEnum("price_type", [
-  "fixed", "negotiable", "free", "auction"
+  "Fixed", "Negotiable", "Free", "Auction"
 ]);
 
 // Let Go Buddy related enums
 export const declutterSituations = pgEnum("declutter_situation", [
-  "moving", "downsizing", "spring_cleaning", "digital_declutter", 
-  "minimalism", "inheritance", "relationship_change", "other"
+  "Moving", "Downsizing", "Spring Cleaning", "Digital Declutter", 
+  "Minimalism", "Inheritance", "Relationship Change", "Other"
 ]);
 
 export const recommendationActions = pgEnum("recommendation_action", [
-  "keep", "sell", "donate", "recycle", "repair", "repurpose", "discard"
+  "Keep", "Sell", "Donate", "Recycle", "Repair", "Repurpose", "Discard"
 ]);
 
 export const environmentalImpactLevels = pgEnum("environmental_impact_level", [
-  "low", "medium", "high", "critical"
+  "Low", "Medium", "High", "Critical"
 ]);
 
 // ===== TABLES =====
@@ -81,7 +81,7 @@ export const products = pgTable("products", {
   description: text("description").notNull(),
   tags: jsonb().notNull().default([]),
   is_sold: boolean().notNull().default(false),
-  price_type: priceTypes().notNull().default("fixed"),
+  price_type: priceTypes().notNull().default("Fixed"),
   stats: jsonb().notNull().default({views: 0, likes: 0}),
   created_at: timestamp("created_at").notNull().defaultNow(),
   updated_at: timestamp("updated_at").notNull().defaultNow(),
@@ -187,7 +187,7 @@ export const userMessages = pgTable("user_messages", {
   sender_id: uuid().notNull().references(() => userProfiles.profile_id, {onDelete: "cascade"}),
   receiver_id: uuid().notNull().references(() => userProfiles.profile_id, {onDelete: "cascade"}),
   content: text("content").notNull(),
-  message_type: messageTypes().notNull().default("text"),
+  message_type: messageTypes().notNull().default("Text"),
   media_url: text("media_url"),
   seen: boolean().notNull().default(false),
   created_at: timestamp("created_at").notNull().defaultNow(),

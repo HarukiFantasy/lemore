@@ -45,11 +45,11 @@ COUNT(*) OVER (
 COUNT(*) FILTER (
     WHERE
         items.recommendation IN (
-            'sell',
-            'donate',
-            'recycle',
-            'repurpose',
-            'discard'
+            'Sell',
+            'Donate',
+            'Recycle',
+            'Repurpose',
+            'Discard'
         )
 ) OVER (
     PARTITION BY

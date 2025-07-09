@@ -10,22 +10,22 @@ COUNT(
 ) as recyclable_items,
 COUNT(
     CASE
-        WHEN items.recommendation = 'recycle' THEN 1
+        WHEN items.recommendation = 'Recycle' THEN 1
     END
 ) as items_to_recycle,
 COUNT(
     CASE
-        WHEN items.recommendation = 'donate' THEN 1
+        WHEN items.recommendation = 'Donate' THEN 1
     END
 ) as items_to_donate,
 COUNT(
     CASE
-        WHEN items.recommendation = 'sell' THEN 1
+        WHEN items.recommendation = 'Sell' THEN 1
     END
 ) as items_to_sell,
 COUNT(
     CASE
-        WHEN items.recommendation = 'keep' THEN 1
+        WHEN items.recommendation = 'Keep' THEN 1
     END
 ) as items_to_keep,
 
@@ -36,22 +36,22 @@ AVG(items.co2_impact) as avg_co2_impact,
 -- Environmental impact levels
 COUNT(
     CASE
-        WHEN items.environmental_impact = 'low' THEN 1
+        WHEN items.environmental_impact = 'Low' THEN 1
     END
 ) as low_impact_items,
 COUNT(
     CASE
-        WHEN items.environmental_impact = 'medium' THEN 1
+        WHEN items.environmental_impact = 'Medium' THEN 1
     END
 ) as medium_impact_items,
 COUNT(
     CASE
-        WHEN items.environmental_impact = 'high' THEN 1
+        WHEN items.environmental_impact = 'High' THEN 1
     END
 ) as high_impact_items,
 COUNT(
     CASE
-        WHEN items.environmental_impact = 'critical' THEN 1
+        WHEN items.environmental_impact = 'Critical' THEN 1
     END
 ) as critical_impact_items,
 

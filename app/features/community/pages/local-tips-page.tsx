@@ -18,7 +18,7 @@ import type { Route } from "./+types/local-tips-page"
 // Types
 
 interface LocalTipPost {
-  id: string;
+  id: number;
   title: string;
   content: string;
   category: LocalTipCategory;
@@ -32,13 +32,16 @@ interface LocalTipPost {
 }
 
 interface Comment {
-  id: string;
-  author: string;
+  comment_id: number;
+  post_id: number;
   content: string;
   likes: number;
-  createdAt: Date;
-  avatarUrl: string;
-  profileUrl: string;
+  created_at: string;
+  author: {
+    profile_id: string;
+    username: string;
+    avatar_url: string | null;
+  };
 }
 
 
@@ -58,6 +61,18 @@ export default function LocalTipsPage({ loaderData }: Route.ComponentProps) {
   
   // State for form inputs
   const [searchInput, setSearchInput] = useState(searchQuery);
+  
+  // Group comments by post_id for easy lookup
+  const commentsByPostId = comments.reduce((acc, comment) => {
+    if (!acc[comment.post_id]) {
+      acc[comment.post_id] = [];
+    }
+    acc[comment.post_id].push(comment);
+    return acc;
+  }, {} as Record<number, Comment[]>);
+
+  // State for comment expansion
+  const [expandedPosts, setExpandedPosts] = useState<Set<number>>(new Set());
   
   // Filter tips based on search and category
   const filteredTips = tips.filter((post) => {
@@ -99,6 +114,28 @@ export default function LocalTipsPage({ loaderData }: Route.ComponentProps) {
       newSearchParams.set("category", category);
     }
     setSearchParams(newSearchParams);
+  };
+
+  // Check if content is long (more than 2 lines)
+  const isContentLong = (content: string) => {
+    // Remove HTML tags for line counting
+    const plainText = content.replace(/<[^>]*>/g, '');
+    return plainText.length > 150; // Approximate 2 lines
+  };
+
+  // Handle comment expansion toggle
+  const handleCommentToggle = (postId: number) => {
+    if (expandedPosts.has(postId)) {
+      // Collapse comments
+      setExpandedPosts(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(postId);
+        return newSet;
+      });
+    } else {
+      // Expand comments
+      setExpandedPosts(prev => new Set(prev).add(postId));
+    }
   };
   
   return (
@@ -148,7 +185,7 @@ export default function LocalTipsPage({ loaderData }: Route.ComponentProps) {
                     key={category}
                     variant={isActive ? "default" : "outline"}
                     size="sm"
-                    className={isActive ? "" : ""}
+                    className={isActive ? `${colors.bg} ${colors.text} ${colors.border} ${colors.hover}` : ""}
                     onClick={() => handleCategoryClick(category)}
                   >
                     {category}
@@ -187,18 +224,31 @@ export default function LocalTipsPage({ loaderData }: Route.ComponentProps) {
                   <h3 className="text-lg font-semibold mb-2">{post.title}</h3>
                   <div className="mb-3">
                     <div
-                      className="text-sm text-gray-700"
+                      className={`text-sm text-gray-700 ${
+                        !expandedPosts.has(post.id) && isContentLong(post.content) 
+                          ? 'line-clamp-2' 
+                          : ''
+                      }`}
                       dangerouslySetInnerHTML={{ __html: post.content }}
                     />
-                    <button
-                      onClick={() => {}}
-                      className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800 mt-1"
-                    >
-                      <>
-                          <ChevronDownIcon className="h-4 w-4" />
-                          Show more
-                        </>
-                    </button>
+                    {(isContentLong(post.content) || commentsByPostId[post.id]?.length > 0) && (
+                      <button
+                        onClick={() => handleCommentToggle(post.id)}
+                        className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800 mt-1"
+                      >
+                        {expandedPosts.has(post.id) ? (
+                          <>
+                            <ChevronUpIcon className="h-4 w-4" />
+                            Show less
+                          </>
+                        ) : (
+                          <>
+                            <ChevronDownIcon className="h-4 w-4" />
+                            Show more
+                          </>
+                        )}
+                      </button>
+                    )}
                   </div>
                   <div className="flex items-center gap-4 text-sm text-muted-foreground">
                     <span>By {(post as any).username || 'Unknown User'}</span>
@@ -242,21 +292,16 @@ export default function LocalTipsPage({ loaderData }: Route.ComponentProps) {
               </div>
 
               {/* Comments Section */}
-              {/* {expandedPosts.has(post.id) && (
+              {expandedPosts.has(post.id) && (
                 <div className="mt-4 pt-4 border-t">
-                  {loadingComments.has(post.id) ? (
-                    <div className="text-center py-4">
-                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto"></div>
-                      <p className="text-sm text-muted-foreground mt-2">Loading comments...</p>
-                    </div>
-                  ) : commentsData[post.id] ? (
+                  {commentsByPostId[post.id] ? (
                     <div className="space-y-3">
-                      <h4 className="font-medium text-sm">Comments ({commentsData[post.id].length})</h4>
-                      {commentsData[post.id].map((comment) => (
-                        <div key={comment.id} className="bg-gray-50 rounded-lg p-3">
+                      <h4 className="font-medium text-sm">Comments ({commentsByPostId[post.id].length})</h4>
+                      {commentsByPostId[post.id].map((comment) => (
+                        <div key={comment.comment_id} className="bg-gray-50 rounded-lg p-3">
                           <div className="flex items-start justify-between mb-2">
-                            <span className="font-medium text-sm">{comment.author}</span>
-                            <span className="text-xs text-muted-foreground">{formatTimeAgo(comment.createdAt)}</span>
+                            <span className="font-medium text-sm">{comment.author.username}</span>
+                            <span className="text-xs text-muted-foreground">{formatTimeAgo(new Date(comment.created_at))}</span>
                           </div>
                           <div
                             className="text-sm text-gray-700"
@@ -271,9 +316,13 @@ export default function LocalTipsPage({ loaderData }: Route.ComponentProps) {
                         </div>
                       ))}
                     </div>
-                  ) : null}
+                  ) : (
+                    <div className="text-center py-4">
+                      <p className="text-sm text-muted-foreground">No comments yet</p>
+                    </div>
+                  )}
                 </div>
-              )} */}
+              )} 
             </CardContent>
           </Card>
         ))}

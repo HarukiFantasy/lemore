@@ -1,8 +1,8 @@
-import supaClient from "../../supa-client";
+import client from "../../supa-client";
 
 
 export const getLocalTipPosts = async () => {
-  const { data, error } = await supaClient.from("local_tips_list_view").select(`*`);
+  const { data, error } = await client.from("local_tips_list_view").select(`*`);
   
   console.log('Posts query result:', { data, error });
   if (error) throw new Error(error.message);
@@ -10,7 +10,7 @@ export const getLocalTipPosts = async () => {
 }
 
 export const getLocalTipComments = async (postId?: string) => {
-  let query = supaClient.from("local_tip_comments").select(`
+  let query = client.from("local_tip_comments").select(`
     comment_id,
     post_id,
     content,
@@ -31,7 +31,7 @@ export const getLocalTipComments = async (postId?: string) => {
 }
 
 export const getGiveAndGlowReviews = async () => {
-  const { data, error } = await supaClient.from("give_and_glow_reviews").select(`
+  const { data, error } = await client.from("give_and_glow_reviews").select(`
     id,
     category,
     rating,
@@ -51,13 +51,13 @@ export const getGiveAndGlowReviews = async () => {
 }
 
 export const getLocalBusinesses = async () => {
-  const { data, error } = await supaClient.from("local_businesses_list_view").select(`*`);
+  const { data, error } = await client.from("local_businesses_list_view").select(`*`);
   if (error) throw new Error(error.message);
   return data;
 }
 
 export const getLocalReviews = async () => {
-  const { data, error } = await supaClient.from("local_reviews_list_view").select(`*`);
+  const { data, error } = await client.from("local_reviews_list_view").select(`*`);
   if (error) throw new Error(error.message);
   return data;
 }

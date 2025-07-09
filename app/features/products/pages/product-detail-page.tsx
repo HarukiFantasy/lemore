@@ -4,7 +4,9 @@ import { Card } from "~/common/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "~/common/components/ui/avatar";
 import { useNavigate } from "react-router";
 import { HeartIcon } from "lucide-react";
-
+import { getProductById } from "../queries";
+import { Route } from './+types/product-detail-page';
+import {DateTime} from "luxon";
 
 export const meta = () => {
   return [
@@ -13,52 +15,31 @@ export const meta = () => {
   ];
 };
 
-export default function ProductDetailPage() {
+export async function loader({ params }: Route.ComponentProps) {
+  const { id } = params;
+  const product = await getProductById(Number(id));
+  return { product };
+}
+
+
+  export default function ProductDetailPage({ loaderData }: Route.ComponentProps) {
+  const { product } = loaderData;
   const navigate = useNavigate();
   const [selectedImage, setSelectedImage] = useState(0);
   const [isLiked, setIsLiked] = useState(false);
 
-  // Mock product data - in a real app this would come from the loader
-  const product = {
-    id: "1",
-    title: "Vintage Bicycle - Perfect Condition",
-    price: "THB 2,500",
-    description: "Beautiful vintage bicycle in excellent condition. Perfect for daily commuting or weekend rides. Includes basket and bell. Only used for 6 months before I moved to a smaller apartment.",
-    condition: "Like New",
-    category: "Sports & Outdoor",
-    location: "Bangkok, Thailand",
-    postedDate: "2 days ago",
-    isSold: Math.random() > 0.7, // 30% 확률로 판매완료 (테스트용)
-    priceType: Math.random() > 0.8 ? "free" : "fixed", // 20% 확률로 무료 (테스트용)
-    images: [
-      "/sample.png",
-      "/sample.png",
-      "/sample.png",
-      "/sample.png"
-    ],
-    seller: {
-      name: "Sarah Johnson",
-      avatar: "/sample.png",
-      rating: 4.8,
-      totalSales: 23,
-      memberSince: "2022",
-      responseRate: "98%",
-      responseTime: "< 1 hour"
-    },
-    tags: ["Vintage", "Well Maintained", "Includes Accessories", "Quick Sale"]
-  };
 
-  const isFree = product.priceType === "free";
+  const isFree = product.price_type === "free";
 
   // Handle contact seller button click
   const handleContactSeller = () => {
     // Navigate to messages page with product context
     navigate("/my/messages", {
       state: {
-        productId: product.id,
+        productId: product.product_id,
         productTitle: product.title,
-        sellerId: "seller-123", // Mock seller ID
-        sellerName: product.seller.name,
+        sellerId: product.seller_id,
+        sellerName: product.seller_name,
         fromProduct: true
       }
     });
@@ -73,16 +54,16 @@ export default function ProductDetailPage() {
           <div className="space-y-4">
             <div className="aspect-square bg-white rounded-lg overflow-hidden shadow-sm relative">
               <img 
-                src={product.images[selectedImage]} 
-                alt={product.title}
+                src={product.primary_image?.startsWith('/') ? product.primary_image : `/toy1.png`}
+                alt={product.title || 'Product image'}
                 className="w-full h-full object-cover"
               />
-              {product.isSold && (
+              {product.is_sold && (
                 <div className="absolute top-4 right-4 bg-red-500 text-white text-sm px-3 py-1 rounded-full font-medium shadow-lg">
                   SOLD
                 </div>
               )}
-              {isFree && !product.isSold && (
+              {isFree && !product.is_sold && (
               <div className="absolute top-3 right-3 bg-green-500 text-white text-xs px-2 py-1 rounded-full font-medium shadow-lg">
                 FREE
               </div>
@@ -91,7 +72,7 @@ export default function ProductDetailPage() {
             
             {/* Thumbnail Images */}
             <div className="grid grid-cols-4 gap-2">
-              {product.images.map((image, index) => (
+              {Array.isArray(product.all_images) && product.all_images.map((image: any, index: number) => (
                 <button
                   key={index}
                   onClick={() => setSelectedImage(index)}
@@ -100,16 +81,16 @@ export default function ProductDetailPage() {
                   }`}
                 >
                   <img 
-                    src={image} 
-                    alt={`${product.title} ${index + 1}`}
+                    src={image.image_url?.startsWith('/') ? image.image_url : `/toy1.png`}
+                    alt={`${product.title || 'Product'} ${index + 1}`}
                     className="w-full h-full object-cover"
                   />
-                  {product.isSold && (
+                  {product.is_sold && (
                     <div className="absolute top-1 right-1 bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full font-medium shadow-sm">
                       SOLD
                     </div>
                   )}
-                  {isFree && !product.isSold && (
+                  {isFree && !product.is_sold && (
                     <div className="absolute top-1 right-1 bg-green-500 text-white text-xs px-1.5 py-0.5 rounded-full font-medium shadow-sm">
                       FREE
                     </div>
@@ -138,18 +119,18 @@ export default function ProductDetailPage() {
               <Button 
                 size="lg" 
                 className="flex-1"
-                disabled={product.isSold}
-                variant={product.isSold ? "secondary" : "default"}
+                disabled={product.is_sold || false}
+                variant={product.is_sold ? "secondary" : "default"}
                 onClick={handleContactSeller}
               >
-                {product.isSold ? "Item Sold" : "Contact Seller"}
+                {product.is_sold ? "Item Sold" : "Contact Seller"}
               </Button>
               <Button 
                 variant="outline" 
                 size="lg"
                 onClick={() => setIsLiked(!isLiked)}
                 className={isLiked ? "text-rose-500 border-primary" : ""}
-                disabled={product.isSold}
+                disabled={product.is_sold || false}
               >
                 <HeartIcon 
                   className={`w-5 h-5 ${isLiked ? 'fill-rose-500 text-rose-500' : 'text-gray-600'}`} 
@@ -168,7 +149,7 @@ export default function ProductDetailPage() {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Category:</span>
-                  <span className="font-medium">{product.category}</span>
+                  <span className="font-medium">{product.category_name}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Location:</span>
@@ -176,7 +157,7 @@ export default function ProductDetailPage() {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Posted:</span>
-                  <span className="font-medium">{product.postedDate}</span>
+                  <span className="font-medium">{DateTime.fromISO(product.created_at || '').toLocaleString(DateTime.DATE_MED)}</span>
                 </div>
               </div>
             </Card>
@@ -191,7 +172,7 @@ export default function ProductDetailPage() {
 
             {/* Tags */}
             <div className="flex flex-wrap gap-2">
-              {product.tags.map((tag, index) => (
+              {Array.isArray(product.tags) && product.tags.map((tag: any, index: number) => (
                 <span 
                   key={index}
                   className="bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-sm"
@@ -209,13 +190,13 @@ export default function ProductDetailPage() {
             <h3 className="text-lg font-semibold mb-4">Seller Information</h3>
             <div className="flex items-start gap-4">
               <Avatar className="h-16 w-16">
-                <AvatarImage src={product.seller.avatar} alt={product.seller.name} />
+                <AvatarImage src={product.seller_avatar || undefined} alt={product.seller_name || 'Seller'} />
                 <AvatarFallback>
-                  {product.seller.name.split(' ').map(n => n[0]).join('').toUpperCase()}
+                  {product.seller_name?.split(' ').map(n => n[0]).join('').toUpperCase() || 'S'}
                 </AvatarFallback>
               </Avatar>
               <div className="flex-1">
-                <h4 className="font-semibold text-lg">{product.seller.name}</h4>
+                <h4 className="font-semibold text-lg">{product.seller_name}</h4>
                 <div className="flex items-center gap-2 mb-2">
                   <div className="flex items-center">
                     {[...Array(5)].map((_, i) => (
@@ -223,25 +204,25 @@ export default function ProductDetailPage() {
                         key={i}
                         width="16" 
                         height="16" 
-                        fill={i < Math.floor(product.seller.rating) ? "currentColor" : "none"}
+                        fill={i < Math.floor(product.seller_rating || 0) ? "currentColor" : "none"}
                         viewBox="0 0 24 24"
-                        className={i < Math.floor(product.seller.rating) ? "text-yellow-400" : "text-gray-300"}
+                        className={i < Math.floor(product.seller_rating || 0) ? "text-yellow-400" : "text-gray-300"}
                       >
                         <path fill="currentColor" d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
                       </svg>
                     ))}
                   </div>
-                  <span className="text-sm text-gray-600">{product.seller.rating} ({product.seller.totalSales} sales)</span>
+                  <span className="text-sm text-gray-600">{product.seller_rating || 0} ({product.seller_total_likes || 0} likes)</span>
                 </div>
                 <div className="grid grid-cols-2 gap-4 text-sm text-gray-600">
                   <div>
-                    <span className="font-medium">Member since:</span> {product.seller.memberSince}
+                    <span className="font-medium">Member since:</span> {product.seller_joined_at || 'N/A'}
                   </div>
                   <div>
-                    <span className="font-medium">Response rate:</span> {product.seller.responseRate}
+                    <span className="font-medium">Response rate:</span> {product.seller_response_rate}
                   </div>
                   <div>
-                    <span className="font-medium">Response time:</span> {product.seller.responseTime}
+                    <span className="font-medium">Response time:</span> {product.seller_response_time}
                   </div>
                 </div>
               </div>

@@ -5,23 +5,23 @@ export const PRODUCT_CATEGORIES = productCategories.enumValues;
 
 // 카테고리별 이모티콘 매핑
 export const CATEGORY_ICONS: Record<string, string> = {
-  electronics: "📱",
-  clothing: "👕",
-  books: "📚",
-  home: "🏠",
-  sports: "⚽",
-  beauty: "💄",
-  toys: "🧸",
-  automotive: "🚗",
-  health: "💊",
-  other: "📦"
+  Electronics: "📱",
+  Clothing: "👕",
+  Books: "📚",
+  Home: "🏠",
+  Sports: "⚽",
+  Beauty: "💄",
+  Toys: "🧸",
+  Automotive: "🚗",
+  Health: "💊",
+  Other: "📦"
 };
 
 export const PRICE_TYPES = [
-  { value: "fixed", label: "Fixed Price" },
-  { value: "negotiable", label: "Negotiable" },
-  { value: "free", label: "Free" },
-  { value: "auction", label: "Auction" }
+  { value: "Fixed", label: "Fixed Price" },
+  { value: "Negotiable", label: "Negotiable" },
+  { value: "Free", label: "Free" },
+  { value: "Auction", label: "Auction" }
 ] as const;
 
 export const PRODUCT_LIMITS = {

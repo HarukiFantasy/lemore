@@ -1,12 +1,13 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useSearchParams } from "react-router";
 import { Button } from "~/common/components/ui/button";
 import { Input } from "~/common/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "~/common/components/ui/card";
 import type { Route } from './+types/give-and-glow-page';
-import { validateWithZod, getFieldErrors, getCategoryColors } from "~/lib/utils";
+import { getCategoryColors } from "~/lib/utils";
 import { GiveAndGlowCard } from '../components/give-and-glow-card';
 import { getGiveAndGlowReviews } from '../queries';
+import { PRODUCT_CATEGORIES } from '~/features/products/constants';
 
 // Error Boundary
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
@@ -71,7 +72,6 @@ export default function GiveAndGlowPage({ loaderData }: Route.ComponentProps) {
     tags: [] as string[]
   });
 
-  const validCategories = ["All", "Furniture", "Kitchen", "Garden", "Toys", "Electronics", "Clothing", "Books", "Sports", "Other"];
 
   // Filter reviews based on search and category
   const filteredReviews = reviews.filter((review: any) => {
@@ -204,7 +204,7 @@ export default function GiveAndGlowPage({ loaderData }: Route.ComponentProps) {
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Item Category</label>
             <div className="flex flex-wrap gap-2">
-              {validCategories.map((category) => {
+              {PRODUCT_CATEGORIES.map((category) => {
                 const colors = getCategoryColors(category);
                 const isActive = urlCategoryFilter === category;
                 return (
@@ -319,7 +319,7 @@ export default function GiveAndGlowPage({ loaderData }: Route.ComponentProps) {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Item Category</label>
                 <div className="flex flex-wrap gap-2">
-                  {validCategories.filter(cat => cat !== "All").map((category) => {
+                  {PRODUCT_CATEGORIES.map((category) => {
                     const colors = getCategoryColors(category);
                     return (
                       <Button

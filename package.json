@@ -30,6 +30,7 @@
     "@react-router/node": "^7.5.3",
     "@react-router/serve": "^7.5.3",
     "@supabase/supabase-js": "^2.50.3",
+    "@tailwindcss/line-clamp": "^0.4.4",
     "@tiptap/extension-blockquote": "^2.23.1",
     "@tiptap/extension-bullet-list": "^2.23.1",
     "@tiptap/extension-highlight": "^2.23.1",
@@ -58,6 +59,7 @@
     "emoji-picker-react": "^4.12.3",
     "isbot": "^5.1.27",
     "lucide-react": "^0.522.0",
+    "luxon": "^3.6.1",
     "motion": "^12.23.0",
     "postgres": "^3.4.7",
     "react": "^19.1.0",
@@ -70,6 +72,7 @@
   "devDependencies": {
     "@react-router/dev": "^7.5.3",
     "@tailwindcss/vite": "^4.1.10",
+    "@types/luxon": "^3.6.2",
     "@types/node": "^20",
     "@types/react": "^19.1.2",
     "@types/react-dom": "^19.1.2",

@@ -1,7 +1,7 @@
-import supaClient from "~/supa-client";
+import client from "~/supa-client";
 
 export const getUser = async () => {
-  const { data, error } = await supaClient.from("users_view").select("*");
+  const { data, error } = await client.from("users_view").select("*");
   if (error) throw new Error(error.message);
   return data;
 };

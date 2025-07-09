@@ -38,29 +38,29 @@ user_profiles.location as user_location,
 -- Calculated fields
 CASE
     WHEN items.recommendation IN (
-        'sell',
-        'donate',
-        'recycle',
-        'repurpose',
-        'discard'
+        'Sell',
+        'Donate',
+        'Recycle',
+        'Repurpose',
+        'Discard'
     ) THEN true
     ELSE false
 END as is_decision_made,
 CASE
-    WHEN items.recommendation = 'keep' THEN 'Keep Item'
-    WHEN items.recommendation = 'sell' THEN 'Sell Item'
-    WHEN items.recommendation = 'donate' THEN 'Donate Item'
-    WHEN items.recommendation = 'recycle' THEN 'Recycle Item'
-    WHEN items.recommendation = 'repair' THEN 'Repair Item'
-    WHEN items.recommendation = 'repurpose' THEN 'Repurpose Item'
-    WHEN items.recommendation = 'discard' THEN 'Discard Item'
+    WHEN items.recommendation = 'Keep' THEN 'Keep Item'
+    WHEN items.recommendation = 'Sell' THEN 'Sell Item'
+    WHEN items.recommendation = 'Donate' THEN 'Donate Item'
+    WHEN items.recommendation = 'Recycle' THEN 'Recycle Item'
+    WHEN items.recommendation = 'Repair' THEN 'Repair Item'
+    WHEN items.recommendation = 'Repurpose' THEN 'Repurpose Item'
+    WHEN items.recommendation = 'Discard' THEN 'Discard Item'
     ELSE 'Unknown'
 END as recommendation_display,
 CASE
-    WHEN items.environmental_impact = 'low' THEN 'Low Impact'
-    WHEN items.environmental_impact = 'medium' THEN 'Medium Impact'
-    WHEN items.environmental_impact = 'high' THEN 'High Impact'
-    WHEN items.environmental_impact = 'critical' THEN 'Critical Impact'
+    WHEN items.environmental_impact = 'Low' THEN 'Low Impact'
+    WHEN items.environmental_impact = 'Medium' THEN 'Medium Impact'
+    WHEN items.environmental_impact = 'High' THEN 'High Impact'
+    WHEN items.environmental_impact = 'Critical' THEN 'Critical Impact'
     ELSE 'Unknown'
 END as environmental_impact_display,
 

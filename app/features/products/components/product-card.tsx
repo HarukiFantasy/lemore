@@ -3,6 +3,7 @@ import { z } from "zod";
 import { HeartIcon } from "lucide-react";
 import { ShineBorder } from "components/magicui/shine-border";
 import { UserStatsHoverCard } from "~/common/components/user-stats-hover-card";
+import { PRODUCT_CATEGORIES } from "../constants";
 
 // 가격 포맷팅 함수
 const formatPrice = (price: number, currency: string = "THB"): string => {
@@ -20,37 +21,10 @@ const productCardSchema = z.object({
   likes: z.number().min(0, "Likes cannot be negative").optional(),
   is_sold: z.boolean().optional(),
   priceType: z.string().optional().default("fixed"),
+  category: z.enum(PRODUCT_CATEGORIES).optional(),
 });
 
-type ProductCardProps = z.infer<typeof productCardSchema>;
-
-// Mock seller statistics - 실제로는 API에서 가져올 데이터
-const getSellerStats = (sellerId: string): {
-  totalListings: number;
-  rating: number;
-  responseRate: string;
-} => {
-  // 실제 구현에서는 sellerId를 사용해서 API 호출
-  return {
-    totalListings: Math.floor(Math.random() * 50) + 5,
-    rating: Math.floor(Math.random() * 5) + 1,
-    responseRate: `${Math.floor(Math.random() * 100) + 1}%`,
-  };
-};
-
-// sellerId를 사용자 친화적인 이름으로 변환
-const getSellerName = (sellerId: string): string => {
-  // 실제 구현에서는 sellerId로 사용자 정보를 조회
-  const sellerNames = [
-    "Sarah M.", "John D.", "Maria L.", "Alex K.", "Emma W.",
-    "David R.", "Lisa T.", "Mike P.", "Anna S.", "Tom B.",
-    "Jenny H.", "Chris L.", "Rachel G.", "Mark J.", "Sophie N."
-  ];
-  
-  // sellerId에서 숫자를 추출하여 일관된 이름 생성
-  const num = parseInt(sellerId.replace(/\D/g, '')) || 0;
-  return sellerNames[num % sellerNames.length];
-};
+type ProductCardProps = z.infer<typeof productCardSchema>; 
 
 export function ProductCard({ 
   productId, 
@@ -61,34 +35,9 @@ export function ProductCard({
   seller = "Multiple Owners", 
   likes = 0,
   is_sold = false,
-  priceType = "fixed"
+  priceType = "fixed",
+  category = "electronics"
 }: ProductCardProps) {
-  // Props 검증
-  const validationResult = productCardSchema.safeParse({ 
-    productId, 
-    image, 
-    title, 
-    price, 
-    currency,
-    seller, 
-    likes,
-    is_sold,
-    priceType
-  });
-  
-  if (!validationResult.success) {
-    return (
-      <div className="relative w-full h-40 sm:h-48 md:h-60 overflow-hidden bg-red-50 rounded-lg shadow border border-red-200">
-        <div className="flex items-center justify-center h-full">
-          <span className="text-red-600 text-sm text-center">
-            Invalid product data: {validationResult.error.errors[0]?.message}
-          </span>
-        </div>
-      </div>
-    );
-  }
-
-  const sellerStats = getSellerStats(seller);
   const isFree = priceType === "free";
 
     return (
@@ -116,7 +65,10 @@ export function ProductCard({
             )}
           </div>
           <div className="flex flex-col gap-1 p-3 pb-2 flex-grow">
-            <span className="text-base font-semibold truncate">{title}</span>
+            <div className="flex items-center justify-between">
+              <span className="text-base font-semibold truncate">{title}</span>
+              <span className="text-sm text-neutral-500 truncate">{category}</span>
+            </div>
             <UserStatsHoverCard
               userId={seller}
               userName={seller}
