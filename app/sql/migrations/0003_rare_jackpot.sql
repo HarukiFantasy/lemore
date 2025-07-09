@@ -1,0 +1,1 @@
+ALTER TABLE "products" RENAME COLUMN "isSold" TO "is_sold";

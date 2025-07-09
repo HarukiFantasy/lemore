@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import type { Route } from './+types/browse-listings-page';
 import { ProductCard } from '../components/product-card';
-import { Form, useSearchParams, useSubmit, useNavigate } from 'react-router';
+import { Form, useSearchParams, useSubmit, useNavigate, useLoaderData } from 'react-router';
 import { Input } from '~/common/components/ui/input';
 import { Button } from '~/common/components/ui/button';
 import { PRODUCT_CATEGORIES, CATEGORY_ICONS } from "../constants";
 import { BlurFade } from 'components/magicui/blur-fade';
+import { getProductsListings } from '../queries';
 
 export const meta: Route.MetaFunction = () => {
   return [
@@ -14,96 +15,19 @@ export const meta: Route.MetaFunction = () => {
   ];
 };
 
-// Mock data for products
-const mockProducts = [
-  {
-    id: "1",
-    title: "Vintage Denim Jacket",
-    price: 45,
-    currency: "USD",
-    priceType: "fixed" as const,
-    image: "/sample.png",
-    sellerId: "seller1",
-    isSold: false,
-  },
-  {
-    id: "2",
-    title: "iPhone 12 Pro",
-    price: 650,
-    currency: "USD",
-    priceType: "negotiable" as const,
-    image: "/sample.png",
-    sellerId: "seller2",
-    isSold: false,
-  },
-  {
-    id: "3",
-    title: "Nike Air Max 270",
-    price: 120,
-    currency: "USD",
-    priceType: "fixed" as const,
-    image: "/sample.png",
-    sellerId: "seller3",
-    isSold: true,
-  },
-  {
-    id: "4",
-    title: "MacBook Air M1",
-    price: 800,
-    currency: "USD",
-    priceType: "negotiable" as const,
-    image: "/sample.png",
-    sellerId: "seller4",
-    isSold: false,
-  },
-  {
-    id: "5",
-    title: "Sony WH-1000XM4 Headphones",
-    price: 250,
-    currency: "USD",
-    priceType: "fixed" as const,
-    image: "/sample.png",
-    sellerId: "seller5",
-    isSold: false,
-  },
-  {
-    id: "6",
-    title: "Levi's 501 Jeans",
-    price: 35,
-    currency: "USD",
-    priceType: "fixed" as const,
-    image: "/sample.png",
-    sellerId: "seller6",
-    isSold: false,
-  },
-  {
-    id: "7",
-    title: "iPad Air 4th Gen",
-    price: 450,
-    currency: "USD",
-    priceType: "negotiable" as const,
-    image: "/sample.png",
-    sellerId: "seller7",
-    isSold: false,
-  },
-  {
-    id: "8",
-    title: "Adidas Ultraboost 21",
-    price: 180,
-    currency: "USD",
-    priceType: "fixed" as const,
-    image: "/sample.png",
-    sellerId: "seller8",
-    isSold: false,
-  },
-];
 
-export default function BrowseListingsPage() {
+export async function loader() {
+  const products = await getProductsListings();
+  return { products: products || [] };
+}
+
+export default function BrowseListingsPage({ loaderData }: Route.ComponentProps) {
   const [searchParams, setSearchParams] = useSearchParams();
   const [searchInput, setSearchInput] = useState(searchParams.get("q") || "");
   const [currentPage, setCurrentPage] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
-  const [displayedProducts, setDisplayedProducts] = useState(mockProducts);
+  const { products } = loaderData;
+  const [displayedProducts, setDisplayedProducts] = useState<any[]>(products || []);
   const [hasMore, setHasMore] = useState(true);
   const observerRef = useRef<IntersectionObserver | null>(null);
   const loadingRef = useRef<HTMLDivElement>(null);
@@ -116,24 +40,26 @@ export default function BrowseListingsPage() {
 
   // Filter products based on search query and category
   useEffect(() => {
-    let filtered = mockProducts;
+    if (!products) return;
+    
+    let filtered = products;
     
     // Apply search filter
     if (searchQuery) {
       filtered = filtered.filter(product =>
-        product.title.toLowerCase().includes(searchQuery.toLowerCase())
+        product.title?.toLowerCase().includes(searchQuery.toLowerCase())
       );
     }
     
     // Apply category filter
     if (categoryFilter) {
       filtered = filtered.filter(product =>
-        product.title.toLowerCase().includes(categoryFilter.toLowerCase())
+        product.category_name?.toLowerCase().includes(categoryFilter.toLowerCase())
       );
     }
     
-    setDisplayedProducts(filtered);
-  }, [searchQuery, categoryFilter]);
+    setDisplayedProducts(filtered as any);
+  }, [searchQuery, categoryFilter, products]);
 
   // 카테고리 클릭 핸들러
   const handleCategoryClick = (categoryName: string) => {
@@ -198,25 +124,31 @@ export default function BrowseListingsPage() {
 
         {/* 표시된 상품 수 정보 */}
         <div className="mb-4 text-sm text-gray-600 mx-auto sm:max-w-[100vw] md:max-w-[100vw]">
-          Showing {displayedProducts.length} of {mockProducts.length} items
+          Showing {displayedProducts.length} of {products?.length || 0} items
         </div>
 
         {/* 상품 카드 그리드 */}
         <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-x-2 gap-y-10 items-start mx-auto sm:max-w-[100vw] md:max-w-[100vw]">
-          {displayedProducts.map((product) => (
-            <BlurFade key={product.id}>
-              <ProductCard
-                productId={product.id}
-                image={product.image || "/sample.png"}
-                title={product.title}
-                price={product.price}
-                currency={product.currency}
-                priceType={product.priceType || "fixed"}
-                seller={product.sellerId}
-                isSold={product.isSold || false}
-              />
-            </BlurFade>
-          ))}
+          {displayedProducts && displayedProducts.length > 0 ? (
+            displayedProducts.map((product: any) => (
+              <BlurFade key={product.product_id}>
+                <ProductCard
+                  productId={product.product_id}
+                  image={product.primary_image?.startsWith('/') ? product.primary_image : `/sample.png`}
+                  title={product.title || "No title"}
+                  price={product.price}
+                  currency={product.currency || "THB"}
+                  priceType={product.price_type || "fixed"}
+                  seller={product.seller_name}
+                  is_sold={product.is_sold || false}
+                />
+              </BlurFade>
+            ))
+          ) : (
+            <div className="col-span-full text-center py-8">
+              <p>No products found</p>
+            </div>
+          )}
         </div>
 
         {/* 로딩 인디케이터 */}

@@ -11,14 +11,14 @@ const formatPrice = (price: number, currency: string = "THB"): string => {
 
 // Props 검증 스키마
 const productCardSchema = z.object({
-  productId: z.string().min(1, "Product ID is required"),
+  productId: z.union([z.string(), z.number()]).transform(String),
   image: z.string().min(1, "Image is required"),
   title: z.string().min(1, "Title is required").max(100, "Title must be less than 100 characters"),
   price: z.number().min(0, "Price must be non-negative"),
   currency: z.string().optional().default("THB"),
   seller: z.string().optional(),
   likes: z.number().min(0, "Likes cannot be negative").optional(),
-  isSold: z.boolean().optional(),
+  is_sold: z.boolean().optional(),
   priceType: z.string().optional().default("fixed"),
 });
 
@@ -60,7 +60,7 @@ export function ProductCard({
   currency = "THB",
   seller = "Multiple Owners", 
   likes = 0,
-  isSold = false,
+  is_sold = false,
   priceType = "fixed"
 }: ProductCardProps) {
   // Props 검증
@@ -72,7 +72,7 @@ export function ProductCard({
     currency,
     seller, 
     likes,
-    isSold,
+    is_sold,
     priceType
   });
   
@@ -104,12 +104,12 @@ export function ProductCard({
           <div className="relative w-full h-40 sm:h-48 md:h-60 overflow-hidden rounded-t-lg">
             <img src={image} className="object-cover w-full h-full group-hover:scale-110 group-hover:brightness-110 transition-all duration-300 ease-out" alt={title} />
             <button className="absolute top-3 left-3 bg-black/60 text-white text-xs px-3 py-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">Save</button>
-            {isSold && (
+            {is_sold && (
               <div className="absolute top-3 right-3 bg-red-500 text-white text-xs px-2 py-1 rounded-full font-medium shadow-lg">
                 SOLD
               </div>
             )}
-            {isFree && !isSold && (
+            {isFree && !is_sold && (
               <div className="absolute top-3 right-3 bg-green-500 text-white text-xs px-2 py-1 rounded-full font-medium shadow-lg">
                 FREE
               </div>

@@ -80,7 +80,7 @@ export const products = pgTable("products", {
   location: text("location").notNull(),
   description: text("description").notNull(),
   tags: jsonb().notNull().default([]),
-  isSold: boolean().notNull().default(false),
+  is_sold: boolean().notNull().default(false),
   price_type: priceTypes().notNull().default("fixed"),
   stats: jsonb().notNull().default({views: 0, likes: 0}),
   created_at: timestamp("created_at").notNull().defaultNow(),
