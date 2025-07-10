@@ -20,6 +20,9 @@ export const loader = async ({ params, request }: Route.LoaderArgs) => {
   const { id } = params;
   const { client, headers } = makeSSRClient(request);
   const product = await getProductById(client, Number(id));
+  if (isNaN(Number(id))) {
+    throw new Error("Invalid product ID");
+  }
   return { product };
 }
 

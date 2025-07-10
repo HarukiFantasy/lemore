@@ -203,6 +203,7 @@ export const giveAndGlowReviews = pgTable("give_and_glow_reviews", {
   rating: integer("rating").notNull(),
   review: text("review").notNull(),
   timestamp: text("timestamp").notNull(),
+  location: text("location").notNull(),
   tags: jsonb("tags").notNull().default([]),
   created_at: timestamp("created_at").notNull().defaultNow(),
   updated_at: timestamp("updated_at").notNull().defaultNow(),

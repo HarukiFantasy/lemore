@@ -1,20 +1,20 @@
-CREATE TYPE "public"."declutter_situation" AS ENUM('moving', 'downsizing', 'spring_cleaning', 'digital_declutter', 'minimalism', 'inheritance', 'relationship_change', 'other');
+CREATE TYPE "public"."declutter_situation" AS ENUM('Moving', 'Downsizing', 'Spring Cleaning', 'Digital Declutter', 'Minimalism', 'Inheritance', 'Relationship Change', 'Other');
 --> statement-breakpoint
-CREATE TYPE "public"."environmental_impact_level" AS ENUM('low', 'medium', 'high', 'critical');
+CREATE TYPE "public"."environmental_impact_level" AS ENUM('Low', 'Medium', 'High', 'Critical');
 --> statement-breakpoint
 CREATE TYPE "public"."local_tip_categories" AS ENUM('Visa', 'Bank', 'Tax', 'Health', 'Education', 'Transportation', 'Other');
 --> statement-breakpoint
-CREATE TYPE "public"."message_type" AS ENUM('text', 'image', 'file', 'audio', 'video', 'location');
+CREATE TYPE "public"."message_type" AS ENUM('Text', 'Image', 'File', 'Audio', 'Video', 'Location');
 --> statement-breakpoint
-CREATE TYPE "public"."notification_type" AS ENUM('message', 'like', 'reply', 'mention');
+CREATE TYPE "public"."notification_type" AS ENUM('Message', 'Like', 'Reply', 'Mention');
 --> statement-breakpoint
-CREATE TYPE "public"."price_type" AS ENUM('fixed', 'negotiable', 'free', 'auction');
+CREATE TYPE "public"."price_type" AS ENUM('Fixed', 'Negotiable', 'Free', 'Auction');
 --> statement-breakpoint
-CREATE TYPE "public"."product_category" AS ENUM('electronics', 'clothing', 'books', 'home', 'sports', 'beauty', 'toys', 'automotive', 'health', 'other');
+CREATE TYPE "public"."product_category" AS ENUM('Electronics', 'Clothing', 'Books', 'Home', 'Sports', 'Beauty', 'Toys', 'Automotive', 'Health', 'Other');
 --> statement-breakpoint
-CREATE TYPE "public"."product_condition" AS ENUM('new', 'like_new', 'excellent', 'good', 'fair', 'poor');
+CREATE TYPE "public"."product_condition" AS ENUM('New', 'Like New', 'Excellent', 'Good', 'Fair', 'Poor');
 --> statement-breakpoint
-CREATE TYPE "public"."recommendation_action" AS ENUM('keep', 'sell', 'donate', 'recycle', 'repair', 'repurpose', 'discard');
+CREATE TYPE "public"."recommendation_action" AS ENUM('Keep', 'Sell', 'Donate', 'Recycle', 'Repair', 'Repurpose', 'Discard');
 --> statement-breakpoint
 CREATE TABLE "categories" (
     "category_id" bigint PRIMARY KEY GENERATED ALWAYS AS IDENTITY (
@@ -34,6 +34,7 @@ CREATE TABLE "give_and_glow_reviews" (
 	"rating" integer NOT NULL,
 	"review" text NOT NULL,
 	"timestamp" text NOT NULL,
+	"location" text NOT NULL,
 	"tags" jsonb DEFAULT '[]'::jsonb NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL
@@ -85,6 +86,7 @@ CREATE TABLE "local_business_reviews" (
 	"author_avatar" text,
 	"timestamp" text NOT NULL,
 	"tags" jsonb DEFAULT '[]'::jsonb NOT NULL,
+	"content" text,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	CONSTRAINT "local_business_reviews_business_id_author_pk" PRIMARY KEY("business_id","author")
 );
@@ -166,6 +168,7 @@ CREATE TABLE "product_images" (
 CREATE TABLE "product_likes" (
     "product_id" bigint NOT NULL,
     "user_id" uuid NOT NULL,
+    "created_at" timestamp DEFAULT now() NOT NULL,
     CONSTRAINT "product_likes_product_id_user_id_pk" PRIMARY KEY ("product_id", "user_id")
 );
 --> statement-breakpoint
@@ -191,8 +194,8 @@ CREATE TABLE "products" (
 	"location" text NOT NULL,
 	"description" text NOT NULL,
 	"tags" jsonb DEFAULT '[]'::jsonb NOT NULL,
-	"isSold" boolean DEFAULT false NOT NULL,
-	"price_type" "price_type" DEFAULT 'fixed' NOT NULL,
+	"is_sold" boolean DEFAULT false NOT NULL,
+	"price_type" "price_type" DEFAULT 'Fixed' NOT NULL,
 	"stats" jsonb DEFAULT '{"views":0,"likes":0}'::jsonb NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL
@@ -217,7 +220,7 @@ CREATE TABLE "user_messages" (
     "sender_id" uuid NOT NULL,
     "receiver_id" uuid NOT NULL,
     "content" text NOT NULL,
-    "message_type" "message_type" DEFAULT 'text' NOT NULL,
+    "message_type" "message_type" DEFAULT 'Text' NOT NULL,
     "media_url" text,
     "seen" boolean DEFAULT false NOT NULL,
     "created_at" timestamp DEFAULT now() NOT NULL

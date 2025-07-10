@@ -5,43 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1751987253102,
-      "tag": "0000_pretty_starbolt",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1751994614635,
-      "tag": "0001_nasty_blackheart",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1751994725784,
-      "tag": "0002_quick_wither",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "7",
-      "when": 1752018033804,
-      "tag": "0003_rare_jackpot",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "7",
-      "when": 1752021387857,
-      "tag": "0004_reflective_fallen_one",
-      "breakpoints": true
-    },
-    {
-      "idx": 5,
-      "version": "7",
-      "when": 1752070999674,
-      "tag": "0005_bizarre_lady_deathstrike",
+      "when": 1752151840197,
+      "tag": "0000_numerous_rattler",
       "breakpoints": true
     }
   ]

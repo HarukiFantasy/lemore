@@ -9,8 +9,7 @@ SELECT
     give_and_glow_reviews.giver_id,
     give_and_glow_reviews.receiver_id,
     give_and_glow_reviews.product_id,
-    give_and_glow_reviews.reviews,
-    give_and_glow_reviews.likes,
+    give_and_glow_reviews.location,
     -- Giver profile data
     giver_profile.username as giver_username,
     giver_profile.avatar_url as giver_avatar_url,

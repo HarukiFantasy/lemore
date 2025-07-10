@@ -1,5 +1,5 @@
 {
-  "id": "b9e37551-4675-43ec-98a1-62ca0fe2d704",
+  "id": "a17d462f-e17c-452d-a28a-1ab2fc2013e2",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -101,6 +101,12 @@
         },
         "timestamp": {
           "name": "timestamp",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "location": {
+          "name": "location",
           "type": "text",
           "primaryKey": false,
           "notNull": true
@@ -468,6 +474,12 @@
           "primaryKey": false,
           "notNull": true,
           "default": "'[]'::jsonb"
+        },
+        "content": {
+          "name": "content",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
         },
         "created_at": {
           "name": "created_at",
@@ -1095,6 +1107,13 @@
           "type": "uuid",
           "primaryKey": false,
           "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
         }
       },
       "indexes": {},
@@ -1281,8 +1300,8 @@
           "notNull": true,
           "default": "'[]'::jsonb"
         },
-        "isSold": {
-          "name": "isSold",
+        "is_sold": {
+          "name": "is_sold",
           "type": "boolean",
           "primaryKey": false,
           "notNull": true,
@@ -1294,7 +1313,7 @@
           "typeSchema": "public",
           "primaryKey": false,
           "notNull": true,
-          "default": "'fixed'"
+          "default": "'Fixed'"
         },
         "stats": {
           "name": "stats",
@@ -1441,7 +1460,7 @@
           "typeSchema": "public",
           "primaryKey": false,
           "notNull": true,
-          "default": "'text'"
+          "default": "'Text'"
         },
         "media_url": {
           "name": "media_url",
@@ -1919,24 +1938,24 @@
       "name": "declutter_situation",
       "schema": "public",
       "values": [
-        "moving",
-        "downsizing",
-        "spring_cleaning",
-        "digital_declutter",
-        "minimalism",
-        "inheritance",
-        "relationship_change",
-        "other"
+        "Moving",
+        "Downsizing",
+        "Spring Cleaning",
+        "Digital Declutter",
+        "Minimalism",
+        "Inheritance",
+        "Relationship Change",
+        "Other"
       ]
     },
     "public.environmental_impact_level": {
       "name": "environmental_impact_level",
       "schema": "public",
       "values": [
-        "low",
-        "medium",
-        "high",
-        "critical"
+        "Low",
+        "Medium",
+        "High",
+        "Critical"
       ]
     },
     "public.local_tip_categories": {
@@ -1956,73 +1975,73 @@
       "name": "message_type",
       "schema": "public",
       "values": [
-        "text",
-        "image",
-        "file",
-        "audio",
-        "video",
-        "location"
+        "Text",
+        "Image",
+        "File",
+        "Audio",
+        "Video",
+        "Location"
       ]
     },
     "public.notification_type": {
       "name": "notification_type",
       "schema": "public",
       "values": [
-        "message",
-        "like",
-        "reply",
-        "mention"
+        "Message",
+        "Like",
+        "Reply",
+        "Mention"
       ]
     },
     "public.price_type": {
       "name": "price_type",
       "schema": "public",
       "values": [
-        "fixed",
-        "negotiable",
-        "free",
-        "auction"
+        "Fixed",
+        "Negotiable",
+        "Free",
+        "Auction"
       ]
     },
     "public.product_category": {
       "name": "product_category",
       "schema": "public",
       "values": [
-        "electronics",
-        "clothing",
-        "books",
-        "home",
-        "sports",
-        "beauty",
-        "toys",
-        "automotive",
-        "health",
-        "other"
+        "Electronics",
+        "Clothing",
+        "Books",
+        "Home",
+        "Sports",
+        "Beauty",
+        "Toys",
+        "Automotive",
+        "Health",
+        "Other"
       ]
     },
     "public.product_condition": {
       "name": "product_condition",
       "schema": "public",
       "values": [
-        "new",
-        "like_new",
-        "excellent",
-        "good",
-        "fair",
-        "poor"
+        "New",
+        "Like New",
+        "Excellent",
+        "Good",
+        "Fair",
+        "Poor"
       ]
     },
     "public.recommendation_action": {
       "name": "recommendation_action",
       "schema": "public",
       "values": [
-        "keep",
-        "sell",
-        "donate",
-        "recycle",
-        "repair",
-        "repurpose",
-        "discard"
+        "Keep",
+        "Sell",
+        "Donate",
+        "Recycle",
+        "Repair",
+        "Repurpose",
+        "Discard"
       ]
     }
   },

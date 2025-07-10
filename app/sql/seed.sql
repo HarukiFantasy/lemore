@@ -1,28 +1,28 @@
--- Seed for categories
+-- SEED DATA FOR ALL TABLES (except user_profiles)
+-- profile_id values to use everywhere: '9347748f-8c23-4fae-89a1-a8a3dde71b9d', 'f2e07533-64f9-4d39-8aaf-c018d52ebace'
+
+-- 1. categories
 INSERT INTO
     categories (name)
-VALUES ('electronics'),
-    ('clothing'),
-    ('books'),
-    ('home'),
-    ('sports'),
-    ('beauty'),
-    ('toys'),
-    ('automotive'),
-    ('health'),
-    ('other');
+VALUES ('Electronics'),
+    ('Clothing'),
+    ('Books'),
+    ('Home'),
+    ('Sports'),
+    ('Beauty'),
+    ('Toys'),
+    ('Automotive'),
+    ('Health'),
+    ('Other');
 
--- Seed for local_businesses
+-- 2. local_businesses
 INSERT INTO
     local_businesses (
         name,
         type,
         location,
-        average_rating,
-        total_reviews,
         price_range,
         tags,
-        image,
         address,
         website,
         description
@@ -31,11 +31,8 @@ VALUES (
         'Cafe Aroma',
         'Cafe',
         'Bangkok',
-        4.5,
-        120,
         '$$',
         '["coffee","wifi"]',
-        'cafe1.png',
         '123 Main St',
         'http://cafearoma.com',
         'Cozy cafe with great coffee'
@@ -44,1336 +41,240 @@ VALUES (
         'Book Haven',
         'Bookstore',
         'Bangkok',
-        4.8,
-        80,
         '$',
         '["books","reading"]',
-        'book1.png',
         '456 Book Rd',
         'http://bookhaven.com',
-        'Best bookstore in town'
+        'Wide selection of books'
     ),
     (
         'Fit Gym',
         'Gym',
         'Bangkok',
-        4.2,
-        60,
-        '$$',
+        '$$$',
         '["fitness","gym"]',
-        'gym1.png',
         '789 Fit Ave',
         'http://fitgym.com',
-        'Modern gym with classes'
+        'Modern gym facilities'
     ),
     (
         'Green Grocer',
         'Grocery',
         'Bangkok',
-        4.6,
-        90,
-        '$',
+        '$$',
         '["organic","fresh"]',
-        'grocery1.png',
         '321 Green St',
         'http://greengrocer.com',
-        'Organic grocery store'
+        'Organic produce'
     ),
     (
         'Tech World',
         'Electronics',
         'Bangkok',
-        4.3,
-        70,
         '$$$',
-        '["electronics","gadgets"]',
-        'tech1.png',
+        '["tech","gadgets"]',
         '654 Tech Rd',
         'http://techworld.com',
-        'Latest gadgets and electronics'
-    ),
-    (
-        'Beauty Bliss',
-        'Salon',
-        'Bangkok',
-        4.7,
-        50,
-        '$$',
-        '["beauty","salon"]',
-        'salon1.png',
-        '987 Beauty Ave',
-        'http://beautybliss.com',
-        'Top-rated beauty salon'
+        'Latest electronics'
     ),
     (
         'Toy Planet',
         'Toy Store',
         'Bangkok',
-        4.4,
-        40,
         '$$',
         '["toys","kids"]',
-        'toy1.png',
-        '159 Toy St',
+        '987 Toy Ave',
         'http://toyplanet.com',
         'Toys for all ages'
     ),
     (
-        'Auto Care',
-        'Car Service',
+        'Beauty Bliss',
+        'Salon',
         'Bangkok',
-        4.1,
-        30,
+        '$$',
+        '["beauty","salon"]',
+        '159 Beauty St',
+        'http://beautybliss.com',
+        'Beauty treatments'
+    ),
+    (
+        'AutoFix',
+        'Auto Repair',
+        'Bangkok',
         '$$$',
-        '["car","service"]',
-        'auto1.png',
+        '["auto","repair"]',
         '753 Auto Rd',
-        'http://autocare.com',
-        'Reliable car service'
+        'http://autofix.com',
+        'Car repair services'
     ),
     (
         'Health Hub',
         'Clinic',
         'Bangkok',
-        4.9,
-        100,
-        '$$',
+        '$$$',
         '["health","clinic"]',
-        'clinic1.png',
         '852 Health Ave',
         'http://healthhub.com',
-        'Comprehensive health services'
+        'Health services'
     ),
     (
         'Home Comforts',
         'Furniture',
         'Bangkok',
-        4.0,
-        20,
         '$$$',
-        '["furniture","home"]',
-        'furniture1.png',
+        '["home","furniture"]',
         '951 Home St',
         'http://homecomforts.com',
-        'Quality home furniture'
+        'Furniture and decor'
     );
 
--- Seed for user_conversations
+-- 3. let_go_buddy_sessions
 INSERT INTO
-    user_conversations (created_at)
-VALUES (now()),
-    (now()),
-    (now()),
-    (now()),
-    (now()),
-    (now()),
-    (now()),
-    (now()),
-    (now()),
-    (now());
-
--- Seed for let_go_buddy_sessions
-INSERT INTO
-    let_go_buddy_sessions (
-        user_id,
-        situation,
-        created_at,
-        updated_at,
-        is_completed
-    )
+    let_go_buddy_sessions (user_id, situation)
 VALUES (
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        'moving',
-        now(),
-        now(),
-        false
+        '9347748f-8c23-4fae-89a1-a8a3dde71b9d',
+        'Moving'
     ),
     (
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        'downsizing',
-        now(),
-        now(),
-        false
+        'f2e07533-64f9-4d39-8aaf-c018d52ebace',
+        'Downsizing'
     ),
     (
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        'spring_cleaning',
-        now(),
-        now(),
-        false
+        '9347748f-8c23-4fae-89a1-a8a3dde71b9d',
+        'Spring Cleaning'
     ),
     (
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        'digital_declutter',
-        now(),
-        now(),
-        false
+        'f2e07533-64f9-4d39-8aaf-c018d52ebace',
+        'Digital Declutter'
     ),
     (
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        'minimalism',
-        now(),
-        now(),
-        false
+        '9347748f-8c23-4fae-89a1-a8a3dde71b9d',
+        'Minimalism'
     ),
     (
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        'inheritance',
-        now(),
-        now(),
-        false
+        'f2e07533-64f9-4d39-8aaf-c018d52ebace',
+        'Inheritance'
     ),
     (
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        'relationship_change',
-        now(),
-        now(),
-        false
+        '9347748f-8c23-4fae-89a1-a8a3dde71b9d',
+        'Relationship Change'
     ),
     (
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        'other',
-        now(),
-        now(),
-        false
+        'f2e07533-64f9-4d39-8aaf-c018d52ebace',
+        'Other'
     ),
     (
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        'moving',
-        now(),
-        now(),
-        true
+        '9347748f-8c23-4fae-89a1-a8a3dde71b9d',
+        'Moving'
     ),
     (
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        'downsizing',
-        now(),
-        now(),
-        true
+        'f2e07533-64f9-4d39-8aaf-c018d52ebace',
+        'Downsizing'
     );
 
--- Seed for products
+-- 4. products
 INSERT INTO
     products (
         seller_id,
         title,
         price,
-        currency,
         category_id,
         condition,
         location,
-        description,
-        tags,
-        "isSold",
-        price_type,
-        stats,
-        created_at,
-        updated_at
+        description
     )
 VALUES (
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
+        '9347748f-8c23-4fae-89a1-a8a3dde71b9d',
         'iPhone 12',
-        25000.00,
-        'THB',
+        20000,
         1,
-        'like_new',
+        'Excellent',
         'Bangkok',
-        'Gently used iPhone 12',
-        '["phone","apple"]',
-        false,
-        'fixed',
-        '{"views":10,"likes":2}',
-        now(),
-        now()
+        'Gently used iPhone 12'
     ),
     (
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
+        'f2e07533-64f9-4d39-8aaf-c018d52ebace',
         'Yoga Mat',
-        500.00,
-        'THB',
+        500,
         5,
-        'good',
+        'Good',
         'Bangkok',
-        'Non-slip yoga mat',
-        '["yoga","fitness"]',
-        false,
-        'fixed',
-        '{"views":5,"likes":1}',
-        now(),
-        now()
+        'Non-slip yoga mat'
     ),
     (
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        'Bookshelf',
-        1200.00,
-        'THB',
+        '9347748f-8c23-4fae-89a1-a8a3dde71b9d',
+        'Book Set',
+        800,
+        3,
+        'Like New',
+        'Bangkok',
+        'Classic literature set'
+    ),
+    (
+        'f2e07533-64f9-4d39-8aaf-c018d52ebace',
+        'Sofa',
+        7000,
         4,
-        'excellent',
+        'Fair',
         'Bangkok',
-        'Wooden bookshelf',
-        '["furniture","books"]',
-        false,
-        'negotiable',
-        '{"views":8,"likes":0}',
-        now(),
-        now()
+        'Comfortable 3-seater sofa'
     ),
     (
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        'Running Shoes',
-        2000.00,
-        'THB',
+        '9347748f-8c23-4fae-89a1-a8a3dde71b9d',
+        'Bicycle',
+        3500,
         5,
-        'good',
+        'Good',
         'Bangkok',
-        'Nike running shoes',
-        '["shoes","nike"]',
-        false,
-        'fixed',
-        '{"views":12,"likes":3}',
-        now(),
-        now()
+        'Mountain bike'
     ),
     (
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        'Blender',
-        800.00,
-        'THB',
-        4,
-        'like_new',
+        'f2e07533-64f9-4d39-8aaf-c018d52ebace',
+        'Hair Dryer',
+        1200,
+        6,
+        'Excellent',
         'Bangkok',
-        'Kitchen blender',
-        '["kitchen","appliance"]',
-        false,
-        'fixed',
-        '{"views":6,"likes":1}',
-        now(),
-        now()
+        'Powerful hair dryer'
     ),
     (
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        'Dress',
-        700.00,
-        'THB',
-        2,
-        'excellent',
-        'Bangkok',
-        'Summer dress',
-        '["clothing","summer"]',
-        false,
-        'fixed',
-        '{"views":7,"likes":2}',
-        now(),
-        now()
-    ),
-    (
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        'Laptop',
-        30000.00,
-        'THB',
-        1,
-        'good',
-        'Bangkok',
-        'Dell XPS 13',
-        '["laptop","dell"]',
-        false,
-        'fixed',
-        '{"views":15,"likes":4}',
-        now(),
-        now()
-    ),
-    (
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
+        '9347748f-8c23-4fae-89a1-a8a3dde71b9d',
         'Toy Car',
-        300.00,
-        'THB',
+        300,
         7,
-        'like_new',
+        'Like New',
         'Bangkok',
-        'Remote control car',
-        '["toy","car"]',
-        false,
-        'fixed',
-        '{"views":3,"likes":0}',
-        now(),
-        now()
+        'Remote control car'
     ),
     (
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        'Face Cream',
-        400.00,
-        'THB',
-        6,
-        'new',
-        'Bangkok',
-        'Moisturizing face cream',
-        '["beauty","cream"]',
-        false,
-        'fixed',
-        '{"views":2,"likes":0}',
-        now(),
-        now()
-    ),
-    (
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
+        'f2e07533-64f9-4d39-8aaf-c018d52ebace',
         'Car Seat',
-        1500.00,
-        'THB',
+        1500,
         8,
-        'good',
+        'Good',
         'Bangkok',
-        'Child car seat',
-        '["car","child"]',
-        false,
-        'fixed',
-        '{"views":4,"likes":1}',
-        now(),
-        now()
-    );
-
-'3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        'iPhone 12',
-        25000.00,
-        'THB',
-        1,
-        'like_new',
-        'Bangkok',
-        'Gently used iPhone 12',
-        '["phone","apple"]',
-        false,
-        'fixed',
-        '{"views":10,"likes":2}',
-        now(),
-        now()
+        'Child car seat'
     ),
     (
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        'Yoga Mat',
-        500.00,
-        'THB',
-        5,
-        'good',
-        'Bangkok',
-        'Non-slip yoga mat',
-        '["yoga","fitness"]',
-        false,
-        'fixed',
-        '{"views":5,"likes":1}',
-        now(),
-        now()
-    ),
-    (
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        'Bookshelf',
-        1200.00,
-        'THB',
-        4,
-        'excellent',
-        'Bangkok',
-        'Wooden bookshelf',
-        '["furniture","books"]',
-        false,
-        'negotiable',
-        '{"views":8,"likes":0}',
-        now(),
-        now()
-    ),
-    (
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        'Running Shoes',
-        2000.00,
-        'THB',
-        5,
-        'good',
-        'Bangkok',
-        'Nike running shoes',
-        '["shoes","nike"]',
-        false,
-        'fixed',
-        '{"views":12,"likes":3}',
-        now(),
-        now()
-    ),
-    (
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        'Blender',
-        800.00,
-        'THB',
-        4,
-        'like_new',
-        'Bangkok',
-        'Kitchen blender',
-        '["kitchen","appliance"]',
-        false,
-        'fixed',
-        '{"views":6,"likes":1}',
-        now(),
-        now()
-    ),
-    (
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        'Dress',
-        700.00,
-        'THB',
-        2,
-        'excellent',
-        'Bangkok',
-        'Summer dress',
-        '["clothing","summer"]',
-        false,
-        'fixed',
-        '{"views":7,"likes":2}',
-        now(),
-        now()
-    ),
-    (
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        'Laptop',
-        30000.00,
-        'THB',
-        1,
-        'good',
-        'Bangkok',
-        'Dell XPS 13',
-        '["laptop","dell"]',
-        false,
-        'fixed',
-        '{"views":15,"likes":4}',
-        now(),
-        now()
-    ),
-    (
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        'Toy Car',
-        300.00,
-        'THB',
-        7,
-        'like_new',
-        'Bangkok',
-        'Remote control car',
-        '["toy","car"]',
-        false,
-        'fixed',
-        '{"views":3,"likes":0}',
-        now(),
-        now()
-    ),
-    (
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        'Face Cream',
-        400.00,
-        'THB',
-        6,
-        'new',
-        'Bangkok',
-        'Moisturizing face cream',
-        '["beauty","cream"]',
-        false,
-        'fixed',
-        '{"views":2,"likes":0}',
-        now(),
-        now()
-    ),
-    (
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        'Car Seat',
-        1500.00,
-        'THB',
-        8,
-        'good',
-        'Bangkok',
-        'Child car seat',
-        '["car","child"]',
-        false,
-        'fixed',
-        '{"views":4,"likes":1}',
-        now(),
-        now()
-    );
-
--- Seed for local_tip_posts
-INSERT INTO
-    local_tip_posts (
-        title,
-        content,
-        category,
-        location,
-        author,
-        stats,
-        created_at,
-        updated_at
-    )
-VALUES (
-        'Best Coffee Shops in Bangkok',
-        'Here are my top picks for coffee in Bangkok...',
-        'Other',
-        'Bangkok',
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        '{"likes":15,"comments":5,"reviews":2}',
-        now(),
-        now()
-    ),
-    (
-        'Visa Extension Process',
-        'Step by step guide for visa extension...',
-        'Visa',
-        'Bangkok',
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        '{"likes":25,"comments":8,"reviews":3}',
-        now(),
-        now()
-    ),
-    (
-        'Bank Account Opening',
-        'How to open a bank account as a foreigner...',
-        'Bank',
-        'Bangkok',
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        '{"likes":12,"comments":3,"reviews":1}',
-        now(),
-        now()
-    ),
-    (
-        'Tax Filing Guide',
-        'Complete guide for filing taxes in Thailand...',
-        'Tax',
-        'Bangkok',
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        '{"likes":8,"comments":2,"reviews":0}',
-        now(),
-        now()
-    ),
-    (
-        'Healthcare System Overview',
-        'Understanding the healthcare system...',
-        'Health',
-        'Bangkok',
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        '{"likes":20,"comments":6,"reviews":4}',
-        now(),
-        now()
-    ),
-    (
-        'International Schools',
-        'Best international schools in Bangkok...',
-        'Education',
-        'Bangkok',
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        '{"likes":18,"comments":4,"reviews":2}',
-        now(),
-        now()
-    ),
-    (
-        'BTS and MRT Guide',
-        'Complete guide to public transportation...',
-        'Transportation',
-        'Bangkok',
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        '{"likes":30,"comments":10,"reviews":5}',
-        now(),
-        now()
-    ),
-    (
-        'Night Markets Guide',
-        'Best night markets to visit...',
-        'Other',
-        'Bangkok',
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        '{"likes":22,"comments":7,"reviews":3}',
-        now(),
-        now()
-    ),
-    (
-        'Apartment Hunting Tips',
-        'How to find the perfect apartment...',
-        'Other',
-        'Bangkok',
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        '{"likes":16,"comments":5,"reviews":2}',
-        now(),
-        now()
-    ),
-    (
-        'Thai Language Learning',
-        'Best resources for learning Thai...',
-        'Education',
-        'Bangkok',
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        '{"likes":14,"comments":3,"reviews":1}',
-        now(),
-        now()
-    );
-
--- Seed for local_tip_comments
-INSERT INTO
-    local_tip_comments (
-        post_id,
-        author,
-        content,
-        likes,
-        created_at
-    )
-VALUES (
-        1,
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        'Great recommendations!',
-        3,
-        now()
-    ),
-    (
-        1,
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        'I love Cafe Aroma too!',
-        2,
-        now()
-    ),
-    (
-        2,
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        'Very helpful guide',
-        4,
-        now()
-    ),
-    (
-        2,
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        'Thanks for sharing',
-        1,
-        now()
-    ),
-    (
-        3,
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        'This saved me a lot of time',
-        5,
-        now()
-    ),
-    (
-        4,
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        'Clear and concise',
-        2,
-        now()
-    ),
-    (
-        5,
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        'Excellent overview',
-        3,
-        now()
-    ),
-    (
-        6,
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        'Very informative',
-        2,
-        now()
-    ),
-    (
-        7,
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        'Perfect timing for this guide',
-        6,
-        now()
-    ),
-    (
-        8,
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        'Love the night markets!',
-        4,
-        now()
-    );
-
--- Seed for local_tip_post_likes (composite primary key)
-INSERT INTO
-    local_tip_post_likes (post_id, user_id, created_at)
-VALUES (
-        1,
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        now()
-    ),
-    (
-        2,
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        now()
-    ),
-    (
-        3,
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        now()
-    ),
-    (
-        4,
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        now()
-    ),
-    (
-        5,
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        now()
-    ),
-    (
-        6,
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        now()
-    ),
-    (
-        7,
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        now()
-    ),
-    (
-        8,
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        now()
-    ),
-    (
+        '9347748f-8c23-4fae-89a1-a8a3dde71b9d',
+        'Blood Pressure Monitor',
+        900,
         9,
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        now()
+        'Excellent',
+        'Bangkok',
+        'Digital monitor'
     ),
     (
-        10,
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        now()
+        'f2e07533-64f9-4d39-8aaf-c018d52ebace',
+        'Lamp',
+        400,
+        4,
+        'Good',
+        'Bangkok',
+        'Desk lamp'
     );
 
--- Seed for local_tip_comment_likes (composite primary key)
-INSERT INTO
-    local_tip_comment_likes (
-        comment_id,
-        user_id,
-        created_at
-    )
-VALUES (
-        1,
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        now()
-    ),
-    (
-        2,
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        now()
-    ),
-    (
-        3,
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        now()
-    ),
-    (
-        4,
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        now()
-    ),
-    (
-        5,
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        now()
-    ),
-    (
-        6,
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        now()
-    ),
-    (
-        7,
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        now()
-    ),
-    (
-        8,
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        now()
-    ),
-    (
-        9,
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        now()
-    ),
-    (
-        10,
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        now()
-    );
-
--- Seed for local_business_reviews (composite primary key)
-INSERT INTO
-    local_business_reviews (
-        business_id,
-        rating,
-        author,
-        author_avatar,
-        timestamp,
-        tags,
-        created_at
-    )
-VALUES (
-        1,
-        5,
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        'avatar1.png',
-        '2024-01-15',
-        '["coffee","atmosphere"]',
-        now()
-    ),
-    (
-        2,
-        4,
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        'avatar1.png',
-        '2024-01-16',
-        '["books","quiet"]',
-        now()
-    ),
-    (
-        3,
-        4,
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        'avatar1.png',
-        '2024-01-17',
-        '["gym","equipment"]',
-        now()
-    ),
-    (
-        4,
-        5,
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        'avatar1.png',
-        '2024-01-18',
-        '["organic","fresh"]',
-        now()
-    ),
-    (
-        5,
-        3,
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        'avatar1.png',
-        '2024-01-19',
-        '["electronics","expensive"]',
-        now()
-    ),
-    (
-        6,
-        5,
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        'avatar1.png',
-        '2024-01-20',
-        '["beauty","service"]',
-        now()
-    ),
-    (
-        7,
-        4,
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        'avatar1.png',
-        '2024-01-21',
-        '["toys","kids"]',
-        now()
-    ),
-    (
-        8,
-        3,
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        'avatar1.png',
-        '2024-01-22',
-        '["car","service"]',
-        now()
-    ),
-    (
-        9,
-        5,
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        'avatar1.png',
-        '2024-01-23',
-        '["health","professional"]',
-        now()
-    ),
-    (
-        10,
-        4,
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        'avatar1.png',
-        '2024-01-24',
-        '["furniture","quality"]',
-        now()
-    );
-
--- Seed for message_participants (composite primary key)
-INSERT INTO
-    message_participants (
-        conversation_id,
-        profile_id,
-        created_at
-    )
-VALUES (
-        1,
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        now()
-    ),
-    (
-        2,
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        now()
-    ),
-    (
-        3,
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        now()
-    ),
-    (
-        4,
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        now()
-    ),
-    (
-        5,
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        now()
-    ),
-    (
-        6,
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        now()
-    ),
-    (
-        7,
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        now()
-    ),
-    (
-        8,
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        now()
-    ),
-    (
-        9,
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        now()
-    ),
-    (
-        10,
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        now()
-    );
-
--- Seed for user_messages
-INSERT INTO
-    user_messages (
-        conversation_id,
-        sender_id,
-        receiver_id,
-        content,
-        message_type,
-        media_url,
-        seen,
-        created_at
-    )
-VALUES (
-        1,
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        'Hello!',
-        'text',
-        null,
-        false,
-        now()
-    ),
-    (
-        2,
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        'How are you?',
-        'text',
-        null,
-        true,
-        now()
-    ),
-    (
-        3,
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        'Check this out',
-        'image',
-        'image1.jpg',
-        false,
-        now()
-    ),
-    (
-        4,
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        'Great product!',
-        'text',
-        null,
-        true,
-        now()
-    ),
-    (
-        5,
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        'Is it still available?',
-        'text',
-        null,
-        false,
-        now()
-    ),
-    (
-        6,
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        'Yes, it is!',
-        'text',
-        null,
-        true,
-        now()
-    ),
-    (
-        7,
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        'Can we meet tomorrow?',
-        'text',
-        null,
-        false,
-        now()
-    ),
-    (
-        8,
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        'Sure, where?',
-        'text',
-        null,
-        true,
-        now()
-    ),
-    (
-        9,
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        'Here is the document',
-        'file',
-        'doc1.pdf',
-        false,
-        now()
-    ),
-    (
-        10,
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        'Thanks!',
-        'text',
-        null,
-        true,
-        now()
-    );
-
--- Seed for user_notifications
-INSERT INTO
-    user_notifications (
-        type,
-        sender_id,
-        receiver_id,
-        product_id,
-        message_id,
-        review_id,
-        is_read,
-        read_at,
-        data,
-        created_at
-    )
-VALUES (
-        'message',
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        null,
-        1,
-        null,
-        false,
-        null,
-        '{"message":"New message received"}',
-        now()
-    ),
-    (
-        'like',
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        1,
-        null,
-        null,
-        false,
-        null,
-        '{"product":"iPhone 12"}',
-        now()
-    ),
-    (
-        'reply',
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        null,
-        2,
-        null,
-        true,
-        now(),
-        '{"message":"Reply to your post"}',
-        now()
-    ),
-    (
-        'mention',
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        null,
-        3,
-        null,
-        false,
-        null,
-        '{"post":"Local tip post"}',
-        now()
-    ),
-    (
-        'message',
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        null,
-        4,
-        null,
-        true,
-        now(),
-        '{"message":"Product inquiry"}',
-        now()
-    ),
-    (
-        'like',
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        2,
-        null,
-        null,
-        false,
-        null,
-        '{"product":"Yoga Mat"}',
-        now()
-    ),
-    (
-        'reply',
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        null,
-        5,
-        null,
-        false,
-        null,
-        '{"message":"Comment reply"}',
-        now()
-    ),
-    (
-        'mention',
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        null,
-        6,
-        null,
-        true,
-        now(),
-        '{"post":"Community post"}',
-        now()
-    ),
-    (
-        'message',
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        null,
-        7,
-        null,
-        false,
-        null,
-        '{"message":"Meeting request"}',
-        now()
-    ),
-    (
-        'like',
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        3,
-        null,
-        null,
-        true,
-        now(),
-        '{"product":"Bookshelf"}',
-        now()
-    );
-
--- Seed for user_reviews
-INSERT INTO
-    user_reviews (
-        reviewer_id,
-        reviewee_id,
-        rating,
-        created_at
-    )
-VALUES (
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        5,
-        now()
-    ),
-    (
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        4,
-        now()
-    ),
-    (
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        5,
-        now()
-    ),
-    (
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        3,
-        now()
-    ),
-    (
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        4,
-        now()
-    ),
-    (
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        5,
-        now()
-    ),
-    (
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        4,
-        now()
-    ),
-    (
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        3,
-        now()
-    ),
-    (
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        5,
-        now()
-    ),
-    (
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        4,
-        now()
-    );
-
--- Seed for product_images (composite primary key)
+-- 5. product_images (composite PK)
 INSERT INTO
     product_images (
         product_id,
@@ -1381,120 +282,162 @@ INSERT INTO
         image_order,
         is_primary
     )
-VALUES (1, 'iphone1.jpg', 0, true),
-    (1, 'iphone2.jpg', 1, false),
-    (2, 'yoga1.jpg', 0, true),
-    (3, 'bookshelf1.jpg', 0, true),
-    (4, 'shoes1.jpg', 0, true),
-    (4, 'shoes2.jpg', 1, false),
-    (5, 'blender1.jpg', 0, true),
-    (6, 'dress1.jpg', 0, true),
-    (7, 'laptop1.jpg', 0, true),
-    (8, 'toycar1.jpg', 0, true);
+VALUES (
+        1,
+        'http://img.com/iphone.jpg',
+        0,
+        true
+    ),
+    (
+        2,
+        'http://img.com/yogamat.jpg',
+        0,
+        true
+    ),
+    (
+        3,
+        'http://img.com/bookset.jpg',
+        0,
+        true
+    ),
+    (
+        4,
+        'http://img.com/sofa.jpg',
+        0,
+        true
+    ),
+    (
+        5,
+        'http://img.com/bike.jpg',
+        0,
+        true
+    ),
+    (
+        6,
+        'http://img.com/hairdryer.jpg',
+        0,
+        true
+    ),
+    (
+        7,
+        'http://img.com/toycar.jpg',
+        0,
+        true
+    ),
+    (
+        8,
+        'http://img.com/carseat.jpg',
+        0,
+        true
+    ),
+    (
+        9,
+        'http://img.com/bpmonitor.jpg',
+        0,
+        true
+    ),
+    (
+        10,
+        'http://img.com/lamp.jpg',
+        0,
+        true
+    ),
+    (
+        1,
+        'http://img.com/iphone2.jpg',
+        1,
+        false
+    );
 
--- Seed for product_likes (composite primary key)
+-- 6. product_likes (composite PK)
 INSERT INTO
     product_likes (product_id, user_id)
 VALUES (
         1,
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634'
+        '9347748f-8c23-4fae-89a1-a8a3dde71b9d'
     ),
     (
         2,
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634'
+        'f2e07533-64f9-4d39-8aaf-c018d52ebace'
     ),
     (
         3,
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634'
+        '9347748f-8c23-4fae-89a1-a8a3dde71b9d'
     ),
     (
         4,
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634'
+        'f2e07533-64f9-4d39-8aaf-c018d52ebace'
     ),
     (
         5,
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634'
+        '9347748f-8c23-4fae-89a1-a8a3dde71b9d'
     ),
     (
         6,
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634'
+        'f2e07533-64f9-4d39-8aaf-c018d52ebace'
     ),
     (
         7,
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634'
+        '9347748f-8c23-4fae-89a1-a8a3dde71b9d'
     ),
     (
         8,
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634'
+        'f2e07533-64f9-4d39-8aaf-c018d52ebace'
     ),
     (
         9,
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634'
+        '9347748f-8c23-4fae-89a1-a8a3dde71b9d'
     ),
     (
         10,
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634'
+        'f2e07533-64f9-4d39-8aaf-c018d52ebace'
     );
 
--- Seed for product_views
+-- 7. product_views
 INSERT INTO
-    product_views (
-        product_id,
-        user_id,
-        viewed_at
-    )
+    product_views (product_id, user_id)
 VALUES (
         1,
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        now()
+        '9347748f-8c23-4fae-89a1-a8a3dde71b9d'
     ),
     (
         2,
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        now()
+        'f2e07533-64f9-4d39-8aaf-c018d52ebace'
     ),
     (
         3,
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        now()
+        '9347748f-8c23-4fae-89a1-a8a3dde71b9d'
     ),
     (
         4,
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        now()
+        'f2e07533-64f9-4d39-8aaf-c018d52ebace'
     ),
     (
         5,
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        now()
+        '9347748f-8c23-4fae-89a1-a8a3dde71b9d'
     ),
     (
         6,
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        now()
+        'f2e07533-64f9-4d39-8aaf-c018d52ebace'
     ),
     (
         7,
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        now()
+        '9347748f-8c23-4fae-89a1-a8a3dde71b9d'
     ),
     (
         8,
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        now()
+        'f2e07533-64f9-4d39-8aaf-c018d52ebace'
     ),
     (
         9,
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        now()
+        '9347748f-8c23-4fae-89a1-a8a3dde71b9d'
     ),
     (
         10,
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        now()
+        'f2e07533-64f9-4d39-8aaf-c018d52ebace'
     );
 
--- Seed for give_and_glow_reviews
+-- 8. give_and_glow_reviews
 INSERT INTO
     give_and_glow_reviews (
         product_id,
@@ -1504,132 +447,121 @@ INSERT INTO
         rating,
         review,
         timestamp,
-        tags,
-        created_at,
-        updated_at
+        location,
+        tags
     )
 VALUES (
         1,
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        'electronics',
+        '9347748f-8c23-4fae-89a1-a8a3dde71b9d',
+        'f2e07533-64f9-4d39-8aaf-c018d52ebace',
+        'Electronics',
         5,
-        'Great condition, fast delivery!',
-        '2024-01-15',
-        '["fast","good_condition"]',
-        now(),
-        now()
+        'Great product!',
+        '2024-06-01T10:00:00Z',
+        'Bangkok',
+        '["fast","friendly"]'
     ),
     (
         2,
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        'sports',
+        'f2e07533-64f9-4d39-8aaf-c018d52ebace',
+        '9347748f-8c23-4fae-89a1-a8a3dde71b9d',
+        'Sports',
         4,
-        'Perfect for my yoga practice',
-        '2024-01-16',
-        '["yoga","perfect"]',
-        now(),
-        now()
+        'Good deal.',
+        '2024-06-02T11:00:00Z',
+        'Bangkok',
+        '["clean","quick"]'
     ),
     (
         3,
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        'home',
+        '9347748f-8c23-4fae-89a1-a8a3dde71b9d',
+        'f2e07533-64f9-4d39-8aaf-c018d52ebace',
+        'Books',
         5,
-        'Beautiful bookshelf, exactly as described',
-        '2024-01-17',
-        '["beautiful","as_described"]',
-        now(),
-        now()
+        'Loved it!',
+        '2024-06-03T12:00:00Z',
+        'Bangkok',
+        '["book","classic"]'
     ),
     (
         4,
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        'sports',
-        4,
-        'Comfortable running shoes',
-        '2024-01-18',
-        '["comfortable","running"]',
-        now(),
-        now()
+        'f2e07533-64f9-4d39-8aaf-c018d52ebace',
+        '9347748f-8c23-4fae-89a1-a8a3dde71b9d',
+        'Home',
+        3,
+        'Okay.',
+        '2024-06-04T13:00:00Z',
+        'Bangkok',
+        '["sofa"]'
     ),
     (
         5,
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        'home',
-        5,
-        'Works perfectly, great deal!',
-        '2024-01-19',
-        '["works_perfect","great_deal"]',
-        now(),
-        now()
+        '9347748f-8c23-4fae-89a1-a8a3dde71b9d',
+        'f2e07533-64f9-4d39-8aaf-c018d52ebace',
+        'Sports',
+        4,
+        'Nice bike.',
+        '2024-06-05T14:00:00Z',
+        'Bangkok',
+        '["bike"]'
     ),
     (
         6,
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        'clothing',
-        4,
-        'Beautiful dress, fits perfectly',
-        '2024-01-20',
-        '["beautiful","fits_perfect"]',
-        now(),
-        now()
+        'f2e07533-64f9-4d39-8aaf-c018d52ebace',
+        '9347748f-8c23-4fae-89a1-a8a3dde71b9d',
+        'Beauty',
+        5,
+        'Works well.',
+        '2024-06-06T15:00:00Z',
+        'Bangkok',
+        '["hair"]'
     ),
     (
         7,
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        'electronics',
+        '9347748f-8c23-4fae-89a1-a8a3dde71b9d',
+        'f2e07533-64f9-4d39-8aaf-c018d52ebace',
+        'Toys',
         5,
-        'Excellent laptop, great performance',
-        '2024-01-21',
-        '["excellent","great_performance"]',
-        now(),
-        now()
+        'Fun toy.',
+        '2024-06-07T16:00:00Z',
+        'Bangkok',
+        '["toy"]'
     ),
     (
         8,
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        'toys',
+        'f2e07533-64f9-4d39-8aaf-c018d52ebace',
+        '9347748f-8c23-4fae-89a1-a8a3dde71b9d',
+        'Automotive',
         4,
-        'Kids love it, good quality',
-        '2024-01-22',
-        '["kids_love","good_quality"]',
-        now(),
-        now()
+        'Safe seat.',
+        '2024-06-08T17:00:00Z',
+        'Bangkok',
+        '["car"]'
     ),
     (
         9,
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        'beauty',
+        '9347748f-8c23-4fae-89a1-a8a3dde71b9d',
+        'f2e07533-64f9-4d39-8aaf-c018d52ebace',
+        'Health',
         5,
-        'Amazing cream, great for skin',
-        '2024-01-23',
-        '["amazing","great_skin"]',
-        now(),
-        now()
+        'Very useful.',
+        '2024-06-09T18:00:00Z',
+        'Bangkok',
+        '["health"]'
     ),
     (
         10,
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        '3eba1bf5-d0ca-4c10-a53e-ea7b214cb634',
-        'automotive',
+        'f2e07533-64f9-4d39-8aaf-c018d52ebace',
+        '9347748f-8c23-4fae-89a1-a8a3dde71b9d',
+        'Home',
         4,
-        'Safe and comfortable car seat',
-        '2024-01-24',
-        '["safe","comfortable"]',
-        now(),
-        now()
+        'Bright lamp.',
+        '2024-06-10T19:00:00Z',
+        'Bangkok',
+        '["lamp"]'
     );
 
--- Seed for item_analyses
+-- 9. item_analyses
 INSERT INTO
     item_analyses (
         session_id,
@@ -1651,247 +583,795 @@ INSERT INTO
         ai_listing_title,
         ai_listing_description,
         ai_listing_location,
-        images,
-        created_at,
-        updated_at
+        images
     )
 VALUES (
-        21,
+        1,
         'Old Laptop',
-        'electronics',
-        'fair',
-        'sell',
-        'This laptop still has some value and can be sold',
-        3,
-        'medium',
-        150.50,
-        'High landfill impact',
-        false,
-        50000.00,
-        8000.00,
-        7500.00,
-        0.00,
-        500.00,
+        'Electronics',
+        'Good',
+        'Sell',
+        'Consider selling online',
+        7,
+        'Medium',
+        12.5,
+        'Low',
+        true,
+        25000,
+        8000,
+        9000,
+        100,
+        50,
         'Used Laptop for Sale',
-        'Fair condition laptop, good for basic tasks',
+        'A reliable used laptop',
         'Bangkok',
-        '["laptop1.jpg"]',
-        now(),
-        now()
+        '["img1.jpg"]'
     ),
     (
-        22,
-        'Books Collection',
-        'books',
-        'good',
-        'donate',
-        'Books can be donated to libraries or schools',
-        7,
-        'low',
-        25.00,
-        'Low landfill impact',
-        true,
-        5000.00,
-        1000.00,
-        800.00,
-        0.00,
-        200.00,
-        'Book Collection Donation',
-        'Good condition books, perfect for donation',
-        'Bangkok',
-        '["books1.jpg"]',
-        now(),
-        now()
-    ),
-    (
-        23,
-        'Yoga Mat',
-        'sports',
-        'excellent',
-        'keep',
-        'This item is in great condition and useful',
-        8,
-        'low',
-        10.00,
-        'Low landfill impact',
-        true,
-        1500.00,
-        1200.00,
-        1000.00,
-        0.00,
-        100.00,
-        'Keep Yoga Mat',
-        'Excellent condition, keep for personal use',
-        'Bangkok',
-        '["yoga1.jpg"]',
-        now(),
-        now()
-    ),
-    (
-        24,
-        'Broken Phone',
-        'electronics',
-        'poor',
-        'recycle',
-        'This should be recycled properly',
         2,
-        'high',
-        200.00,
-        'High landfill impact',
-        false,
-        30000.00,
-        0.00,
-        0.00,
-        0.00,
-        0.00,
-        'Recycle Broken Phone',
-        'Broken phone for proper recycling',
-        'Bangkok',
-        '["phone1.jpg"]',
-        now(),
-        now()
-    ),
-    (
-        25,
-        'Clothing Items',
-        'clothing',
-        'good',
-        'donate',
-        'Clothing can be donated to charity',
-        6,
-        'low',
-        15.00,
-        'Low landfill impact',
+        'Yoga Mat',
+        'Sports',
+        'Fair',
+        'Donate',
+        'Donate to local gym',
+        5,
+        'Low',
+        2.0,
+        'Minimal',
         true,
-        3000.00,
-        500.00,
-        300.00,
-        0.00,
-        150.00,
-        'Clothing Donation',
-        'Good condition clothing for donation',
+        1000,
+        200,
+        0,
+        0,
+        0,
+        'Yoga Mat',
+        'Still usable',
         'Bangkok',
-        '["clothing1.jpg"]',
-        now(),
-        now()
+        '["img2.jpg"]'
     ),
     (
-        26,
-        'Furniture Set',
-        'home',
-        'excellent',
-        'sell',
-        'High value furniture should be sold',
-        9,
-        'medium',
-        300.00,
-        'Medium landfill impact',
-        false,
-        50000.00,
-        25000.00,
-        22000.00,
-        0.00,
-        2000.00,
-        'Furniture Set for Sale',
-        'Excellent condition furniture set',
-        'Bangkok',
-        '["furniture1.jpg"]',
-        now(),
-        now()
-    ),
-    (
-        27,
-        'Kitchen Appliances',
-        'home',
-        'like_new',
-        'sell',
-        'New appliances have high resale value',
+        3,
+        'Books',
+        'Books',
+        'Excellent',
+        'Keep',
+        'Keep for future reading',
         8,
-        'medium',
-        200.00,
-        'Medium landfill impact',
-        false,
-        15000.00,
-        12000.00,
-        11000.00,
-        0.00,
-        800.00,
-        'Kitchen Appliances Sale',
-        'Like new kitchen appliances',
-        'Bangkok',
-        '["appliance1.jpg"]',
-        now(),
-        now()
-    ),
-    (
-        28,
-        'Toy Collection',
-        'toys',
-        'good',
-        'donate',
-        'Toys can bring joy to other children',
-        7,
-        'low',
-        20.00,
-        'Low landfill impact',
+        'Low',
+        0.5,
+        'None',
         true,
-        2000.00,
-        300.00,
-        200.00,
-        0.00,
-        100.00,
-        'Toy Donation',
-        'Good condition toys for donation',
+        500,
+        500,
+        0,
+        0,
+        0,
+        'Book Collection',
+        'Classic books',
         'Bangkok',
-        '["toys1.jpg"]',
-        now(),
-        now()
+        '["img3.jpg"]'
     ),
     (
-        29,
-        'Beauty Products',
-        'beauty',
-        'new',
-        'sell',
-        'Unused beauty products have good value',
+        4,
+        'Sofa',
+        'Home',
+        'Fair',
+        'Recycle',
+        'Recycle at local center',
+        4,
+        'High',
+        30.0,
+        'High',
+        false,
+        10000,
+        1000,
+        0,
+        0,
+        0,
+        'Old Sofa',
+        'Worn but usable',
+        'Bangkok',
+        '["img4.jpg"]'
+    ),
+    (
+        5,
+        'Bike',
+        'Sports',
+        'Good',
+        'Sell',
+        'Sell to neighbor',
         6,
-        'low',
-        5.00,
-        'Low landfill impact',
+        'Medium',
+        8.0,
+        'Low',
         true,
-        1000.00,
-        800.00,
-        700.00,
-        0.00,
-        50.00,
-        'Beauty Products Sale',
-        'New beauty products for sale',
+        5000,
+        2000,
+        2500,
+        50,
+        20,
+        'Mountain Bike',
+        'Good for city rides',
         'Bangkok',
-        '["beauty1.jpg"]',
-        now(),
-        now()
+        '["img5.jpg"]'
     ),
     (
-        30,
-        'Car Accessories',
-        'automotive',
-        'excellent',
-        'sell',
-        'Car accessories have good resale value',
-        7,
-        'medium',
-        100.00,
-        'Medium landfill impact',
-        false,
-        5000.00,
-        3000.00,
-        2800.00,
-        0.00,
-        200.00,
-        'Car Accessories Sale',
-        'Excellent condition car accessories',
+        6,
+        'Hair Dryer',
+        'Beauty',
+        'Excellent',
+        'Keep',
+        'Keep for personal use',
+        9,
+        'Low',
+        0.2,
+        'None',
+        true,
+        1500,
+        1500,
+        0,
+        0,
+        0,
+        'Hair Dryer',
+        'Works perfectly',
         'Bangkok',
-        '["car1.jpg"]',
-        now(),
-        now()
+        '["img6.jpg"]'
+    ),
+    (
+        7,
+        'Toy Car',
+        'Toys',
+        'Like New',
+        'Donate',
+        'Donate to charity',
+        8,
+        'Low',
+        0.1,
+        'None',
+        true,
+        400,
+        300,
+        0,
+        0,
+        0,
+        'Toy Car',
+        'Fun for kids',
+        'Bangkok',
+        '["img7.jpg"]'
+    ),
+    (
+        8,
+        'Car Seat',
+        'Automotive',
+        'Good',
+        'Sell',
+        'Sell online',
+        7,
+        'Medium',
+        5.0,
+        'Low',
+        true,
+        2000,
+        800,
+        1000,
+        20,
+        10,
+        'Car Seat',
+        'Safe and clean',
+        'Bangkok',
+        '["img8.jpg"]'
+    ),
+    (
+        9,
+        'BP Monitor',
+        'Health',
+        'Excellent',
+        'Keep',
+        'Keep for health',
+        10,
+        'Low',
+        0.3,
+        'None',
+        true,
+        1200,
+        1200,
+        0,
+        0,
+        0,
+        'BP Monitor',
+        'Accurate readings',
+        'Bangkok',
+        '["img9.jpg"]'
+    ),
+    (
+        10,
+        'Lamp',
+        'Home',
+        'Good',
+        'Repair',
+        'Repair and reuse',
+        6,
+        'Low',
+        0.4,
+        'Minimal',
+        true,
+        600,
+        200,
+        0,
+        50,
+        10,
+        'Desk Lamp',
+        'Needs minor repair',
+        'Bangkok',
+        '["img10.jpg"]'
+    );
+
+-- 10. local_business_reviews (composite PK)
+INSERT INTO
+    local_business_reviews (
+        business_id,
+        rating,
+        author,
+        author_avatar,
+        timestamp,
+        tags,
+        content
+    )
+VALUES (
+        1,
+        5,
+        '9347748f-8c23-4fae-89a1-a8a3dde71b9d',
+        'http://img.com/avatar1.jpg',
+        '2024-06-01T10:00:00Z',
+        '["friendly"]',
+        'Great coffee!'
+    ),
+    (
+        2,
+        4,
+        'f2e07533-64f9-4d39-8aaf-c018d52ebace',
+        'http://img.com/avatar2.jpg',
+        '2024-06-02T11:00:00Z',
+        '["books"]',
+        'Nice selection.'
+    ),
+    (
+        3,
+        5,
+        '9347748f-8c23-4fae-89a1-a8a3dde71b9d',
+        'http://img.com/avatar1.jpg',
+        '2024-06-03T12:00:00Z',
+        '["gym"]',
+        'Clean gym.'
+    ),
+    (
+        4,
+        4,
+        'f2e07533-64f9-4d39-8aaf-c018d52ebace',
+        'http://img.com/avatar2.jpg',
+        '2024-06-04T13:00:00Z',
+        '["organic"]',
+        'Fresh produce.'
+    ),
+    (
+        5,
+        5,
+        '9347748f-8c23-4fae-89a1-a8a3dde71b9d',
+        'http://img.com/avatar1.jpg',
+        '2024-06-05T14:00:00Z',
+        '["tech"]',
+        'Cool gadgets.'
+    ),
+    (
+        6,
+        4,
+        'f2e07533-64f9-4d39-8aaf-c018d52ebace',
+        'http://img.com/avatar2.jpg',
+        '2024-06-06T15:00:00Z',
+        '["toys"]',
+        'Fun toys.'
+    ),
+    (
+        7,
+        5,
+        '9347748f-8c23-4fae-89a1-a8a3dde71b9d',
+        'http://img.com/avatar1.jpg',
+        '2024-06-07T16:00:00Z',
+        '["beauty"]',
+        'Great salon.'
+    ),
+    (
+        8,
+        4,
+        'f2e07533-64f9-4d39-8aaf-c018d52ebace',
+        'http://img.com/avatar2.jpg',
+        '2024-06-08T17:00:00Z',
+        '["auto"]',
+        'Quick repair.'
+    ),
+    (
+        9,
+        5,
+        '9347748f-8c23-4fae-89a1-a8a3dde71b9d',
+        'http://img.com/avatar1.jpg',
+        '2024-06-09T18:00:00Z',
+        '["health"]',
+        'Helpful staff.'
+    ),
+    (
+        10,
+        4,
+        'f2e07533-64f9-4d39-8aaf-c018d52ebace',
+        'http://img.com/avatar2.jpg',
+        '2024-06-10T19:00:00Z',
+        '["home"]',
+        'Nice furniture.'
+    );
+
+-- 11. local_tip_posts
+INSERT INTO
+    local_tip_posts (
+        title,
+        content,
+        category,
+        location,
+        author
+    )
+VALUES (
+        'Visa Tips',
+        'How to get a visa in Thailand',
+        'Visa',
+        'Bangkok',
+        '9347748f-8c23-4fae-89a1-a8a3dde71b9d'
+    ),
+    (
+        'Banking 101',
+        'Opening a bank account',
+        'Bank',
+        'Bangkok',
+        'f2e07533-64f9-4d39-8aaf-c018d52ebace'
+    ),
+    (
+        'Tax Guide',
+        'Filing taxes as an expat',
+        'Tax',
+        'Bangkok',
+        '9347748f-8c23-4fae-89a1-a8a3dde71b9d'
+    ),
+    (
+        'Health Insurance',
+        'Best health insurance options',
+        'Health',
+        'Bangkok',
+        'f2e07533-64f9-4d39-8aaf-c018d52ebace'
+    ),
+    (
+        'Education Tips',
+        'Finding schools in Bangkok',
+        'Education',
+        'Bangkok',
+        '9347748f-8c23-4fae-89a1-a8a3dde71b9d'
+    ),
+    (
+        'Getting Around',
+        'Public transport tips',
+        'Transportation',
+        'Bangkok',
+        'f2e07533-64f9-4d39-8aaf-c018d52ebace'
+    ),
+    (
+        'Other Tips',
+        'Miscellaneous tips',
+        'Other',
+        'Bangkok',
+        '9347748f-8c23-4fae-89a1-a8a3dde71b9d'
+    ),
+    (
+        'Visa Renewal',
+        'Renewing your visa',
+        'Visa',
+        'Bangkok',
+        'f2e07533-64f9-4d39-8aaf-c018d52ebace'
+    ),
+    (
+        'Bank Transfers',
+        'Transferring money',
+        'Bank',
+        'Bangkok',
+        '9347748f-8c23-4fae-89a1-a8a3dde71b9d'
+    ),
+    (
+        'Tax Deductions',
+        'What you can deduct',
+        'Tax',
+        'Bangkok',
+        'f2e07533-64f9-4d39-8aaf-c018d52ebace'
+    );
+
+-- 12. local_tip_comments
+INSERT INTO
+    local_tip_comments (post_id, author, content)
+VALUES (
+        1,
+        '9347748f-8c23-4fae-89a1-a8a3dde71b9d',
+        'Very helpful!'
+    ),
+    (
+        2,
+        'f2e07533-64f9-4d39-8aaf-c018d52ebace',
+        'Thanks for sharing.'
+    ),
+    (
+        3,
+        '9347748f-8c23-4fae-89a1-a8a3dde71b9d',
+        'Great info.'
+    ),
+    (
+        4,
+        'f2e07533-64f9-4d39-8aaf-c018d52ebace',
+        'Useful tips.'
+    ),
+    (
+        5,
+        '9347748f-8c23-4fae-89a1-a8a3dde71b9d',
+        'Appreciate it!'
+    ),
+    (
+        6,
+        'f2e07533-64f9-4d39-8aaf-c018d52ebace',
+        'Good to know.'
+    ),
+    (
+        7,
+        '9347748f-8c23-4fae-89a1-a8a3dde71b9d',
+        'Thanks!'
+    ),
+    (
+        8,
+        'f2e07533-64f9-4d39-8aaf-c018d52ebace',
+        'Very clear.'
+    ),
+    (
+        9,
+        '9347748f-8c23-4fae-89a1-a8a3dde71b9d',
+        'Super helpful.'
+    ),
+    (
+        10,
+        'f2e07533-64f9-4d39-8aaf-c018d52ebace',
+        'Great advice.'
+    );
+
+-- 13. local_tip_comment_likes (composite PK)
+INSERT INTO
+    local_tip_comment_likes (comment_id, user_id)
+VALUES (
+        1,
+        '9347748f-8c23-4fae-89a1-a8a3dde71b9d'
+    ),
+    (
+        2,
+        'f2e07533-64f9-4d39-8aaf-c018d52ebace'
+    ),
+    (
+        3,
+        '9347748f-8c23-4fae-89a1-a8a3dde71b9d'
+    ),
+    (
+        4,
+        'f2e07533-64f9-4d39-8aaf-c018d52ebace'
+    ),
+    (
+        5,
+        '9347748f-8c23-4fae-89a1-a8a3dde71b9d'
+    ),
+    (
+        6,
+        'f2e07533-64f9-4d39-8aaf-c018d52ebace'
+    ),
+    (
+        7,
+        '9347748f-8c23-4fae-89a1-a8a3dde71b9d'
+    ),
+    (
+        8,
+        'f2e07533-64f9-4d39-8aaf-c018d52ebace'
+    ),
+    (
+        9,
+        '9347748f-8c23-4fae-89a1-a8a3dde71b9d'
+    ),
+    (
+        10,
+        'f2e07533-64f9-4d39-8aaf-c018d52ebace'
+    );
+
+-- 14. local_tip_post_likes (composite PK)
+INSERT INTO
+    local_tip_post_likes (post_id, user_id)
+VALUES (
+        1,
+        '9347748f-8c23-4fae-89a1-a8a3dde71b9d'
+    ),
+    (
+        2,
+        'f2e07533-64f9-4d39-8aaf-c018d52ebace'
+    ),
+    (
+        3,
+        '9347748f-8c23-4fae-89a1-a8a3dde71b9d'
+    ),
+    (
+        4,
+        'f2e07533-64f9-4d39-8aaf-c018d52ebace'
+    ),
+    (
+        5,
+        '9347748f-8c23-4fae-89a1-a8a3dde71b9d'
+    ),
+    (
+        6,
+        'f2e07533-64f9-4d39-8aaf-c018d52ebace'
+    ),
+    (
+        7,
+        '9347748f-8c23-4fae-89a1-a8a3dde71b9d'
+    ),
+    (
+        8,
+        'f2e07533-64f9-4d39-8aaf-c018d52ebace'
+    ),
+    (
+        9,
+        '9347748f-8c23-4fae-89a1-a8a3dde71b9d'
+    ),
+    (
+        10,
+        'f2e07533-64f9-4d39-8aaf-c018d52ebace'
+    );
+
+-- 15. message_participants (composite PK)
+INSERT INTO
+    message_participants (conversation_id, profile_id)
+VALUES (
+        1,
+        '9347748f-8c23-4fae-89a1-a8a3dde71b9d'
+    ),
+    (
+        1,
+        'f2e07533-64f9-4d39-8aaf-c018d52ebace'
+    ),
+    (
+        2,
+        '9347748f-8c23-4fae-89a1-a8a3dde71b9d'
+    ),
+    (
+        2,
+        'f2e07533-64f9-4d39-8aaf-c018d52ebace'
+    ),
+    (
+        3,
+        '9347748f-8c23-4fae-89a1-a8a3dde71b9d'
+    ),
+    (
+        3,
+        'f2e07533-64f9-4d39-8aaf-c018d52ebace'
+    ),
+    (
+        4,
+        '9347748f-8c23-4fae-89a1-a8a3dde71b9d'
+    ),
+    (
+        4,
+        'f2e07533-64f9-4d39-8aaf-c018d52ebace'
+    ),
+    (
+        5,
+        '9347748f-8c23-4fae-89a1-a8a3dde71b9d'
+    ),
+    (
+        5,
+        'f2e07533-64f9-4d39-8aaf-c018d52ebace'
+    );
+
+-- 16. user_conversations
+INSERT INTO user_conversations DEFAULT VALUES;
+
+INSERT INTO user_conversations DEFAULT VALUES;
+
+INSERT INTO user_conversations DEFAULT VALUES;
+
+INSERT INTO user_conversations DEFAULT VALUES;
+
+INSERT INTO user_conversations DEFAULT VALUES;
+
+INSERT INTO user_conversations DEFAULT VALUES;
+
+INSERT INTO user_conversations DEFAULT VALUES;
+
+INSERT INTO user_conversations DEFAULT VALUES;
+
+INSERT INTO user_conversations DEFAULT VALUES;
+
+INSERT INTO user_conversations DEFAULT VALUES;
+
+-- 17. user_messages
+INSERT INTO
+    user_messages (
+        conversation_id,
+        sender_id,
+        receiver_id,
+        content
+    )
+VALUES (
+        1,
+        '9347748f-8c23-4fae-89a1-a8a3dde71b9d',
+        'f2e07533-64f9-4d39-8aaf-c018d52ebace',
+        'Hello!'
+    ),
+    (
+        2,
+        'f2e07533-64f9-4d39-8aaf-c018d52ebace',
+        '9347748f-8c23-4fae-89a1-a8a3dde71b9d',
+        'Hi!'
+    ),
+    (
+        3,
+        '9347748f-8c23-4fae-89a1-a8a3dde71b9d',
+        'f2e07533-64f9-4d39-8aaf-c018d52ebace',
+        'How are you?'
+    ),
+    (
+        4,
+        'f2e07533-64f9-4d39-8aaf-c018d52ebace',
+        '9347748f-8c23-4fae-89a1-a8a3dde71b9d',
+        'Good, thanks!'
+    ),
+    (
+        5,
+        '9347748f-8c23-4fae-89a1-a8a3dde71b9d',
+        'f2e07533-64f9-4d39-8aaf-c018d52ebace',
+        'What are you up to?'
+    ),
+    (
+        6,
+        'f2e07533-64f9-4d39-8aaf-c018d52ebace',
+        '9347748f-8c23-4fae-89a1-a8a3dde71b9d',
+        'Just working.'
+    ),
+    (
+        7,
+        '9347748f-8c23-4fae-89a1-a8a3dde71b9d',
+        'f2e07533-64f9-4d39-8aaf-c018d52ebace',
+        'Same here.'
+    ),
+    (
+        8,
+        'f2e07533-64f9-4d39-8aaf-c018d52ebace',
+        '9347748f-8c23-4fae-89a1-a8a3dde71b9d',
+        'Let''s meet up.'
+    ),
+    (
+        9,
+        '9347748f-8c23-4fae-89a1-a8a3dde71b9d',
+        'f2e07533-64f9-4d39-8aaf-c018d52ebace',
+        'Sure!'
+    ),
+    (
+        10,
+        'f2e07533-64f9-4d39-8aaf-c018d52ebace',
+        '9347748f-8c23-4fae-89a1-a8a3dde71b9d',
+        'See you soon.'
+    );
+
+-- 18. user_notifications
+INSERT INTO
+    user_notifications (type, sender_id, receiver_id)
+VALUES (
+        'Message',
+        '9347748f-8c23-4fae-89a1-a8a3dde71b9d',
+        'f2e07533-64f9-4d39-8aaf-c018d52ebace'
+    ),
+    (
+        'Like',
+        'f2e07533-64f9-4d39-8aaf-c018d52ebace',
+        '9347748f-8c23-4fae-89a1-a8a3dde71b9d'
+    ),
+    (
+        'Reply',
+        '9347748f-8c23-4fae-89a1-a8a3dde71b9d',
+        'f2e07533-64f9-4d39-8aaf-c018d52ebace'
+    ),
+    (
+        'Mention',
+        'f2e07533-64f9-4d39-8aaf-c018d52ebace',
+        '9347748f-8c23-4fae-89a1-a8a3dde71b9d'
+    ),
+    (
+        'Message',
+        '9347748f-8c23-4fae-89a1-a8a3dde71b9d',
+        'f2e07533-64f9-4d39-8aaf-c018d52ebace'
+    ),
+    (
+        'Like',
+        'f2e07533-64f9-4d39-8aaf-c018d52ebace',
+        '9347748f-8c23-4fae-89a1-a8a3dde71b9d'
+    ),
+    (
+        'Reply',
+        '9347748f-8c23-4fae-89a1-a8a3dde71b9d',
+        'f2e07533-64f9-4d39-8aaf-c018d52ebace'
+    ),
+    (
+        'Mention',
+        'f2e07533-64f9-4d39-8aaf-c018d52ebace',
+        '9347748f-8c23-4fae-89a1-a8a3dde71b9d'
+    ),
+    (
+        'Message',
+        '9347748f-8c23-4fae-89a1-a8a3dde71b9d',
+        'f2e07533-64f9-4d39-8aaf-c018d52ebace'
+    ),
+    (
+        'Like',
+        'f2e07533-64f9-4d39-8aaf-c018d52ebace',
+        '9347748f-8c23-4fae-89a1-a8a3dde71b9d'
+    );
+
+-- 19. user_reviews
+INSERT INTO
+    user_reviews (
+        reviewer_id,
+        reviewee_id,
+        rating
+    )
+VALUES (
+        '9347748f-8c23-4fae-89a1-a8a3dde71b9d',
+        'f2e07533-64f9-4d39-8aaf-c018d52ebace',
+        5
+    ),
+    (
+        'f2e07533-64f9-4d39-8aaf-c018d52ebace',
+        '9347748f-8c23-4fae-89a1-a8a3dde71b9d',
+        4
+    ),
+    (
+        '9347748f-8c23-4fae-89a1-a8a3dde71b9d',
+        'f2e07533-64f9-4d39-8aaf-c018d52ebace',
+        5
+    ),
+    (
+        'f2e07533-64f9-4d39-8aaf-c018d52ebace',
+        '9347748f-8c23-4fae-89a1-a8a3dde71b9d',
+        4
+    ),
+    (
+        '9347748f-8c23-4fae-89a1-a8a3dde71b9d',
+        'f2e07533-64f9-4d39-8aaf-c018d52ebace',
+        5
+    ),
+    (
+        'f2e07533-64f9-4d39-8aaf-c018d52ebace',
+        '9347748f-8c23-4fae-89a1-a8a3dde71b9d',
+        4
+    ),
+    (
+        '9347748f-8c23-4fae-89a1-a8a3dde71b9d',
+        'f2e07533-64f9-4d39-8aaf-c018d52ebace',
+        5
+    ),
+    (
+        'f2e07533-64f9-4d39-8aaf-c018d52ebace',
+        '9347748f-8c23-4fae-89a1-a8a3dde71b9d',
+        4
+    ),
+    (
+        '9347748f-8c23-4fae-89a1-a8a3dde71b9d',
+        'f2e07533-64f9-4d39-8aaf-c018d52ebace',
+        5
+    ),
+    (
+        'f2e07533-64f9-4d39-8aaf-c018d52ebace',
+        '9347748f-8c23-4fae-89a1-a8a3dde71b9d',
+        4
     );

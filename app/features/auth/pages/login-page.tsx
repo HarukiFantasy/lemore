@@ -1,10 +1,53 @@
-import { Form, Link } from "react-router";
+import { Form, Link, useNavigation } from "react-router";
 import { Button } from "../../../common/components/ui/button";
 import { Input } from "../../../common/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../../common/components/ui/card";
 import { AnimatedGradientText } from "components/magicui/animated-gradient-text";
+import { Route } from './+types/login-page';
+import { CircleIcon } from 'lucide-react';
+import { z } from 'zod';
+import { makeSSRClient } from '~/supa-client';
+import { redirect } from "react-router";
 
-export default function LoginPage() {
+export const meta: Route.MetaFunction = () => {
+  return [
+    { title: "Login | LE:MORE" },
+    { name: "description", content: "Login to your account" },
+  ];
+};
+
+const formSchema = z.object({
+  email: z.string({required_error: "Email is required"}).email("Invalid email address"),
+  password: z.string({required_error: "Password is required"}).min(8, "Password must be at least 8 characters"),
+});
+
+export const action = async ({ request }: Route.ActionArgs) => {
+  const formData = await request.formData();
+  const { success, data, error } = formSchema.safeParse(Object.fromEntries(formData));
+  if(!success) {
+    return { 
+      loginError: null,
+      formErrors: error.flatten().fieldErrors, 
+    };
+  };
+  const { email, password } = data;
+  const { client, headers } = makeSSRClient(request);
+  const { error: loginError } = await client.auth.signInWithPassword({
+    email,
+    password,
+  });
+  if (loginError) {
+    return { 
+      formErrors: null,
+      loginError: loginError.message,
+    };
+  }
+  return redirect("/", { headers });
+};
+
+export default function LoginPage({actionData}: Route.ComponentProps) {
+  const navigation = useNavigation();
+  const isSubmitting = navigation.state === "submitting" || navigation.state === "loading";
   return (
     <div className="flex items-center justify-center min-h-screen p-4">
       <Card className="w-full max-w-md">
@@ -27,6 +70,9 @@ export default function LoginPage() {
                 placeholder="Enter your email"
                 required
               />
+              {actionData && "formErrors" in actionData && (
+                <p className="text-red-500">{actionData?.formErrors?.email?.join(", ")}</p>
+              )}
             </div>
             <div className="space-y-2">
               <label htmlFor="password" className="text-sm font-medium">
@@ -39,10 +85,16 @@ export default function LoginPage() {
                 placeholder="Enter your password"
                 required
               />
+              {actionData && "formErrors" in actionData && (
+                <p className="text-red-500">{actionData?.formErrors?.password?.join(", ")}</p>
+              )}
             </div>
-            <Button type="submit" className="w-full">
-              Sign in
+            <Button type="submit" className="w-full cursor-pointer" disabled={isSubmitting}>
+              {isSubmitting ? <CircleIcon className="animate-spin" /> : "Log in"}
             </Button>
+            {actionData && "loginError" in actionData && (
+              <p className="text-red-500">{actionData.loginError}</p>
+            )}
           </Form>
           
           {/* Alternative Login Options */}

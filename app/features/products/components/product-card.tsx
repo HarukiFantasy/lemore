@@ -12,7 +12,7 @@ const formatPrice = (price: number, currency: string = "THB"): string => {
 
 // Props 검증 스키마
 const productCardSchema = z.object({
-  productId: z.union([z.string(), z.number()]).transform(String),
+  productId: z.number(),
   image: z.string().min(1, "Image is required"),
   title: z.string().min(1, "Title is required").max(100, "Title must be less than 100 characters"),
   price: z.number().min(0, "Price must be non-negative"),
@@ -36,7 +36,7 @@ export function ProductCard({
   likes = 0,
   is_sold = false,
   priceType = "fixed",
-  category = "electronics"
+  category = "Electronics"
 }: ProductCardProps) {
   const isFree = priceType === "free";
 

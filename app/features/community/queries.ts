@@ -1,9 +1,12 @@
 import { SupabaseClient } from '@supabase/supabase-js';
 import { Database } from '~/supa-client';
 
-
-export const getLocalTipPosts = async (client: SupabaseClient<Database, any, any, any>) => {
-  const { data, error } = await client.from("local_tips_list_view").select(`*`);
+export const getLocalTipPosts = async (client: SupabaseClient<Database, any, any, any>, limit?: number) => {
+  let query = client.from("local_tips_list_view").select(`*`);
+  if (limit) {
+    query = query.limit(limit);
+  }
+  const { data, error } = await query;
   
   if (error) throw new Error(error.message);
   return data;

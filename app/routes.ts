@@ -28,6 +28,7 @@ export default [
         route("/complete", "features/auth/pages/social-complete-page.tsx"),
       ]),
     ]),
+    route("/logout", "features/auth/pages/logout-page.tsx"),
   ]),
   ...prefix("/my", [
     route("/dashboard", "features/users/pages/dashboard-page.tsx"),

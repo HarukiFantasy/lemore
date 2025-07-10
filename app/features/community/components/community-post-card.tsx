@@ -5,7 +5,7 @@ import { Card, CardHeader, CardContent, CardFooter } from "~/common/components/u
 
 // Props 검증 스키마
 const communityPostCardSchema = z.object({
-  id: z.string().min(1, "ID is required"),
+  id: z.number().min(1, "ID is required"),
   title: z.string().min(1, "Title is required").max(100, "Title must be less than 100 characters"),
   timeAgo: z.string().min(1, "Time is required"),
   author: z.string().optional(),
@@ -49,19 +49,9 @@ export function CommunityPostCard({
     );
   }
 
-  // post ID에서 실제 ID 추출 (tip-123 -> 123, give-and-glow-456 -> 456, local-review-789 -> 789)
-  const actualId = id.includes('-') ? id.split('-').slice(1).join('-') : id;
-  
-  // type에 따라 링크 경로 결정
-  let linkPath = `/community/local-tips?post=${actualId}`;
-  if (type === 'give-and-glow') {
-    linkPath = `/community/give-and-glow?post=${actualId}`;
-  } else if (type === 'local-review') {
-    linkPath = `/community/local-reviews?post=${actualId}`;
-  }
 
   return (
-    <Link to={linkPath} className="block">
+    <Link to={`/community/local-tips?search=${title}`} className="block">
       <Card className={`hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 transition-all duration-300 hover:scale-[1.02] hover:shadow-lg ${!isLast ? 'border-b border-gray-200 rounded-none' : ''}`}>
         <CardHeader className="pb-0">
           <div className="flex items-center gap-2 mb-1">
