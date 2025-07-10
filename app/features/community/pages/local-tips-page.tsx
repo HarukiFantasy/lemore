@@ -14,6 +14,7 @@ import {
 import { localTipCategories } from "~/schema";
 import { getLocalTipComments, getLocalTipPosts } from '../queries';
 import type { Route } from "./+types/local-tips-page"
+import { makeSSRClient } from "~/supa-client";
 
 // Types
 
@@ -46,9 +47,10 @@ interface Comment {
 
 
 
-export const loader = async () => {
-  const tips = await getLocalTipPosts();
-  const comments = await getLocalTipComments();
+export const loader = async ({ request }: Route.LoaderArgs) => {
+  const { client, headers } = makeSSRClient(request);
+  const tips = await getLocalTipPosts(client);
+  const comments = await getLocalTipComments(client);
   return { tips, comments };
 }
 
@@ -297,7 +299,7 @@ export default function LocalTipsPage({ loaderData }: Route.ComponentProps) {
                   {commentsByPostId[post.id] ? (
                     <div className="space-y-3">
                       <h4 className="font-medium text-sm">Comments ({commentsByPostId[post.id].length})</h4>
-                      {commentsByPostId[post.id].map((comment) => (
+                      {commentsByPostId[post.id].map((comment: any ) => (
                         <div key={comment.comment_id} className="bg-gray-50 rounded-lg p-3">
                           <div className="flex items-start justify-between mb-2">
                             <span className="font-medium text-sm">{comment.author.username}</span>

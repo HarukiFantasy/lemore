@@ -231,7 +231,7 @@ export default function LocalReviewsPage({ loaderData }: Route.ComponentProps) {
                           (
                             Array.isArray(business.tags) &&
                             business.tags.some(
-                              (tag) => typeof tag === "string" && tag.toLowerCase().includes(searchQuery.toLowerCase())
+                              (tag: string) => tag.toLowerCase().includes(searchQuery.toLowerCase())
                             )
                           );
     const matchesType = selectedType === "All" || business.type === selectedType;
@@ -456,8 +456,8 @@ export default function LocalReviewsPage({ loaderData }: Route.ComponentProps) {
                     </div>
                     {Array.isArray(business.tags) &&
                       business.tags
-                        .filter((tag): tag is string => typeof tag === "string")
-                        .map((tag, idx) => (
+                        .filter((tag: string) => typeof tag === "string")
+                        .map((tag: string, idx: number) => (
                           <span key={idx} className="bg-gray-100 text-gray-700 px-2 py-1 rounded-full text-xs">{tag}</span>
                         ))
                     }
@@ -473,7 +473,7 @@ export default function LocalReviewsPage({ loaderData }: Route.ComponentProps) {
                             <div className="flex items-start gap-3">
                               <Avatar className="w-10 h-10">
                                 <AvatarImage src={review.author_avatar ?? ""} alt={review.author_username ?? ""} />
-                                <AvatarFallback>{(review.author_username ?? "").split(' ').map(n => n[0]).join('')}</AvatarFallback>
+                                <AvatarFallback>{(review.author_username ?? "").split(' ').map((n: string) => n[0]).join('')}</AvatarFallback>
                               </Avatar>
                               <div className="flex-1">
                                 <div className="font-semibold text-md text-gray-900">{review.author_username}</div>

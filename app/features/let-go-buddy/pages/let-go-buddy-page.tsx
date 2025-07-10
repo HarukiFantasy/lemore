@@ -19,14 +19,16 @@ import { useNavigate, useSearchParams } from "react-router";
 import { EMOTIONAL_QUESTIONS, ENVIRONMENTAL_IMPACT, DECLUTTER_SITUATIONS } from '../constants';
 import { getEnvironmentalImpactSummary, getLetGoBuddySessionsWithItems, getUserLetGoBuddyStats, getItemAnalysesDetailed } from '../queries';
 import { Route } from './+types/let-go-buddy-page';
+import { makeSSRClient } from "~/supa-client";
 
 
-export async function loader() {
+export async function loader({ request }: Route.LoaderArgs) {
+  const { client, headers } = makeSSRClient(request);
   const [sessions, stats, analyses, impact] = await Promise.all([
-    getLetGoBuddySessionsWithItems(),
-    getUserLetGoBuddyStats(),
-    getItemAnalysesDetailed(),
-    getEnvironmentalImpactSummary()
+    getLetGoBuddySessionsWithItems(client),
+    getUserLetGoBuddyStats(client),
+    getItemAnalysesDetailed(client),
+    getEnvironmentalImpactSummary(client)
   ]);
   return { sessions, stats, analyses, impact };
 }

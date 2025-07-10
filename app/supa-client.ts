@@ -4,6 +4,9 @@ import { MergeDeep, SetNonNullable } from "type-fest";
 export { Json } from '../database.types'
 
 export type Database = MergeDeep<SupabaseDatabase, {
+  __InternalSupabase: {
+    PostgrestVersion: '12'
+  }
   public: {
     Views: {
       local_tips_list_view: {

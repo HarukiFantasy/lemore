@@ -7,6 +7,7 @@ import { Button } from '~/common/components/ui/button';
 import { PRODUCT_CATEGORIES, CATEGORY_ICONS } from "../constants";
 import { BlurFade } from 'components/magicui/blur-fade';
 import { getProductsListings } from '../queries';
+import { makeSSRClient } from '~/supa-client';
 
 export const meta: Route.MetaFunction = () => {
   return [
@@ -16,9 +17,10 @@ export const meta: Route.MetaFunction = () => {
 };
 
 
-export async function loader() {
-  const products = await getProductsListings();
-  return { products: products || [] };
+export const loader = async ({ request }: Route.LoaderArgs) => {
+  const { client, headers } = makeSSRClient(request);
+  const products = await getProductsListings(client);
+  return { products };
 }
 
 export default function BrowseListingsPage({ loaderData }: Route.ComponentProps) {

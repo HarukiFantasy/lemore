@@ -7,6 +7,7 @@ import { HeartIcon } from "lucide-react";
 import { getProductById } from "../queries";
 import { Route } from './+types/product-detail-page';
 import {DateTime} from "luxon";
+import { makeSSRClient } from "~/supa-client";
 
 export const meta = () => {
   return [
@@ -15,9 +16,10 @@ export const meta = () => {
   ];
 };
 
-export async function loader({ params }: Route.ComponentProps) {
+export const loader = async ({ params, request }: Route.LoaderArgs) => {
   const { id } = params;
-  const product = await getProductById(Number(id));
+  const { client, headers } = makeSSRClient(request);
+  const product = await getProductById(client, Number(id));
   return { product };
 }
 
@@ -192,7 +194,7 @@ export async function loader({ params }: Route.ComponentProps) {
               <Avatar className="h-16 w-16">
                 <AvatarImage src={product.seller_avatar || undefined} alt={product.seller_name || 'Seller'} />
                 <AvatarFallback>
-                  {product.seller_name?.split(' ').map(n => n[0]).join('').toUpperCase() || 'S'}
+                  {product.seller_name?.split(' ').map((n: string) => n[0]).join('').toUpperCase() || 'S'}
                 </AvatarFallback>
               </Avatar>
               <div className="flex-1">
