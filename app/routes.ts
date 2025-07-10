@@ -39,4 +39,5 @@ export default [
     route("/messages", "features/users/pages/messages-page.tsx"),
     route("/likes", "features/users/pages/likes-page.tsx"),
   ]),
+  route("/users/:username", "features/users/pages/usersProfile-page.tsx"),
 ] satisfies RouteConfig;

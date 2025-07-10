@@ -17,3 +17,14 @@ export const getUserByProfileId = async (client: SupabaseClient<Database, any, a
   if (error) throw new Error(error.message);
   return data;
 };
+
+export const getUserByUsername = async (client: SupabaseClient<Database, any, any, any>, { username }: { username: string }) => {
+  const { data, error } = await client
+    .from("users_view")
+    .select("*")
+    .eq("username", username)
+    .single();
+    
+  if (error) throw new Error(error.message);
+  return data;
+};

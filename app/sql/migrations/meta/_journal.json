@@ -15,6 +15,20 @@
       "when": 1752163150052,
       "tag": "0001_high_the_renegades",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1752170915105,
+      "tag": "0002_lazy_meltdown",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1752175599328,
+      "tag": "0003_hesitant_human_robot",
+      "breakpoints": true
     }
   ]
 }

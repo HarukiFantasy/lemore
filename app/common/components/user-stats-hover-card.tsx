@@ -2,27 +2,48 @@ import { HoverCard, HoverCardTrigger, HoverCardContent } from "./ui/hover-card";
 import { Badge } from "./ui/badge";
 import { PackageIcon, EyeIcon, MessageCircleReplyIcon } from "lucide-react";
 import { useAppreciationBadge } from "~/hooks/use-appreciation-badge";
+import { Button } from './ui/button';
+import { Link } from "react-router";
+import { useState, useEffect } from "react";
+import { makeSSRClient } from "~/supa-client";
+import { getUserByUsername } from "~/features/users/queries";
+
+interface UserStats {
+  totalListings: number;
+  rating: number;
+  responseRate: string;
+}
 
 interface UserStatsHoverCardProps {
-  userId?: string;
+  profileId?: string;
   userName: string;
-  userType?: "Seller" | "Giver" | "Receiver" | "User";
   children: React.ReactNode;
   showAppreciationBadge?: boolean;
   className?: string;
 }
 
-// Mock seller statistics - 실제로는 API에서 가져올 데이터
-const getUserStats = (userId: string): {
-  totalListings: number;
-  rating: number;
-  responseRate: string;
-} => {
-  // 실제 구현에서는 userId를 사용해서 API 호출
+// 실제 데이터베이스에서 유저 통계를 가져오는 함수
+const getUserStats = async (username: string): Promise<UserStats> => {
+  try {
+    // 클라이언트 사이드에서는 fetch API를 사용
+    const response = await fetch(`/api/users/${username}/stats`);
+    if (response.ok) {
+      const userData = await response.json();
+      return {
+        totalListings: userData?.total_listings || 0,
+        rating: userData?.rating || 0,
+        responseRate: userData?.response_rate || "0%",
+      };
+    }
+  } catch (error) {
+    console.error("Error fetching user stats:", error);
+  }
+  
+  // 기본값 반환
   return {
-    totalListings: Math.floor(Math.random() * 50) + 5,
-    rating: Math.floor(Math.random() * 5) + 1,
-    responseRate: `${Math.floor(Math.random() * 100) + 1}%`,
+    totalListings: 0,
+    rating: 0,
+    responseRate: "0%",
   };
 };
 
@@ -40,41 +61,41 @@ const getDisplayName = (userId: string): string => {
   return userNames[num % userNames.length];
 };
 
-/**
- * UserStatsHoverCard - A reusable component that shows user statistics in a hover card
- * 
- * @example
- * ```tsx
- * <UserStatsHoverCard
- *   userId="user-123"
- *   userName="John Doe"
- *   userType="Seller"
- *   showAppreciationBadge={true}
- * >
- *   John Doe
- * </UserStatsHoverCard>
- * ```
- * 
- * @param userId - Optional user ID for database queries
- * @param userName - Display name of the user
- * @param userType - Type of user (Seller, Giver, User)
- * @param children - The content to display as the hover trigger
- * @param showAppreciationBadge - Whether to show appreciation badge based on rating
- * @param className - Additional CSS classes for styling
- */
 export function UserStatsHoverCard({
-  userId,
+  profileId,
   userName,
-  userType = "User",
   children,
   showAppreciationBadge = false,
   className = ""
 }: UserStatsHoverCardProps) {
+  const [userStats, setUserStats] = useState<UserStats>({
+    totalListings: 0,
+    rating: 0,
+    responseRate: "0%"
+  });
+  const [isLoadingStats, setIsLoadingStats] = useState(false);
+
   // Use the appreciation badge hook
-  const { hasAppreciationBadge, isLoading } = useAppreciationBadge(userId);
+  const { hasAppreciationBadge, isLoading } = useAppreciationBadge(profileId);
   
-  // Get user stats
-  const userStats = userId ? getUserStats(userId) : getUserStats(userName);
+  // Get user stats when component mounts or username changes
+  useEffect(() => {
+    const fetchUserStats = async () => {
+      setIsLoadingStats(true);
+      try {
+        const stats = await getUserStats(userName);
+        setUserStats(stats);
+      } catch (error) {
+        console.error("Error fetching user stats:", error);
+      } finally {
+        setIsLoadingStats(false);
+      }
+    };
+
+    if (userName) {
+      fetchUserStats();
+    }
+  }, [userName]);
 
   return (
     <HoverCard>
@@ -86,8 +107,12 @@ export function UserStatsHoverCard({
       <HoverCardContent className="w-80">
         <div className="flex flex-col gap-3">
           <div className="flex items-center gap-2">
-            <span className="font-semibold text-sm">{getDisplayName(userId || userName)}</span>
-            <Badge variant="secondary" className="text-xs">{userType}</Badge>
+            <span className="font-semibold text-sm">{getDisplayName(profileId || userName)}</span>
+            <Link to={`/users/${profileId}`}>
+              <Button variant="secondary" className="text-xs h-6">
+                See Profile..
+              </Button>
+            </Link>
             {/* Show appreciation badge for users with high-rated give-and-glow reviews */}
             {(hasAppreciationBadge || showAppreciationBadge) && (
               <Badge variant="outline" className="text-xs bg-green-100 text-green-700">Appreciation</Badge>
@@ -98,7 +123,7 @@ export function UserStatsHoverCard({
           </div>
           
           <div className="text-xs text-neutral-500">
-            ID: {userId || userName}
+            ID: {profileId || userName}
           </div>
           
           {/* User Stats */}
@@ -106,17 +131,23 @@ export function UserStatsHoverCard({
             <div className="flex flex-col items-center gap-1">
               <PackageIcon className="w-4 h-4 text-blue-500" />
               <span className="text-xs text-neutral-600">Total Listings</span>
-              <span className="text-sm font-semibold">{userStats.totalListings}</span>
+              <span className="text-sm font-semibold">
+                {isLoadingStats ? "..." : userStats.totalListings}
+              </span>
             </div>
             <div className="flex flex-col items-center gap-1">
               <EyeIcon className="w-4 h-4 text-green-500" />
               <span className="text-xs text-neutral-600">Rating</span>
-              <span className="text-sm font-semibold">{userStats.rating}</span>
+              <span className="text-sm font-semibold">
+                {isLoadingStats ? "..." : userStats.rating}
+              </span>
             </div>
             <div className="flex flex-col items-center gap-1">
               <MessageCircleReplyIcon className="w-4 h-4 text-red-500" />
               <span className="text-xs text-neutral-600">Response Rate</span>
-              <span className="text-sm font-semibold">{userStats.responseRate}</span>
+              <span className="text-sm font-semibold">
+                {isLoadingStats ? "..." : userStats.responseRate}
+              </span>
             </div>
           </div>
           

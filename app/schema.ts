@@ -15,8 +15,12 @@ import {
   primaryKey,
   check,
 } from "drizzle-orm/pg-core";
+import { LOCATIONS } from './constants';
 
 // ===== ENUMS =====
+
+// Location enum
+export const locationEnum = pgEnum("location", LOCATIONS);
 
 // User related enums
 
@@ -77,7 +81,7 @@ export const products = pgTable("products", {
   currency: text().notNull().default("THB"),
   category_id: bigint("category_id", {mode: "number"}).references(() => categories.category_id, {onDelete: "set null"}),
   condition: productConditions().notNull(),
-  location: text("location").notNull(),
+  location: locationEnum().notNull(),
   description: text("description").notNull(),
   tags: jsonb().notNull().default([]),
   is_sold: boolean().notNull().default(false),
@@ -123,11 +127,11 @@ export const users = pgSchema("auth").table("users", {
 // User profiles table
 export const userProfiles = pgTable("user_profiles", {
   profile_id: uuid().primaryKey().unique().references(() => users.id, {onDelete: "cascade"}),
-  username: text("username").notNull(),
+  username: text("username").unique().notNull(),
   email: text("email").notNull(),
   avatar_url: text("avatar_url"),
   bio: text("bio"),
-  location: text("location"),
+  location: locationEnum(),
   total_likes: integer().default(0),
   total_views: integer().default(0),
   total_listings: integer().default(0),
@@ -203,7 +207,7 @@ export const giveAndGlowReviews = pgTable("give_and_glow_reviews", {
   rating: integer("rating").notNull(),
   review: text("review").notNull(),
   timestamp: text("timestamp").notNull(),
-  location: text("location").notNull(),
+  location: locationEnum().notNull(),
   tags: jsonb("tags").notNull().default([]),
   created_at: timestamp("created_at").notNull().defaultNow(),
   updated_at: timestamp("updated_at").notNull().defaultNow(),
@@ -214,7 +218,7 @@ export const localBusinesses = pgTable("local_businesses", {
   id: bigint("id", {mode: "number"}).primaryKey().generatedAlwaysAsIdentity(),
   name: text("name").notNull(),
   type: text("type"),
-  location: text("location").notNull(),
+  location: locationEnum().notNull(),
   average_rating: decimal("average_rating", { precision: 3, scale: 2 }).notNull().default("0.00"),
   total_reviews: integer("total_reviews").notNull().default(0),
   price_range: text("price_range").notNull(),
@@ -246,7 +250,7 @@ export const localTipPosts = pgTable("local_tip_posts", {
   title: text("title").notNull(),
   content: text("content").notNull(),
   category: localTipCategories("category").notNull(),
-  location: text("location").notNull(),
+  location: locationEnum().notNull(),
   author: uuid().notNull().references(() => userProfiles.profile_id),
   stats: jsonb("stats").notNull().default({likes: 0, comments: 0, reviews: 0}),
   created_at: timestamp("created_at").notNull().defaultNow(),
@@ -312,7 +316,7 @@ export const itemAnalyses = pgTable("item_analyses", {
   space_value: decimal({ precision: 10, scale: 2 }).default("0"),
   ai_listing_title: text(),
   ai_listing_description: text(),
-  ai_listing_location: text(),
+  ai_listing_location: locationEnum(),
   images: jsonb().notNull().default([]),
   created_at: timestamp().notNull().defaultNow(),
   updated_at: timestamp().notNull().defaultNow(),

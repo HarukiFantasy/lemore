@@ -22,3 +22,9 @@ export const getProductById = async (client: SupabaseClient<Database, any, any, 
   if (error) throw new Error(error.message);
   return data;
 };
+
+export const getProductByUsername = async (client: SupabaseClient<Database, any, any, any>, username: string) => {
+  const { data, error } = await client.from("product_detail_view").select("*").eq("seller_name", username);
+  if (error) throw new Error(error.message);
+  return data;
+};

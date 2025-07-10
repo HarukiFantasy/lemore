@@ -70,9 +70,8 @@ export function ProductCard({
               <span className="text-sm text-neutral-500 truncate">{category}</span>
             </div>
             <UserStatsHoverCard
-              userId={seller}
+              profileId={seller}
               userName={seller}
-              userType="Seller"
               className="text-xs text-neutral-500 truncate"
             >
               {seller}
