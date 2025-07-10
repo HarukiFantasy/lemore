@@ -2,6 +2,7 @@ import { Form, Link, useNavigation } from "react-router";
 import { Button } from "../../../common/components/ui/button";
 import { Input } from "../../../common/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../../common/components/ui/card";
+import { Alert, AlertDescription } from "../../../common/components/ui/alert";
 import { AnimatedGradientText } from "components/magicui/animated-gradient-text";
 import { Route } from './+types/login-page';
 import { CircleIcon } from 'lucide-react';
@@ -71,7 +72,7 @@ export default function LoginPage({actionData}: Route.ComponentProps) {
                 required
               />
               {actionData && "formErrors" in actionData && (
-                <p className="text-red-500">{actionData?.formErrors?.email?.join(", ")}</p>
+                <p className="text-red-500 text-sm italic">{actionData?.formErrors?.email?.join(", ")}</p>
               )}
             </div>
             <div className="space-y-2">
@@ -86,14 +87,14 @@ export default function LoginPage({actionData}: Route.ComponentProps) {
                 required
               />
               {actionData && "formErrors" in actionData && (
-                <p className="text-red-500">{actionData?.formErrors?.password?.join(", ")}</p>
+                <p className="text-red-500 text-sm italic">{actionData?.formErrors?.password?.join(", ")}</p>
               )}
             </div>
             <Button type="submit" className="w-full cursor-pointer" disabled={isSubmitting}>
               {isSubmitting ? <CircleIcon className="animate-spin" /> : "Log in"}
             </Button>
             {actionData && "loginError" in actionData && (
-              <p className="text-red-500">{actionData.loginError}</p>
+              <p className="text-red-500 text-sm italic">{actionData.loginError}</p>
             )}
           </Form>
           

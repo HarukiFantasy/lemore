@@ -1,11 +1,15 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../../common/components/ui/card";
 import { Button } from "../../../common/components/ui/button";
 import { Input } from "../../../common/components/ui/input";
+import { Textarea } from "../../../common/components/ui/textarea";
 import { Separator } from "../../../common/components/ui/separator";
 import { RadioGroup, RadioGroupItem } from "../../../common/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../../common/components/ui/select";
+
+import { Alert, AlertDescription, AlertTitle } from "../../../common/components/ui/alert";
 import { useRouteError, isRouteErrorResponse } from "react-router";
 import { z } from "zod";
+import type { Route } from './+types/settings-page';
 
 // Mock user settings function (임시)
 async function fetchMockUserSettings(userId: string) {

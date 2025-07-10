@@ -56,10 +56,14 @@ export function Navigation({
   isLoggedIn,
   hasNotifications,
   hasMessages,
+  username,
+  avatarUrl,
 }: {
   isLoggedIn: boolean;
   hasNotifications: boolean;
   hasMessages: boolean;
+  username: string;
+  avatarUrl: string;
 }) {
   const [searchParams, setSearchParams] = useSearchParams();
   const [location, setLocation] = useState(searchParams.get("location") || "Bangkok");
@@ -215,14 +219,16 @@ export function Navigation({
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Avatar className="h-10 w-10 cursor-pointer">
-                  <AvatarImage src="https://github.com/harukifantasy.png" alt="Haruki" />
-                  <AvatarFallback>H</AvatarFallback>
+                  {avatarUrl ? (
+                  <AvatarImage src={avatarUrl} /> 
+                  ) : (
+                  <AvatarFallback>{username.charAt(0)}</AvatarFallback>
+                  )}
                 </Avatar>
               </DropdownMenuTrigger>
               <DropdownMenuContent className="w-56">
                 <DropdownMenuLabel className="flex flex-col">
-                  <span className="font-medium">Haruki</span>
-                  <span className="text-xs text-muted-foreground">@username</span>
+                  <span className="font-medium">{username}</span>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuGroup>

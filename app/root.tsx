@@ -13,6 +13,7 @@ import "./app.css";
 import { Navigation } from "./common/components/navigation";
 import { makeSSRClient } from './supa-client';
 import { cn } from './lib/utils';
+import { getUserByProfileId } from "./features/users/queries";
 
 export const links: Route.LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -50,7 +51,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
 export const loader = async ({ request }: Route.LoaderArgs) => {
   const { client } = makeSSRClient(request);
   const { data: {user} } = await client.auth.getUser();
-  return { user };
+  if (user) {
+    const userProfile = await getUserByProfileId(client, { profileId: user?.id ?? null });
+  return { user, userProfile };
+  }
+  return { user: null, userProfile: null };
 }
 
 export default function App({ loaderData }: Route.ComponentProps) {
@@ -67,7 +72,11 @@ export default function App({ loaderData }: Route.ComponentProps) {
     })}
     > 
       {pathname.includes("/auth") ? null : (
-        <Navigation isLoggedIn={isLoggedIn} hasNotifications={true} hasMessages={true} />
+        <Navigation isLoggedIn={isLoggedIn} 
+        username={loaderData.userProfile?.username} 
+        avatarUrl={loaderData.userProfile?.avatar_url}
+        hasNotifications={true} 
+        hasMessages={true} />
       )}
       <Outlet />
     </div>
