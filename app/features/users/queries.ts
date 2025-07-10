@@ -1,12 +1,13 @@
-import client from "~/supa-client";
+import { SupabaseClient } from '@supabase/supabase-js';
+import { Database } from '~/supa-client';
 
-export const getUser = async () => {
+export const getUser = async (client: SupabaseClient<Database>) => {
   const { data, error } = await client.from("users_view").select("*");
   if (error) throw new Error(error.message);
   return data;
 };
 
-export const getCurrentUser = async () => {
+export const getCurrentUser = async (client: SupabaseClient<Database>) => {
   // 개발 환경에서 테스트용 사용자 데이터 반환
   const mockUser = {
     user_id: "test-user-id",

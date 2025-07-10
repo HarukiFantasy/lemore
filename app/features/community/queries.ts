@@ -1,23 +1,16 @@
-import client from "../../supa-client";
+import { SupabaseClient } from '@supabase/supabase-js';
+import { Database } from '~/supa-client';
 
 
-export const getLocalTipPosts = async () => {
+export const getLocalTipPosts = async (client: SupabaseClient<Database>) => {
   const { data, error } = await client.from("local_tips_list_view").select(`*`);
   
-  console.log('Posts query result:', { data, error });
   if (error) throw new Error(error.message);
   return data;
 }
 
-export const getLocalTipComments = async (postId?: string) => {
-  let query = client.from("local_tip_comments").select(`
-    comment_id,
-    post_id,
-    content,
-    likes,
-    created_at,
-    author:user_profiles!local_tip_comments_author_user_profiles_profile_id_fk(profile_id, username, avatar_url)
-  `);
+export const getLocalTipComments = async (client: SupabaseClient<Database>, postId?: string) => {
+  let query = client.from("local_tip_comments_view").select(`*`);
   
   if (postId) {
     query = query.eq("post_id", parseInt(postId));
@@ -25,38 +18,24 @@ export const getLocalTipComments = async (postId?: string) => {
   
   const { data, error } = await query;
 
-  console.log('Comments query result:', { data, error, postId });
   if (error) throw new Error(error.message);
   return data;
 }
 
-export const getGiveAndGlowReviews = async () => {
-  const { data, error } = await client.from("give_and_glow_reviews").select(`
-    id,
-    category,
-    rating,
-    review,
-    timestamp,
-    tags,
-    created_at,
-    updated_at,
-    giver:user_profiles!give_and_glow_reviews_giver_id_user_profiles_profile_id_fk(profile_id, username, avatar_url),
-    receiver:user_profiles!give_and_glow_reviews_receiver_id_user_profiles_profile_id_fk(profile_id, username, avatar_url),
-    product:products!give_and_glow_reviews_product_id_products_product_id_fk(product_id, title, location)
-  `);
+export const getGiveAndGlowReviews = async (client: SupabaseClient<Database>) => {
+  const { data, error } = await client.from("give_and_glow_reviews").select(`*`);
   
-  console.log('Give and Glow reviews query result:', { data, error });
   if (error) throw new Error(error.message);
   return data;
 }
 
-export const getLocalBusinesses = async () => {
+export const getLocalBusinesses = async (client: SupabaseClient<Database>) => {
   const { data, error } = await client.from("local_businesses_list_view").select(`*`);
   if (error) throw new Error(error.message);
   return data;
 }
 
-export const getLocalReviews = async () => {
+export const getLocalReviews = async (client: SupabaseClient<Database>) => {
   const { data, error } = await client.from("local_reviews_list_view").select(`*`);
   if (error) throw new Error(error.message);
   return data;

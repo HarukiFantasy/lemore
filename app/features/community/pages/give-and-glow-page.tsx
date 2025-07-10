@@ -8,6 +8,7 @@ import { getCategoryColors } from "~/lib/utils";
 import { GiveAndGlowCard } from '../components/give-and-glow-card';
 import { getGiveAndGlowReviews } from '../queries';
 import { PRODUCT_CATEGORIES } from '~/features/products/constants';
+import { makeSSRClient } from "~/supa-client";
 
 // Error Boundary
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
@@ -43,8 +44,9 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
   );
 }
 
-export const loader = async () => {
-  const reviews = await getGiveAndGlowReviews();
+export const loader = async ({ request }: Route.LoaderArgs) => {
+  const { client, headers } = makeSSRClient(request);
+  const reviews = await getGiveAndGlowReviews(client);
   return { reviews };
 }
 

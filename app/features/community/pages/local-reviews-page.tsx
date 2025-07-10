@@ -8,6 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "~/common/components/ui/avat
 import { Marquee } from "components/magicui/marquee";
 import { getLocalBusinesses, getLocalReviews } from "../queries";
 import type { Route } from "./+types/local-reviews-page";
+import { makeSSRClient } from '~/supa-client';
 
 // Schema definitions
 const BusinessTypeSchema = z.enum(["All", "Restaurant", "Cafe", "Bar", "Shop", "Service", "Other"]);
@@ -15,11 +16,10 @@ const PriceRangeSchema = z.enum(["All", "$", "$$", "$$$", "$$$$"]);
 const LocationSchema = z.enum(["Bangkok", "Chiang Mai", "Phuket", "Pattaya", "Krabi", "All Cities"]);
 
 
-export const loader = async () => {
-  const businesses = await getLocalBusinesses();
-  const reviews = await getLocalReviews();
-  console.log(businesses);
-  console.log(reviews);
+export const loader = async ({ request }: Route.LoaderArgs) => {
+  const { client, headers } = makeSSRClient(request);
+  const businesses = await getLocalBusinesses(client);
+  const reviews = await getLocalReviews(client);
   return { businesses, reviews };
 }
 
