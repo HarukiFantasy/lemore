@@ -1,294 +1,208 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../../common/components/ui/card";
-import { Button } from "../../../common/components/ui/button";
-import { Input } from "../../../common/components/ui/input";
-import { Textarea } from "../../../common/components/ui/textarea";
-import { Separator } from "../../../common/components/ui/separator";
-import { RadioGroup, RadioGroupItem } from "../../../common/components/ui/radio-group";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../../common/components/ui/select";
-
-import { Alert, AlertDescription, AlertTitle } from "../../../common/components/ui/alert";
-import { useRouteError, isRouteErrorResponse } from "react-router";
-import { z } from "zod";
+import React, { useState, useEffect } from "react";
+import { motion } from "motion/react";
+import { Bell, Shield, Save, CheckCircle, AlertCircle } from "lucide-react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/common/components/ui/card";
+import { Button } from "~/common/components/ui/button";
+import { Switch } from "~/common/components/ui/switch";
+import { Separator } from "~/common/components/ui/separator";
+import { Alert, AlertDescription } from "~/common/components/ui/alert";
+import { makeSSRClient } from "~/supa-client";
+import { redirect } from 'react-router';
 import type { Route } from './+types/settings-page';
 
-// Mock user settings function (임시)
-async function fetchMockUserSettings(userId: string) {
-  return {
-    success: true,
-    settings: {
-      notifications: {
-        email: "all" as const,
-        push: "important" as const,
-        marketing: true,
-        updates: true,
-      },
-      privacy: {
-        profileVisibility: "public" as const,
-        contactInfo: "buyers" as const,
-        locationSharing: "city" as const,
-        showOnlineStatus: true,
-      },
-      preferences: {
-        language: "en" as const,
-        timezone: "pst" as const,
-        currency: "USD" as const,
-        dateFormat: "MM/DD/YYYY" as const,
-      },
-      security: {
-        twoFactorEnabled: false,
-        loginNotifications: true,
-        sessionTimeout: 60,
-      },
-    }
-  };
-}
+export const loader = async ({request}: Route.LoaderArgs) => {
+  const { client } = makeSSRClient(request);
+  const { data: {user} } = await client.auth.getUser();
+  if (!user) {
+    return redirect('/auth/login');
+  }
+  
+  // 사용자 설정 가져오기
+  const { data: settings } = await client
+    .from("user_setting_table")
+    .select("setting_key, setting_value")
+    .eq("user_id", user.id);
+    
+  return { settings: settings || [] };
+};
 
-// Settings loader data schema
-const settingsLoaderDataSchema = z.object({
-  settings: z.object({
-    notifications: z.object({
-      email: z.enum(["all", "important", "none"]),
-      push: z.enum(["all", "important", "none"]),
-      marketing: z.boolean(),
-      updates: z.boolean(),
-    }),
-    privacy: z.object({
-      profileVisibility: z.enum(["public", "friends", "private"]),
-      contactInfo: z.enum(["everyone", "buyers", "verified"]),
-      locationSharing: z.enum(["city", "region", "none"]),
-      showOnlineStatus: z.boolean(),
-    }),
-    preferences: z.object({
-      language: z.enum(["en", "es", "fr", "de"]),
-      timezone: z.enum(["pst", "est", "cst", "mst", "gmt"]),
-      currency: z.enum(["USD", "EUR", "GBP", "JPY"]),
-      dateFormat: z.enum(["MM/DD/YYYY", "DD/MM/YYYY", "YYYY-MM-DD"]),
-    }),
-    security: z.object({
-      twoFactorEnabled: z.boolean(),
-      loginNotifications: z.boolean(),
-      sessionTimeout: z.number(),
-    }),
-  }),
-});
+export const action = async ({request}: Route.ActionArgs) => {
+  const formData = await request.formData();
+  const { client } = makeSSRClient(request);
+  const { data: { user } } = await client.auth.getUser();
+  
+  if (!user) {
+    return redirect('/auth/login');
+  }
 
-type SettingsLoaderData = z.infer<typeof settingsLoaderDataSchema>;
-
-// Loader function
-export const loader = async ({ request }: { request: Request }) => {
   try {
-    // 실제 환경에서는 사용자 ID를 세션이나 토큰에서 가져와야 함
-    const userId = "current-user"; // 임시 사용자 ID
-    
-    console.log("Settings loader: Starting to fetch user settings for userId:", userId);
-    
-    // 개발 환경에서는 mock 데이터 사용
-    const result = await fetchMockUserSettings(userId);
-    
-    console.log("Settings loader: Mock data result:", result);
-    
-    if (!result.success) {
-      console.error("Settings loader: Failed to fetch user settings");
-      throw new Response("Failed to load settings", { 
-        status: 500,
-        statusText: "Failed to load settings"
-      });
+    const settings = [
+      { key: "email_messages", value: formData.get("email_messages") === "on" ? "true" : "false" },
+      { key: "email_sales", value: formData.get("email_sales") === "on" ? "true" : "false" },
+      { key: "email_reviews", value: formData.get("email_reviews") === "on" ? "true" : "false" },
+      { key: "email_system", value: formData.get("email_system") === "on" ? "true" : "false" },
+      { key: "profile_public", value: formData.get("profile_public") === "on" ? "true" : "false" },
+      { key: "location_public", value: formData.get("location_public") === "on" ? "true" : "false" },
+    ];
+
+    // 기존 설정 삭제 후 새로 삽입
+    await client
+      .from("user_setting_table")
+      .delete()
+      .eq("user_id", user.id);
+
+    const { error } = await client
+      .from("user_setting_table")
+      .insert(settings.map(setting => ({
+        user_id: user.id,
+        setting_key: setting.key,
+        setting_value: setting.value,
+        updated_at: new Date().toISOString()
+      })));
+
+    if (error) {
+      console.error("Settings update error:", error);
+      return { success: false, error: 'Failed to update settings' };
     }
 
-    const loaderData: SettingsLoaderData = {
-      settings: result.settings!
-    };
-
-    console.log("Settings loader: Prepared loader data:", loaderData);
-
-    // Zod를 사용한 데이터 검증
-    const validationResult = settingsLoaderDataSchema.safeParse(loaderData);
-    
-    if (!validationResult.success) {
-      console.error("Settings loader: Validation failed:", validationResult.error.errors);
-      const errorMessage = validationResult.error.errors.map(err => err.message).join(", ");
-      throw new Response(`Data validation failed: ${errorMessage}`, { 
-        status: 500,
-        statusText: "Invalid settings data"
-      });
-    }
-
-    console.log("Settings loader: Validation successful, returning data");
-    return validationResult.data;
-
+    return { success: true, message: 'Settings updated successfully' };
   } catch (error) {
-    console.error("Settings loader error:", error);
+    console.error('Action error:', error);
+    return { success: false, error: 'An error occurred while updating settings' };
+  }
+};
+
+export default function SettingsPage({ loaderData }: Route.ComponentProps) {
+  const { settings } = loaderData;
+  const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // 설정값을 객체로 변환
+  const settingsMap = settings.reduce((acc: Record<string, string>, setting: any) => {
+    acc[setting.setting_key] = setting.setting_value;
+    return acc;
+  }, {});
+
+  const [formData, setFormData] = useState({
+    email_messages: settingsMap.email_messages === "true",
+    email_sales: settingsMap.email_sales === "true",
+    email_reviews: settingsMap.email_reviews === "true",
+    email_system: settingsMap.email_system === "true",
+    profile_public: settingsMap.profile_public !== "false", // 기본값 true
+    location_public: settingsMap.location_public !== "false", // 기본값 true
+  });
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
     
-    if (error instanceof Response) {
-      // 이미 Response 객체인 경우 그대로 던지기
-      throw error;
-    }
-    
-    if (error instanceof Error) {
-      // 데이터베이스 에러인 경우 500 Internal Server Error 반환
-      if (error.message.includes("Failed to fetch")) {
-        throw new Response("Database connection failed", { status: 500 });
+    const form = new FormData();
+    Object.entries(formData).forEach(([key, value]) => {
+      form.append(key, value ? "on" : "off");
+    });
+
+    try {
+      const response = await fetch('/my/settings', {
+        method: 'POST',
+        body: form,
+      });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        setMessage({ type: 'success', text: result.message || 'Settings updated successfully!' });
+      } else {
+        setMessage({ type: 'error', text: result.error || 'Failed to update settings' });
       }
+    } catch (error) {
+      setMessage({ type: 'error', text: 'An error occurred while updating settings' });
+    } finally {
+      setIsSubmitting(false);
+      setTimeout(() => setMessage(null), 5000);
     }
-    
-    // 기타 에러는 500 Internal Server Error 반환
-    throw new Response("Internal server error", { status: 500 });
-  }
-};
-
-// Error Boundary
-export function ErrorBoundary() {
-  const error = useRouteError();
-
-  let message = "Something went wrong";
-  let details = "An unexpected error occurred while loading your settings.";
-
-  if (isRouteErrorResponse(error)) {
-    if (error.status === 400) {
-      message = "Invalid Request";
-      details = "The request was invalid. Please try again.";
-    } else if (error.status === 404) {
-      message = "Settings Not Found";
-      details = "The requested settings could not be found.";
-    } else if (error.status === 500) {
-      message = "Server Error";
-      details = "There was a problem loading your settings. Please try again later.";
-    }
-  }
-
-  return (
-    <div className="container mx-auto px-0 py-8 md:px-8">
-      <div className="text-center space-y-4">
-        <h1 className="text-2xl font-bold text-gray-900">{message}</h1>
-        <p className="text-gray-600">{details}</p>
-        <Button onClick={() => window.location.reload()}>
-          Try Again
-        </Button>
-      </div>
-    </div>
-  );
-}
-
-// Meta function for SEO
-export const meta = () => {
-  return [
-    { title: "Settings | Lemore" },
-    { name: "description", content: "Manage your account settings and preferences on Lemore" },
-  ];
-};
-
-export default function SettingsPage() {
-  // Mock data for settings
-  const settings = {
-    notifications: {
-      email: "all" as const,
-      push: "important" as const,
-      marketing: true,
-      updates: true,
-    },
-    privacy: {
-      profileVisibility: "public" as const,
-      contactInfo: "buyers" as const,
-      locationSharing: "city" as const,
-      showOnlineStatus: true,
-    },
-    preferences: {
-      language: "en" as const,
-      timezone: "pst" as const,
-      currency: "USD" as const,
-      dateFormat: "MM/DD/YYYY" as const,
-    },
-    security: {
-      twoFactorEnabled: false,
-      loginNotifications: true,
-      sessionTimeout: 60,
-    },
   };
 
   return (
-    <div className="container mx-auto px-0 py-8 md:px-8">
+    <div className="container mx-auto px-4 py-8 max-w-2xl">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900">Settings</h1>
-        <p className="text-gray-600 mt-2">Customize your account settings and preferences.</p>
+        <p className="text-gray-600 mt-2">Manage your account preferences and privacy settings.</p>
       </div>
 
-      <div className="space-y-8">
-        {/* Account Settings */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Account Settings</CardTitle>
-            <CardDescription>Manage your account information and security.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div>
-              <label htmlFor="currentPassword" className="block text-sm font-medium text-gray-700 mb-2">
-                Current Password
-              </label>
-              <Input id="currentPassword" type="password" />
-            </div>
-            <div>
-              <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700 mb-2">
-                New Password
-              </label>
-              <Input id="newPassword" type="password" />
-            </div>
-            <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-2">
-                Confirm New Password
-              </label>
-              <Input id="confirmPassword" type="password" />
-            </div>
-            <div className="flex justify-end">
-              <Button>Update Password</Button>
-            </div>
-          </CardContent>
-        </Card>
+      {message && (
+        <Alert className={`mb-6 ${message.type === 'success' ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'}`}>
+          {message.type === 'success' ? (
+            <CheckCircle className="h-4 w-4 text-green-600" />
+          ) : (
+            <AlertCircle className="h-4 w-4 text-red-600" />
+          )}
+          <AlertDescription className={message.type === 'success' ? 'text-green-800' : 'text-red-800'}>
+            {message.text}
+          </AlertDescription>
+        </Alert>
+      )}
 
-        {/* Notification Settings */}
+      <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Email Notifications */}
         <Card>
           <CardHeader>
-            <CardTitle>Notification Settings</CardTitle>
-            <CardDescription>Choose how you want to be notified about activities.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div>
-              <label className="text-sm font-medium text-gray-700 mb-3 block">Email Notifications</label>
-              <RadioGroup defaultValue={settings.notifications.email}>
-                <div className="space-y-2">
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="all" id="email-all" />
-                    <label htmlFor="email-all" className="text-sm">All notifications</label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="important" id="email-important" />
-                    <label htmlFor="email-important" className="text-sm">Important only</label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="none" id="email-none" />
-                    <label htmlFor="email-none" className="text-sm">None</label>
-                  </div>
-                </div>
-              </RadioGroup>
+            <div className="flex items-center space-x-3">
+              <Bell className="w-6 h-6 text-blue-600" />
+              <div>
+                <CardTitle>Email Notifications</CardTitle>
+                <CardDescription>Choose which notifications you want to receive via email</CardDescription>
+              </div>
             </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h4 className="font-medium">New Messages</h4>
+                <p className="text-sm text-gray-500">Get notified when someone sends you a message</p>
+              </div>
+              <Switch
+                checked={formData.email_messages}
+                onCheckedChange={(checked) => setFormData(prev => ({ ...prev, email_messages: checked }))}
+              />
+            </div>
+            
             <Separator />
-            <div>
-              <label className="text-sm font-medium text-gray-700 mb-3 block">Push Notifications</label>
-              <RadioGroup defaultValue={settings.notifications.push}>
-                <div className="space-y-2">
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="all" id="push-all" />
-                    <label htmlFor="push-all" className="text-sm">All notifications</label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="important" id="push-important" />
-                    <label htmlFor="push-important" className="text-sm">Important only</label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="none" id="push-none" />
-                    <label htmlFor="push-none" className="text-sm">None</label>
-                  </div>
-                </div>
-              </RadioGroup>
+            
+            <div className="flex items-center justify-between">
+              <div>
+                <h4 className="font-medium">Sales & Offers</h4>
+                <p className="text-sm text-gray-500">Notifications about your product listings</p>
+              </div>
+              <Switch
+                checked={formData.email_sales}
+                onCheckedChange={(checked) => setFormData(prev => ({ ...prev, email_sales: checked }))}
+              />
+            </div>
+            
+            <Separator />
+            
+            <div className="flex items-center justify-between">
+              <div>
+                <h4 className="font-medium">Reviews & Feedback</h4>
+                <p className="text-sm text-gray-500">When someone reviews your products or profile</p>
+              </div>
+              <Switch
+                checked={formData.email_reviews}
+                onCheckedChange={(checked) => setFormData(prev => ({ ...prev, email_reviews: checked }))}
+              />
+            </div>
+            
+            <Separator />
+            
+            <div className="flex items-center justify-between">
+              <div>
+                <h4 className="font-medium">System Updates</h4>
+                <p className="text-sm text-gray-500">Important updates about the platform</p>
+              </div>
+              <Switch
+                checked={formData.email_system}
+                onCheckedChange={(checked) => setFormData(prev => ({ ...prev, email_system: checked }))}
+              />
             </div>
           </CardContent>
         </Card>
@@ -296,72 +210,66 @@ export default function SettingsPage() {
         {/* Privacy Settings */}
         <Card>
           <CardHeader>
-            <CardTitle>Privacy Settings</CardTitle>
-            <CardDescription>Control who can see your profile and contact you.</CardDescription>
+            <div className="flex items-center space-x-3">
+              <Shield className="w-6 h-6 text-green-600" />
+              <div>
+                <CardTitle>Privacy Settings</CardTitle>
+                <CardDescription>Control who can see your information</CardDescription>
+              </div>
+            </div>
           </CardHeader>
-          <CardContent className="space-y-6">
-            <div>
-              <label className="text-sm font-medium text-gray-700 mb-3 block">Profile Visibility</label>
-              <RadioGroup defaultValue={settings.privacy.profileVisibility}>
-                <div className="space-y-2">
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="public" id="profile-public" />
-                    <label htmlFor="profile-public" className="text-sm">Public</label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="friends" id="profile-friends" />
-                    <label htmlFor="profile-friends" className="text-sm">Friends only</label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="private" id="profile-private" />
-                    <label htmlFor="profile-private" className="text-sm">Private</label>
-                  </div>
-                </div>
-              </RadioGroup>
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h4 className="font-medium">Public Profile</h4>
+                <p className="text-sm text-gray-500">Allow others to view your profile and listings</p>
+              </div>
+              <Switch
+                checked={formData.profile_public}
+                onCheckedChange={(checked) => setFormData(prev => ({ ...prev, profile_public: checked }))}
+              />
+            </div>
+            
+            <Separator />
+            
+            <div className="flex items-center justify-between">
+              <div>
+                <h4 className="font-medium">Location Information</h4>
+                <p className="text-sm text-gray-500">Show your location in listings and profile</p>
+              </div>
+              <Switch
+                checked={formData.location_public}
+                onCheckedChange={(checked) => setFormData(prev => ({ ...prev, location_public: checked }))}
+              />
             </div>
           </CardContent>
         </Card>
 
-        {/* Preferences */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Preferences</CardTitle>
-            <CardDescription>Customize your experience.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="text-sm font-medium text-gray-700 mb-2 block">Language</label>
-                <Select defaultValue={settings.preferences.language}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="en">English</SelectItem>
-                    <SelectItem value="es">Spanish</SelectItem>
-                    <SelectItem value="fr">French</SelectItem>
-                    <SelectItem value="de">German</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <label className="text-sm font-medium text-gray-700 mb-2 block">Currency</label>
-                <Select defaultValue={settings.preferences.currency}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="USD">USD ($)</SelectItem>
-                    <SelectItem value="EUR">EUR (€)</SelectItem>
-                    <SelectItem value="GBP">GBP (£)</SelectItem>
-                    <SelectItem value="JPY">JPY (¥)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+        {/* Save Button */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex justify-end"
+        >
+          <Button 
+            type="submit" 
+            disabled={isSubmitting}
+            className="min-w-[120px]"
+          >
+            {isSubmitting ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                Saving...
+              </>
+            ) : (
+              <>
+                <Save className="w-4 h-4 mr-2" />
+                Save Settings
+              </>
+            )}
+          </Button>
+        </motion.div>
+      </form>
     </div>
   );
-} 
+}

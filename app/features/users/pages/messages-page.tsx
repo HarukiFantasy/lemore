@@ -4,60 +4,16 @@ import { Input } from "../../../common/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "../../../common/components/ui/avatar";
 import { Badge } from "../../../common/components/ui/badge";
 import { Popover, PopoverContent, PopoverTrigger } from "../../../common/components/ui/popover";
-import { useRouteError, isRouteErrorResponse, useLocation } from "react-router";
+import { useLocation } from "react-router";
 import { useState, useRef, useEffect } from "react";
 import { z } from "zod";
 import type { Route } from './+types/messages-page';
 import { 
   FaceSmileIcon, 
   PhotoIcon,
-  PhoneIcon,
-  VideoCameraIcon,
-  Cog6ToothIcon
 } from "@heroicons/react/24/outline";
-
-// Mock messages function (임시)
-async function fetchMockMessages(userId: string, filters: any) {
-  return {
-    success: true,
-    data: {
-      conversations: [
-        {
-          id: '1',
-          participantIds: [userId, 'user-2'],
-          lastMessage: {
-            id: 'msg-1',
-            content: 'Is this still available?',
-            senderId: 'user-2',
-            receiverId: userId,
-            timestamp: '2024-01-15T10:30:00Z',
-            isRead: false,
-            type: 'text' as const,
-          },
-          unreadCount: 1,
-          updatedAt: '2024-01-15T10:30:00Z',
-        },
-        {
-          id: '2',
-          participantIds: [userId, 'user-3'],
-          lastMessage: {
-            id: 'msg-2',
-            content: 'Can you send me more photos?',
-            senderId: userId,
-            receiverId: 'user-3',
-            timestamp: '2024-01-14T15:45:00Z',
-            isRead: true,
-            type: 'text' as const,
-          },
-          unreadCount: 0,
-          updatedAt: '2024-01-14T15:45:00Z',
-        }
-      ],
-      totalCount: 2,
-      hasMore: false,
-    }
-  };
-}
+import { makeSSRClient, browserClient } from "~/supa-client";
+import { getLoggedInUserId, getMessages, sendMessage, getOrCreateConversation, getConversations, getConversationMessages } from "../queries";
 
 // Message schemas for data validation
 export const messageFiltersSchema = z.object({
@@ -108,209 +64,28 @@ export const meta: Route.MetaFunction = () => {
 
 // Loader function
 export const loader = async ({ request }: Route.LoaderArgs) => {
-  try {
-    const url = new URL(request.url);
-    const search = url.searchParams.get("search") || undefined;
-    const unreadOnly = url.searchParams.get("unreadOnly") === "true";
-    const limit = parseInt(url.searchParams.get("limit") || "20");
-
-    // Mock user ID (실제로는 인증된 사용자 ID를 사용해야 함)
-    const userId = "current-user-id";
-
-    const result = await fetchMockMessages(userId, {
-      search,
-      unreadOnly,
-      limit,
-    });
-
-    if (!result.success) {
-      throw new Response("Failed to load messages", { 
-        status: 500,
-        statusText: "Failed to load messages"
-      });
-    }
-
-    return {
-      conversations: result.data?.conversations || [],
-      totalCount: result.data?.totalCount || 0,
-      hasMore: result.data?.hasMore || false,
-      filters: { search, unreadOnly, limit }
-    };
-
-  } catch (error) {
-    console.error("Loader error:", error);
-    
-    if (error instanceof Response) {
-      throw error;
-    }
-    
-    throw new Response("Failed to load messages", { 
-      status: 500,
-      statusText: "Internal server error"
-    });
-  }
+  const { client } = makeSSRClient(request);
+  const userId = await getLoggedInUserId(client);
+  const messages = await getMessages(client, { profileId: userId });
+  return { messages, userId };
 };
 
-// Loading component
-function MessagesLoading() {
-  return (
-    <div className="container mx-auto px-0 py-8 md:px-8">
-      <div className="mb-8">
-        <div className="h-8 bg-gray-200 rounded w-48 mb-2 animate-pulse"></div>
-        <div className="h-4 bg-gray-200 rounded w-96 animate-pulse"></div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 h-[600px]">
-        {/* Conversations List Loading */}
-        <div className="lg:col-span-1">
-          <Card className="h-full">
-            <CardHeader>
-              <div className="h-6 bg-gray-200 rounded w-32 mb-2 animate-pulse"></div>
-              <div className="h-4 bg-gray-200 rounded w-48 mb-4 animate-pulse"></div>
-              <div className="h-10 bg-gray-200 rounded animate-pulse"></div>
-            </CardHeader>
-            <CardContent className="p-0">
-              <div className="space-y-1">
-                {[1, 2, 3, 4].map((i) => (
-                  <div key={i} className="flex items-center space-x-3 p-4">
-                    <div className="h-10 w-10 bg-gray-200 rounded-full animate-pulse"></div>
-                    <div className="flex-1">
-                      <div className="h-4 bg-gray-200 rounded w-32 mb-1 animate-pulse"></div>
-                      <div className="h-3 bg-gray-200 rounded w-48 animate-pulse"></div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Chat Area Loading */}
-        <div className="lg:col-span-2">
-          <Card className="h-full flex flex-col">
-            <CardHeader className="border-b">
-              <div className="flex items-center space-x-3">
-                <div className="h-10 w-10 bg-gray-200 rounded-full animate-pulse"></div>
-                <div className="flex-1">
-                  <div className="h-5 bg-gray-200 rounded w-32 mb-1 animate-pulse"></div>
-                  <div className="h-3 bg-gray-200 rounded w-24 animate-pulse"></div>
-                </div>
-                <div className="flex space-x-2">
-                  <div className="h-8 w-8 bg-gray-200 rounded animate-pulse"></div>
-                  <div className="h-8 w-8 bg-gray-200 rounded animate-pulse"></div>
-                  <div className="h-8 w-8 bg-gray-200 rounded animate-pulse"></div>
-                </div>
-              </div>
-            </CardHeader>
-
-            <CardContent className="flex-1 p-0">
-              <div className="h-full flex flex-col">
-                <div className="flex-1 p-4 space-y-4">
-                  {[1, 2, 3].map((i) => (
-                    <div key={i} className="flex items-start space-x-3">
-                      <div className="h-8 w-8 bg-gray-200 rounded-full animate-pulse"></div>
-                      <div className="flex-1">
-                        <div className="h-16 bg-gray-200 rounded-lg animate-pulse"></div>
-                        <div className="h-3 bg-gray-200 rounded w-16 mt-1 animate-pulse"></div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                <div className="border-t p-4">
-                  <div className="h-10 bg-gray-200 rounded animate-pulse"></div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// Error Boundary
-export function ErrorBoundary() {
-  const error = useRouteError();
-
-  let message = "Something went wrong";
-  let details = "An unexpected error occurred while loading messages.";
-
-  if (isRouteErrorResponse(error)) {
-    if (error.status === 400) {
-      message = "Invalid Request";
-      details = error.statusText || "The request contains invalid parameters.";
-    } else if (error.status === 500) {
-      message = "Server Error";
-      details = "An internal server error occurred. Please try again later.";
-    }
-  } else if (error instanceof Error) {
-    details = error.message;
-  }
-
-  return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-      <div className="max-w-md mx-auto px-4 py-8">
-        <Card>
-          <CardContent className="p-8 text-center">
-            <h1 className="text-2xl font-bold text-red-600 mb-4">{message}</h1>
-            <p className="text-gray-600 mb-6">{details}</p>
-            <Button onClick={() => window.location.reload()}>
-              Try Again
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
-  );
-}
-
-export default function MessagesPage() {
+export default function MessagesPage({ loaderData }: Route.ComponentProps) {
+  const { messages, userId } = loaderData;
   const location = useLocation();
   const productContext = location.state;
-
-  // Mock data for messages
-  const userId = "current-user-id";
-  
-  const conversations = [
-    {
-      id: '1',
-      participantIds: [userId, 'user-2'],
-      lastMessage: {
-        id: 'msg-1',
-        content: 'Is this still available?',
-        senderId: 'user-2',
-        receiverId: userId,
-        timestamp: '2024-01-15T10:30:00Z',
-        isRead: false,
-        type: 'text' as const,
-      },
-      unreadCount: 1,
-      updatedAt: '2024-01-15T10:30:00Z',
-    },
-    {
-      id: '2',
-      participantIds: [userId, 'user-3'],
-      lastMessage: {
-        id: 'msg-2',
-        content: 'Can you send me more photos?',
-        senderId: userId,
-        receiverId: 'user-3',
-        timestamp: '2024-01-14T15:45:00Z',
-        isRead: true,
-        type: 'text' as const,
-      },
-      unreadCount: 0,
-      updatedAt: '2024-01-14T15:45:00Z',
-    }
-  ];
 
   const [selectedConversation, setSelectedConversation] = useState<any>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [messageInput, setMessageInput] = useState("");
   const [isMobile, setIsMobile] = useState(false);
   const [showConversationList, setShowConversationList] = useState(true);
+  const [conversations, setConversations] = useState<any[]>([]);
+  const [conversationMessages, setConversationMessages] = useState<any[]>([]);
+  const [isSending, setIsSending] = useState(false);
+  const [isLoadingMessages, setIsLoadingMessages] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-
+  
   // Check if user came from product detail page
   const isFromProduct = productContext?.fromProduct;
   const productInfo = isFromProduct ? {
@@ -319,62 +94,89 @@ export default function MessagesPage() {
     sellerName: productContext.sellerName
   } : null;
 
-  const filteredConversations = conversations.filter(conversation => {
+  const filteredConversations = conversations.filter((conversation: any) => {
     if (searchTerm) {
-      return conversation.lastMessage?.content.toLowerCase().includes(searchTerm.toLowerCase());
+      return conversation.content?.toLowerCase().includes(searchTerm.toLowerCase());
     }
     return true;
   });
 
-  const handleConversationClick = (conversation: any) => {
+  const handleConversationClick = async (conversation: any) => {
     setSelectedConversation(conversation);
+    setIsLoadingMessages(true);
+    
+    try {
+      // 선택된 대화의 메시지들 로드
+      const messages = await getConversationMessages(browserClient, {
+        conversationId: conversation.conversation_id
+      });
+      setConversationMessages(messages);
+    } catch (error) {
+      console.error('Failed to load conversation messages:', error);
+    } finally {
+      setIsLoadingMessages(false);
+    }
+    
     if (isMobile) {
       setShowConversationList(false);
     }
   };
 
-  // Mock messages for selected conversation
-  const getConversationMessages = (conversationId: string) => {
-    if (conversationId === '1') {
-      return [
-        {
-          id: 'msg-1-1',
-          content: 'Hi! I saw your iPhone listing. Is it still available?',
-          senderId: 'user-2',
-          receiverId: userId,
-          timestamp: '2024-01-15T10:25:00Z',
-          isRead: true,
-          type: 'text' as const,
-        },
-        {
-          id: 'msg-1-2',
-          content: 'Yes, it is! Are you interested?',
-          senderId: userId,
-          receiverId: 'user-2',
-          timestamp: '2024-01-15T10:28:00Z',
-          isRead: true,
-          type: 'text' as const,
-        },
-        {
-          id: 'msg-1-3',
-          content: 'Is this still available?',
-          senderId: 'user-2',
-          receiverId: userId,
-          timestamp: '2024-01-15T10:30:00Z',
-          isRead: false,
-          type: 'text' as const,
-        }
-      ];
-    }
-    return [];
-  };
+  const handleSendMessage = async () => {
+    if (!messageInput.trim() || !selectedConversation || isSending) return;
 
-  const handleSendMessage = () => {
-    if (!messageInput.trim() || !selectedConversation) return;
+    setIsSending(true);
     
-    // Mock sending message
-    console.log('Sending message:', messageInput);
-    setMessageInput("");
+    try {
+      let conversationId = selectedConversation.conversation_id;
+      
+      // 대화가 없으면 새로 생성
+      if (!conversationId) {
+        const otherUserId = selectedConversation.sender_id === userId ? selectedConversation.receiver_id : selectedConversation.sender_id;
+        const conversation = await getOrCreateConversation(browserClient, {
+          userId,
+          otherUserId
+        });
+        conversationId = conversation.conversation_id;
+        
+        // selectedConversation 업데이트
+        setSelectedConversation((prev: any) => ({
+          ...prev,
+          conversation_id: conversationId
+        }));
+      }
+      
+      // 메시지 전송
+      const newMessage = await sendMessage(browserClient, {
+        conversationId,
+        senderId: userId,
+        receiverId: selectedConversation.sender_id === userId ? selectedConversation.receiver_id : selectedConversation.sender_id,
+        content: messageInput.trim()
+      });
+
+      // 새 메시지를 대화 메시지 목록에 추가
+      const messageWithDetails = {
+        ...newMessage,
+        sender_username: "You", // 현재 사용자
+        receiver_username: selectedConversation.sender_id === userId ? selectedConversation.receiver_username : selectedConversation.sender_username,
+        message_type_category: "text",
+        message_status: "read"
+      };
+
+      setConversationMessages(prev => [...prev, messageWithDetails]);
+      setMessageInput("");
+      
+      // 메시지 목록 맨 아래로 스크롤
+      setTimeout(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+      }, 100);
+      
+    } catch (error) {
+      console.error('Failed to send message:', error);
+      // 에러 처리 (사용자에게 알림 등)
+    } finally {
+      setIsSending(false);
+    }
   };
 
   const formatTime = (timestamp: string) => {
@@ -394,6 +196,24 @@ export default function MessagesPage() {
     
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
+
+  // 초기 대화 목록 로드
+  useEffect(() => {
+    const loadConversations = async () => {
+      try {
+        const convs = await getConversations(browserClient, { profileId: userId });
+        setConversations(convs);
+      } catch (error) {
+        console.error('Failed to load conversations:', error);
+      }
+    };
+    loadConversations();
+  }, [userId]);
+
+  // 메시지 목록이 업데이트될 때마다 스크롤을 맨 아래로
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [conversationMessages]);
 
   return (
     <div className="container mx-auto px-0 py-8 md:px-8">
@@ -436,11 +256,11 @@ export default function MessagesPage() {
             </CardHeader>
             <CardContent className="p-0">
               <div className="space-y-1">
-                {filteredConversations.map((conversation) => (
+                {filteredConversations.map((conversation: any) => (
                   <div
-                    key={conversation.id}
+                    key={conversation.message_id}
                     className={`flex items-center space-x-3 p-4 cursor-pointer hover:bg-gray-50 ${
-                      selectedConversation?.id === conversation.id ? 'bg-blue-50' : ''
+                      selectedConversation?.message_id === conversation.message_id ? 'bg-blue-50' : ''
                     }`}
                     onClick={() => handleConversationClick(conversation)}
                   >
@@ -450,18 +270,20 @@ export default function MessagesPage() {
                     </Avatar>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between">
-                        <p className="text-sm font-medium truncate">User {conversation.participantIds.find((id: string) => id !== userId)?.slice(-1)}</p>
+                        <p className="text-sm font-medium truncate">
+                          {conversation.sender_id === userId ? conversation.receiver_username : conversation.sender_username}
+                        </p>
                         <span className="text-xs text-gray-500">
-                          {formatTime(conversation.lastMessage?.timestamp || '')}
+                          {formatTime(conversation.created_at || '')}
                         </span>
                       </div>
                       <p className="text-xs text-gray-500 truncate">
-                        {conversation.lastMessage?.content}
+                        {conversation.content}
                       </p>
                     </div>
-                    {conversation.unreadCount > 0 && (
-                      <Badge variant="destructive" className="ml-2">
-                        {conversation.unreadCount}
+                    {conversation.message_status === 'unread' && (
+                      <Badge variant="destructive" className="ml-2 rounded-sm bg-rose-500 text-gray-200">
+                        {conversation.message_status}
                       </Badge>
                     )}
                   </div>
@@ -480,50 +302,50 @@ export default function MessagesPage() {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-3">
                       <Avatar className="h-10 w-10">
-                        <AvatarImage src="/sample.png" />
+                        <AvatarImage src={selectedConversation.sender_avatar_url} />
                         <AvatarFallback>U</AvatarFallback>
                       </Avatar>
                       <div>
-                        <h3 className="font-medium">User {selectedConversation.participantIds.find((id: string) => id !== userId)?.slice(-1)}</h3>
+                        <h3 className="font-medium">
+                          {selectedConversation.sender_id === userId ? selectedConversation.receiver_username : selectedConversation.sender_username}
+                        </h3>
                         <p className="text-sm text-gray-500">Online</p>
                       </div>
-                    </div>
-                    <div className="flex space-x-2">
-                      <Button variant="ghost" size="icon">
-                        <PhoneIcon className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="icon">
-                        <VideoCameraIcon className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="icon">
-                        <Cog6ToothIcon className="h-4 w-4" />
-                      </Button>
                     </div>
                   </div>
                 </CardHeader>
                 
                 <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                  {getConversationMessages(selectedConversation.id).map((message) => (
-                    <div
-                      key={message.id}
-                      className={`flex ${message.senderId === userId ? 'justify-end' : 'justify-start'}`}
-                    >
-                      <div
-                        className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
-                          message.senderId === userId
-                            ? 'bg-blue-600 text-white'
-                            : 'bg-gray-100 text-gray-900'
-                        }`}
-                      >
-                        <p className="text-sm">{message.content}</p>
-                        <p className={`text-xs mt-1 ${
-                          message.senderId === userId ? 'text-blue-100' : 'text-gray-500'
-                        }`}>
-                          {formatTime(message.timestamp)}
-                        </p>
+                  {isLoadingMessages ? (
+                    <div className="flex items-center justify-center h-full">
+                      <div className="text-center">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                        <p className="text-sm text-gray-500 mt-2">Loading messages...</p>
                       </div>
                     </div>
-                  ))}
+                  ) : (
+                    conversationMessages.map((message: any) => (
+                      <div
+                        key={message.message_id}
+                        className={`flex ${message.sender_id === userId ? 'justify-end' : 'justify-start'}`}
+                      >
+                        <div
+                          className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
+                            message.sender_id === userId
+                              ? 'bg-blue-600 text-white'
+                              : 'bg-gray-100 text-gray-900'
+                          }`}
+                        >
+                          <p className="text-sm">{message.content}</p>
+                          <p className={`text-xs mt-1 ${
+                            message.sender_id === userId ? 'text-blue-100' : 'text-gray-500'
+                          }`}>
+                            {formatTime(message.created_at)}
+                          </p>
+                        </div>
+                      </div>
+                    ))
+                  )}
                   <div ref={messagesEndRef} />
                 </div>
 
@@ -534,13 +356,14 @@ export default function MessagesPage() {
                       value={messageInput}
                       onChange={(e) => setMessageInput(e.target.value)}
                       onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+                      disabled={isSending}
                     />
-                    <Button variant="ghost" size="icon">
+                    <Button variant="ghost" size="icon" disabled={isSending}>
                       <PhotoIcon className="h-4 w-4" />
                     </Button>
                     <Popover>
                       <PopoverTrigger asChild>
-                        <Button variant="ghost" size="icon">
+                        <Button variant="ghost" size="icon" disabled={isSending}>
                           <FaceSmileIcon className="h-4 w-4" />
                         </Button>
                       </PopoverTrigger>
@@ -558,7 +381,9 @@ export default function MessagesPage() {
                         </div>
                       </PopoverContent>
                     </Popover>
-                    <Button onClick={handleSendMessage}>Send</Button>
+                    <Button onClick={handleSendMessage} disabled={isSending}>
+                      {isSending ? 'Sending...' : 'Send'}
+                    </Button>
                   </div>
                 </div>
               </>
@@ -575,5 +400,5 @@ export default function MessagesPage() {
         </div>
       </div>
     </div>
-  );
-} 
+  )
+}

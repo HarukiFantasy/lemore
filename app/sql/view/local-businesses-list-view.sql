@@ -1,3 +1,4 @@
+-- 5. Local Businesses List View
 CREATE OR REPLACE VIEW local_businesses_list_view AS
 SELECT
     b.id,

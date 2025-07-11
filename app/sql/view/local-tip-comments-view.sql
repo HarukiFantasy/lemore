@@ -1,4 +1,4 @@
--- Local tip comments view with author information
+-- 10. Local Tip Comments View
 CREATE OR REPLACE VIEW local_tip_comments_view AS
 SELECT
     c.comment_id,
@@ -16,8 +16,3 @@ FROM
     local_tip_comments c
     JOIN user_profiles u ON c.author = u.profile_id
     JOIN local_tip_posts p ON c.post_id = p.id;
-
--- Grant permissions
-GRANT SELECT ON local_tip_comments_view TO anon;
-
-GRANT SELECT ON local_tip_comments_view TO authenticated;

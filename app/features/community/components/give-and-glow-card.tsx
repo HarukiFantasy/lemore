@@ -21,6 +21,8 @@ interface GiveAndGlowCardProps {
   tags: string[];
   appreciationBadge?: boolean;
   giverId?: string; // Add giver ID for appreciation badge checking
+  giverStats?: any; // giver 통계 데이터
+  receiverStats?: any; // receiver 통계 데이터
 }
 
 // Star rating component
@@ -85,6 +87,8 @@ export function GiveAndGlowCard({
   tags,
   appreciationBadge = false,
   giverId,
+  giverStats,
+  receiverStats,
 }: GiveAndGlowCardProps) {
   // Show appreciation badge if rating > 4 or if explicitly set to true
   const shouldShowAppreciationBadge = appreciationBadge || rating > 4;
@@ -109,9 +113,9 @@ export function GiveAndGlowCard({
                 <div className="flex items-center gap-2 text-sm text-gray-600">
                   <span>Given by </span>
                   <UserStatsHoverCard
-                    userId={giverId}
+                    profileId={giverId}
                     userName={giverName}
-                    userType="Giver"
+                    userStats={giverStats}
                     showAppreciationBadge={shouldShowAppreciationBadge}
                   >
                     {giverName}
@@ -119,9 +123,9 @@ export function GiveAndGlowCard({
                   <span>•</span>
                   <span>Reviewed by </span>
                   <UserStatsHoverCard
-                    userId={receiverId}
+                    profileId={receiverId}
                     userName={receiverName}
-                    userType="Receiver"
+                    userStats={receiverStats}
                   >
                     {receiverName}
                   </UserStatsHoverCard>

@@ -3,6 +3,7 @@ import { useSearchParams } from "react-router";
 import { Button } from "../../../common/components/ui/button";
 import { Input } from "../../../common/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "../../../common/components/ui/card";
+import { Avatar, AvatarImage, AvatarFallback } from "../../../common/components/ui/avatar";
 import { HandThumbUpIcon, ChatBubbleLeftEllipsisIcon, ChevronDownIcon, ChevronUpIcon, EyeIcon } from "@heroicons/react/24/outline";
 import { AvatarCircles } from "../../../../components/magicui/avatar-circles";
 import { getCategoryColors, formatTimeAgo } from "~/lib/utils";
@@ -13,6 +14,7 @@ import {
 } from "../constants";
 import { localTipCategories } from "~/schema";
 import { getLocalTipComments, getLocalTipPosts } from '../queries';
+import { UserStatsHoverCard } from "../../../common/components/user-stats-hover-card";
 import type { Route } from "./+types/local-tips-page"
 import { makeSSRClient } from "~/supa-client";
 
@@ -118,6 +120,25 @@ export default function LocalTipsPage({ loaderData }: Route.ComponentProps) {
     setSearchParams(newSearchParams);
   };
 
+  // Clear all filters
+  const handleClearFilters = () => {
+    setSearchInput("");
+    const newSearchParams = new URLSearchParams();
+    setSearchParams(newSearchParams);
+  };
+
+  // Clear specific filter
+  const handleClearFilter = (filterType: 'search' | 'category') => {
+    const newSearchParams = new URLSearchParams(searchParams);
+    if (filterType === 'search') {
+      newSearchParams.delete("search");
+      setSearchInput("");
+    } else if (filterType === 'category') {
+      newSearchParams.delete("category");
+    }
+    setSearchParams(newSearchParams);
+  };
+
   // Check if content is long (more than 2 lines)
   const isContentLong = (content: string) => {
     // Remove HTML tags for line counting
@@ -199,6 +220,41 @@ export default function LocalTipsPage({ loaderData }: Route.ComponentProps) {
         </CardContent>
       </Card>
 
+      {/* Active filters display and clear */}
+      {(searchQuery || categoryFilter !== "All") && (
+        <div className="mb-6 flex flex-wrap items-center gap-2 justify-center">
+          <span className="text-sm text-gray-600">Active filters:</span>
+          {searchQuery && (
+            <div className="flex items-center gap-1 bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-sm">
+              <span>Search: "{searchQuery}"</span>
+              <button
+                onClick={() => handleClearFilter('search')}
+                className="ml-1 text-purple-600 hover:text-purple-800"
+              >
+                ×
+              </button>
+            </div>
+          )}
+          {categoryFilter !== "All" && (
+            <div className="flex items-center gap-1 bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm">
+              <span>Category: {categoryFilter}</span>
+              <button
+                onClick={() => handleClearFilter('category')}
+                className="ml-1 text-blue-600 hover:text-blue-800"
+              >
+                ×
+              </button>
+            </div>
+          )}
+          <button
+            onClick={handleClearFilters}
+            className="text-sm text-gray-500 hover:text-gray-700 underline"
+          >
+            Clear all
+          </button>
+        </div>
+      )}
+
       {/* Results and Action Button */}
       <div className="flex justify-between items-center mb-4">
         <p className="text-muted-foreground">
@@ -253,7 +309,26 @@ export default function LocalTipsPage({ loaderData }: Route.ComponentProps) {
                     )}
                   </div>
                   <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                    <span>By {(post as any).username || 'Unknown User'}</span>
+                    <div className="flex items-center gap-2">
+                      <span>By</span>
+                      <Avatar className="h-6 w-6">
+                        <AvatarImage src={post.avatar_url || undefined} alt={(post as any).username || 'Unknown User'} />
+                        <AvatarFallback className="text-xs">
+                          {(post as any).username ? (post as any).username.charAt(0).toUpperCase() : 'U'}
+                        </AvatarFallback>
+                      </Avatar>
+                      <UserStatsHoverCard
+                        profileId={(post as any).profile_id}
+                        userName={(post as any).username || 'Unknown User'}
+                        userStats={{
+                          totalListings: 0,
+                          rating: 0,
+                          responseRate: "0%"
+                        }}
+                      >
+                        {(post as any).username || 'Unknown User'}
+                      </UserStatsHoverCard>
+                    </div>
                     <span>•</span>
                     <span>{formatTimeAgo(new Date(post.created_at))}</span>
                     <span>•</span>

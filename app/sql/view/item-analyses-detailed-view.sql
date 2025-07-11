@@ -1,3 +1,4 @@
+-- 9. Item Analyses Detailed View
 CREATE OR REPLACE VIEW item_analyses_detailed_view AS
 SELECT
     -- Item analysis data

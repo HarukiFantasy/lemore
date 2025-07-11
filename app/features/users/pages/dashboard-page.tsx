@@ -2,18 +2,24 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../..
 import { Button } from "../../../common/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "../../../common/components/ui/avatar";
 import { Separator } from "../../../common/components/ui/separator";
-import { Link } from "react-router";
+import { Link, redirect } from "react-router";
 import { NumberTicker } from 'components/magicui/number-ticker';
-import { getCurrentUser } from "../queries";
+import { getDashboard } from "../queries";
 import type { Route } from "./+types/dashboard-page";
+import { makeSSRClient } from "~/supa-client";
 
-export const loader = async () => {
-  const user = await getCurrentUser();
-  return { user };
+export const loader = async ({request}: Route.LoaderArgs) => {
+  const { client } = makeSSRClient(request);
+  const { data: { user } } = await client.auth.getUser();
+  if (!user) {
+    return redirect('/auth/login');
+  }
+  const dashboard = await getDashboard(client, { profileId: user.id });
+  return { dashboard };
 };
 
 export default function DashboardPage({ loaderData }: Route.ComponentProps) {
-  const { user } = loaderData;
+  const { dashboard } = loaderData;
   return (
     <div className="container mx-auto px-0 py-8 md:px-8">
       <div className="mb-8">
@@ -30,7 +36,7 @@ export default function DashboardPage({ loaderData }: Route.ComponentProps) {
               <CardDescription>Items you've uploaded</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-blue-600">{user.total_listings}</div>
+              <div className="text-3xl font-bold text-blue-600">{dashboard.total_listings}</div>
               <p className="text-sm text-gray-500 mt-1">Click to view all</p>
             </CardContent>
           </Card>
@@ -42,8 +48,8 @@ export default function DashboardPage({ loaderData }: Route.ComponentProps) {
             <CardDescription>Your earnings this month</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-green-600">$<NumberTicker value={user.total_sales} className="text-3xl font-bold text-green-600"/></div>
-            <p className="text-sm text-gray-500 mt-1">{user.total_sales_change}</p>
+            <div className="text-3xl font-bold text-green-600">THB <NumberTicker value={dashboard.total_sales} className="text-3xl font-bold text-green-600"/></div>
+            <p className="text-sm text-gray-500 mt-1">{dashboard.total_sales_change}</p>
           </CardContent>
         </Card>
 
@@ -54,8 +60,8 @@ export default function DashboardPage({ loaderData }: Route.ComponentProps) {
               <CardDescription>Unread messages</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-orange-600">{user.unread_messages}</div>
-              <p className="text-sm text-gray-500 mt-1">{user.unread_messages_change}</p>
+              <div className="text-3xl font-bold text-orange-600">{dashboard.unread_messages}</div>
+              <p className="text-sm text-gray-500 mt-1">{dashboard.unread_messages_change}</p>
             </CardContent>
           </Card>
         </Link>
@@ -70,7 +76,7 @@ export default function DashboardPage({ loaderData }: Route.ComponentProps) {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {(user.recent_activity || []).map((activity: any, index: number) => (
+              {(dashboard.recent_activity || []).map((activity: any, index: number) => (
                 <div key={activity.id}>
                   <div className="flex items-center space-x-3">
                     <Avatar className="h-10 w-10">
@@ -82,7 +88,7 @@ export default function DashboardPage({ loaderData }: Route.ComponentProps) {
                       <p className="text-xs text-gray-500">{activity.timestamp}</p>
                     </div>
                   </div>
-                  {index < (user.recent_activity || []).length - 1 && <Separator className="mt-4" />}
+                  {index < (dashboard.recent_activity || []).length - 1 && <Separator className="mt-4" />}
                 </div>
               ))}
             </div>

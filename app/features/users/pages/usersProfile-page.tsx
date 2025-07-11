@@ -28,9 +28,41 @@ export const loader = async ({request, params}: Route.LoaderArgs) => {
   const targetUserProfile = await getUserByUsername(client, { username: targetUsername });
   const userProducts = await getProductByUsername(client, targetUsername);
 
+  // 사용자 통계 가져오기
+  const { data: listings, error: listingsError } = await client
+    .from("products_listings_view")
+    .select("product_id")
+    .eq("seller_name", targetUsername);
+    
+  if (listingsError) {
+    console.error("Error fetching user listings:", listingsError);
+  }
+  
+  // 사용자의 리뷰 평점 가져오기
+  const { data: reviews, error: reviewsError } = await client
+    .from("local_reviews_list_view")
+    .select("rating")
+    .eq("author_username", targetUsername);
+    
+  if (reviewsError) {
+    console.error("Error fetching user reviews:", reviewsError);
+  }
+  
+  // 평균 평점 계산
+  const averageRating = reviews && reviews.length > 0 
+    ? reviews.reduce((sum, review) => sum + (review.rating || 0), 0) / reviews.length 
+    : 0;
+
+  const userStats = {
+    total_listings: listings?.length || 0,
+    rating: Math.round(averageRating * 10) / 10,
+    response_rate: "95%", // 기본값
+  };
+
   return { 
     targetUserProfile,
     userProducts,
+    userStats,
   };
 };
 

@@ -1,4 +1,4 @@
--- User Dashboard View - 대시보드에 필요한 모든 사용자 데이터
+-- 1. User Dashboard View
 CREATE OR REPLACE VIEW user_dashboard_view AS
 WITH
     user_stats AS (
@@ -143,7 +143,8 @@ SELECT
     END as messages_change_text,
     -- 판매 변화 텍스트
     CASE
-        WHEN sc.current_month_sales > sc.last_month_sales THEN '+' || ROUND(
+        WHEN sc.last_month_sales > 0
+        AND sc.current_month_sales > sc.last_month_sales THEN '+' || ROUND(
             (
                 (
                     sc.current_month_sales - sc.last_month_sales
@@ -151,7 +152,8 @@ SELECT
             ) * 100,
             1
         ) || '% from last month'
-        WHEN sc.current_month_sales < sc.last_month_sales THEN ROUND(
+        WHEN sc.last_month_sales > 0
+        AND sc.current_month_sales < sc.last_month_sales THEN ROUND(
             (
                 (
                     sc.current_month_sales - sc.last_month_sales
@@ -159,6 +161,10 @@ SELECT
             ) * 100,
             1
         ) || '% from last month'
+        WHEN sc.last_month_sales = 0
+        AND sc.current_month_sales > 0 THEN '+100% from last month'
+        WHEN sc.last_month_sales = 0
+        AND sc.current_month_sales = 0 THEN 'No change from last month'
         ELSE 'No change from last month'
     END as sales_change_text
 FROM

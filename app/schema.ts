@@ -14,6 +14,8 @@ import {
   bigint,
   primaryKey,
   check,
+  unique,
+  uniqueIndex,
 } from "drizzle-orm/pg-core";
 import { LOCATIONS } from './constants';
 
@@ -103,7 +105,7 @@ export const productImages = pgTable("product_images", {
 
 // Product likes table
 export const productLikes = pgTable("product_likes", {
-  product_id: bigint("product_id", {mode: "number"}).notNull().references(() => products.product_id),
+  product_id: bigint("product_id", {mode: "number"}).notNull().references(() => products.product_id, {onDelete: "cascade"}),
   user_id: uuid().notNull().references(() => userProfiles.profile_id, {onDelete: "cascade"}), 
   created_at: timestamp("created_at").notNull().defaultNow(),
 }, (table) => [

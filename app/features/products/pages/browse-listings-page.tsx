@@ -8,6 +8,7 @@ import { PRODUCT_CATEGORIES, CATEGORY_ICONS } from "../constants";
 import { BlurFade } from 'components/magicui/blur-fade';
 import { getProductsListings } from '../queries';
 import { makeSSRClient } from '~/supa-client';
+import { getUserStats } from '~/features/users/queries';
 
 export const meta: Route.MetaFunction = () => {
   return [
@@ -20,7 +21,27 @@ export const meta: Route.MetaFunction = () => {
 export const loader = async ({ request }: Route.LoaderArgs) => {
   const { client, headers } = makeSSRClient(request);
   const products = await getProductsListings(client);
-  return { products };
+  
+  // 각 제품의 판매자에 대한 통계 수집
+  const userStatsMap = new Map();
+  
+  for (const product of products) {
+    if (product.seller_name && !userStatsMap.has(product.seller_name)) {
+      try {
+        const sellerStats = await getUserStats(client, { username: product.seller_name });
+        userStatsMap.set(product.seller_name, sellerStats);
+      } catch (error) {
+        console.error(`Error fetching stats for seller ${product.seller_name}:`, error);
+        userStatsMap.set(product.seller_name, {
+          totalListings: 0,
+          rating: 0,
+          responseRate: "0%"
+        });
+      }
+    }
+  }
+  
+  return { products, userStats: Object.fromEntries(userStatsMap) };
 }
 
 export default function BrowseListingsPage({ loaderData }: Route.ComponentProps) {
@@ -28,7 +49,7 @@ export default function BrowseListingsPage({ loaderData }: Route.ComponentProps)
   const [searchInput, setSearchInput] = useState(searchParams.get("q") || "");
   const [currentPage, setCurrentPage] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
-  const { products } = loaderData;
+  const { products, userStats } = loaderData;
   const [displayedProducts, setDisplayedProducts] = useState<any[]>(products || []);
   const [hasMore, setHasMore] = useState(true);
   const observerRef = useRef<IntersectionObserver | null>(null);
@@ -211,6 +232,7 @@ export default function BrowseListingsPage({ loaderData }: Route.ComponentProps)
                   seller={product.seller_name}
                   is_sold={product.is_sold || false}
                   category={product.category_name || "electronics"}
+                  sellerStats={userStats[product.seller_name]}
                 />
               </BlurFade>
             ))

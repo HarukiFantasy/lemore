@@ -6,7 +6,8 @@ import { UserStatsHoverCard } from "~/common/components/user-stats-hover-card";
 import { PRODUCT_CATEGORIES } from "../constants";
 
 // 가격 포맷팅 함수
-const formatPrice = (price: number, currency: string = "THB"): string => {
+const formatPrice = (price?: number, currency: string = "THB"): string => {
+  if (typeof price !== 'number' || isNaN(price)) return '';
   return `${currency} ${price.toLocaleString()}`;
 };
 
@@ -22,6 +23,7 @@ const productCardSchema = z.object({
   is_sold: z.boolean().optional(),
   priceType: z.string().optional().default("fixed"),
   category: z.enum(PRODUCT_CATEGORIES).optional(),
+  sellerStats: z.any().optional(),
 });
 
 type ProductCardProps = z.infer<typeof productCardSchema>; 
@@ -36,7 +38,8 @@ export function ProductCard({
   likes = 0,
   is_sold = false,
   priceType = "fixed",
-  category = "Electronics"
+  category = "Electronics",
+  sellerStats
 }: ProductCardProps) {
   const isFree = priceType === "free";
 
@@ -72,6 +75,7 @@ export function ProductCard({
             <UserStatsHoverCard
               profileId={seller}
               userName={seller}
+              userStats={sellerStats}
               className="text-xs text-neutral-500 truncate"
             >
               {seller}

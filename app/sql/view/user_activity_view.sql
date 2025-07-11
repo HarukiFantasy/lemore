@@ -1,5 +1,6 @@
 -- User Activity View - 최근 활동 내역
 
+
 CREATE OR REPLACE VIEW user_activity_view AS
 WITH all_activities AS (
     -- 상품 관련 활동

@@ -282,6 +282,31 @@ export default function LocalReviewsPage({ loaderData }: Route.ComponentProps) {
     setSearchParams(newSearchParams);
   };
 
+  // Clear all filters
+  const handleClearFilters = () => {
+    setSearchQuery("");
+    setSelectedType("All");
+    setSelectedPriceRange("All");
+    const newSearchParams = new URLSearchParams();
+    setSearchParams(newSearchParams);
+  };
+
+  // Clear specific filter
+  const handleClearFilter = (filterType: 'search' | 'type' | 'priceRange') => {
+    const newSearchParams = new URLSearchParams(searchParams);
+    if (filterType === 'search') {
+      newSearchParams.delete("search");
+      setSearchQuery("");
+    } else if (filterType === 'type') {
+      newSearchParams.delete("type");
+      setSelectedType("All");
+    } else if (filterType === 'priceRange') {
+      newSearchParams.delete("priceRange");
+      setSelectedPriceRange("All");
+    }
+    setSearchParams(newSearchParams);
+  };
+
   const handleSubmitReview = () => {
     if (selectedBusiness && newReview.review.trim()) {
       // TODO: Submit to backend
@@ -399,6 +424,52 @@ export default function LocalReviewsPage({ loaderData }: Route.ComponentProps) {
           </div>
         </CardContent>
       </Card>
+
+      {/* Active filters display and clear */}
+      {(searchQuery || selectedType !== "All" || selectedPriceRange !== "All") && (
+        <div className="mb-6 flex flex-wrap items-center gap-2 justify-center">
+          <span className="text-sm text-gray-600">Active filters:</span>
+          {searchQuery && (
+            <div className="flex items-center gap-1 bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-sm">
+              <span>Search: "{searchQuery}"</span>
+              <button
+                onClick={() => handleClearFilter('search')}
+                className="ml-1 text-purple-600 hover:text-purple-800"
+              >
+                ×
+              </button>
+            </div>
+          )}
+          {selectedType !== "All" && (
+            <div className="flex items-center gap-1 bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm">
+              <span>Type: {selectedType}</span>
+              <button
+                onClick={() => handleClearFilter('type')}
+                className="ml-1 text-blue-600 hover:text-blue-800"
+              >
+                ×
+              </button>
+            </div>
+          )}
+          {selectedPriceRange !== "All" && (
+            <div className="flex items-center gap-1 bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm">
+              <span>Price: {selectedPriceRange}</span>
+              <button
+                onClick={() => handleClearFilter('priceRange')}
+                className="ml-1 text-green-600 hover:text-green-800"
+              >
+                ×
+              </button>
+            </div>
+          )}
+          <button
+            onClick={handleClearFilters}
+            className="text-sm text-gray-500 hover:text-gray-700 underline"
+          >
+            Clear all
+          </button>
+        </div>
+      )}
 
       {/* Results Statistics and Action Button */}
       <div className="flex justify-between items-center mb-4">

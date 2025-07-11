@@ -9,6 +9,7 @@ import { GiveAndGlowCard } from '../components/give-and-glow-card';
 import { getGiveAndGlowReviews } from '../queries';
 import { PRODUCT_CATEGORIES } from '~/features/products/constants';
 import { makeSSRClient } from "~/supa-client";
+import { getUserStats } from '~/features/users/queries';
 
 // Error Boundary
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
@@ -47,11 +48,47 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
 export const loader = async ({ request }: Route.LoaderArgs) => {
   const { client, headers } = makeSSRClient(request);
   const reviews = await getGiveAndGlowReviews(client);
-  return { reviews };
+  
+  // 각 리뷰의 giver와 receiver에 대한 통계 수집
+  const userStatsMap = new Map();
+  
+  for (const review of reviews) {
+    // giver 통계
+    if (review.giver_username && !userStatsMap.has(review.giver_username)) {
+      try {
+        const giverStats = await getUserStats(client, { username: review.giver_username });
+        userStatsMap.set(review.giver_username, giverStats);
+      } catch (error) {
+        console.error(`Error fetching stats for giver ${review.giver_username}:`, error);
+        userStatsMap.set(review.giver_username, {
+          totalListings: 0,
+          rating: 0,
+          responseRate: "0%"
+        });
+      }
+    }
+    
+    // receiver 통계
+    if (review.receiver_username && !userStatsMap.has(review.receiver_username)) {
+      try {
+        const receiverStats = await getUserStats(client, { username: review.receiver_username });
+        userStatsMap.set(review.receiver_username, receiverStats);
+      } catch (error) {
+        console.error(`Error fetching stats for receiver ${review.receiver_username}:`, error);
+        userStatsMap.set(review.receiver_username, {
+          totalListings: 0,
+          rating: 0,
+          responseRate: "0%"
+        });
+      }
+    }
+  }
+  
+  return { reviews, userStats: Object.fromEntries(userStatsMap) };
 }
 
 export default function GiveAndGlowPage({ loaderData }: Route.ComponentProps) {
-  const { reviews } = loaderData;
+  const { reviews, userStats } = loaderData;
   const [searchParams, setSearchParams] = useSearchParams();
   const location = "Bangkok";
   const urlLocation = searchParams.get("location") || location;
@@ -78,13 +115,13 @@ export default function GiveAndGlowPage({ loaderData }: Route.ComponentProps) {
   // Filter reviews based on search and category
   const filteredReviews = reviews.filter((review: any) => {
     const matchesSearch = !urlSearchQuery || 
-      review.product?.title?.toLowerCase().includes(urlSearchQuery.toLowerCase()) ||
-      review.giver?.username?.toLowerCase().includes(urlSearchQuery.toLowerCase()) ||
-      review.receiver?.username?.toLowerCase().includes(urlSearchQuery.toLowerCase()) ||
+      review.product_title?.toLowerCase().includes(urlSearchQuery.toLowerCase()) ||
+      review.giver_username?.toLowerCase().includes(urlSearchQuery.toLowerCase()) ||
+      review.receiver_username?.toLowerCase().includes(urlSearchQuery.toLowerCase()) ||
       review.review?.toLowerCase().includes(urlSearchQuery.toLowerCase());
     
     const matchesCategory = urlCategoryFilter === "All" || review.category === urlCategoryFilter;
-    const matchesLocation = urlLocation === "All Cities" || review.product?.location === urlLocation;
+    const matchesLocation = urlLocation === "All Cities" || review.product_location === urlLocation;
     
     return matchesSearch && matchesCategory && matchesLocation;
   });
@@ -112,6 +149,27 @@ export default function GiveAndGlowPage({ loaderData }: Route.ComponentProps) {
       newSearchParams.delete("category");
     } else {
       newSearchParams.set("category", category);
+    }
+    setSearchParams(newSearchParams);
+  };
+
+  // Clear all filters
+  const handleClearFilters = () => {
+    setSearchQuery("");
+    setSelectedCategory("All");
+    const newSearchParams = new URLSearchParams();
+    setSearchParams(newSearchParams);
+  };
+
+  // Clear specific filter
+  const handleClearFilter = (filterType: 'search' | 'category') => {
+    const newSearchParams = new URLSearchParams(searchParams);
+    if (filterType === 'search') {
+      newSearchParams.delete("search");
+      setSearchQuery("");
+    } else if (filterType === 'category') {
+      newSearchParams.delete("category");
+      setSelectedCategory("All");
     }
     setSearchParams(newSearchParams);
   };
@@ -226,6 +284,41 @@ export default function GiveAndGlowPage({ loaderData }: Route.ComponentProps) {
         </CardContent>
       </Card>
 
+      {/* Active filters display and clear */}
+      {(urlSearchQuery || urlCategoryFilter !== "All") && (
+        <div className="mb-6 flex flex-wrap items-center gap-2 justify-center">
+          <span className="text-sm text-gray-600">Active filters:</span>
+          {urlSearchQuery && (
+            <div className="flex items-center gap-1 bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-sm">
+              <span>Search: "{urlSearchQuery}"</span>
+              <button
+                onClick={() => handleClearFilter('search')}
+                className="ml-1 text-purple-600 hover:text-purple-800"
+              >
+                ×
+              </button>
+            </div>
+          )}
+          {urlCategoryFilter !== "All" && (
+            <div className="flex items-center gap-1 bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm">
+              <span>Category: {urlCategoryFilter}</span>
+              <button
+                onClick={() => handleClearFilter('category')}
+                className="ml-1 text-blue-600 hover:text-blue-800"
+              >
+                ×
+              </button>
+            </div>
+          )}
+          <button
+            onClick={handleClearFilters}
+            className="text-sm text-gray-500 hover:text-gray-700 underline"
+          >
+            Clear all
+          </button>
+        </div>
+      )}
+
       {/* Results Statistics and Action Button */}
       <div className="flex justify-between items-center">
         <p className="text-sm text-gray-600">
@@ -249,20 +342,22 @@ export default function GiveAndGlowPage({ loaderData }: Route.ComponentProps) {
           <GiveAndGlowCard 
             key={review.id}
             id={review.id.toString()}
-            itemName={review.product?.title || "Unknown Item"}
+            itemName={review.product_title || "Unknown Item"}
             itemCategory={review.category}
-            giverName={review.giver?.username || "Unknown Giver"}
-            giverAvatar={review.giver?.avatar_url}
-            receiverName={review.receiver?.username || "Unknown Receiver"}
-            receiverAvatar={review.receiver?.avatar_url}
-            giverId={review.giver?.profile_id}
-            receiverId={review.receiver?.profile_id}
+            giverName={review.giver_username || "Unknown Giver"}
+            giverAvatar={review.giver_avatar_url}
+            receiverName={review.receiver_username || "Unknown Receiver"}
+            receiverAvatar={review.receiver_avatar_url}
+            giverId={review.giver_profile_id}
+            receiverId={review.receiver_profile_id}
             rating={review.rating}
             review={review.review}
             timestamp={review.created_at}
-            location={review.product?.location || "Unknown Location"}
+            location={review.product_location || "Unknown Location"}
             tags={review.tags || []}
             appreciationBadge={review.rating > 4}
+            giverStats={userStats[review.giver_username]}
+            receiverStats={userStats[review.receiver_username]}
           />
         ))}
       </div>

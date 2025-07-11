@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Link } from "react-router";
+import { Link, redirect } from "react-router";
 import { Button } from "~/common/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "~/common/components/ui/card";
 import { ProductCard } from "~/features/products/components/product-card";
@@ -11,6 +11,9 @@ import {
   SelectTrigger, 
   SelectValue 
 } from "~/common/components/ui/select";
+import { makeSSRClient } from "~/supa-client";
+import { Route } from './+types/likes-page';
+import { getLikedProductsByUserId } from '../queries';
 
 export const meta = () => {
   return [
@@ -19,98 +22,20 @@ export const meta = () => {
   ];
 };
 
-// Mock data for liked products
-const mockLikedProducts = [
-  {
-    id: "product-1",
-    title: "Vintage Bicycle - Perfect Condition",
-    price: 2500,
-    currency: "THB",
-    priceType: "fixed",
-    image: "/sample.png",
-    seller: "Sarah Johnson",
-    likes: 15,
-    category: "Sports & Outdoor",
-    condition: "Like New",
-    location: "Bangkok",
-    postedDate: "2 days ago"
-  },
-  {
-    id: "product-2",
-    title: "MacBook Pro 2021 - Excellent Condition",
-    price: 4500,
-    currency: "THB",
-    priceType: "fixed",
-    image: "/sample.png",
-    seller: "TechGuru",
-    likes: 32,
-    category: "Electronics",
-    condition: "Good",
-    location: "Chiang Mai",
-    postedDate: "1 week ago"
-  },
-  {
-    id: "product-3",
-    title: "Designer Handbag - Authentic",
-    price: 8500,
-    currency: "THB",
-    priceType: "fixed",
-    image: "/sample.png",
-    seller: "Fashionista",
-    likes: 8,
-    category: "Clothing",
-    condition: "Like New",
-    location: "Phuket",
-    postedDate: "3 days ago"
-  },
-  {
-    id: "product-4",
-    title: "Gaming Console - Complete Set",
-    price: 12000,
-    currency: "THB",
-    priceType: "fixed",
-    image: "/sample.png",
-    seller: "GameMaster",
-    likes: 25,
-    category: "Electronics",
-    condition: "Good",
-    location: "Bangkok",
-    postedDate: "5 days ago"
-  },
-  {
-    id: "product-5",
-    title: "Vintage Camera Collection",
-    price: 15000,
-    currency: "THB",
-    priceType: "fixed",
-    image: "/sample.png",
-    seller: "PhotoPro",
-    likes: 12,
-    category: "Electronics",
-    condition: "Fair",
-    location: "Pattaya",
-    postedDate: "1 week ago"
-  },
-  {
-    id: "product-6",
-    title: "Mountain Bike - Professional Grade",
-    price: 18500,
-    currency: "THB",
-    priceType: "fixed",
-    image: "/sample.png",
-    seller: "BikeExpert",
-    likes: 19,
-    category: "Sports & Outdoor",
-    condition: "Good",
-    location: "Chiang Mai",
-    postedDate: "4 days ago"
+export const loader = async ({request}: Route.LoaderArgs) => {
+  const { client } = makeSSRClient(request);
+  const { data: { user } } = await client.auth.getUser();
+  if (!user) {
+    return redirect('/auth/login');
   }
-];
+  const likedProducts = await getLikedProductsByUserId(client, { profileId: user.id });
+  return { likedProducts };
+};
 
-export default function LikesPage() {
+export default function LikesPage({ loaderData }: Route.ComponentProps) {
   const [sortBy, setSortBy] = useState("date");
   const [filterBy, setFilterBy] = useState("all");
-  const [likedProducts, setLikedProducts] = useState(mockLikedProducts);
+  const [likedProducts, setLikedProducts] = useState(loaderData.likedProducts);
 
   // Handle unlike
   const handleUnlike = (productId: string) => {
@@ -202,7 +127,7 @@ export default function LikesPage() {
               <div key={product.id} className="relative group">
                 <ProductCard
                   productId={product.id}
-                  image={product.image}
+                  image={product.primary_image?.startsWith('/') ? product.primary_image : `/toy1.png`}
                   title={product.title}
                   price={product.price}
                   seller={product.seller}

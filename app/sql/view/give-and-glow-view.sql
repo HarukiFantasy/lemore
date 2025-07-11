@@ -1,7 +1,10 @@
+-- 4. Give and Glow View
 CREATE OR REPLACE VIEW give_and_glow_view AS
 SELECT
     give_and_glow_reviews.id,
     give_and_glow_reviews.category,
+    give_and_glow_reviews.rating,
+    give_and_glow_reviews.review,
     give_and_glow_reviews.timestamp,
     give_and_glow_reviews.tags,
     give_and_glow_reviews.created_at,
@@ -26,4 +29,4 @@ FROM
     give_and_glow_reviews
     INNER JOIN user_profiles giver_profile ON give_and_glow_reviews.giver_id = giver_profile.profile_id
     INNER JOIN user_profiles receiver_profile ON give_and_glow_reviews.receiver_id = receiver_profile.profile_id
-    INNER JOIN products ON give_and_glow_reviews.product_id = products.product_id
+    INNER JOIN products ON give_and_glow_reviews.product_id = products.product_id;

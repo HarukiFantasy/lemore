@@ -1,3 +1,4 @@
+-- 8. Let Go Buddy Sessions With Items View
 CREATE OR REPLACE VIEW let_go_buddy_sessions_with_items_view AS
 SELECT
     -- Session data

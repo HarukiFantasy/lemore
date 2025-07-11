@@ -1,3 +1,4 @@
+-- 3. Products Listings View
 CREATE OR REPLACE VIEW products_listings_view AS
 SELECT
     p.product_id,
@@ -8,7 +9,7 @@ SELECT
     p.location,
     p.description,
     p.tags,
-    p.isSold,
+    p.is_sold,
     p.price_type,
     p.stats,
     p.created_at,

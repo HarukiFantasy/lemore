@@ -1,4 +1,4 @@
--- Product Detail View - 제품 상세 페이지에 필요한 모든 정보
+-- 2. Product Detail View
 CREATE OR REPLACE VIEW product_detail_view AS
 SELECT
     p.product_id,

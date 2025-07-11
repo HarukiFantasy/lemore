@@ -1,4 +1,4 @@
--- Users view that combines auth.users and user_profiles
+-- 7. Users View
 CREATE OR REPLACE VIEW users_view AS
 SELECT
     u.id as user_id,

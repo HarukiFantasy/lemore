@@ -26,7 +26,7 @@ export const getLocalTipComments = async (client: SupabaseClient<Database, any, 
 }
 
 export const getGiveAndGlowReviews = async (client: SupabaseClient<Database, any, any, any>) => {
-  const { data, error } = await client.from("give_and_glow_reviews").select(`*`);
+  const { data, error } = await client.from("give_and_glow_view").select(`*`);
   
   if (error) throw new Error(error.message);
   return data;

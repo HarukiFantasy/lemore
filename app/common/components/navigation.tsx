@@ -247,11 +247,6 @@ export function Navigation({
                       <HeartIcon className="size-4 mr-2" />Likes
                     </Link>
                   </DropdownMenuItem>
-                  <DropdownMenuItem asChild className="cursor-pointer">
-                    <Link to="/my/settings">
-                      <SettingsIcon className="size-4 mr-2" />Settings
-                    </Link>
-                  </DropdownMenuItem>
                   <DropdownMenuItem 
                     className="cursor-pointer md:hidden"
                     onClick={() => setIsNotificationsOpen(true)}

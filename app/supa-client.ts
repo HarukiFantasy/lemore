@@ -36,6 +36,9 @@ export type Database = MergeDeep<SupabaseDatabase, {
       user_let_go_buddy_stats_view: {
         Row: SetNonNullable<SupabaseDatabase["public"]["Views"]["user_let_go_buddy_stats_view"]["Row"]>
       }
+      user_messages_view: {
+        Row: SetNonNullable<SupabaseDatabase["public"]["Views"]["user_messages_view"]["Row"]>
+      }
       item_analyses_detailed_view: {
         Row: SetNonNullable<SupabaseDatabase["public"]["Views"]["item_analyses_detailed_view"]["Row"]> & {
           original_price: number | null,
