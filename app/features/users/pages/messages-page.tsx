@@ -1,398 +1,324 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../../common/components/ui/card";
-import { Button } from "../../../common/components/ui/button";
-import { Input } from "../../../common/components/ui/input";
-import { Avatar, AvatarFallback, AvatarImage } from "../../../common/components/ui/avatar";
-import { Badge } from "../../../common/components/ui/badge";
-import { Popover, PopoverContent, PopoverTrigger } from "../../../common/components/ui/popover";
-import { useLocation } from "react-router";
-import { useState, useRef, useEffect } from "react";
-import { z } from "zod";
 import type { Route } from './+types/messages-page';
-import { 
-  FaceSmileIcon, 
-  PhotoIcon,
-} from "@heroicons/react/24/outline";
-import { makeSSRClient, browserClient } from "~/supa-client";
-import { getLoggedInUserId, getMessages, sendMessage, getOrCreateConversation, getConversations, getConversationMessages } from "../queries";
+import { makeSSRClient, browserClient } from '~/supa-client';
+import { redirect } from 'react-router';
+import { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '~/common/components/ui/card';
+import { Avatar, AvatarFallback, AvatarImage } from '~/common/components/ui/avatar';
+import { Button } from '~/common/components/ui/button';
+import { Input } from '~/common/components/ui/input';
+import { Badge } from '~/common/components/ui/badge';
+import { HoverCard, HoverCardContent, HoverCardTrigger } from '~/common/components/ui/hover-card';
+import { getConversations, getConversationMessages, sendMessage, getOrCreateConversation } from '../queries';
+import { MessageCircle, Send, Clock, User, MoreHorizontal } from 'lucide-react';
 
-// Message schemas for data validation
-export const messageFiltersSchema = z.object({
-  search: z.string().optional(),
-  unreadOnly: z.boolean().optional(),
-  limit: z.number().min(1).max(100).default(20),
-});
-
-export const messageSchema = z.object({
-  id: z.string(),
-  content: z.string(),
-  senderId: z.string(),
-  receiverId: z.string(),
-  timestamp: z.string(),
-  isRead: z.boolean(),
-  type: z.enum(['text', 'image']).optional(),
-  imageUrl: z.string().optional(),
-});
-
-export const conversationSchema = z.object({
-  id: z.string(),
-  participantIds: z.array(z.string()),
-  lastMessage: messageSchema.optional(),
-  unreadCount: z.number(),
-  updatedAt: z.string(),
-});
-
-export const messageListSchema = z.object({
-  conversations: z.array(conversationSchema),
-  totalCount: z.number(),
-  hasMore: z.boolean(),
-});
-
-// TypeScript types
-export type MessageFilters = z.infer<typeof messageFiltersSchema>;
-export type Message = z.infer<typeof messageSchema>;
-export type Conversation = z.infer<typeof conversationSchema>;
-export type MessageList = z.infer<typeof messageListSchema>;
-
-
-// Meta function for SEO
-export const meta: Route.MetaFunction = () => {
-  return [
-    { title: "Messages | Lemore" },
-    { name: "description", content: "Connect with buyers and sellers in your community through messages" },
-  ];
-};
-
-// Loader function
 export const loader = async ({ request }: Route.LoaderArgs) => {
   const { client } = makeSSRClient(request);
-  const userId = await getLoggedInUserId(client);
-  const messages = await getMessages(client, { profileId: userId });
-  return { messages, userId };
+  const { data: { user } } = await client.auth.getUser();
+  if (!user) {
+    return redirect('/auth/login');
+  }
+  // 사용자의 대화 목록 가져오기
+  const conversations = await getConversations(client, { profileId: user.id });
+  
+  return { user, conversations };
 };
 
 export default function MessagesPage({ loaderData }: Route.ComponentProps) {
-  const { messages, userId } = loaderData;
-  const location = useLocation();
-  const productContext = location.state;
-
+  const { user, conversations } = loaderData;
   const [selectedConversation, setSelectedConversation] = useState<any>(null);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [messageInput, setMessageInput] = useState("");
-  const [isMobile, setIsMobile] = useState(false);
-  const [showConversationList, setShowConversationList] = useState(true);
-  const [conversations, setConversations] = useState<any[]>([]);
-  const [conversationMessages, setConversationMessages] = useState<any[]>([]);
-  const [isSending, setIsSending] = useState(false);
-  const [isLoadingMessages, setIsLoadingMessages] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  
-  // Check if user came from product detail page
-  const isFromProduct = productContext?.fromProduct;
-  const productInfo = isFromProduct ? {
-    id: productContext.productId,
-    title: productContext.productTitle,
-    sellerName: productContext.sellerName
-  } : null;
+  const [messages, setMessages] = useState<any[]>([]);
+  const [newMessage, setNewMessage] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [client] = useState(() => browserClient);
 
-  const filteredConversations = conversations.filter((conversation: any) => {
-    if (searchTerm) {
-      return conversation.content?.toLowerCase().includes(searchTerm.toLowerCase());
+  // 대화 선택 시 메시지 로드
+  useEffect(() => {
+    if (selectedConversation) {
+      loadMessages(selectedConversation.conversation_id);
     }
-    return true;
-  });
+  }, [selectedConversation]);
 
-  const handleConversationClick = async (conversation: any) => {
-    setSelectedConversation(conversation);
-    setIsLoadingMessages(true);
-    
+  const loadMessages = async (conversationId: number) => {
     try {
-      // 선택된 대화의 메시지들 로드
-      const messages = await getConversationMessages(browserClient, {
-        conversationId: conversation.conversation_id
-      });
-      setConversationMessages(messages);
+      setLoading(true);
+      const conversationMessages = await getConversationMessages(client, { conversationId });
+      setMessages(conversationMessages);
     } catch (error) {
-      console.error('Failed to load conversation messages:', error);
+      console.error('메시지 로드 실패:', error);
     } finally {
-      setIsLoadingMessages(false);
-    }
-    
-    if (isMobile) {
-      setShowConversationList(false);
+      setLoading(false);
     }
   };
 
   const handleSendMessage = async () => {
-    if (!messageInput.trim() || !selectedConversation || isSending) return;
+    if (!newMessage.trim() || !selectedConversation) return;
 
-    setIsSending(true);
-    
     try {
-      let conversationId = selectedConversation.conversation_id;
-      
-      // 대화가 없으면 새로 생성
-      if (!conversationId) {
-        const otherUserId = selectedConversation.sender_id === userId ? selectedConversation.receiver_id : selectedConversation.sender_id;
-        const conversation = await getOrCreateConversation(browserClient, {
-          userId,
-          otherUserId
-        });
-        conversationId = conversation.conversation_id;
-        
-        // selectedConversation 업데이트
-        setSelectedConversation((prev: any) => ({
-          ...prev,
-          conversation_id: conversationId
-        }));
-      }
-      
-      // 메시지 전송
-      const newMessage = await sendMessage(browserClient, {
-        conversationId,
-        senderId: userId,
-        receiverId: selectedConversation.sender_id === userId ? selectedConversation.receiver_id : selectedConversation.sender_id,
-        content: messageInput.trim()
+      setLoading(true);
+      const sentMessage = await sendMessage(client, {
+        conversationId: selectedConversation.conversation_id,
+        senderId: user.id,
+        receiverId: selectedConversation.receiver_id || selectedConversation.sender_id,
+        content: newMessage.trim()
       });
 
-      // 새 메시지를 대화 메시지 목록에 추가
-      const messageWithDetails = {
-        ...newMessage,
-        sender_username: "You", // 현재 사용자
-        receiver_username: selectedConversation.sender_id === userId ? selectedConversation.receiver_username : selectedConversation.sender_username,
-        message_type_category: "text",
-        message_status: "read"
-      };
-
-      setConversationMessages(prev => [...prev, messageWithDetails]);
-      setMessageInput("");
-      
-      // 메시지 목록 맨 아래로 스크롤
-      setTimeout(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-      }, 100);
-      
+      // 새 메시지를 목록에 추가
+      setMessages(prev => [...prev, sentMessage]);
+      setNewMessage('');
     } catch (error) {
-      console.error('Failed to send message:', error);
-      // 에러 처리 (사용자에게 알림 등)
+      console.error('메시지 전송 실패:', error);
     } finally {
-      setIsSending(false);
+      setLoading(false);
     }
   };
 
-  const formatTime = (timestamp: string) => {
-    return new Date(timestamp).toLocaleTimeString('en-US', { 
-      hour: '2-digit', 
-      minute: '2-digit' 
-    });
+  const formatTime = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInHours = (now.getTime() - date.getTime()) / (1000 * 60 * 60);
+    
+    if (diffInHours < 1) {
+      return `${Math.floor(diffInHours * 60)}분 전`;
+    } else if (diffInHours < 24) {
+      return `${Math.floor(diffInHours)}시간 전`;
+    } else {
+      return date.toLocaleDateString('ko-KR');
+    }
   };
 
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 1024);
-    };
-    
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
+  const getOtherParticipant = (conversation: any) => {
+    if (conversation.sender_id === user.id) {
+      return {
+        username: conversation.receiver_username,
+        avatar: conversation.receiver_avatar_url,
+        id: conversation.receiver_id
+      };
+    } else {
+      return {
+        username: conversation.sender_username,
+        avatar: conversation.sender_avatar_url,
+        id: conversation.sender_id
+      };
+    }
+  };
 
-  // 초기 대화 목록 로드
-  useEffect(() => {
-    const loadConversations = async () => {
-      try {
-        const convs = await getConversations(browserClient, { profileId: userId });
-        setConversations(convs);
-      } catch (error) {
-        console.error('Failed to load conversations:', error);
-      }
-    };
-    loadConversations();
-  }, [userId]);
-
-  // 메시지 목록이 업데이트될 때마다 스크롤을 맨 아래로
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [conversationMessages]);
+  const getUnreadCount = (conversation: any) => {
+    // 읽지 않은 메시지 수 계산 (간단한 구현)
+    return conversation.message_status === 'unread' ? 1 : 0;
+  };
 
   return (
-    <div className="container mx-auto px-0 py-8 md:px-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Messages</h1>
-        <p className="text-gray-600 mt-2">Connect with buyers and sellers in your community.</p>
-        
-        {/* Product Context Banner */}
-        {isFromProduct && productInfo && (
-          <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="font-semibold text-blue-900">About: {productInfo.title}</h3>
-                <p className="text-sm text-blue-700">Seller: {productInfo.sellerName}</p>
-              </div>
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => window.history.back()}
-              >
-                Back to Product
-              </Button>
-            </div>
-          </div>
-        )}
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 h-[600px]">
-        {/* Conversations List */}
-        <div className={`lg:col-span-1 ${!showConversationList && isMobile ? 'hidden' : 'block'}`}>
+    <div className="container mx-auto p-4 max-w-6xl">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[calc(100vh-8rem)]">
+        {/* 대화 목록 */}
+        <div className="lg:col-span-1">
           <Card className="h-full">
             <CardHeader>
-              <CardTitle>Conversations</CardTitle>
-              <CardDescription>Your recent conversations</CardDescription>
-              <Input
-                placeholder="Search conversations..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
+              <CardTitle className="flex items-center gap-2">
+                <MessageCircle className="w-5 h-5" />
+                메시지
+              </CardTitle>
             </CardHeader>
             <CardContent className="p-0">
-              <div className="space-y-1">
-                {filteredConversations.map((conversation: any) => (
-                  <div
-                    key={conversation.message_id}
-                    className={`flex items-center space-x-3 p-4 cursor-pointer hover:bg-gray-50 ${
-                      selectedConversation?.message_id === conversation.message_id ? 'bg-blue-50' : ''
-                    }`}
-                    onClick={() => handleConversationClick(conversation)}
-                  >
-                    <Avatar className="h-10 w-10">
-                      <AvatarImage src="/sample.png" />
-                      <AvatarFallback>U</AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between">
-                        <p className="text-sm font-medium truncate">
-                          {conversation.sender_id === userId ? conversation.receiver_username : conversation.sender_username}
-                        </p>
-                        <span className="text-xs text-gray-500">
-                          {formatTime(conversation.created_at || '')}
-                        </span>
-                      </div>
-                      <p className="text-xs text-gray-500 truncate">
-                        {conversation.content}
-                      </p>
-                    </div>
-                    {conversation.message_status === 'unread' && (
-                      <Badge variant="destructive" className="ml-2 rounded-sm bg-rose-500 text-gray-200">
-                        {conversation.message_status}
-                      </Badge>
-                    )}
+              <div className="space-y-1 max-h-[calc(100vh-12rem)] overflow-y-auto">
+                {conversations.length === 0 ? (
+                  <div className="p-4 text-center text-muted-foreground">
+                    <MessageCircle className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                    <p>아직 대화가 없습니다</p>
                   </div>
-                ))}
+                ) : (
+                  conversations.map((conversation) => {
+                    const otherUser = getOtherParticipant(conversation);
+                    const unreadCount = getUnreadCount(conversation);
+                    const isSelected = selectedConversation?.conversation_id === conversation.conversation_id;
+                    
+                    return (
+                      <div
+                        key={conversation.conversation_id}
+                        className={`p-4 cursor-pointer transition-colors hover:bg-accent ${
+                          isSelected ? 'bg-accent border-l-4 border-primary' : ''
+                        }`}
+                        onClick={() => setSelectedConversation(conversation)}
+                      >
+                        <div className="flex items-center gap-3">
+                          <Avatar className="w-12 h-12">
+                            <AvatarImage src={otherUser.avatar} alt={otherUser.username} />
+                            <AvatarFallback>
+                              <User className="w-6 h-6" />
+                            </AvatarFallback>
+                          </Avatar>
+                          
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between">
+                              <h3 className="font-medium truncate">{otherUser.username}</h3>
+                              <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                                <Clock className="w-3 h-3" />
+                                {formatTime(conversation.created_at)}
+                              </div>
+                            </div>
+                            
+                            <p className="text-sm text-muted-foreground truncate">
+                              {conversation.content}
+                            </p>
+                          </div>
+                          
+                          {unreadCount > 0 && (
+                            <Badge variant="destructive" className="ml-2">
+                              {unreadCount}
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
               </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Chat Area */}
-        <div className={`lg:col-span-2 ${!showConversationList && isMobile ? 'block' : 'hidden lg:block'}`}>
+        {/* 메시지 영역 */}
+        <div className="lg:col-span-2">
           <Card className="h-full flex flex-col">
             {selectedConversation ? (
               <>
+                {/* 대화 헤더 */}
                 <CardHeader className="border-b">
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                      <Avatar className="h-10 w-10">
-                        <AvatarImage src={selectedConversation.sender_avatar_url} />
-                        <AvatarFallback>U</AvatarFallback>
+                    <div className="flex items-center gap-3">
+                      <Avatar className="w-10 h-10">
+                        <AvatarImage 
+                          src={getOtherParticipant(selectedConversation).avatar} 
+                          alt={getOtherParticipant(selectedConversation).username} 
+                        />
+                        <AvatarFallback>
+                          <User className="w-5 h-5" />
+                        </AvatarFallback>
                       </Avatar>
-                      <div>
-                        <h3 className="font-medium">
-                          {selectedConversation.sender_id === userId ? selectedConversation.receiver_username : selectedConversation.sender_username}
-                        </h3>
-                        <p className="text-sm text-gray-500">Online</p>
-                      </div>
+                      
+                      <HoverCard>
+                        <HoverCardTrigger asChild>
+                          <Button variant="ghost" className="p-0 h-auto">
+                            <h3 className="font-medium">
+                              {getOtherParticipant(selectedConversation).username}
+                            </h3>
+                          </Button>
+                        </HoverCardTrigger>
+                        <HoverCardContent className="w-80">
+                          <div className="flex items-center gap-3">
+                            <Avatar className="w-12 h-12">
+                              <AvatarImage 
+                                src={getOtherParticipant(selectedConversation).avatar} 
+                                alt={getOtherParticipant(selectedConversation).username} 
+                              />
+                              <AvatarFallback>
+                                <User className="w-6 h-6" />
+                              </AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <h4 className="font-medium">
+                                {getOtherParticipant(selectedConversation).username}
+                              </h4>
+                              <p className="text-sm text-muted-foreground">
+                                대화 시작: {formatTime(selectedConversation.conversation_created_at)}
+                              </p>
+                            </div>
+                          </div>
+                        </HoverCardContent>
+                      </HoverCard>
                     </div>
+                    
+                    <Button variant="ghost" size="icon">
+                      <MoreHorizontal className="w-4 h-4" />
+                    </Button>
                   </div>
                 </CardHeader>
-                
-                <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                  {isLoadingMessages ? (
-                    <div className="flex items-center justify-center h-full">
-                      <div className="text-center">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-                        <p className="text-sm text-gray-500 mt-2">Loading messages...</p>
+
+                {/* 메시지 목록 */}
+                <CardContent className="flex-1 p-0 overflow-hidden">
+                  <div className="h-full flex flex-col">
+                    <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                      {loading ? (
+                        <div className="flex justify-center items-center h-32">
+                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                        </div>
+                      ) : messages.length === 0 ? (
+                        <div className="text-center text-muted-foreground py-8">
+                          <MessageCircle className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                          <p>메시지를 시작해보세요</p>
+                        </div>
+                      ) : (
+                        messages.map((message) => {
+                          const isOwnMessage = message.sender_id === user.id;
+                          
+                          return (
+                            <div
+                              key={message.message_id}
+                              className={`flex ${isOwnMessage ? 'justify-end' : 'justify-start'}`}
+                            >
+                              <div className={`max-w-[70%] ${isOwnMessage ? 'order-2' : 'order-1'}`}>
+                                <div className={`rounded-lg px-4 py-2 ${
+                                  isOwnMessage 
+                                    ? 'bg-primary text-primary-foreground' 
+                                    : 'bg-muted'
+                                }`}>
+                                  <p className="text-sm">{message.content}</p>
+                                  <p className={`text-xs mt-1 ${
+                                    isOwnMessage ? 'text-primary-foreground/70' : 'text-muted-foreground'
+                                  }`}>
+                                    {formatTime(message.created_at)}
+                                  </p>
+                                </div>
+                              </div>
+                              
+                              {!isOwnMessage && (
+                                <div className="order-1 ml-2">
+                                  <Avatar className="w-6 h-6">
+                                    <AvatarImage 
+                                      src={message.sender_avatar_url} 
+                                      alt={message.sender_username} 
+                                    />
+                                    <AvatarFallback>
+                                      <User className="w-3 h-3" />
+                                    </AvatarFallback>
+                                  </Avatar>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })
+                      )}
+                    </div>
+
+                    {/* 메시지 입력 */}
+                    <div className="border-t p-4">
+                      <div className="flex gap-2">
+                        <Input
+                          value={newMessage}
+                          onChange={(e) => setNewMessage(e.target.value)}
+                          onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+                          placeholder="메시지를 입력하세요..."
+                          disabled={loading}
+                          className="flex-1"
+                        />
+                        <Button 
+                          onClick={handleSendMessage}
+                          disabled={!newMessage.trim() || loading}
+                          size="icon"
+                        >
+                          <Send className="w-4 h-4" />
+                        </Button>
                       </div>
                     </div>
-                  ) : (
-                    conversationMessages.map((message: any) => (
-                      <div
-                        key={message.message_id}
-                        className={`flex ${message.sender_id === userId ? 'justify-end' : 'justify-start'}`}
-                      >
-                        <div
-                          className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
-                            message.sender_id === userId
-                              ? 'bg-blue-600 text-white'
-                              : 'bg-gray-100 text-gray-900'
-                          }`}
-                        >
-                          <p className="text-sm">{message.content}</p>
-                          <p className={`text-xs mt-1 ${
-                            message.sender_id === userId ? 'text-blue-100' : 'text-gray-500'
-                          }`}>
-                            {formatTime(message.created_at)}
-                          </p>
-                        </div>
-                      </div>
-                    ))
-                  )}
-                  <div ref={messagesEndRef} />
-                </div>
-
-                <div className="border-t p-4">
-                  <div className="flex items-center space-x-2">
-                    <Input
-                      placeholder="Type a message..."
-                      value={messageInput}
-                      onChange={(e) => setMessageInput(e.target.value)}
-                      onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-                      disabled={isSending}
-                    />
-                    <Button variant="ghost" size="icon" disabled={isSending}>
-                      <PhotoIcon className="h-4 w-4" />
-                    </Button>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button variant="ghost" size="icon" disabled={isSending}>
-                          <FaceSmileIcon className="h-4 w-4" />
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-80">
-                        <div className="grid grid-cols-8 gap-1">
-                          {['😀', '😃', '😄', '😁', '😆', '😅', '😂', '🤣'].map((emoji) => (
-                            <button
-                              key={emoji}
-                              className="p-2 hover:bg-gray-100 rounded"
-                              onClick={() => setMessageInput(prev => prev + emoji)}
-                            >
-                              {emoji}
-                            </button>
-                          ))}
-                        </div>
-                      </PopoverContent>
-                    </Popover>
-                    <Button onClick={handleSendMessage} disabled={isSending}>
-                      {isSending ? 'Sending...' : 'Send'}
-                    </Button>
                   </div>
-                </div>
+                </CardContent>
               </>
             ) : (
               <div className="flex-1 flex items-center justify-center">
-                <div className="text-center">
-                  <div className="text-6xl mb-4">💬</div>
-                  <h3 className="text-xl font-medium text-gray-900 mb-2">No conversation selected</h3>
-                  <p className="text-gray-500">Choose a conversation from the list to start messaging</p>
+                <div className="text-center text-muted-foreground">
+                  <MessageCircle className="w-16 h-16 mx-auto mb-4 opacity-50" />
+                  <h3 className="text-lg font-medium mb-2">대화를 선택하세요</h3>
+                  <p>메시지를 보내고 받으려면 왼쪽에서 대화를 선택하세요</p>
                 </div>
               </div>
             )}
@@ -400,5 +326,5 @@ export default function MessagesPage({ loaderData }: Route.ComponentProps) {
         </div>
       </div>
     </div>
-  )
+  );
 }

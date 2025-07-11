@@ -1,7 +1,6 @@
 import { HoverCard, HoverCardTrigger, HoverCardContent } from "./ui/hover-card";
 import { Badge } from "./ui/badge";
 import { PackageIcon, EyeIcon, MessageCircleReplyIcon } from "lucide-react";
-import { useAppreciationBadge } from "~/hooks/use-appreciation-badge";
 import { Button } from './ui/button';
 import { Link } from "react-router";
 
@@ -17,7 +16,7 @@ interface UserStatsHoverCardProps {
   children: React.ReactNode;
   showAppreciationBadge?: boolean;
   className?: string;
-  userStats?: UserStats; // loader에서 받은 데이터
+  userStats?: UserStats;
 }
 
 export function UserStatsHoverCard({
@@ -28,9 +27,6 @@ export function UserStatsHoverCard({
   className = "",
   userStats
 }: UserStatsHoverCardProps) {
-  // Use the appreciation badge hook
-  const { hasAppreciationBadge, isLoading } = useAppreciationBadge(profileId);
-  
   return (
     <HoverCard>
       <HoverCardTrigger asChild>
@@ -44,19 +40,13 @@ export function UserStatsHoverCard({
             <span className="font-semibold text-sm">{userName}</span>
             <Link to={`/users/${userName}`}>
               <Button variant="secondary" className="text-xs h-5 px-2">
-                Profile
+                ViewProfile
               </Button>
             </Link>
-            {/* Show appreciation badge for users with high-rated give-and-glow reviews */}
-            {(hasAppreciationBadge || showAppreciationBadge) && (
+            {(showAppreciationBadge) && (
               <Badge variant="outline" className="text-xs bg-green-100 text-green-700">Appreciation</Badge>
             )}
-            {isLoading && (
-              <Badge variant="outline" className="text-xs bg-gray-100 text-gray-500">Loading...</Badge>
-            )}
           </div>
-          
-          {/* User Stats */}
           <div className="grid grid-cols-3 gap-2">
             <div className="flex flex-col items-center gap-1">
               <PackageIcon className="w-3 h-3 text-blue-500" />
@@ -80,8 +70,6 @@ export function UserStatsHoverCard({
               </span>
             </div>
           </div>
-          
-          {/* Additional User Info */}
           <div className="pt-1 border-t border-gray-100">
             <div className="text-xs text-neutral-600">
               <span className="font-medium">Member since:</span> 

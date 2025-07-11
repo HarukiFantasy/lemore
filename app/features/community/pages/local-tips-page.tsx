@@ -318,13 +318,7 @@ export default function LocalTipsPage({ loaderData }: Route.ComponentProps) {
                         </AvatarFallback>
                       </Avatar>
                       <UserStatsHoverCard
-                        profileId={(post as any).profile_id}
                         userName={(post as any).username || 'Unknown User'}
-                        userStats={{
-                          totalListings: 0,
-                          rating: 0,
-                          responseRate: "0%"
-                        }}
                       >
                         {(post as any).username || 'Unknown User'}
                       </UserStatsHoverCard>
