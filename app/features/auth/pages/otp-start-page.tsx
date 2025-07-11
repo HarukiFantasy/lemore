@@ -57,14 +57,20 @@ export const action = async ({ request }: Route.ActionArgs) => {
     }
     let { phone } = parsedData;
 
+    // Supabase를 사용하여 SMS OTP 전송
     const { client } = makeSSRClient(request);
     const { error } = await client.auth.signInWithOtp({
       phone,
+      options: {
+        shouldCreateUser: true,
+      },
     });
-    if (error) { 
-      console.error('SMS OTP Error:', error);
-      return {error: `Failed to send SMS OTP: ${error.message}`} 
+    
+    if (error) {
+      console.error('SMS OTP error:', error);
+      return { error: "Failed to send SMS OTP: " + error.message };
     }
+
     return redirect(`/auth/otp/complete?phone=${phone}`);
   }
   

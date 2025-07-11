@@ -43,6 +43,20 @@
       "when": 1752187664802,
       "tag": "0005_slim_corsair",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1752264014300,
+      "tag": "0006_lame_mojo",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1752266206852,
+      "tag": "0007_messy_hex",
+      "breakpoints": true
     }
   ]
 }

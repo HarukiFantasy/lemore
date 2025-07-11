@@ -48,18 +48,30 @@ export const action = async ({ request }: Route.ActionArgs) => {
       return { fieldErrors: error.flatten().fieldErrors };
     }
     const { phone, otp } = parsedData;
+    
+    // 폰 OTP 검증 및 세션 생성
     const { client, headers } = makeSSRClient(request);
-    const { error: verifyError } = await client.auth.verifyOtp({
-      phone,
-      token: otp,
-      type: "sms",
-    });
-    if (verifyError) {
-      return { verifyError: verifyError.message };
+    
+    try {
+      // 폰번호로 사용자 생성 또는 로그인
+      const { data: authData, error: authError } = await client.auth.verifyOtp({
+        phone,
+        token: otp,
+        type: "sms",
+      });
+      if (authError) {
+        console.error('Auth error:', authError);
+        return { verifyError: "Failed to authenticate: " + authError.message };
+      }
+      
+      // 성공적으로 세션이 생성되면 홈페이지로 리다이렉트
+      return redirect("/", { headers });
+      
+    } catch (error) {
+      console.error('Session creation error:', error);
+      return { verifyError: "Failed to create user session" };
     }
-    return redirect("/", { headers });
   }
-  
   return { error: "Invalid form submission" };
 };
 

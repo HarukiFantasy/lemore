@@ -119,13 +119,6 @@ export type Database = {
             foreignKeyName: "give_and_glow_reviews_giver_id_user_profiles_profile_id_fk"
             columns: ["giver_id"]
             isOneToOne: false
-            referencedRelation: "user_sales_stats_view"
-            referencedColumns: ["profile_id"]
-          },
-          {
-            foreignKeyName: "give_and_glow_reviews_giver_id_user_profiles_profile_id_fk"
-            columns: ["giver_id"]
-            isOneToOne: false
             referencedRelation: "users_view"
             referencedColumns: ["profile_id"]
           },
@@ -190,13 +183,6 @@ export type Database = {
             columns: ["receiver_id"]
             isOneToOne: false
             referencedRelation: "user_profiles"
-            referencedColumns: ["profile_id"]
-          },
-          {
-            foreignKeyName: "give_and_glow_reviews_receiver_id_user_profiles_profile_id_fk"
-            columns: ["receiver_id"]
-            isOneToOne: false
-            referencedRelation: "user_sales_stats_view"
             referencedColumns: ["profile_id"]
           },
           {
@@ -380,13 +366,6 @@ export type Database = {
             foreignKeyName: "let_go_buddy_sessions_user_id_user_profiles_profile_id_fk"
             columns: ["user_id"]
             isOneToOne: false
-            referencedRelation: "user_sales_stats_view"
-            referencedColumns: ["profile_id"]
-          },
-          {
-            foreignKeyName: "let_go_buddy_sessions_user_id_user_profiles_profile_id_fk"
-            columns: ["user_id"]
-            isOneToOne: false
             referencedRelation: "users_view"
             referencedColumns: ["profile_id"]
           },
@@ -464,13 +443,6 @@ export type Database = {
             columns: ["author"]
             isOneToOne: false
             referencedRelation: "user_profiles"
-            referencedColumns: ["profile_id"]
-          },
-          {
-            foreignKeyName: "local_business_reviews_author_user_profiles_profile_id_fk"
-            columns: ["author"]
-            isOneToOne: false
-            referencedRelation: "user_sales_stats_view"
             referencedColumns: ["profile_id"]
           },
           {
@@ -624,13 +596,6 @@ export type Database = {
             foreignKeyName: "local_tip_comment_likes_user_id_user_profiles_profile_id_fk"
             columns: ["user_id"]
             isOneToOne: false
-            referencedRelation: "user_sales_stats_view"
-            referencedColumns: ["profile_id"]
-          },
-          {
-            foreignKeyName: "local_tip_comment_likes_user_id_user_profiles_profile_id_fk"
-            columns: ["user_id"]
-            isOneToOne: false
             referencedRelation: "users_view"
             referencedColumns: ["profile_id"]
           },
@@ -702,13 +667,6 @@ export type Database = {
             columns: ["author"]
             isOneToOne: false
             referencedRelation: "user_profiles"
-            referencedColumns: ["profile_id"]
-          },
-          {
-            foreignKeyName: "local_tip_comments_author_user_profiles_profile_id_fk"
-            columns: ["author"]
-            isOneToOne: false
-            referencedRelation: "user_sales_stats_view"
             referencedColumns: ["profile_id"]
           },
           {
@@ -811,13 +769,6 @@ export type Database = {
             foreignKeyName: "local_tip_post_likes_user_id_user_profiles_profile_id_fk"
             columns: ["user_id"]
             isOneToOne: false
-            referencedRelation: "user_sales_stats_view"
-            referencedColumns: ["profile_id"]
-          },
-          {
-            foreignKeyName: "local_tip_post_likes_user_id_user_profiles_profile_id_fk"
-            columns: ["user_id"]
-            isOneToOne: false
             referencedRelation: "users_view"
             referencedColumns: ["profile_id"]
           },
@@ -904,13 +855,6 @@ export type Database = {
             foreignKeyName: "local_tip_posts_author_user_profiles_profile_id_fk"
             columns: ["author"]
             isOneToOne: false
-            referencedRelation: "user_sales_stats_view"
-            referencedColumns: ["profile_id"]
-          },
-          {
-            foreignKeyName: "local_tip_posts_author_user_profiles_profile_id_fk"
-            columns: ["author"]
-            isOneToOne: false
             referencedRelation: "users_view"
             referencedColumns: ["profile_id"]
           },
@@ -980,13 +924,6 @@ export type Database = {
             columns: ["profile_id"]
             isOneToOne: false
             referencedRelation: "user_profiles"
-            referencedColumns: ["profile_id"]
-          },
-          {
-            foreignKeyName: "message_participants_profile_id_user_profiles_profile_id_fk"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "user_sales_stats_view"
             referencedColumns: ["profile_id"]
           },
           {
@@ -1125,13 +1062,6 @@ export type Database = {
             foreignKeyName: "product_likes_user_id_user_profiles_profile_id_fk"
             columns: ["user_id"]
             isOneToOne: false
-            referencedRelation: "user_sales_stats_view"
-            referencedColumns: ["profile_id"]
-          },
-          {
-            foreignKeyName: "product_likes_user_id_user_profiles_profile_id_fk"
-            columns: ["user_id"]
-            isOneToOne: false
             referencedRelation: "users_view"
             referencedColumns: ["profile_id"]
           },
@@ -1197,13 +1127,6 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "user_profiles"
-            referencedColumns: ["profile_id"]
-          },
-          {
-            foreignKeyName: "product_views_user_id_user_profiles_profile_id_fk"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "user_sales_stats_view"
             referencedColumns: ["profile_id"]
           },
           {
@@ -1328,13 +1251,6 @@ export type Database = {
             foreignKeyName: "products_seller_id_user_profiles_profile_id_fk"
             columns: ["seller_id"]
             isOneToOne: false
-            referencedRelation: "user_sales_stats_view"
-            referencedColumns: ["profile_id"]
-          },
-          {
-            foreignKeyName: "products_seller_id_user_profiles_profile_id_fk"
-            columns: ["seller_id"]
-            isOneToOne: false
             referencedRelation: "users_view"
             referencedColumns: ["profile_id"]
           },
@@ -1443,13 +1359,6 @@ export type Database = {
             foreignKeyName: "user_messages_receiver_id_user_profiles_profile_id_fk"
             columns: ["receiver_id"]
             isOneToOne: false
-            referencedRelation: "user_sales_stats_view"
-            referencedColumns: ["profile_id"]
-          },
-          {
-            foreignKeyName: "user_messages_receiver_id_user_profiles_profile_id_fk"
-            columns: ["receiver_id"]
-            isOneToOne: false
             referencedRelation: "users_view"
             referencedColumns: ["profile_id"]
           },
@@ -1493,13 +1402,6 @@ export type Database = {
             columns: ["sender_id"]
             isOneToOne: false
             referencedRelation: "user_profiles"
-            referencedColumns: ["profile_id"]
-          },
-          {
-            foreignKeyName: "user_messages_sender_id_user_profiles_profile_id_fk"
-            columns: ["sender_id"]
-            isOneToOne: false
-            referencedRelation: "user_sales_stats_view"
             referencedColumns: ["profile_id"]
           },
           {
@@ -1633,13 +1535,6 @@ export type Database = {
             foreignKeyName: "user_notifications_receiver_id_user_profiles_profile_id_fk"
             columns: ["receiver_id"]
             isOneToOne: false
-            referencedRelation: "user_sales_stats_view"
-            referencedColumns: ["profile_id"]
-          },
-          {
-            foreignKeyName: "user_notifications_receiver_id_user_profiles_profile_id_fk"
-            columns: ["receiver_id"]
-            isOneToOne: false
             referencedRelation: "users_view"
             referencedColumns: ["profile_id"]
           },
@@ -1703,13 +1598,6 @@ export type Database = {
             foreignKeyName: "user_notifications_sender_id_user_profiles_profile_id_fk"
             columns: ["sender_id"]
             isOneToOne: false
-            referencedRelation: "user_sales_stats_view"
-            referencedColumns: ["profile_id"]
-          },
-          {
-            foreignKeyName: "user_notifications_sender_id_user_profiles_profile_id_fk"
-            columns: ["sender_id"]
-            isOneToOne: false
             referencedRelation: "users_view"
             referencedColumns: ["profile_id"]
           },
@@ -1723,6 +1611,7 @@ export type Database = {
           created_at: string
           email: string
           location: Database["public"]["Enums"]["location"] | null
+          phone: string | null
           profile_id: string
           rating: number | null
           response_rate: number | null
@@ -1740,6 +1629,7 @@ export type Database = {
           created_at?: string
           email: string
           location?: Database["public"]["Enums"]["location"] | null
+          phone?: string | null
           profile_id: string
           rating?: number | null
           response_rate?: number | null
@@ -1757,6 +1647,7 @@ export type Database = {
           created_at?: string
           email?: string
           location?: Database["public"]["Enums"]["location"] | null
+          phone?: string | null
           profile_id?: string
           rating?: number | null
           response_rate?: number | null
@@ -1846,13 +1737,6 @@ export type Database = {
             foreignKeyName: "user_reviews_reviewee_id_user_profiles_profile_id_fk"
             columns: ["reviewee_id"]
             isOneToOne: false
-            referencedRelation: "user_sales_stats_view"
-            referencedColumns: ["profile_id"]
-          },
-          {
-            foreignKeyName: "user_reviews_reviewee_id_user_profiles_profile_id_fk"
-            columns: ["reviewee_id"]
-            isOneToOne: false
             referencedRelation: "users_view"
             referencedColumns: ["profile_id"]
           },
@@ -1896,13 +1780,6 @@ export type Database = {
             columns: ["reviewer_id"]
             isOneToOne: false
             referencedRelation: "user_profiles"
-            referencedColumns: ["profile_id"]
-          },
-          {
-            foreignKeyName: "user_reviews_reviewer_id_user_profiles_profile_id_fk"
-            columns: ["reviewer_id"]
-            isOneToOne: false
-            referencedRelation: "user_sales_stats_view"
             referencedColumns: ["profile_id"]
           },
           {
@@ -1986,13 +1863,6 @@ export type Database = {
             foreignKeyName: "let_go_buddy_sessions_user_id_user_profiles_profile_id_fk"
             columns: ["user_id"]
             isOneToOne: false
-            referencedRelation: "user_sales_stats_view"
-            referencedColumns: ["profile_id"]
-          },
-          {
-            foreignKeyName: "let_go_buddy_sessions_user_id_user_profiles_profile_id_fk"
-            columns: ["user_id"]
-            isOneToOne: false
             referencedRelation: "users_view"
             referencedColumns: ["profile_id"]
           },
@@ -2069,13 +1939,6 @@ export type Database = {
             foreignKeyName: "give_and_glow_reviews_giver_id_user_profiles_profile_id_fk"
             columns: ["giver_id"]
             isOneToOne: false
-            referencedRelation: "user_sales_stats_view"
-            referencedColumns: ["profile_id"]
-          },
-          {
-            foreignKeyName: "give_and_glow_reviews_giver_id_user_profiles_profile_id_fk"
-            columns: ["giver_id"]
-            isOneToOne: false
             referencedRelation: "users_view"
             referencedColumns: ["profile_id"]
           },
@@ -2140,13 +2003,6 @@ export type Database = {
             columns: ["receiver_id"]
             isOneToOne: false
             referencedRelation: "user_profiles"
-            referencedColumns: ["profile_id"]
-          },
-          {
-            foreignKeyName: "give_and_glow_reviews_receiver_id_user_profiles_profile_id_fk"
-            columns: ["receiver_id"]
-            isOneToOne: false
-            referencedRelation: "user_sales_stats_view"
             referencedColumns: ["profile_id"]
           },
           {
@@ -2332,13 +2188,6 @@ export type Database = {
             foreignKeyName: "let_go_buddy_sessions_user_id_user_profiles_profile_id_fk"
             columns: ["user_id"]
             isOneToOne: false
-            referencedRelation: "user_sales_stats_view"
-            referencedColumns: ["profile_id"]
-          },
-          {
-            foreignKeyName: "let_go_buddy_sessions_user_id_user_profiles_profile_id_fk"
-            columns: ["user_id"]
-            isOneToOne: false
             referencedRelation: "users_view"
             referencedColumns: ["profile_id"]
           },
@@ -2415,13 +2264,6 @@ export type Database = {
             columns: ["author"]
             isOneToOne: false
             referencedRelation: "user_profiles"
-            referencedColumns: ["profile_id"]
-          },
-          {
-            foreignKeyName: "local_business_reviews_author_user_profiles_profile_id_fk"
-            columns: ["author"]
-            isOneToOne: false
-            referencedRelation: "user_sales_stats_view"
             referencedColumns: ["profile_id"]
           },
           {
@@ -2510,13 +2352,6 @@ export type Database = {
             foreignKeyName: "local_tip_comments_author_user_profiles_profile_id_fk"
             columns: ["author"]
             isOneToOne: false
-            referencedRelation: "user_sales_stats_view"
-            referencedColumns: ["profile_id"]
-          },
-          {
-            foreignKeyName: "local_tip_comments_author_user_profiles_profile_id_fk"
-            columns: ["author"]
-            isOneToOne: false
             referencedRelation: "users_view"
             referencedColumns: ["profile_id"]
           },
@@ -2591,13 +2426,6 @@ export type Database = {
             columns: ["author"]
             isOneToOne: false
             referencedRelation: "user_profiles"
-            referencedColumns: ["profile_id"]
-          },
-          {
-            foreignKeyName: "local_tip_posts_author_user_profiles_profile_id_fk"
-            columns: ["author"]
-            isOneToOne: false
-            referencedRelation: "user_sales_stats_view"
             referencedColumns: ["profile_id"]
           },
           {
@@ -2700,20 +2528,6 @@ export type Database = {
           },
         ]
       }
-      user_activity_view: {
-        Row: {
-          activity_timestamp: string | null
-          activity_title: string | null
-          activity_type: string | null
-          avatar_url: string | null
-          profile_id: string | null
-          related_id: number | null
-          related_type: string | null
-          time_ago: string | null
-          username: string | null
-        }
-        Relationships: []
-      }
       user_dashboard_view: {
         Row: {
           active_listings: number | null
@@ -2751,88 +2565,6 @@ export type Database = {
             isOneToOne: true
             referencedRelation: "users_view"
             referencedColumns: ["user_id"]
-          },
-        ]
-      }
-      user_let_go_buddy_stats_view: {
-        Row: {
-          avatar_url: string | null
-          avg_emotional_score: number | null
-          avg_environmental_impact_score: number | null
-          avg_item_value: number | null
-          completed_sessions: number | null
-          last_item_analysis_date: string | null
-          last_session_date: string | null
-          most_common_recommendation:
-            | Database["public"]["Enums"]["recommendation_action"]
-            | null
-          most_common_situation:
-            | Database["public"]["Enums"]["declutter_situation"]
-            | null
-          total_co2_saved: number | null
-          total_items_analyzed: number | null
-          total_items_completed: number | null
-          total_sessions: number | null
-          total_value_created: number | null
-          user_id: string | null
-          username: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "let_go_buddy_sessions_user_id_user_profiles_profile_id_fk"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "give_and_glow_view"
-            referencedColumns: ["giver_profile_id"]
-          },
-          {
-            foreignKeyName: "let_go_buddy_sessions_user_id_user_profiles_profile_id_fk"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "give_and_glow_view"
-            referencedColumns: ["receiver_profile_id"]
-          },
-          {
-            foreignKeyName: "let_go_buddy_sessions_user_id_user_profiles_profile_id_fk"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "product_detail_view"
-            referencedColumns: ["seller_id"]
-          },
-          {
-            foreignKeyName: "let_go_buddy_sessions_user_id_user_profiles_profile_id_fk"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "products_listings_view"
-            referencedColumns: ["seller_id"]
-          },
-          {
-            foreignKeyName: "let_go_buddy_sessions_user_id_user_profiles_profile_id_fk"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "user_dashboard_view"
-            referencedColumns: ["profile_id"]
-          },
-          {
-            foreignKeyName: "let_go_buddy_sessions_user_id_user_profiles_profile_id_fk"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "user_profiles"
-            referencedColumns: ["profile_id"]
-          },
-          {
-            foreignKeyName: "let_go_buddy_sessions_user_id_user_profiles_profile_id_fk"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "user_sales_stats_view"
-            referencedColumns: ["profile_id"]
-          },
-          {
-            foreignKeyName: "let_go_buddy_sessions_user_id_user_profiles_profile_id_fk"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "users_view"
-            referencedColumns: ["profile_id"]
           },
         ]
       }
@@ -2911,13 +2643,6 @@ export type Database = {
             foreignKeyName: "user_messages_receiver_id_user_profiles_profile_id_fk"
             columns: ["receiver_id"]
             isOneToOne: false
-            referencedRelation: "user_sales_stats_view"
-            referencedColumns: ["profile_id"]
-          },
-          {
-            foreignKeyName: "user_messages_receiver_id_user_profiles_profile_id_fk"
-            columns: ["receiver_id"]
-            isOneToOne: false
             referencedRelation: "users_view"
             referencedColumns: ["profile_id"]
           },
@@ -2967,41 +2692,8 @@ export type Database = {
             foreignKeyName: "user_messages_sender_id_user_profiles_profile_id_fk"
             columns: ["sender_id"]
             isOneToOne: false
-            referencedRelation: "user_sales_stats_view"
-            referencedColumns: ["profile_id"]
-          },
-          {
-            foreignKeyName: "user_messages_sender_id_user_profiles_profile_id_fk"
-            columns: ["sender_id"]
-            isOneToOne: false
             referencedRelation: "users_view"
             referencedColumns: ["profile_id"]
-          },
-        ]
-      }
-      user_sales_stats_view: {
-        Row: {
-          active_listings: number | null
-          avg_sale_price: number | null
-          current_month_sales: number | null
-          email: string | null
-          last_month_sales: number | null
-          last_sale_date: string | null
-          profile_id: string | null
-          sales_change_percentage: number | null
-          sales_last_7_days: number | null
-          sold_items: number | null
-          total_listings: number | null
-          total_sales: number | null
-          username: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "user_profiles_profile_id_users_id_fk"
-            columns: ["profile_id"]
-            isOneToOne: true
-            referencedRelation: "users_view"
-            referencedColumns: ["user_id"]
           },
         ]
       }
