@@ -276,6 +276,7 @@ export function Navigation({
             <Button asChild variant="secondary">
               <Link to="/auth/join">Join</Link>
             </Button>
+
           </div>
         )}
       </div>

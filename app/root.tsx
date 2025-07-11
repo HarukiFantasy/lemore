@@ -65,21 +65,21 @@ export default function App({ loaderData }: Route.ComponentProps) {
   const isLoading = navigation.state === "loading";
   const isLoggedIn = user !== null;
   return (
-    <div
-    className={cn({
-      "py-28 px-5 md:px-20": !pathname.includes("/auth/"),
-      "transition-opacity animate-pulse": isLoading,
-    })}
-    > 
-      {pathname.includes("/auth") ? null : (
-        <Navigation isLoggedIn={isLoggedIn} 
-        username={loaderData.userProfile?.username} 
-        avatarUrl={loaderData.userProfile?.avatar_url}
-        hasNotifications={true} 
-        hasMessages={true} />
-      )}
-      <Outlet />
-    </div>
+      <div
+      className={cn({
+        "py-28 px-5 md:px-20": !pathname.includes("/auth/"),
+        "transition-opacity animate-pulse": isLoading,
+      })}
+      > 
+        {pathname.includes("/auth") ? null : (
+          <Navigation isLoggedIn={isLoggedIn} 
+          username={loaderData.userProfile?.username} 
+          avatarUrl={loaderData.userProfile?.avatar_url}
+          hasNotifications={true} 
+          hasMessages={true} />
+        )}
+        <Outlet />
+      </div>
   );
 }
 

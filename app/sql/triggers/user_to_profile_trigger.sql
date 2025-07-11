@@ -8,7 +8,7 @@ BEGIN
     -- 이메일 로그인 또는 소셜 로그인인 경우 프로필 생성
     IF new.raw_app_meta_data is not null THEN
         -- 이메일 로그인인 경우
-        IF new.raw_app_meta_data ? 'provider' AND new.raw_app_meta_data ->> 'provider' = 'email' THEN
+        IF new.raw_app_meta_data ? 'provider' AND new.raw_app_meta_data ->> 'provider' = 'email' OR new.raw_app_meta_data ? 'provider' AND new.raw_app_meta_data ->> 'provider' = 'phone' THEN
             IF new.raw_user_meta_data ? 'username' THEN
                 INSERT INTO public.user_profiles (profile_id, username, email, created_at, updated_at)
                 values (
