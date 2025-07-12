@@ -1,3 +1,4 @@
+-- Fix Facebook OAuth trigger
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER
 LANGUAGE plpgsql
@@ -70,8 +71,4 @@ BEGIN
     END IF;
     RETURN new;
 END;
-$$;
-
-CREATE TRIGGER user_to_profile_trigger
-AFTER INSERT ON auth.users
-FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+$$; 

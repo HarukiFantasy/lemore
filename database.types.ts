@@ -1609,7 +1609,7 @@ export type Database = {
           avatar_url: string | null
           bio: string | null
           created_at: string
-          email: string
+          email: string | null
           location: Database["public"]["Enums"]["location"] | null
           phone: string | null
           profile_id: string
@@ -1620,14 +1620,14 @@ export type Database = {
           total_listings: number | null
           total_views: number | null
           updated_at: string
-          username: string
+          username: string | null
         }
         Insert: {
           appreciation_badge?: boolean | null
           avatar_url?: string | null
           bio?: string | null
           created_at?: string
-          email: string
+          email?: string | null
           location?: Database["public"]["Enums"]["location"] | null
           phone?: string | null
           profile_id: string
@@ -1638,14 +1638,14 @@ export type Database = {
           total_listings?: number | null
           total_views?: number | null
           updated_at?: string
-          username: string
+          username?: string | null
         }
         Update: {
           appreciation_badge?: boolean | null
           avatar_url?: string | null
           bio?: string | null
           created_at?: string
-          email?: string
+          email?: string | null
           location?: Database["public"]["Enums"]["location"] | null
           phone?: string | null
           profile_id?: string
@@ -1656,7 +1656,7 @@ export type Database = {
           total_listings?: number | null
           total_views?: number | null
           updated_at?: string
-          username?: string
+          username?: string | null
         }
         Relationships: [
           {
