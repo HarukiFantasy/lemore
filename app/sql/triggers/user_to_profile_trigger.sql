@@ -10,20 +10,22 @@ BEGIN
         -- 이메일 로그인인 경우
         IF new.raw_app_meta_data ? 'provider' AND new.raw_app_meta_data ->> 'provider' = 'email' THEN
             IF new.raw_user_meta_data ? 'username' THEN
-                INSERT INTO public.user_profiles (profile_id, username, email, created_at, updated_at)
+                INSERT INTO public.user_profiles (profile_id, username, email, avatar_url, created_at, updated_at)
                 values (
                     new.id,
                     new.raw_user_meta_data ->> 'username',
                     new.email,
+                    new.raw_user_meta_data ->> 'avatar_url',
                     now(),
                     now()
                 );
             ELSE 
-                INSERT INTO public.user_profiles (profile_id, username, email, created_at, updated_at)
+                INSERT INTO public.user_profiles (profile_id, username, email, avatar_url, created_at, updated_at)
                 values (
                     new.id,
                     'username' || substr(md5(random()::text), 1, 8),
                     new.email,
+                    new.raw_user_meta_data ->> 'avatar_url',
                     now(),
                     now()
                 );
@@ -50,7 +52,7 @@ BEGIN
                 );
             END IF;
         -- 소셜 로그인인 경우 (google 등)
-        ELSIF new.raw_app_meta_data ? 'provider' AND new.raw_app_meta_data ->> 'provider' IN ('google' ) THEN
+        ELSIF new.raw_app_meta_data ? 'provider' AND new.raw_app_meta_data ->> 'provider' IN ('google') THEN
             -- 소셜 로그인의 경우 이메일을 기반으로 username 생성
             INSERT INTO public.user_profiles (profile_id, username, email, avatar_url, created_at, updated_at)
             values (
@@ -64,51 +66,6 @@ BEGIN
                 now(),
                 now()
             );
-        END IF;
-    -- raw_app_meta_data가 없는 경우 (기본 이메일/폰 로그인)
-    ELSE
-        -- 이메일이 있으면 이메일 로그인으로 처리
-        IF new.email IS NOT NULL THEN
-            IF new.raw_user_meta_data ? 'username' THEN
-                INSERT INTO public.user_profiles (profile_id, username, email, created_at, updated_at)
-                values (
-                    new.id,
-                    new.raw_user_meta_data ->> 'username',
-                    new.email,
-                    now(),
-                    now()
-                );
-            ELSE 
-                INSERT INTO public.user_profiles (profile_id, username, email, created_at, updated_at)
-                values (
-                    new.id,
-                    'username' || substr(md5(random()::text), 1, 8),
-                    new.email,
-                    now(),
-                    now()
-                );
-            END IF;
-        -- 폰번호가 있으면 폰 로그인으로 처리
-        ELSIF new.phone IS NOT NULL THEN
-            IF new.raw_user_meta_data ? 'username' THEN
-                INSERT INTO public.user_profiles (profile_id, username, phone, created_at, updated_at)
-                values (
-                    new.id,
-                    new.raw_user_meta_data ->> 'username',
-                    new.phone,
-                    now(),
-                    now()
-                );
-            ELSE 
-                INSERT INTO public.user_profiles (profile_id, username, phone, created_at, updated_at)
-                values (
-                    new.id,
-                    'username' || substr(md5(random()::text), 1, 8),
-                    new.phone,
-                    now(),
-                    now()
-                );
-            END IF;
         END IF;
     END IF;
     RETURN new;

@@ -8,5 +8,11 @@ export default defineConfig({
   server: {
     host: "localhost",
     port: 5173,
+    allowedHosts: [
+      "localhost",
+      "127.0.0.1",
+      "84d5b8aeeed2.ngrok-free.app",
+      ".ngrok-free.app", // 모든 ngrok 도메인 허용
+    ],
   },
 });
