@@ -217,6 +217,20 @@ export const getOrCreateConversation = async (
   return await createConversation(client, { participantIds: [userId, otherUserId] });
 };
 
+export const searchUsers = async (
+  client: SupabaseClient<Database>,
+  { searchTerm }: { searchTerm: string }
+) => {
+  const { data, error } = await client
+    .from("users_view")
+    .select("profile_id, username, display_name, avatar_url")
+    .or(`username.ilike.%${searchTerm}%,display_name.ilike.%${searchTerm}%`)
+    .limit(10);
+    
+  if (error) throw new Error(error.message);
+  return data;
+};
+
 export const getUserStats = async (
   client: SupabaseClient<Database>,
   { username }: { username: string }

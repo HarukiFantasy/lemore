@@ -1,15 +1,27 @@
 import React, { useState } from "react";
-import { useSearchParams } from "react-router";
+import { useSearchParams, Form, useActionData } from "react-router";
 import { Button } from "~/common/components/ui/button";
 import { Input } from "~/common/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "~/common/components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "~/common/components/ui/dialog";
+import { ScrollArea } from "~/common/components/ui/scroll-area";
 import type { Route } from './+types/give-and-glow-page';
 import { getCategoryColors } from "~/lib/utils";
 import { GiveAndGlowCard } from '../components/give-and-glow-card';
 import { getGiveAndGlowReviews } from '../queries';
 import { PRODUCT_CATEGORIES } from '~/features/products/constants';
 import { makeSSRClient } from "~/supa-client";
-import { getUserStats } from '~/features/users/queries';
+import { getUserStats, searchUsers } from '~/features/users/queries';
+import { createGiveAndGlowReview } from '../mutation';
+import { z } from "zod";
+
+export const formSchema = z.object({
+  itemName: z.string().min(1, { message: "Item name is required" }),
+  itemCategory: z.string().min(1, { message: "Item category is required" }),
+  giverId: z.string().min(1, { message: "Giver is required" }),
+  rating: z.coerce.number().min(1).max(5),
+  review: z.string().min(10, { message: "Review must be at least 10 characters" }),
+});
 
 // Error Boundary
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
@@ -49,6 +61,16 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
   const { client, headers } = makeSSRClient(request);
   const reviews = await getGiveAndGlowReviews(client);
   
+  // Get all users for the dropdown
+  const { data: users, error: usersError } = await client
+    .from("users_view")
+    .select("profile_id, username, avatar_url")
+    .order("username", { ascending: true });
+    
+  if (usersError) {
+    console.error("Error fetching users:", usersError);
+  }
+  
   // 각 리뷰의 giver와 receiver에 대한 통계 수집
   const userStatsMap = new Map();
   
@@ -84,11 +106,46 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
     }
   }
   
-  return { reviews, userStats: Object.fromEntries(userStatsMap) };
+  return { reviews, userStats: Object.fromEntries(userStatsMap), users: users || [] };
+}
+
+export const action = async ({ request }: Route.ActionArgs) => {
+  const { client } = makeSSRClient(request);
+  const { data: { user } } = await client.auth.getUser();
+  const formData = await request.formData();
+  
+  console.log("Form data received:", Object.fromEntries(formData));
+  
+  const { success, data, error } = formSchema.safeParse(Object.fromEntries(formData));
+  if (!success) {
+    console.log("Validation errors:", error.flatten().fieldErrors);
+    return { fieldErrors: error.flatten().fieldErrors };
+  }
+  const { itemName, itemCategory, giverId, rating, review } = data;
+  
+  console.log("Validated data:", { itemName, itemCategory, giverId, rating, review });
+  
+  try {
+    await createGiveAndGlowReview(client, {
+      itemName,
+      itemCategory,
+      giverId,
+      rating,
+      review,
+    });
+    console.log("Review created successfully");
+    return { success: true };
+  } catch (error) {
+    console.error("Error creating review:", error);
+    return { 
+      error: "Failed to submit review. Please try again." 
+    };
+  }
 }
 
 export default function GiveAndGlowPage({ loaderData }: Route.ComponentProps) {
-  const { reviews, userStats } = loaderData;
+  const { reviews, userStats, users } = loaderData;
+  const actionData = useActionData<typeof action>();
   const [searchParams, setSearchParams] = useSearchParams();
   const location = "Bangkok";
   const urlLocation = searchParams.get("location") || location;
@@ -99,32 +156,42 @@ export default function GiveAndGlowPage({ loaderData }: Route.ComponentProps) {
   const [searchQuery, setSearchQuery] = useState(urlSearchQuery);
   const [selectedCategory, setSelectedCategory] = useState(urlCategoryFilter);
   const [showReviewForm, setShowReviewForm] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [newReview, setNewReview] = useState({
     itemName: "",
     itemCategory: "Furniture",
-    giverName: "",
+    giverId: "",
+    giverName: "", // For display purposes
     rating: 5,
     review: "",
     location: urlLocation,
     tags: [] as string[]
   });
-
+  
+  // User selection state
+  const [selectedGiver, setSelectedGiver] = useState<any>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [showDropdown, setShowDropdown] = useState(false);
 
   // Filter reviews based on search and category
-  const filteredReviews = reviews.filter((review: any) => {
-    const matchesSearch = !urlSearchQuery || 
-      review.product_title?.toLowerCase().includes(urlSearchQuery.toLowerCase()) ||
-      review.giver_username?.toLowerCase().includes(urlSearchQuery.toLowerCase()) ||
-      review.receiver_username?.toLowerCase().includes(urlSearchQuery.toLowerCase()) ||
-      review.review?.toLowerCase().includes(urlSearchQuery.toLowerCase());
-    
-    const matchesCategory = urlCategoryFilter === "All" || review.category === urlCategoryFilter;
-    const matchesLocation = urlLocation === "All Cities" || review.product_location === urlLocation;
-    
-    return matchesSearch && matchesCategory && matchesLocation;
-  });
+  const filteredReviews = reviews
+    .filter((review: any) => {
+      const matchesSearch = !urlSearchQuery || 
+        review.product_title?.toLowerCase().includes(urlSearchQuery.toLowerCase()) ||
+        review.giver_username?.toLowerCase().includes(urlSearchQuery.toLowerCase()) ||
+        review.receiver_username?.toLowerCase().includes(urlSearchQuery.toLowerCase()) ||
+        review.review?.toLowerCase().includes(urlSearchQuery.toLowerCase());
+      
+      const matchesCategory = urlCategoryFilter === "All" || review.category === urlCategoryFilter;
+      const matchesLocation = urlLocation === "All Cities" || review.product_location === urlLocation;
+      
+      return matchesSearch && matchesCategory && matchesLocation;
+    })
+    .sort((a: any, b: any) => {
+      // Sort by created_at in descending order (newest first)
+      const dateA = new Date(a.created_at);
+      const dateB = new Date(b.created_at);
+      return dateB.getTime() - dateA.getTime();
+    });
 
   // Handlers
   const handleSearchChange = (value: string) => {
@@ -174,39 +241,60 @@ export default function GiveAndGlowPage({ loaderData }: Route.ComponentProps) {
     setSearchParams(newSearchParams);
   };
 
-  const handleSubmitReview = async () => {
-    setIsSubmitting(true);
-    setFormErrors({});
-
-    // Simple validation
-    const errors: Record<string, string> = {};
-    if (!newReview.itemName.trim()) errors.itemName = "Item name is required";
-    if (!newReview.giverName.trim()) errors.giverName = "Giver name is required";
-    if (!newReview.review.trim()) errors.review = "Review is required";
-    if (newReview.review.trim().length < 10) errors.review = "Review must be at least 10 characters";
-
-    if (Object.keys(errors).length > 0) {
-      setFormErrors(errors);
-      setIsSubmitting(false);
-      return;
-    }
-
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    // Reset form
-    setShowReviewForm(false);
+  const handleUserSelect = (user: any) => {
+    setSelectedGiver(user);
     setNewReview({
-      itemName: "",
-      itemCategory: "Furniture",
-      giverName: "",
-      rating: 5,
-      review: "",
-      location: urlLocation as any,
-      tags: []
+      ...newReview,
+      giverId: user.profile_id,
+      giverName: user.username
     });
-    setIsSubmitting(false);
+    setSearchTerm(user.username || "");
+    setShowDropdown(false);
   };
+
+  // Filter users based on search term
+  const filteredUsers = users.filter((user) =>
+    user.username?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  // Close dropdown when clicking outside
+  React.useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Element;
+      if (!target.closest('.user-search-container')) {
+        setShowDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  // Close modal when action is successful
+  React.useEffect(() => {
+    if (actionData && !('fieldErrors' in actionData) && !('error' in actionData)) {
+      console.log("Action successful, closing modal");
+      setShowReviewForm(false);
+      setNewReview({
+        itemName: "",
+        itemCategory: "Furniture",
+        giverId: "",
+        giverName: "",
+        rating: 5,
+        review: "",
+        location: urlLocation as any,
+        tags: []
+      });
+      setSearchTerm("");
+      setSelectedGiver(null);
+      setShowDropdown(false);
+      
+      // Reload the page to show the new review
+      window.location.reload();
+    }
+  }, [actionData]);
   
   const renderStars = (rating: number) => {
     return (
@@ -372,7 +460,7 @@ export default function GiveAndGlowPage({ loaderData }: Route.ComponentProps) {
             </p>
             <Button 
               onClick={() => setShowReviewForm(true)} 
-              className="mt-4"
+              className="mt-4 cursor-pointer"
               size="lg"
             >
               Write a Review
@@ -381,18 +469,24 @@ export default function GiveAndGlowPage({ loaderData }: Route.ComponentProps) {
         </Card>
       )}
 
-      {/* Review Form Modal */}
-      {showReviewForm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <CardHeader>
-              <CardTitle>Write a Review for Free Item Received</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {/* Error Display */}
-              {formErrors.submit && (
+      {/* Review Form Dialog */}
+      <Dialog open={showReviewForm} onOpenChange={setShowReviewForm}>
+        <DialogContent className="max-w-2xl max-h-[90vh]">
+          <DialogHeader>
+            <DialogTitle>Write a Review for Free Item Received</DialogTitle>
+          </DialogHeader>
+          <ScrollArea className="max-h-[60vh]">
+            <Form method="post" className="space-y-4 pr-4">
+              {/* Error/Success Display */}
+              {actionData?.error && (
                 <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md">
-                  {formErrors.submit}
+                  {actionData.error}
+                </div>
+              )}
+              
+              {actionData && !('fieldErrors' in actionData) && !('error' in actionData) && (
+                <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-md">
+                  Review submitted successfully! The page will reload shortly.
                 </div>
               )}
 
@@ -401,12 +495,12 @@ export default function GiveAndGlowPage({ loaderData }: Route.ComponentProps) {
                 <label className="block text-sm font-medium text-gray-700 mb-2">Item Name *</label>
                 <Input
                   placeholder="What item did you receive?"
-                  value={newReview.itemName}
-                  onChange={(e) => setNewReview({ ...newReview, itemName: e.target.value })}
-                  className={formErrors.itemName ? "border-red-500" : ""}
+                  name="itemName"
+                  defaultValue={newReview.itemName}
+                  className={actionData?.fieldErrors?.itemName ? "border-red-500" : ""}
                 />
-                {formErrors.itemName && (
-                  <p className="text-red-500 text-sm mt-1">{formErrors.itemName}</p>
+                {actionData?.fieldErrors?.itemName && (
+                  <p className="text-red-500 text-sm mt-1">{actionData.fieldErrors.itemName[0]}</p>
                 )}
               </div>
 
@@ -429,22 +523,60 @@ export default function GiveAndGlowPage({ loaderData }: Route.ComponentProps) {
                     );
                   })}
                 </div>
-                {formErrors.itemCategory && (
-                  <p className="text-red-500 text-sm mt-1">{formErrors.itemCategory}</p>
+                {actionData?.fieldErrors?.itemCategory && (
+                  <p className="text-red-500 text-sm mt-1">{actionData.fieldErrors.itemCategory[0]}</p>
                 )}
+                <input type="hidden" name="itemCategory" value={newReview.itemCategory} />
               </div>
 
-              {/* Giver Name */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Giver's Name *</label>
+              {/* Giver Selection */}
+              <div className="relative user-search-container">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Giver *</label>
                 <Input
-                  placeholder="Who gave you this item?"
-                  value={newReview.giverName}
-                  onChange={(e) => setNewReview({ ...newReview, giverName: e.target.value })}
-                  className={formErrors.giverName ? "border-red-500" : ""}
+                  placeholder="Search for a user..."
+                  value={searchTerm}
+                  onChange={(e) => {
+                    setSearchTerm(e.target.value);
+                    setShowDropdown(true);
+                  }}
+                  onFocus={() => setShowDropdown(true)}
+                  className={actionData?.fieldErrors?.giverId ? "border-red-500" : ""}
                 />
-                {formErrors.giverName && (
-                  <p className="text-red-500 text-sm mt-1">{formErrors.giverName}</p>
+                <input type="hidden" name="giverId" value={newReview.giverId || ""} />
+                {actionData?.fieldErrors?.giverId && (
+                  <p className="text-red-500 text-sm mt-1">{actionData.fieldErrors.giverId[0]}</p>
+                )}
+                
+                {/* Search Results Dropdown */}
+                {showDropdown && filteredUsers.length > 0 && (
+                  <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-y-auto">
+                    {filteredUsers.map((user) => (
+                      <button
+                        key={user.profile_id}
+                        type="button"
+                        onClick={() => handleUserSelect(user)}
+                        className="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center gap-3"
+                      >
+                        {user.avatar_url && (
+                          <img 
+                            src={user.avatar_url} 
+                            alt={user.username || ""}
+                            className="w-6 h-6 rounded-full"
+                          />
+                        )}
+                        <div>
+                          <div className="font-medium">{user.username}</div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+                
+                {/* No results message */}
+                {showDropdown && searchTerm && filteredUsers.length === 0 && (
+                  <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg p-4 text-center text-gray-500">
+                    No users found matching "{searchTerm}"
+                  </div>
                 )}
               </div>
 
@@ -470,8 +602,9 @@ export default function GiveAndGlowPage({ loaderData }: Route.ComponentProps) {
                   ))}
                   <span className="ml-2 text-sm text-gray-600">{newReview.rating}/5</span>
                 </div>
-                {formErrors.rating && (
-                  <p className="text-red-500 text-sm mt-1">{formErrors.rating}</p>
+                <input type="hidden" name="rating" value={newReview.rating} />
+                {actionData?.fieldErrors?.rating && (
+                  <p className="text-red-500 text-sm mt-1">{actionData.fieldErrors.rating[0]}</p>
                 )}
               </div>
               
@@ -479,13 +612,13 @@ export default function GiveAndGlowPage({ loaderData }: Route.ComponentProps) {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Your Review *</label>
                 <textarea
-                  className={`w-full min-h-[120px] p-3 border rounded-md resize-none focus:outline-none focus:ring-2 focus:ring-ring ${formErrors.review ? "border-red-500" : ""}`}
+                  className={`w-full min-h-[120px] p-3 border rounded-md resize-none focus:outline-none focus:ring-2 focus:ring-ring ${actionData?.fieldErrors?.review ? "border-red-500" : ""}`}
                   placeholder="Share your experience and appreciation for the free item you received..."
-                  value={newReview.review}
-                  onChange={(e) => setNewReview({ ...newReview, review: e.target.value })}
+                  name="review"
+                  defaultValue={newReview.review}
                 />
-                {formErrors.review && (
-                  <p className="text-red-500 text-sm mt-1">{formErrors.review}</p>
+                {actionData?.fieldErrors?.review && (
+                  <p className="text-red-500 text-sm mt-1">{actionData.fieldErrors.review[0]}</p>
                 )}
               </div>
 
@@ -494,47 +627,44 @@ export default function GiveAndGlowPage({ loaderData }: Route.ComponentProps) {
                 <label className="block text-sm font-medium text-gray-700 mb-2">Tags (optional)</label>
                 <Input
                   placeholder="excellent condition, friendly giver, smooth pickup (comma separated)"
-                  value={newReview.tags.join(", ")}
-                  onChange={(e) => setNewReview({ ...newReview, tags: e.target.value.split(",").map(tag => tag.trim()).filter(tag => tag) })}
-                  className={formErrors.tags ? "border-red-500" : ""}
+                  defaultValue={newReview.tags.join(", ")}
                 />
-                {formErrors.tags && (
-                  <p className="text-red-500 text-sm mt-1">{formErrors.tags}</p>
-                )}
               </div>
 
-              <div className="flex gap-2 pt-4">
+              <DialogFooter className="flex gap-2 pt-4">
                 <Button 
-                  onClick={handleSubmitReview} 
-                  className="flex-1"
-                  disabled={isSubmitting || !newReview.itemName || !newReview.giverName || !newReview.review}
+                  type="submit"
+                  className="flex-1 cursor-pointer"
                 >
-                  {isSubmitting ? "Submitting..." : "Submit Review"}
+                  Submit Review
                 </Button>
                 <Button 
+                  type="button"
                   variant="outline" 
                   onClick={() => {
                     setShowReviewForm(false);
                     setNewReview({
                       itemName: "",
                       itemCategory: "Furniture",
+                      giverId: "",
                       giverName: "",
                       rating: 5,
                       review: "",
                       location: urlLocation as any,
                       tags: []
                     });
-                    setFormErrors({});
+                    setSearchTerm("");
+                    setSelectedGiver(null);
+                    setShowDropdown(false);
                   }}
-                  disabled={isSubmitting}
                 >
                   Cancel
                 </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
+              </DialogFooter>
+            </Form>
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 } 

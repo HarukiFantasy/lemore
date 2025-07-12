@@ -5,6 +5,7 @@ import { Button } from "~/common/components/ui/button";
 import { Input } from "~/common/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "~/common/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "~/common/components/ui/avatar";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "~/common/components/ui/dialog";
 import { Marquee } from "components/magicui/marquee";
 import { getLocalBusinesses, getLocalReviews } from "../queries";
 import type { Route } from "./+types/local-reviews-page";
@@ -585,16 +586,15 @@ export default function LocalReviewsPage({ loaderData }: Route.ComponentProps) {
         )}
       </div>
 
-      {/* Write a Review Modal */}
-      {showReviewForm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <CardHeader>
-              <CardTitle>
-                {reviewStep === 'select-business' ? 'Select Business' : `Write a Review for ${selectedBusiness?.name}`}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
+      {/* Write a Review Dialog */}
+      <Dialog open={showReviewForm} onOpenChange={setShowReviewForm}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              {reviewStep === 'select-business' ? 'Select Business' : `Write a Review for ${selectedBusiness?.name}`}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
               {reviewStep === 'select-business' ? (
                 <>
                   {/* Step 1: Business Selection */}
@@ -793,8 +793,9 @@ export default function LocalReviewsPage({ loaderData }: Route.ComponentProps) {
                   </div>
                 </>
               )}
+            </div>
               
-              <div className="flex gap-2 pt-4">
+            <DialogFooter className="flex gap-2 pt-4">
                 {reviewStep === 'write-review' && (
                   <Button 
                     variant="outline"
@@ -861,11 +862,9 @@ export default function LocalReviewsPage({ loaderData }: Route.ComponentProps) {
                 >
                   Cancel
                 </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
     </div>
   );
 } 

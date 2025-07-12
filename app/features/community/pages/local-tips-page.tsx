@@ -67,7 +67,8 @@ export const action = async ({ request }: Route.ActionArgs) => {
     location,
     author: user?.id || '',
   });
-  return redirect('/community/local-tips');
+  console.log("Success :", success, "data :", data, "error :", error)
+  return { success, data, error };
 }
 
 
@@ -116,10 +117,10 @@ export default function LocalTipsPage({ loaderData }: Route.ComponentProps) {
       (post.username && post.username.toLowerCase().includes(searchQuery.toLowerCase()));
     
     const matchesCategory = categoryFilter === "All" || post.category === categoryFilter;
-    const matchesLocation = urlLocation === "All Cities" || post.location === urlLocation;
+    const matchesLocation = urlLocation === "Other Cities" || post.location === urlLocation;
     
     return matchesSearch && matchesCategory && matchesLocation;
-  });
+  }).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
   // Handle search input change
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -307,7 +308,7 @@ export default function LocalTipsPage({ loaderData }: Route.ComponentProps) {
       <div className="flex justify-between items-center mb-4">
         <p className="text-muted-foreground">
           {filteredTips.length} tip{filteredTips.length !== 1 ? 's' : ''} found 
-          {urlLocation === "All Cities" ? " across all cities" : ` in ${urlLocation}`}
+          {urlLocation === "Other Cities" ? " across all cities" : ` in ${urlLocation}`}
           {(searchQuery || categoryFilter !== "All") && (
             <span className="ml-2">
               {searchQuery && ` for "${searchQuery}"`}

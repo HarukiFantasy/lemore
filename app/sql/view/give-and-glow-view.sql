@@ -21,12 +21,12 @@ SELECT
     receiver_profile.username as receiver_username,
     receiver_profile.avatar_url as receiver_avatar_url,
     receiver_profile.profile_id as receiver_profile_id,
-    -- Product data
-    products.title as product_title,
-    products.location as product_location,
-    products.description as product_description
+    -- Product data (LEFT JOIN to allow reviews without products)
+    COALESCE(products.title, 'Unknown Item') as product_title,
+    COALESCE(products.location, give_and_glow_reviews.location) as product_location,
+    COALESCE(products.description, 'Free item received') as product_description
 FROM
     give_and_glow_reviews
     INNER JOIN user_profiles giver_profile ON give_and_glow_reviews.giver_id = giver_profile.profile_id
     INNER JOIN user_profiles receiver_profile ON give_and_glow_reviews.receiver_id = receiver_profile.profile_id
-    INNER JOIN products ON give_and_glow_reviews.product_id = products.product_id;
+    LEFT JOIN products ON give_and_glow_reviews.product_id = products.product_id;
