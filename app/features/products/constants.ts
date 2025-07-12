@@ -31,8 +31,18 @@ export const PRODUCT_LIMITS = {
   images: { max: 10 }
 } as const;
 
+export const PRODUCT_CONDITIONS = [
+  { value: "New", label: "New" },
+  { value: "Like New", label: "Like New" },
+  { value: "Excellent", label: "Excellent" },
+  { value: "Good", label: "Good" },
+  { value: "Fair", label: "Fair" },
+  { value: "Poor", label: "Poor" }
+] as const;
+
 export const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"] as const;
 export const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+
 
 // 타입 정의
 export type ProductCategory = typeof productCategories.enumValues[number];

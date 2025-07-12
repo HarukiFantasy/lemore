@@ -57,6 +57,20 @@
       "when": 1752266206852,
       "tag": "0007_messy_hex",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1752311600746,
+      "tag": "0008_oval_taskmaster",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1752312944359,
+      "tag": "0009_bouncy_ezekiel",
+      "breakpoints": true
     }
   ]
 }

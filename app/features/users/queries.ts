@@ -2,13 +2,15 @@ import { SupabaseClient } from '@supabase/supabase-js';
 import { redirect } from 'react-router';
 import { Database } from '~/supa-client';
 
-export const getUser = async (client: SupabaseClient<Database, any, any, any>) => {
+export const getUser = async (client: SupabaseClient<Database>) => {
   const { data, error } = await client.from("users_view").select("*");
   if (error) throw new Error(error.message);
   return data;
 };
 
-export const getUserByProfileId = async (client: SupabaseClient<Database, any, any, any>, { profileId }: { profileId: string|null }) => {
+export const getUserByProfileId = async (client: SupabaseClient<Database>, { profileId }: { profileId: string|null }) => {
+  if (!profileId) throw new Error("Profile ID is required");
+  
   const { data, error } = await client
     .from("users_view")
     .select("*")
@@ -19,7 +21,7 @@ export const getUserByProfileId = async (client: SupabaseClient<Database, any, a
   return data;
 };
 
-export const getUserByUsername = async (client: SupabaseClient<Database, any, any, any>, { username }: { username: string }) => {
+export const getUserByUsername = async (client: SupabaseClient<Database>, { username }: { username: string }) => {
   const { data, error } = await client
     .from("users_view")
     .select("*")
@@ -30,7 +32,9 @@ export const getUserByUsername = async (client: SupabaseClient<Database, any, an
   return data;
 };
 
-export const getDashboard = async (client: SupabaseClient<Database, any, any, any>, { profileId }: { profileId: string|null }) => {
+export const getDashboard = async (client: SupabaseClient<Database>, { profileId }: { profileId: string|null }) => {
+  if (!profileId) throw new Error("Profile ID is required");
+  
   const { data, error } = await client
     .from("user_dashboard_view")
     .select("*")
@@ -41,7 +45,9 @@ export const getDashboard = async (client: SupabaseClient<Database, any, any, an
   return data;
 };
 
-export const getLikedProductsByUserId = async (client: SupabaseClient<Database, any, any, any>, { profileId }: { profileId: string|null }) => {
+export const getLikedProductsByUserId = async (client: SupabaseClient<Database>, { profileId }: { profileId: string|null }) => {
+  if (!profileId) throw new Error("Profile ID is required");
+  
   const { data, error } = await client
     .from("product_likes")
     .select("*")
@@ -51,7 +57,7 @@ export const getLikedProductsByUserId = async (client: SupabaseClient<Database, 
   return data;
 };
 
-export const getLoggedInUserId = async (client: SupabaseClient<Database, any, any, any>) => {
+export const getLoggedInUserId = async (client: SupabaseClient<Database>) => {
   const { data, error } = await client.auth.getUser();
   if (error || data.user === null) {
     throw redirect("/auth/login");
@@ -59,7 +65,7 @@ export const getLoggedInUserId = async (client: SupabaseClient<Database, any, an
   return data.user.id;
 };
 
-export const getMessages = async (client: SupabaseClient<Database, any, any, any>, { profileId }: { profileId: string|null }) => {
+export const getMessages = async (client: SupabaseClient<Database>, { profileId }: { profileId: string|null }) => {
   const { data, error } = await client
     .from("user_messages_view")
     .select("*")
@@ -70,7 +76,9 @@ export const getMessages = async (client: SupabaseClient<Database, any, any, any
   return data;
 };
 
-export const getConversations = async (client: SupabaseClient<Database, any, any, any>, { profileId }: { profileId: string|null }) => {
+export const getConversations = async (client: SupabaseClient<Database>, { profileId }: { profileId: string|null }) => {
+  if (!profileId) throw new Error("Profile ID is required");
+  
   // 사용자가 참가한 대화들의 conversation_id 가져오기
   const { data: conversations, error: convError } = await client
     .from("message_participants")
@@ -104,7 +112,7 @@ export const getConversations = async (client: SupabaseClient<Database, any, any
 };
 
 export const getConversationMessages = async (
-  client: SupabaseClient<Database, any, any, any>, 
+  client: SupabaseClient<Database>, 
   { conversationId }: { conversationId: number }
 ) => {
   const { data, error } = await client
@@ -118,7 +126,7 @@ export const getConversationMessages = async (
 };
 
 export const sendMessage = async (
-  client: SupabaseClient<Database, any, any, any>, 
+  client: SupabaseClient<Database>, 
   { 
     conversationId, 
     senderId, 
@@ -149,7 +157,7 @@ export const sendMessage = async (
 };
 
 export const createConversation = async (
-  client: SupabaseClient<Database, any, any, any>,
+  client: SupabaseClient<Database>,
   { participantIds }: { participantIds: string[] }
 ) => {
   // 대화 생성
@@ -177,7 +185,7 @@ export const createConversation = async (
 };
 
 export const getOrCreateConversation = async (
-  client: SupabaseClient<Database, any, any, any>,
+  client: SupabaseClient<Database>,
   { userId, otherUserId }: { userId: string; otherUserId: string }
 ) => {
   // 기존 대화가 있는지 확인
@@ -210,7 +218,7 @@ export const getOrCreateConversation = async (
 };
 
 export const getUserStats = async (
-  client: SupabaseClient<Database, any, any, any>,
+  client: SupabaseClient<Database>,
   { username }: { username: string }
 ) => {
   // 사용자의 리스팅 수 가져오기

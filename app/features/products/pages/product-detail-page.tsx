@@ -34,7 +34,7 @@ export const loader = async ({ params, request }: Route.LoaderArgs) => {
   const [isLiked, setIsLiked] = useState(false);
 
 
-  const isFree = product.price_type === "free";
+  const isFree = product.price_type === "Free";
 
   // Handle contact seller button click
   const handleContactSeller = () => {

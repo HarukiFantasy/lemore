@@ -860,6 +860,33 @@ export type Database = {
           },
         ]
       }
+      locations: {
+        Row: {
+          description: string | null
+          display_name: string
+          is_active: boolean
+          location_id: number
+          name: Database["public"]["Enums"]["location"]
+          population: number | null
+        }
+        Insert: {
+          description?: string | null
+          display_name: string
+          is_active?: boolean
+          location_id?: never
+          name: Database["public"]["Enums"]["location"]
+          population?: number | null
+        }
+        Update: {
+          description?: string | null
+          display_name?: string
+          is_active?: boolean
+          location_id?: never
+          name?: Database["public"]["Enums"]["location"]
+          population?: number | null
+        }
+        Relationships: []
+      }
       message_participants: {
         Row: {
           conversation_id: number
@@ -2757,7 +2784,7 @@ export type Database = {
         | "Pattaya"
         | "Krabi"
         | "Koh Samui"
-        | "All Cities"
+        | "Other Cities"
       message_type: "Text" | "Image" | "File" | "Audio" | "Video" | "Location"
       notification_type: "Message" | "Like" | "Reply" | "Mention"
       price_type: "Fixed" | "Negotiable" | "Free" | "Auction"
@@ -2942,7 +2969,7 @@ export const Constants = {
         "Pattaya",
         "Krabi",
         "Koh Samui",
-        "All Cities",
+        "Other Cities",
       ],
       message_type: ["Text", "Image", "File", "Audio", "Video", "Location"],
       notification_type: ["Message", "Like", "Reply", "Mention"],

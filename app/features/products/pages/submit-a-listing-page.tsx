@@ -4,52 +4,96 @@ import { Button } from "~/common/components/ui/button";
 import { Textarea } from "~/common/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/common/components/ui/select";
 import { Badge } from "~/common/components/ui/badge";
-import { useNavigate, useLocation } from "react-router";
-import { PRODUCT_CATEGORIES, PRICE_TYPES, PRODUCT_LIMITS, ALLOWED_IMAGE_TYPES, MAX_FILE_SIZE } from "../constants";
-import { LOCATIONS } from "~/constants";
+import { useNavigate, useLocation, redirect, Form } from "react-router";
+import { PRICE_TYPES,ALLOWED_IMAGE_TYPES, MAX_FILE_SIZE, PRODUCT_CONDITIONS} from "../constants";
+import { CURRENCIES, LOCATIONS } from '~/constants';
+import { Route } from "./+types/submit-a-listing-page";
+import { makeSSRClient } from "~/supa-client";
+import { getLoggedInUserId } from "~/features/users/queries";
+import { getCategories, getlocations } from '../queries';
+import { createProduct } from '../mutations';
+import { z } from 'zod';
+import { CircleIcon } from 'lucide-react';
 
-// Mock data for form validation
-const mockFormData = {
-  title: "",
-  price: "",
-  currency: "THB",
-  description: "",
-  condition: "",
-  category: "",
-  location: "",
-  images: [] as File[],
+export const loader = async ({ request }: Route.LoaderArgs) => {
+  const { client } = makeSSRClient(request);
+  await getLoggedInUserId(client);
+  const categories = await getCategories(client);
+  const locations = await getlocations(client);
+  return { categories, locations };
 };
 
-export default function SubmitAListingPage() {
+const formSchema = z.object({
+  title: z.string().min(1),
+  price: z.string().min(1),
+  currency: z.string().min(1),
+  priceType: z.string().min(1),
+  description: z.string().min(1),
+  condition: z.string().min(1),
+  category: z.string().min(1),
+  location: z.string().min(1),
+});
+
+export const action = async ({ request }: Route.ActionArgs) => {
+  const { client } = makeSSRClient(request);
+
+  const { data: { user }, error: authError } = await client.auth.getUser();
+  if (authError || !user) {
+    console.error('Auth error:', authError);
+    return redirect("/auth/login");
+  }
+  console.log('Authenticated user:', user.id);
+
+  const formData = await request.formData();
+  const { success, data, error } = formSchema.safeParse(Object.fromEntries(formData));
+  if (!success) {
+    return { fieldErrors: error.flatten().fieldErrors };
+  }
+  const { title, price, currency, priceType, description, condition, category, location } = data;
+  const product  = await createProduct(client, { 
+    title, 
+    price: parseFloat(price), 
+    currency,  
+    priceType, 
+    userId: user.id,
+    description,
+    condition,
+    category,
+    location
+  });
+  return redirect(`/secondhand/product/${product.product_id}`);
+};
+
+export default function SubmitAListingPage({loaderData, actionData }: Route.ComponentProps) {
+  const { categories, locations } = loaderData;
   const [images, setImages] = useState<File[]>([]);
   const [previews, setPreviews] = useState<string[]>([]);
   const [title, setTitle] = useState("");
   const [price, setPrice] = useState("");
   const [currency, setCurrency] = useState("THB");
-  const [priceType, setPriceType] = useState("fixed");
+  const [priceType, setPriceType] = useState("");
   const [description, setDescription] = useState("");
   const [condition, setCondition] = useState("");
   const [category, setCategory] = useState("");
   const [location, setLocation] = useState("");
-  const [errors, setErrors] = useState<Record<string, string>>({});
   const navigate = useNavigate();
   const locationState = useLocation();
   const prefillData = locationState.state?.prefillData;
   const fromLetGoBuddy = locationState.state?.fromLetGoBuddy;
-
+  const [isSubmitting, setIsSubmitting] = useState(false);
   // Auto-fill form with data from Let Go Buddy
   useEffect(() => {
     if (prefillData && fromLetGoBuddy) {
       setTitle(prefillData.title || "");
       setPrice(prefillData.price !== undefined && prefillData.price !== null ? String(prefillData.price) : "");
       setCurrency(prefillData.currency || "THB");
-      // 무료나눔 상태가 있으면 priceType을 free로 강제 세팅
+      // 무료나눔 상태가 있으면 priceType을 Free로 강제 세팅
       if (prefillData.priceType) {
         setPriceType(prefillData.priceType);
       } else if (prefillData.isGiveaway) {
-        setPriceType("free");
+        setPriceType("Free");
       } else {
-        setPriceType("fixed");
+        setPriceType("Fixed");
       }
       setDescription(prefillData.description || "");
       setCondition(prefillData.condition || "");
@@ -63,7 +107,7 @@ export default function SubmitAListingPage() {
     }
   }, [prefillData, fromLetGoBuddy]);
 
-  const isFree = priceType === "free";
+  const isFree = priceType === "Free";
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files ? Array.from(e.target.files) : [];
@@ -108,98 +152,8 @@ export default function SubmitAListingPage() {
     setPreviews(prev => prev.filter((_, i) => i !== index));
   };
 
-  const validateForm = (): boolean => {
-    const newErrors: Record<string, string> = {};
-
-    // Title validation
-    if (!title.trim()) {
-      newErrors.title = "Title is required";
-    } else if (title.length > 100) {
-      newErrors.title = "Title must be less than 100 characters";
-    }
-
-    // Price validation (only for non-free items)
-    if (!isFree) {
-      if (!price.trim()) {
-        newErrors.price = "Price is required";
-      } else if (isNaN(Number(price.replace(/,/g, '')))) {
-        newErrors.price = "Price must be a valid number";
-      }
-    }
-
-    // Currency validation
-    if (!currency) {
-      newErrors.currency = "Currency is required";
-    }
-
-    // Description validation
-    if (!description.trim()) {
-      newErrors.description = "Description is required";
-    } else if (description.length < 10) {
-      newErrors.description = "Description must be at least 10 characters";
-    } else if (description.length > 1000) {
-      newErrors.description = "Description must be less than 1000 characters";
-    }
-
-    // Condition validation
-    if (!condition) {
-      newErrors.condition = "Condition is required";
-    }
-
-    // Category validation
-    if (!category) {
-      newErrors.category = "Category is required";
-    }
-
-    // Location validation
-    if (!location) {
-      newErrors.location = "Location is required";
-    }
-
-    // Images validation
-    if (images.length === 0) {
-      newErrors.images = "At least one image is required";
-    } else if (images.length > 5) {
-      newErrors.images = "Maximum 5 images allowed";
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!validateForm()) {
-      return;
-    }
-
-    // Mock data for submission
-    const mockProductData = {
-      id: Date.now().toString(),
-      title,
-      price: isFree ? 0 : Number(price.replace(/,/g, '')),
-      currency,
-      priceType,
-      description,
-      condition,
-      category,
-      location,
-      images: images.length,
-      createdAt: new Date().toISOString(),
-      sellerId: "mock-seller-123",
-      isSold: false,
-    };
-
-    console.log("Submitting product:", mockProductData);
-
-    // Here you would normally upload the product and get its ID
-    // For now, redirect to a sample product detail page
-    navigate("/secondhand/product/0");
-  };
-
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col md:flex-row gap-8 p-8 max-w-4xl mx-auto">
+    <Form method="post" className="flex flex-col md:flex-row gap-8 p-8 max-w-4xl mx-auto">
       {/* Left: Image Upload */}
       <div className="flex-1 flex flex-col items-center justify-center border rounded-lg p-6 bg-white shadow">
         <label className="w-full flex flex-col items-center cursor-pointer">
@@ -235,7 +189,6 @@ export default function SubmitAListingPage() {
           <span className="text-xs text-gray-400 mt-1">
             Supported formats: JPEG, PNG, WebP (max 10MB each)
           </span>
-          {errors.images && <span className="text-xs text-red-500 mt-1">{errors.images}</span>}
         </label>
       </div>
       
@@ -244,17 +197,22 @@ export default function SubmitAListingPage() {
         <div>
           <Input
             type="text"
+            name="title"
             placeholder="Product Title"
             value={title}
             onChange={e => setTitle(e.target.value)}
-            className={errors.title ? "border-red-500" : ""}
+            className={actionData && "fieldErrors" in actionData && actionData.fieldErrors.title ? "border-red-500" : ""}
           />
-          {errors.title && <span className="text-xs text-red-500 mt-1">{errors.title}</span>}
-        </div>
-        
+          {actionData && "fieldErrors" in actionData && ( 
+            <div className="text-xs text-red-500 mt-1">
+              {actionData.fieldErrors.title}
+            </div>
+          )}
+          </div>
         <div>
+          <input type="hidden" name="priceType" value={priceType} />
           <Select value={priceType} onValueChange={setPriceType}>
-            <SelectTrigger className={errors.priceType ? "border-red-500" : ""}>
+            <SelectTrigger className={actionData && "fieldErrors" in actionData && actionData.fieldErrors.priceType ? "border-red-500" : ""}>
               <SelectValue placeholder="Select Price Type" />
             </SelectTrigger>
             <SelectContent>
@@ -265,7 +223,11 @@ export default function SubmitAListingPage() {
               ))}
             </SelectContent>
           </Select>
-          {errors.priceType && <span className="text-xs text-red-500 mt-1">{errors.priceType}</span>}
+          {actionData && "fieldErrors" in actionData && (
+            <div className="text-xs text-red-500 mt-1">
+              {actionData.fieldErrors.priceType}
+            </div>
+          )}
         </div>
         
         <div className="space-y-3">
@@ -274,6 +236,7 @@ export default function SubmitAListingPage() {
               <div className="relative flex-1">
                 <Input
                   type="text"
+                  name="price"
                   placeholder="0"
                   value={isFree ? "0" : price}
                   onChange={e => {
@@ -283,7 +246,7 @@ export default function SubmitAListingPage() {
                       setPrice(value);
                     }
                   }}
-                  className={`${errors.price ? "border-red-500" : ""} ${
+                  className={`${actionData && "fieldErrors" in actionData && actionData.fieldErrors.price ? "border-red-500" : ""} ${
                     isFree ? "bg-green-50 border-green-300 text-green-700" : ""
                   } pr-12 text-lg font-medium`}
                   disabled={isFree}
@@ -295,22 +258,27 @@ export default function SubmitAListingPage() {
                   <div className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-green-600 font-medium" />
                 )}
               </div>
+              <input type="hidden" name="currency" value={currency} />
               <Select value={currency} onValueChange={setCurrency} disabled={isFree}>
                 <SelectTrigger className={`w-20 ${isFree ? "bg-green-50 border-green-300" : ""}`}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="THB">THB</SelectItem>
-                  <SelectItem value="USD">USD</SelectItem>
-                  <SelectItem value="EUR">EUR</SelectItem>
-                  <SelectItem value="KRW">KRW</SelectItem>
+                  {CURRENCIES.map((currency: string) => (
+                    <SelectItem key={currency} value={currency}>
+                      {currency}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
           </div>
           
-          {errors.price && <span className="text-xs text-red-500">{errors.price}</span>}
-          {errors.currency && <span className="text-xs text-red-500">{errors.currency}</span>}
+          {actionData && "fieldErrors" in actionData && (
+            <div className="text-xs text-red-500">
+              {actionData.fieldErrors.price}
+            </div>
+          )}
           
           {isFree && (
             <div className="flex items-center gap-2">
@@ -324,64 +292,86 @@ export default function SubmitAListingPage() {
         
         <div>
           <Textarea
+            name="description"
             placeholder="Description & Specifications"
             value={description}
             onChange={e => setDescription(e.target.value)}
-            className={`min-h-[100px] ${errors.description ? "border-red-500" : ""}`}
+            className={`min-h-[100px] ${actionData && "fieldErrors" in actionData && actionData.fieldErrors.description ? "border-red-500" : ""}`}
           />
-          {errors.description && <span className="text-xs text-red-500 mt-1">{errors.description}</span>}
+          {actionData && "fieldErrors" in actionData && (
+            <div className="text-xs text-red-500 mt-1">
+              {actionData.fieldErrors.description}
+            </div>
+          )}
         </div>
         
         <div>
+          <input type="hidden" name="condition" value={condition} />
           <Select value={condition} onValueChange={setCondition}>
-            <SelectTrigger className={errors.condition ? "border-red-500" : ""}>
+            <SelectTrigger className={actionData && "fieldErrors" in actionData && actionData.fieldErrors.condition ? "border-red-500" : ""}>
               <SelectValue placeholder="Select Condition" />
             </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="New">New</SelectItem>
-              <SelectItem value="Like New">Like New</SelectItem>
-              <SelectItem value="Good">Good</SelectItem>
-              <SelectItem value="Fair">Fair</SelectItem>
-              <SelectItem value="Poor">Poor</SelectItem>
+            <SelectContent> 
+              {PRODUCT_CONDITIONS.map((condition: any) => (
+                <SelectItem key={condition.value} value={condition.value}>
+                  {condition.label}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
-          {errors.condition && <span className="text-xs text-red-500 mt-1">{errors.condition}</span>}
+          {actionData && "fieldErrors" in actionData && (
+            <div className="text-xs text-red-500 mt-1">
+              {actionData.fieldErrors.condition}
+            </div>
+          )}
         </div>
         
         <div>
+          <input type="hidden" name="category" value={category} />
           <Select value={category} onValueChange={setCategory}>
-            <SelectTrigger className={errors.category ? "border-red-500" : ""}>
+            <SelectTrigger className={actionData && "fieldErrors" in actionData && actionData.fieldErrors.category ? "border-red-500" : ""}>
               <SelectValue placeholder="Select Category" />
             </SelectTrigger>
             <SelectContent>
-              {PRODUCT_CATEGORIES.map(cat => (
-                <SelectItem key={cat} value={cat}>
-                  {cat}
+              {categories.map((category: any) => (
+                <SelectItem key={category.category_id} value={category.name}>
+                  {category.name}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
-          {errors.category && <span className="text-xs text-red-500 mt-1">{errors.category}</span>}
+          {actionData && "fieldErrors" in actionData && (
+            <div className="text-xs text-red-500 mt-1">
+              {actionData.fieldErrors.category}
+            </div>
+          )}
         </div>
         
         <div>
+          <input type="hidden" name="location" value={location} />
           <Select value={location} onValueChange={setLocation}>
-            <SelectTrigger className={errors.location ? "border-red-500" : ""}>
+            <SelectTrigger className={actionData && "fieldErrors" in actionData && actionData.fieldErrors.location ? "border-red-500" : ""}>
               <SelectValue placeholder="Select Location" />
             </SelectTrigger>
             <SelectContent>
-              {LOCATIONS.map((loc) => (
-                <SelectItem key={loc} value={loc}>
-                  {loc}
+              {LOCATIONS.map((location: string) => (
+                <SelectItem key={location} value={location}>
+                  {location}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
-          {errors.location && <span className="text-xs text-red-500 mt-1">{errors.location}</span>}
+          {actionData && "fieldErrors" in actionData && (
+            <div className="text-xs text-red-500 mt-1">
+              {actionData.fieldErrors.location}
+            </div>
+          )}
         </div>
-        
-        <Button type="submit" className="mt-4">Submit Listing</Button>
+          
+        <Button type="submit" className="w-full" disabled={isSubmitting}>
+          {isSubmitting ? <CircleIcon className="animate-spin" /> : "Create account"}
+        </Button>
       </div>
-    </form>
+    </Form>
   );
 } 

@@ -9,7 +9,7 @@ export const LOCATIONS = [
   "Pattaya",
   "Krabi",
   "Koh Samui",
-  "All Cities"
+  "Other Cities"
 ] as const;
 
 // 통화

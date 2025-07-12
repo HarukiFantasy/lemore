@@ -22,7 +22,16 @@ import { LOCATIONS } from './constants';
 // ===== ENUMS =====
 
 // Location enum
-export const locationEnum = pgEnum("location", LOCATIONS);
+export const locationEnum = pgEnum("location", [
+  "Bangkok",
+  "ChiangMai", 
+  "Phuket",
+  "HuaHin",
+  "Pattaya",
+  "Krabi",
+  "Koh Samui",
+  "Other Cities"
+]);
 
 // User related enums
 
@@ -73,6 +82,16 @@ export const categories = pgTable("categories", {
   category_id: bigint("category_id", {mode: "number"}).primaryKey().generatedAlwaysAsIdentity(),
   name: productCategories().notNull(),
 });
+
+export const locations = pgTable("locations", {
+  location_id: bigint("location_id", {mode: "number"}).primaryKey().generatedAlwaysAsIdentity(),
+  name: locationEnum().notNull(),
+  display_name: text("display_name").notNull(),
+  population: integer("population"),
+  description: text("description"),
+  is_active: boolean().notNull().default(true),
+});
+
 
 // Products table
 export const products = pgTable("products", {
