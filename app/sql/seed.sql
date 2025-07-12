@@ -586,7 +586,7 @@ INSERT INTO
         images
     )
 VALUES (
-        1,
+        11,
         'Old Laptop',
         'Electronics',
         'Good',
@@ -608,7 +608,7 @@ VALUES (
         '["img1.jpg"]'
     ),
     (
-        2,
+        12,
         'Yoga Mat',
         'Sports',
         'Fair',
@@ -630,7 +630,7 @@ VALUES (
         '["img2.jpg"]'
     ),
     (
-        3,
+        13,
         'Books',
         'Books',
         'Excellent',
@@ -652,7 +652,7 @@ VALUES (
         '["img3.jpg"]'
     ),
     (
-        4,
+        14,
         'Sofa',
         'Home',
         'Fair',
@@ -674,7 +674,7 @@ VALUES (
         '["img4.jpg"]'
     ),
     (
-        5,
+        15,
         'Bike',
         'Sports',
         'Good',
@@ -696,7 +696,7 @@ VALUES (
         '["img5.jpg"]'
     ),
     (
-        6,
+        16,
         'Hair Dryer',
         'Beauty',
         'Excellent',
@@ -718,7 +718,7 @@ VALUES (
         '["img6.jpg"]'
     ),
     (
-        7,
+        17,
         'Toy Car',
         'Toys',
         'Like New',
@@ -740,7 +740,7 @@ VALUES (
         '["img7.jpg"]'
     ),
     (
-        8,
+        18,
         'Car Seat',
         'Automotive',
         'Good',
@@ -762,7 +762,7 @@ VALUES (
         '["img8.jpg"]'
     ),
     (
-        9,
+        19,
         'BP Monitor',
         'Health',
         'Excellent',
@@ -784,7 +784,7 @@ VALUES (
         '["img9.jpg"]'
     ),
     (
-        10,
+        20,
         'Lamp',
         'Home',
         'Good',

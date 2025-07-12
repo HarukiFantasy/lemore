@@ -1,4 +1,4 @@
-import { Link } from "react-router";
+import { Link, useSearchParams } from "react-router";
 import { z } from "zod";
 import { HeartIcon } from "lucide-react";
 import { ShineBorder } from "components/magicui/shine-border";
@@ -41,10 +41,21 @@ export function ProductCard({
   category = "Electronics",
   sellerStats
 }: ProductCardProps) {
+  const [searchParams] = useSearchParams();
+  const location = searchParams.get("location");
   const isFree = priceType === "free";
 
+  // Helper function to add location to URLs
+  const addLocationToUrl = (url: string) => {
+    if (location && location !== "Bangkok") {
+      const separator = url.includes('?') ? '&' : '?';
+      return `${url}${separator}location=${location}`;
+    }
+    return url;
+  };
+
     return (
-    <Link to={`/secondhand/product/${productId}`}>
+    <Link to={addLocationToUrl(`/secondhand/product/${productId}`)}>
       <div className="relative group p-1">
         <ShineBorder 
           borderWidth={2} 

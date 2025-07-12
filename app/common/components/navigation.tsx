@@ -76,6 +76,15 @@ export function Navigation({
     setSearchParams(params);
   };
 
+  // Helper function to add location to URLs
+  const addLocationToUrl = (url: string) => {
+    if (location && location !== "Bangkok") {
+      const separator = url.includes('?') ? '&' : '?';
+      return `${url}${separator}location=${location}`;
+    }
+    return url;
+  };
+
   useEffect(() => {
     const urlLocation = searchParams.get("location");
     if (urlLocation && urlLocation !== location) {
@@ -99,12 +108,12 @@ export function Navigation({
             <div key={idx}>
               <DropdownMenuLabel className="text-sm text-neutral-800">
                 {menu.to ? (
-                  <Link to={menu.to} className="hover:underline">{menu.name}</Link>
+                  <Link to={addLocationToUrl(menu.to)} className="hover:underline">{menu.name}</Link>
                 ) : menu.name}
               </DropdownMenuLabel>
               {menu.items && menu.items.map((item, subIdx) => (
                 <DropdownMenuItem asChild key={subIdx} className="pl-6 text-xs text-neutral-700">
-                  <Link to={item.to} className="block w-full">{item.name}</Link>
+                  <Link to={addLocationToUrl(item.to)} className="block w-full">{item.name}</Link>
                 </DropdownMenuItem>
               ))}
             </div>
@@ -131,7 +140,7 @@ export function Navigation({
             <NavigationMenuItem key={menu.name}>
               {menu.items? ( 
                 <> 
-                <Link to={menu.to}>
+                <Link to={addLocationToUrl(menu.to)}>
                   <NavigationMenuTrigger> {menu.name} </NavigationMenuTrigger>
                 </Link>
                 <NavigationMenuContent> 
@@ -144,7 +153,7 @@ export function Navigation({
                         <NavigationMenuLink asChild>
                           <Link 
                             className="p-3 space-y-1 block text-sm leading-none no-underline outline-none"
-                            to={item.to}
+                            to={addLocationToUrl(item.to)}
                           >
                             <span className="text-sm font-medium leading-none">{item.name}</span>
                             <p className="text-xs leading-snug text-muted-foreground">{item.description}</p>
@@ -156,7 +165,7 @@ export function Navigation({
                 </NavigationMenuContent>
               </>
             ) : (
-              <Link className={navigationMenuTriggerStyle()} to={menu.to}> {menu.name} </Link>
+              <Link className={navigationMenuTriggerStyle()} to={addLocationToUrl(menu.to)}> {menu.name} </Link>
             )}
             </NavigationMenuItem>
           ))}
@@ -166,7 +175,7 @@ export function Navigation({
 
       {/* 중앙 타이틀 */}
       <div className="flex-1 flex justify-center">
-        <Link to="/" className="text-2xl font-bold">LE:MORE</Link>
+        <Link to={addLocationToUrl("/")} className="text-2xl font-bold">LE:MORE</Link>
       </div>
 
       {/* 오른쪽 (필요시 아이콘/버튼) */}
@@ -209,7 +218,7 @@ export function Navigation({
               )}
             </Button>
             <Button variant="ghost" size="icon" asChild className="hidden md:flex cursor-pointer relative">
-              <Link to="/my/messages">
+              <Link to={addLocationToUrl("/my/messages")}>
                 <MessageCircleIcon className="size-4" />
                 {hasMessages && (
                   <div className="absolute top-1 right-1 size-2 bg-red-500 rounded-full" />
@@ -233,17 +242,17 @@ export function Navigation({
                 <DropdownMenuSeparator />
                 <DropdownMenuGroup>
                   <DropdownMenuItem asChild className="cursor-pointer">
-                    <Link to="/my/dashboard">
+                    <Link to={addLocationToUrl("/my/dashboard")}>
                       <BarChart3Icon className="size-4 mr-2" />Dashboard
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild className="cursor-pointer">
-                    <Link to="/my/profile">
+                    <Link to={addLocationToUrl("/my/profile")}>
                       <UserIcon className="size-4 mr-2" />Profile
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild className="cursor-pointer">
-                    <Link to="/my/likes">
+                    <Link to={addLocationToUrl("/my/likes")}>
                       <HeartIcon className="size-4 mr-2" />Likes
                     </Link>
                   </DropdownMenuItem>
@@ -254,14 +263,14 @@ export function Navigation({
                     <BellIcon className="size-4 mr-2" />Notifications
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild className="cursor-pointer md:hidden">
-                    <Link to="/my/messages">
+                    <Link to={addLocationToUrl("/my/messages")}>
                       <MessageCircleIcon className="size-4 mr-2" />Messages
                     </Link>
                   </DropdownMenuItem>
                 </DropdownMenuGroup>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild className="cursor-pointer">
-                  <Link to="/auth/logout">
+                  <Link to={addLocationToUrl("/auth/logout")}>
                     <LogOutIcon className="size-4 mr-2" />Logout
                   </Link>
                 </DropdownMenuItem>
@@ -271,10 +280,10 @@ export function Navigation({
         ) : (
           <div className="flex items-center gap-4">
             <Button asChild variant="secondary">
-              <Link to="/auth/login">Login</Link>
+              <Link to={addLocationToUrl("/auth/login")}>Login</Link>
             </Button>
             <Button asChild variant="secondary">
-              <Link to="/auth/join">Join</Link>
+              <Link to={addLocationToUrl("/auth/join")}>Join</Link>
             </Button>
 
           </div>

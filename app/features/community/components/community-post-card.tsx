@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { HandThumbUpIcon, ChatBubbleLeftEllipsisIcon } from "@heroicons/react/24/outline";
-import { Link } from "react-router";
+import { Link, useSearchParams } from "react-router";
 import { Card, CardHeader, CardContent, CardFooter } from "~/common/components/ui/card";
 
 // Props 검증 스키마
@@ -27,6 +27,18 @@ export function CommunityPostCard({
   comments,
   isLast = false
 }: CommunityPostCardProps) {
+  const [searchParams] = useSearchParams();
+  const location = searchParams.get("location");
+
+  // Helper function to add location to URLs
+  const addLocationToUrl = (url: string) => {
+    if (location && location !== "Bangkok") {
+      const separator = url.includes('?') ? '&' : '?';
+      return `${url}${separator}location=${location}`;
+    }
+    return url;
+  };
+
   // Props 검증
   const validationResult = communityPostCardSchema.safeParse({ 
     id,
@@ -51,7 +63,7 @@ export function CommunityPostCard({
 
 
   return (
-    <Link to={`/community/local-tips?search=${title}`} className="block">
+    <Link to={addLocationToUrl(`/community/local-tips?search=${title}`)} className="block">
       <Card className={`hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 transition-all duration-300 hover:scale-[1.02] hover:shadow-lg ${!isLast ? 'border-b border-gray-200 rounded-none' : ''}`}>
         <CardHeader className="pb-0">
           <div className="flex items-center gap-2 mb-1">

@@ -231,7 +231,7 @@ export default function LocalReviewsPage({ loaderData }: Route.ComponentProps) {
                           (
                             Array.isArray(business.tags) &&
                             business.tags.some(
-                              (tag: string) => tag.toLowerCase().includes(searchQuery.toLowerCase())
+                              (tag) => typeof tag === 'string' && tag.toLowerCase().includes(searchQuery.toLowerCase())
                             )
                           );
     const matchesType = selectedType === "All" || business.type === selectedType;
@@ -365,8 +365,7 @@ export default function LocalReviewsPage({ loaderData }: Route.ComponentProps) {
       <div className="text-center space-y-2">
         <h1 className="text-3xl font-bold text-gray-900">Local Reviews</h1>
         <p className="text-gray-600">
-          Discover and review the best local businesses in {urlLocation === "All Cities" ? "Thailand" : urlLocation}
-        </p>
+          Discover and review the best local businesses in {urlLocation}</p>
       </div>
 
       {/* Search and Filters */}
@@ -527,9 +526,9 @@ export default function LocalReviewsPage({ loaderData }: Route.ComponentProps) {
                     </div>
                     {Array.isArray(business.tags) &&
                       business.tags
-                        .filter((tag: string) => typeof tag === "string")
-                        .map((tag: string, idx: number) => (
-                          <span key={idx} className="bg-gray-100 text-gray-700 px-2 py-1 rounded-full text-xs">{tag}</span>
+                        .filter((tag) => typeof tag === "string")
+                        .map((tag, idx) => (
+                          <span key={idx} className="bg-gray-100 text-gray-700 px-2 py-1 rounded-full text-xs">{tag as string}</span>
                         ))
                     }
                   </div>

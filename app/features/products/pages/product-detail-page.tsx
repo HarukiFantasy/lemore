@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Button } from "~/common/components/ui/button";
 import { Card } from "~/common/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "~/common/components/ui/avatar";
-import { useNavigate } from "react-router";
+import { useNavigate, useSearchParams } from "react-router";
 import { HeartIcon } from "lucide-react";
 import { getProductById } from "../queries";
 import { Route } from './+types/product-detail-page';
@@ -30,16 +30,27 @@ export const loader = async ({ params, request }: Route.LoaderArgs) => {
   export default function ProductDetailPage({ loaderData }: Route.ComponentProps) {
   const { product } = loaderData;
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const location = searchParams.get("location");
   const [selectedImage, setSelectedImage] = useState(0);
   const [isLiked, setIsLiked] = useState(false);
 
 
   const isFree = product.price_type === "Free";
 
+  // Helper function to add location to URLs
+  const addLocationToUrl = (url: string) => {
+    if (location && location !== "Bangkok") {
+      const separator = url.includes('?') ? '&' : '?';
+      return `${url}${separator}location=${location}`;
+    }
+    return url;
+  };
+
   // Handle contact seller button click
   const handleContactSeller = () => {
     // Navigate to messages page with product context
-    navigate("/my/messages", {
+    navigate(addLocationToUrl("/my/messages"), {
       state: {
         productId: product.product_id,
         productTitle: product.title,

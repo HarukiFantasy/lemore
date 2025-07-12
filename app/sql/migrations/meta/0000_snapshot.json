@@ -1,5 +1,5 @@
 {
-  "id": "a17d462f-e17c-452d-a28a-1ab2fc2013e2",
+  "id": "15746d12-1ee8-4f07-b9c0-23b03c60fead",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -107,7 +107,8 @@
         },
         "location": {
           "name": "location",
-          "type": "text",
+          "type": "location",
+          "typeSchema": "public",
           "primaryKey": false,
           "notNull": true
         },
@@ -308,7 +309,8 @@
         },
         "ai_listing_location": {
           "name": "ai_listing_location",
-          "type": "text",
+          "type": "location",
+          "typeSchema": "public",
           "primaryKey": false,
           "notNull": false
         },
@@ -567,7 +569,8 @@
         },
         "location": {
           "name": "location",
-          "type": "text",
+          "type": "location",
+          "typeSchema": "public",
           "primaryKey": false,
           "notNull": true
         },
@@ -910,7 +913,8 @@
         },
         "location": {
           "name": "location",
-          "type": "text",
+          "type": "location",
+          "typeSchema": "public",
           "primaryKey": false,
           "notNull": true
         },
@@ -924,7 +928,7 @@
           "name": "stats",
           "type": "jsonb",
           "primaryKey": false,
-          "notNull": true,
+          "notNull": false,
           "default": "'{\"likes\":0,\"comments\":0,\"reviews\":0}'::jsonb"
         },
         "created_at": {
@@ -958,6 +962,68 @@
           "onUpdate": "no action"
         }
       },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.locations": {
+      "name": "locations",
+      "schema": "",
+      "columns": {
+        "location_id": {
+          "name": "location_id",
+          "type": "bigint",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "locations_location_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "9223372036854775807",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "name": {
+          "name": "name",
+          "type": "location",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "display_name": {
+          "name": "display_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "population": {
+          "name": "population",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "is_active": {
+          "name": "is_active",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
@@ -1128,7 +1194,7 @@
           "columnsTo": [
             "product_id"
           ],
-          "onDelete": "no action",
+          "onDelete": "cascade",
           "onUpdate": "no action"
         },
         "product_likes_user_id_user_profiles_profile_id_fk": {
@@ -1283,7 +1349,8 @@
         },
         "location": {
           "name": "location",
-          "type": "text",
+          "type": "location",
+          "typeSchema": "public",
           "primaryKey": false,
           "notNull": true
         },
@@ -1705,13 +1772,19 @@
           "name": "username",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
         },
         "email": {
           "name": "email",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
+        },
+        "phone": {
+          "name": "phone",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
         },
         "avatar_url": {
           "name": "avatar_url",
@@ -1727,50 +1800,51 @@
         },
         "location": {
           "name": "location",
-          "type": "text",
+          "type": "location",
+          "typeSchema": "public",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
         },
         "total_likes": {
           "name": "total_likes",
           "type": "integer",
           "primaryKey": false,
-          "notNull": true,
+          "notNull": false,
           "default": 0
         },
         "total_views": {
           "name": "total_views",
           "type": "integer",
           "primaryKey": false,
-          "notNull": true,
+          "notNull": false,
           "default": 0
         },
         "total_listings": {
           "name": "total_listings",
           "type": "integer",
           "primaryKey": false,
-          "notNull": true,
+          "notNull": false,
           "default": 0
         },
         "response_rate": {
           "name": "response_rate",
           "type": "numeric(10, 2)",
           "primaryKey": false,
-          "notNull": true,
+          "notNull": false,
           "default": "'0.00'"
         },
         "response_time": {
           "name": "response_time",
           "type": "text",
           "primaryKey": false,
-          "notNull": true,
+          "notNull": false,
           "default": "'< 1 hour'"
         },
         "rating": {
           "name": "rating",
           "type": "numeric(10, 2)",
           "primaryKey": false,
-          "notNull": true,
+          "notNull": false,
           "default": "'0.00'"
         },
         "appreciation_badge": {
@@ -1819,6 +1893,20 @@
           "nullsNotDistinct": false,
           "columns": [
             "profile_id"
+          ]
+        },
+        "user_profiles_username_unique": {
+          "name": "user_profiles_username_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "username"
+          ]
+        },
+        "user_profiles_phone_unique": {
+          "name": "user_profiles_phone_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "phone"
           ]
         }
       },
@@ -1969,6 +2057,20 @@
         "Education",
         "Transportation",
         "Other"
+      ]
+    },
+    "public.location": {
+      "name": "location",
+      "schema": "public",
+      "values": [
+        "Bangkok",
+        "ChiangMai",
+        "Phuket",
+        "HuaHin",
+        "Pattaya",
+        "Krabi",
+        "Koh Samui",
+        "Other Cities"
       ]
     },
     "public.message_type": {

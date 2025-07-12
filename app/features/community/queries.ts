@@ -1,8 +1,27 @@
 import { SupabaseClient } from '@supabase/supabase-js';
 import { Database } from '~/supa-client';
 
+
+export const getlocations = async (client: SupabaseClient<Database>) => {
+  const { data, error } = await client.from("locations").select("*");
+  if (error) throw new Error(error.message);
+  return data;
+};
+
 export const getLocalTipPosts = async (client: SupabaseClient<Database>, limit?: number) => {
-  let query = client.from("local_tips_list_view").select(`*`);
+  let query = client.from("local_tips_list_view").select(`
+    id,
+    title,
+    content,
+    category,
+    location,
+    author,
+    username,
+    avatar_url,
+    stats,
+    created_at,
+    updated_at
+  `);
   if (limit) {
     query = query.limit(limit);
   }
@@ -11,6 +30,7 @@ export const getLocalTipPosts = async (client: SupabaseClient<Database>, limit?:
   if (error) throw new Error(error.message);
   return data;
 }
+
 
 export const getLocalTipComments = async (client: SupabaseClient<Database>, postId?: string) => {
   let query = client.from("local_tip_comments_view").select(`*`);

@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~
 import { Badge } from "~/common/components/ui/badge";
 import { useNavigate, useLocation, redirect, Form } from "react-router";
 import { PRICE_TYPES,ALLOWED_IMAGE_TYPES, MAX_FILE_SIZE, PRODUCT_CONDITIONS} from "../constants";
-import { CURRENCIES, LOCATIONS } from '~/constants';
+import { CURRENCIES } from '~/constants';
 import { Route } from "./+types/submit-a-listing-page";
 import { makeSSRClient } from "~/supa-client";
 import { getLoggedInUserId } from "~/features/users/queries";
@@ -39,11 +39,8 @@ export const action = async ({ request }: Route.ActionArgs) => {
 
   const { data: { user }, error: authError } = await client.auth.getUser();
   if (authError || !user) {
-    console.error('Auth error:', authError);
     return redirect("/auth/login");
   }
-  console.log('Authenticated user:', user.id);
-
   const formData = await request.formData();
   const { success, data, error } = formSchema.safeParse(Object.fromEntries(formData));
   if (!success) {
@@ -61,11 +58,20 @@ export const action = async ({ request }: Route.ActionArgs) => {
     category,
     location
   });
-  return redirect(`/secondhand/product/${product.product_id}`);
+  
+  // Get location from URL params to preserve it in redirect
+  const url = new URL(request.url);
+  const locationParam = url.searchParams.get("location");
+  const redirectUrl = locationParam && locationParam !== "Bangkok" 
+    ? `/secondhand/product/${product.product_id}?location=${locationParam}`
+    : `/secondhand/product/${product.product_id}`;
+    
+  return redirect(redirectUrl);
 };
 
 export default function SubmitAListingPage({loaderData, actionData }: Route.ComponentProps) {
   const { categories, locations } = loaderData;
+  
   const [images, setImages] = useState<File[]>([]);
   const [previews, setPreviews] = useState<string[]>([]);
   const [title, setTitle] = useState("");
@@ -354,9 +360,9 @@ export default function SubmitAListingPage({loaderData, actionData }: Route.Comp
               <SelectValue placeholder="Select Location" />
             </SelectTrigger>
             <SelectContent>
-              {LOCATIONS.map((location: string) => (
-                <SelectItem key={location} value={location}>
-                  {location}
+              {locations.map((location: any) => (
+                <SelectItem key={location.id} value={location.name}>
+                  {location.name}
                 </SelectItem>
               ))}
             </SelectContent>

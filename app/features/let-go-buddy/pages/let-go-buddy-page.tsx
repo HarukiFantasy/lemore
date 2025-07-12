@@ -17,28 +17,23 @@ import {
 } from "@heroicons/react/24/outline";
 import { useNavigate, useSearchParams } from "react-router";
 import { EMOTIONAL_QUESTIONS, ENVIRONMENTAL_IMPACT, DECLUTTER_SITUATIONS } from '../constants';
-import { getEnvironmentalImpactSummary, getLetGoBuddySessionsWithItems, getUserLetGoBuddyStats, getItemAnalysesDetailed } from '../queries';
+import { getEnvironmentalImpactSummary, getLetGoBuddySessionsWithItems,getItemAnalysesDetailed } from '../queries';
 import { Route } from './+types/let-go-buddy-page';
 import { makeSSRClient } from "~/supa-client";
 
 
 export async function loader({ request }: Route.LoaderArgs) {
   const { client, headers } = makeSSRClient(request);
-  const [sessions, stats, analyses, impact] = await Promise.all([
+  const [sessions, analyses, impact] = await Promise.all([
     getLetGoBuddySessionsWithItems(client),
-    getUserLetGoBuddyStats(client),
     getItemAnalysesDetailed(client),
     getEnvironmentalImpactSummary(client)
   ]);
-  return { sessions, stats, analyses, impact };
+  return { sessions, analyses, impact };
 }
 
 export default function LetGoBuddyPage({ loaderData }: Route.ComponentProps) {
-  const { sessions, stats, analyses, impact } = loaderData;
-  console.log(sessions);
-  console.log(stats);
-  console.log(analyses);
-  console.log(impact);
+  const { sessions, analyses, impact } = loaderData;
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const currentLocation = searchParams.get("location") || "Bangkok";
@@ -209,7 +204,11 @@ export default function LetGoBuddyPage({ loaderData }: Route.ComponentProps) {
       };
 
       // Navigate to submit-a-listing-page with the data
-      navigate("/secondhand/submit-a-listing", { 
+      const targetUrl = currentLocation && currentLocation !== "Bangkok" 
+        ? `/secondhand/submit-a-listing?location=${currentLocation}`
+        : "/secondhand/submit-a-listing";
+      
+      navigate(targetUrl, { 
         state: { 
           prefillData: listingData,
           fromLetGoBuddy: true 
@@ -301,7 +300,11 @@ export default function LetGoBuddyPage({ loaderData }: Route.ComponentProps) {
       };
 
       // Navigate to submit-a-listing-page with free giveaway data
-      navigate("/secondhand/submit-a-listing", { 
+      const targetUrl = currentLocation && currentLocation !== "Bangkok" 
+        ? `/secondhand/submit-a-listing?location=${currentLocation}`
+        : "/secondhand/submit-a-listing";
+      
+      navigate(targetUrl, { 
         state: { 
           prefillData: giveawayData,
           fromLetGoBuddy: true,

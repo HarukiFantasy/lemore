@@ -231,9 +231,7 @@ export default function GiveAndGlowPage({ loaderData }: Route.ComponentProps) {
       <div className="text-center space-y-2">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">Give and Glow</h1>
         <p className="text-muted-foreground pb-6">
-          Share appreciation for free items received and spread kindness in our community
-          {location}
-        </p>
+          Share appreciation for free items received and spread kindness in {urlLocation}</p>
       </div>
 
       {/* Search and Filters */}
