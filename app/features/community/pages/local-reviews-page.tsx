@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useSearchParams } from "react-router";
+import { useSearchParams, Form, useActionData } from "react-router";
 import { z } from "zod";;
 import { Button } from "~/common/components/ui/button";
 import { Input } from "~/common/components/ui/input";
@@ -8,8 +8,10 @@ import { Avatar, AvatarFallback, AvatarImage } from "~/common/components/ui/avat
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "~/common/components/ui/dialog";
 import { Marquee } from "components/magicui/marquee";
 import { getLocalBusinesses, getLocalReviews } from "../queries";
+import { createLocalReview } from "../mutation";
 import type { Route } from "./+types/local-reviews-page";
 import { makeSSRClient } from '~/supa-client';
+import { BUSINESS_TYPES } from '../constants';
 
 // Schema definitions
 const BusinessTypeSchema = z.enum(["All", "Restaurant", "Cafe", "Bar", "Shop", "Service", "Other"]);
@@ -24,14 +26,54 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
   return { businesses, reviews };
 }
 
+export const action = async ({ request }: Route.ActionArgs) => {
+  const { client } = makeSSRClient(request);
+  const formData = await request.formData();
+  const { content, rating, tags, businessId } = Object.fromEntries(formData);
+  const data = await createLocalReview(client, { 
+    content: content as string, 
+    rating: parseInt(rating as string), 
+    tags: tags as string, 
+    businessId: parseInt(businessId as string) 
+  });
+  return { data };
+} 
 // Main component
 export default function LocalReviewsPage({ loaderData }: Route.ComponentProps) {
   const { businesses, reviews } = loaderData;
+  const actionData = useActionData<typeof action>();
   
   // Debug logging
   console.log('Businesses data:', businesses);
   console.log('Reviews data:', reviews);
+  console.log('Action data:', actionData);
   const [searchParams, setSearchParams] = useSearchParams();
+  
+  // Close modal when action is successful
+  useEffect(() => {
+    if (actionData?.data) {
+      console.log("Review submitted successfully:", actionData.data);
+      setShowReviewForm(false);
+      setSelectedBusiness(null);
+      setReviewStep('select-business');
+      setBusinessSearchQuery("");
+      setNewReview({ rating: 5, review: "", priceRange: "$" as z.infer<typeof PriceRangeSchema>, tags: [] });
+      setNewBusiness({
+        name: "",
+        type: "Restaurant" as z.infer<typeof BusinessTypeSchema>,
+        location: urlLocation as z.infer<typeof LocationSchema>,
+        priceRange: "$" as z.infer<typeof PriceRangeSchema>,
+        tags: [],
+        address: "",
+        phone: "",
+        website: "",
+        description: ""
+      });
+      
+      // Reload the page to show the new review
+      window.location.reload();
+    }
+  }, [actionData]);
   const urlLocation = searchParams.get("location") || "Bangkok";
   
   // State variables
@@ -64,155 +106,7 @@ export default function LocalReviewsPage({ loaderData }: Route.ComponentProps) {
     tags: [] as string[]
   });
 
-  // const mockBusinesses: MockBusiness[] = [
-  //   {
-  //     id: "1",
-  //     name: "Siam Street Food",
-  //     type: "Restaurant",
-  //     location: "Bangkok",
-  //     priceRange: "$",
-  //     tags: ["street food", "local", "authentic", "quick"],
-  //     address: "123 Sukhumvit Road, Bangkok",
-  //     phone: "+66 2 123 4567",
-  //     website: "https://siamstreetfood.com",
-  //     description: "Authentic Thai street food in a casual setting. Famous for pad thai and tom yum soup.",
-  //     image: "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=400&h=300&fit=crop",
-  //     averageRating: 4.5,
-  //     totalReviews: 127
-  //   },
-  //   {
-  //     id: "2",
-  //     name: "Blue Moon Cafe",
-  //     type: "Cafe",
-  //     location: "Bangkok",
-  //     priceRange: "$$",
-  //     tags: ["coffee", "brunch", "wifi", "quiet"],
-  //     address: "456 Silom Road, Bangkok",
-  //     phone: "+66 2 234 5678",
-  //     website: "https://bluemooncafe.com",
-  //     description: "Cozy cafe with excellent coffee and brunch options. Perfect for remote work.",
-  //     image: "https://images.unsplash.com/photo-1501339847302-ac426a4a87c8?w=400&h=300&fit=crop",
-  //     averageRating: 4.2,
-  //     totalReviews: 89
-  //   },
-  //   {
-  //     id: "3",
-  //     name: "Riverside Bar",
-  //     type: "Bar",
-  //     location: "Bangkok",
-  //     priceRange: "$$$",
-  //     tags: ["cocktails", "river view", "live music", "romantic"],
-  //     address: "789 Chao Phraya Road, Bangkok",
-  //     phone: "+66 2 345 6789",
-  //     website: "https://riversidebar.com",
-  //     description: "Elegant bar with stunning river views. Perfect for sunset cocktails and live jazz.",
-  //     image: "https://images.unsplash.com/photo-1514933651103-005eec06c04b?w=400&h=300&fit=crop",
-  //     averageRating: 4.7,
-  //     totalReviews: 203
-  //   },
-  //   {
-  //     id: "4",
-  //     name: "Thai Craft Market",
-  //     type: "Shop",
-  //     location: "Chiang Mai",
-  //     priceRange: "$$",
-  //     tags: ["handicrafts", "local artisans", "souvenirs", "unique"],
-  //     address: "321 Nimman Road, Chiang Mai",
-  //     phone: "+66 53 123 4567",
-  //     website: "https://thaicraftmarket.com",
-  //     description: "Local handicrafts and souvenirs from northern Thailand artisans.",
-  //     image: "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=400&h=300&fit=crop",
-  //     averageRating: 4.3,
-  //     totalReviews: 156
-  //   },
-  //   {
-  //     id: "5",
-  //     name: "Beach Massage Spa",
-  //     type: "Service",
-  //     location: "Phuket",
-  //     priceRange: "$$",
-  //     tags: ["massage", "spa", "relaxation", "beachfront"],
-  //     address: "654 Patong Beach Road, Phuket",
-  //     phone: "+66 76 234 5678",
-  //     website: "https://beachmassagespa.com",
-  //     description: "Relaxing massage and spa services with beautiful beach views.",
-  //     image: "https://images.unsplash.com/photo-1544161512-84f9c86cbeb4?w=400&h=300&fit=crop",
-  //     averageRating: 4.6,
-  //     totalReviews: 342
-  //   }
-  // ];
-
-  // const mockReviews: MockReview[] = [
-  //   {
-  //     id: "1",
-  //     businessName: "Siam Street Food",
-  //     businessType: "Restaurant",
-  //     location: "Bangkok",
-  //     author: "Sarah Johnson",
-  //     authorAvatar: "https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face",
-  //     rating: 5,
-  //     priceRange: "$",
-  //     review: "",
-  //     tags: ["authentic", "friendly staff", "generous portions"],
-  //     timestamp: "2024-01-15T10:30:00Z"
-  //   },
-  //   {
-  //     id: "1b",
-  //     businessName: "Siam Street Food",
-  //     businessType: "Restaurant",
-  //     location: "Bangkok",
-  //     author: "Leo Kim",
-  //     authorAvatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face",
-  //     rating: 4,
-  //     priceRange: "$",
-  //     review: "Quick service and delicious noodles. The place is always busy but worth the wait!",
-  //     tags: ["quick", "busy", "worth it"],
-  //     timestamp: "2024-01-16T12:00:00Z"
-  //   },
-  //   {
-  //     id: "1c",
-  //     businessName: "Siam Street Food",
-  //     businessType: "Restaurant",
-  //     location: "Bangkok",
-  //     author: "Mina Park",
-  //     authorAvatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face",
-  //     rating: 5,
-  //     priceRange: "$",
-  //     review: "Best street food in Bangkok! Loved the spicy soup and the friendly staff.",
-  //     tags: ["spicy", "best in town", "friendly staff"],
-  //     timestamp: "2024-01-17T09:45:00Z"
-  //   },
-  //   {
-  //     id: "2",
-  //     businessName: "Blue Moon Cafe",
-  //     businessType: "Cafe",
-  //     location: "Bangkok",
-  //     author: "Mike Chen",
-  //     authorAvatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face",
-  //     rating: 4,
-  //     priceRange: "$$",
-  //     review: "Great coffee and excellent wifi for working. The avocado toast is delicious. A bit pricey but worth it for the quality and atmosphere.",
-  //     tags: ["good coffee", "wifi", "quiet"],
-  //     timestamp: "2024-01-14T14:20:00Z"
-  //   },
-  //   {
-  //     id: "3",
-  //     businessName: "Riverside Bar",
-  //     businessType: "Bar",
-  //     location: "Bangkok",
-  //     author: "Emma Wilson",
-  //     authorAvatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face",
-  //     rating: 5,
-  //     priceRange: "$$$",
-  //     review: "Stunning views and amazing cocktails! The live jazz band was incredible. Perfect for a romantic evening or special celebration.",
-  //     tags: ["beautiful views", "live music", "romantic"],
-  //     timestamp: "2024-01-13T19:15:00Z"
-  //   }
-  // ];
-
-  // const businesses = mockBusinesses;
-  // const reviews = mockReviews;
-  const validBusinessTypes: z.infer<typeof BusinessTypeSchema>[] = ["All", "Restaurant", "Cafe", "Bar", "Shop", "Service", "Other"];
+  const validBusinessTypes = BUSINESS_TYPES;
   const validPriceRanges: z.infer<typeof PriceRangeSchema>[] = ["All", "$", "$$", "$$$", "$$$$"];
 
   // Filter businesses for the selection modal
@@ -741,7 +635,9 @@ export default function LocalReviewsPage({ loaderData }: Route.ComponentProps) {
               ) : (
                 <>
                   {/* Step 2: Write Review */}
-                  <div className="space-y-4">
+                  <Form method="post" id="review-form" className="space-y-4">
+                    <input type="hidden" name="businessId" value={selectedBusiness?.id} />
+                    
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">Rating</label>
                       <div className="flex items-center gap-1">
@@ -763,11 +659,13 @@ export default function LocalReviewsPage({ loaderData }: Route.ComponentProps) {
                         ))}
                         <span className="ml-2 text-sm text-gray-600">{newReview.rating}/5</span>
                       </div>
+                      <input type="hidden" name="rating" value={newReview.rating} />
                     </div>
                     
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">Review</label>
                       <textarea
+                        name="content"
                         className="w-full min-h-[120px] p-3 border rounded-md resize-none focus:outline-none focus:ring-2 focus:ring-ring"
                         placeholder="Share your experience..."
                         value={newReview.review}
@@ -789,8 +687,9 @@ export default function LocalReviewsPage({ loaderData }: Route.ComponentProps) {
                           </Button>
                         ))}
                       </div>
+                      <input type="hidden" name="tags" value={JSON.stringify([newReview.priceRange])} />
                     </div>
-                  </div>
+                  </Form>
                 </>
               )}
             </div>
@@ -804,9 +703,9 @@ export default function LocalReviewsPage({ loaderData }: Route.ComponentProps) {
                     Back
                   </Button>
                 )}
-                <Button 
-                  onClick={() => {
-                    if (reviewStep === 'select-business') {
+                {reviewStep === 'select-business' ? (
+                  <Button 
+                    onClick={() => {
                       // If we're in select-business step and have a new business filled out, create temp business
                       if (newBusiness.name.trim() && newBusiness.address.trim()) {
                         const tempBusiness: any = {
@@ -826,19 +725,22 @@ export default function LocalReviewsPage({ loaderData }: Route.ComponentProps) {
                         setSelectedBusiness(tempBusiness);
                         setReviewStep('write-review');
                       }
-                    } else {
-                      // If we're in write-review step, submit the review
-                      handleSubmitReview();
-                    }
-                  }}
-                  className="flex-1"
-                  disabled={
-                    (reviewStep === 'select-business' && (!newBusiness.name.trim() || !newBusiness.address.trim())) ||
-                    (reviewStep === 'write-review' && !newReview.review.trim())
-                  }
-                >
-                  {reviewStep === 'select-business' ? 'Continue' : 'Submit Review'}
-                </Button>
+                    }}
+                    className="flex-1"
+                    disabled={!newBusiness.name.trim() || !newBusiness.address.trim()}
+                  >
+                    Continue
+                  </Button>
+                ) : (
+                  <Button 
+                    type="submit"
+                    form="review-form"
+                    className="flex-1"
+                    disabled={!newReview.review.trim()}
+                  >
+                    Submit Review
+                  </Button>
+                )}
                 <Button 
                   variant="outline" 
                   onClick={() => {

@@ -14,3 +14,13 @@ export type LocalTipCategory = typeof localTipCategories.enumValues[number];
 
 // 기존 코드와의 호환성을 위한 별칭
 export const LOCAL_TIP_CATEGORIES = LOCAL_TIP_CATEGORIES_WITH_ALL; 
+
+export const BUSINESS_TYPES = [
+  "All",
+  "Restaurant",
+  "Cafe",
+  "Bar",
+  "Shop",
+  "Service",
+  "Other"
+] as const;

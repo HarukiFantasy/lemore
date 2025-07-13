@@ -66,3 +66,30 @@ export const createGiveAndGlowReview = async (client: SupabaseClient<Database>, 
     console.log("Review created:", data);
     return data;
 };
+
+export const createLocalReview = async (client: SupabaseClient<Database>, {
+  content, rating, tags, businessId}:{
+    content: string;
+    rating: number;
+    tags: string;
+    businessId: number;
+  }) => {
+    const {data: {user}} = await client.auth.getUser();
+    if (!user) {
+      throw new Error("User not authenticated");
+    }
+    const {data, error} = await client
+      .from("local_business_reviews")
+      .insert({
+        author: user.id,
+        business_id: businessId,
+        content,
+        rating,
+        tags,
+        timestamp: new Date().toISOString(),
+      })
+      .select()
+      .single();
+    if (error) {throw error};
+    return data;
+};
