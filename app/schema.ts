@@ -14,10 +14,9 @@ import {
   bigint,
   primaryKey,
   check,
-  unique,
-  uniqueIndex,
+  pgPolicy,
 } from "drizzle-orm/pg-core";
-import { LOCATIONS } from './constants';
+import { authenticatedRole, authUsers } from "drizzle-orm/supabase";
 
 // ===== ENUMS =====
 
@@ -81,7 +80,14 @@ export const environmentalImpactLevels = pgEnum("environmental_impact_level", [
 export const categories = pgTable("categories", {
   category_id: bigint("category_id", {mode: "number"}).primaryKey().generatedAlwaysAsIdentity(),
   name: productCategories().notNull(),
-});
+}, (table) => [
+  pgPolicy("categories_select_policy", {
+    for: "select",
+    to: "all",
+    as: "permissive",
+    using: sql`true`
+  })
+]);
 
 export const locations = pgTable("locations", {
   location_id: bigint("location_id", {mode: "number"}).primaryKey().generatedAlwaysAsIdentity(),
@@ -90,7 +96,14 @@ export const locations = pgTable("locations", {
   population: integer("population"),
   description: text("description"),
   is_active: boolean().notNull().default(true),
-});
+}, (table) => [
+  pgPolicy("locations_select_policy", {
+    for: "select",
+    to: "all",
+    as: "permissive",
+    using: sql`true`
+  })
+]);
 
 
 // Products table
@@ -110,7 +123,27 @@ export const products = pgTable("products", {
   stats: jsonb().notNull().default({views: 0, likes: 0}),
   created_at: timestamp("created_at").notNull().defaultNow(),
   updated_at: timestamp("updated_at").notNull().defaultNow(),
-});
+}, (table) => [
+  pgPolicy("products_select_policy", {
+    for: "select",
+    to: "all",
+    as: "permissive",
+    using: sql`true`
+  }),
+  pgPolicy("products_insert_policy", {
+    for: "insert",
+    to: authenticatedRole,
+    as: "permissive",
+    withCheck: sql`${table.seller_id} = ${authUsers.id}`
+  }),
+  pgPolicy("products_update_policy", {
+    for: "update",
+    to: authenticatedRole,
+    as: "permissive",
+    using: sql`${table.seller_id} = ${authUsers.id}`,
+    withCheck: sql`${table.seller_id} = ${authUsers.id}`
+  }),
+]);
 
 // Product images table
 export const productImages = pgTable("product_images", {
@@ -120,6 +153,31 @@ export const productImages = pgTable("product_images", {
   is_primary: boolean().notNull().default(false),
 }, (table) => [
   primaryKey({ columns: [table.product_id, table.image_order] }),
+  pgPolicy("product_images_select_policy", {
+    for: "select",
+    to: "all",
+    as: "permissive",
+    using: sql`true`
+  }),
+  pgPolicy("product_images_insert_policy", {
+    for: "insert",
+    to: authenticatedRole,
+    as: "permissive",
+    withCheck: sql`${table.product_id} = ${products.product_id}`
+  }),
+  pgPolicy("product_images_update_policy", {
+    for: "update",
+    to: authenticatedRole,
+    as: "permissive",
+    using: sql`${table.product_id} = ${products.product_id}`,
+    withCheck: sql`${table.product_id} = ${products.product_id}`
+  }),
+  pgPolicy("product_images_delete_policy", {
+    for: "delete",
+    to: authenticatedRole,
+    as: "permissive",
+    using: sql`${table.product_id} = ${products.product_id}`
+  })
 ]);
 
 // Product likes table
@@ -129,6 +187,24 @@ export const productLikes = pgTable("product_likes", {
   created_at: timestamp("created_at").notNull().defaultNow(),
 }, (table) => [
   primaryKey({ columns: [table.product_id, table.user_id] }),
+  pgPolicy("product_likes_select_policy", {
+    for: "select",
+    to: "all",
+    as: "permissive",
+    using: sql`true`
+  }),
+  pgPolicy("product_likes_insert_policy", {
+    for: "insert",
+    to: authenticatedRole,
+    as: "permissive",
+    withCheck: sql`${table.user_id} = ${authUsers.id}`
+  }),
+  pgPolicy("product_likes_delete_policy", {
+    for: "delete",
+    to: authenticatedRole,
+    as: "permissive",
+    using: sql`${table.user_id} = ${authUsers.id}`
+  })
 ]);
 
 // Product views table
@@ -137,17 +213,36 @@ export const productViews = pgTable("product_views", {
   product_id: bigint("product_id", {mode: "number"}).notNull(),
   user_id: uuid().references(() => userProfiles.profile_id), 
   viewed_at: timestamp("viewed_at").notNull().defaultNow(),
-});
+}, (table) => [
+  pgPolicy("product_views_select_policy", {
+    for: "select",
+    to: "all",
+    as: "permissive",
+    using: sql`true`
+  }),
+  pgPolicy("product_views_insert_policy", {
+    for: "insert",
+    to: authenticatedRole,
+    as: "permissive",
+    withCheck: sql`${table.product_id} = ${products.product_id}`
+  }), 
+  pgPolicy("product_views_delete_policy", {
+    for: "delete",
+    to: authenticatedRole,
+    as: "permissive",
+    using: sql`${table.product_id} = ${products.product_id}`
+  })
+]);
 
 
 // Auth schema - users table (Supabase Auth integration)
-export const users = pgSchema("auth").table("users", {
-  id: uuid().primaryKey()
-});
+// export const users = pgSchema("auth").table("users", {
+//   id: uuid().primaryKey()
+// });
 
 // User profiles table
 export const userProfiles = pgTable("user_profiles", {
-  profile_id: uuid().primaryKey().unique().references(() => users.id, {onDelete: "cascade"}),
+  profile_id: uuid().primaryKey().unique().references(() => authUsers.id, {onDelete: "cascade"}),
   username: text("username").unique(),
   email: text("email"),
   phone: text("phone").unique(),
@@ -163,7 +258,39 @@ export const userProfiles = pgTable("user_profiles", {
   appreciation_badge: boolean("appreciation_badge").default(false),
   created_at: timestamp("created_at").notNull().defaultNow(),
   updated_at: timestamp("updated_at").notNull().defaultNow(),
-}, (table) => [check('rating_check', sql`rating >= 0 AND rating <= 5`)
+}, (table) => [check('rating_check', sql`rating >= 0 AND rating <= 5`), 
+  // SELECT 정책 - 모든 사용자가 프로필을 조회할 수 있음
+  pgPolicy("user_profiles_select_policy", {
+    for: "select",
+    to: "all",
+    as: "permissive",
+    using: sql`true`
+  }),
+  
+  // INSERT 정책 - 사용자는 자신의 프로필만 생성 가능 (트리거 고려)
+  pgPolicy("user_profiles_insert_policy", {
+    for: "insert",
+    to: authenticatedRole,
+    as: "permissive",
+    withCheck: sql`${authUsers.id} = ${table.profile_id}`
+  }),
+  
+  // UPDATE 정책 - 사용자는 자신의 프로필만 수정 가능
+  pgPolicy("user_profiles_update_policy", {
+    for: "update",
+    to: authenticatedRole,
+    as: "permissive",
+    using: sql`${authUsers.id} = ${table.profile_id}`,
+    withCheck: sql`${authUsers.id} = ${table.profile_id}`
+  }),
+  
+  // DELETE 정책 - 사용자는 자신의 프로필만 삭제 가능
+  pgPolicy("user_profiles_delete_policy", {
+    for: "delete",
+    to: authenticatedRole,
+    as: "permissive",
+    using: sql`${authUsers.id} = ${table.profile_id}`
+  })
 ]);
 
 // User reviews table
@@ -173,7 +300,26 @@ export const userReviews = pgTable("user_reviews", {
   reviewee_id: uuid().notNull().references(() => userProfiles.profile_id, {onDelete: "cascade"}),
   rating: integer().notNull(),
   created_at: timestamp("created_at").notNull().defaultNow(),
-});
+}, (table) => [
+  pgPolicy("user_reviews_select_policy", {
+    for: "select",
+    to: "all",
+    as: "permissive",
+    using: sql`true`
+  }),
+  pgPolicy("user_reviews_insert_policy", {
+    for: "insert",
+    to: authenticatedRole,
+    as: "permissive",
+    withCheck: sql`${table.reviewer_id} = ${authUsers.id}`
+  }),
+  pgPolicy("user_reviews_delete_policy", {
+    for: "delete",
+    to: authenticatedRole,
+    as: "permissive",
+    using: sql`${table.reviewer_id} = ${authUsers.id}`
+  })
+]);
 
 // User notifications table
 export const userNotifications = pgTable("user_notifications", {
@@ -189,13 +335,50 @@ export const userNotifications = pgTable("user_notifications", {
   read_at: timestamp("read_at"),
   data: jsonb().notNull().default({}),
   created_at: timestamp("created_at").notNull().defaultNow(),
-});
+}, (table) => [
+  pgPolicy("user_notifications_select_policy", {
+    for: "select",
+    to: authenticatedRole,
+    as: "permissive",
+    using: sql`${table.receiver_id} = ${authUsers.id}`
+  }),
+  pgPolicy("user_notifications_insert_policy", {
+    for: "insert",
+    to: authenticatedRole,
+    as: "permissive",
+    withCheck: sql`${table.sender_id} = ${authUsers.id}`
+  }),
+  pgPolicy("user_notifications_update_policy", {
+    for: "update",
+    to: authenticatedRole,
+    as: "permissive",
+    using: sql`${table.receiver_id} = ${authUsers.id}`,
+    withCheck: sql`${table.receiver_id} = ${authUsers.id}`
+  })
+]);
 
 // User conversations table
 export const userConversations = pgTable("user_conversations", {
   conversation_id: bigint("conversation_id", {mode: "number"}).primaryKey().generatedAlwaysAsIdentity(),
   created_at: timestamp("created_at").notNull().defaultNow(),
-});
+}, (table) => [
+  pgPolicy("user_conversations_select_policy", {
+    for: "select",
+    to: authenticatedRole,
+    as: "permissive",
+    using: sql`EXISTS (
+      SELECT 1 FROM message_participants mp 
+      WHERE mp.conversation_id = ${table.conversation_id} 
+      AND mp.profile_id = ${authUsers.id}
+    )`
+  }),
+  pgPolicy("user_conversations_insert_policy", {
+    for: "insert",
+    to: authenticatedRole,
+    as: "permissive",
+    withCheck: sql`true`
+  })
+]);
 
 // Message participants table
 export const messageParticipants = pgTable("message_participants", {
@@ -204,6 +387,24 @@ export const messageParticipants = pgTable("message_participants", {
   created_at: timestamp("created_at").notNull().defaultNow(),
 }, (table) => [
   primaryKey({ columns: [table.conversation_id, table.profile_id] }),
+  pgPolicy("message_participants_select_policy", {
+    for: "select",
+    to: authenticatedRole,
+    as: "permissive",
+    using: sql`${table.profile_id} = ${authUsers.id}`
+  }),
+  pgPolicy("message_participants_insert_policy", {
+    for: "insert",
+    to: authenticatedRole,
+    as: "permissive",
+    withCheck: sql`${table.profile_id} = ${authUsers.id}`
+  }),
+  pgPolicy("message_participants_delete_policy", {
+    for: "delete",
+    to: authenticatedRole,
+    as: "permissive",
+    using: sql`${table.profile_id} = ${authUsers.id}`
+  })
 ]);
 
 // User messages table
@@ -217,7 +418,33 @@ export const userMessages = pgTable("user_messages", {
   media_url: text("media_url"),
   seen: boolean().notNull().default(false),
   created_at: timestamp("created_at").notNull().defaultNow(),
-});
+}, (table) => [
+  pgPolicy("user_messages_select_policy", {
+    for: "select",
+    to: authenticatedRole,
+    as: "permissive",
+    using: sql`${table.sender_id} = ${authUsers.id} OR ${table.receiver_id} = ${authUsers.id}`
+  }),
+  pgPolicy("user_messages_insert_policy", {
+    for: "insert",
+    to: authenticatedRole,
+    as: "permissive",
+    withCheck: sql`${table.sender_id} = ${authUsers.id}`
+  }),
+  pgPolicy("user_messages_update_policy", {
+    for: "update",
+    to: authenticatedRole,
+    as: "permissive",
+    using: sql`${table.sender_id} = ${authUsers.id}`,
+    withCheck: sql`${table.sender_id} = ${authUsers.id}`
+  }),
+  pgPolicy("user_messages_delete_policy", {
+    for: "delete",
+    to: authenticatedRole,
+    as: "permissive",
+    using: sql`${table.sender_id} = ${authUsers.id}`
+  })
+]);
 
 // Give & Glow reviews table
 export const giveAndGlowReviews = pgTable("give_and_glow_reviews", {
@@ -233,7 +460,33 @@ export const giveAndGlowReviews = pgTable("give_and_glow_reviews", {
   tags: jsonb("tags").notNull().default([]),
   created_at: timestamp("created_at").notNull().defaultNow(),
   updated_at: timestamp("updated_at").notNull().defaultNow(),
-});
+}, (table) => [
+  pgPolicy("give_and_glow_reviews_select_policy", {
+    for: "select",
+    to: "all",
+    as: "permissive",
+    using: sql`true`
+  }),
+  pgPolicy("give_and_glow_reviews_insert_policy", {
+    for: "insert",
+    to: authenticatedRole,
+    as: "permissive",
+    withCheck: sql`${table.giver_id} = ${authUsers.id}`
+  }),
+  pgPolicy("give_and_glow_reviews_delete_policy", {
+    for: "delete",
+    to: authenticatedRole,
+    as: "permissive",
+    using: sql`${table.giver_id} = ${authUsers.id}`
+  }),
+  pgPolicy("give_and_glow_reviews_update_policy", {
+    for: "update",
+    to: authenticatedRole,
+    as: "permissive",
+    using: sql`${table.giver_id} = ${authUsers.id}`,
+    withCheck: sql`${table.giver_id} = ${authUsers.id}`
+  })
+]);
 
 // Local businesses table
 export const localBusinesses = pgTable("local_businesses", {
@@ -251,7 +504,20 @@ export const localBusinesses = pgTable("local_businesses", {
   description: text("description"),
   created_at: timestamp("created_at").notNull().defaultNow(),
   updated_at: timestamp("updated_at").notNull().defaultNow(),
-});
+}, (table) => [
+  pgPolicy("local_businesses_select_policy", {
+    for: "select",
+    to: "all",
+    as: "permissive",
+    using: sql`true`
+  }),
+  pgPolicy("local_businesses_insert_policy", {
+    for: "insert",
+    to: authenticatedRole,
+    as: "permissive",
+    withCheck: sql`true`
+  })
+]);
 
 // Local business reviews table
 export const localBusinessReviews = pgTable("local_business_reviews", {
@@ -263,8 +529,27 @@ export const localBusinessReviews = pgTable("local_business_reviews", {
   tags: jsonb("tags").notNull().default([]),
   content: text("content"),
   created_at: timestamp("created_at").notNull().defaultNow(),
-}, (table) => [primaryKey({ columns: [table.business_id, table.author] })] 
-);
+}, (table) => [primaryKey({ columns: [table.business_id, table.author] }),
+  pgPolicy("local_business_reviews_select_policy", {
+    for: "select",
+    to: "all",
+    as: "permissive",
+    using: sql`true`
+  }),
+  pgPolicy("local_business_reviews_insert_policy", {
+    for: "insert",
+    to: authenticatedRole,
+    as: "permissive",
+    withCheck: sql`${table.author} = ${authUsers.id}`
+  }),
+  pgPolicy("local_business_reviews_update_policy", {
+    for: "update",
+    to: authenticatedRole,
+    as: "permissive",
+    using: sql`${table.author} = ${authUsers.id}`,
+    withCheck: sql`${table.author} = ${authUsers.id}`
+  })
+]);
 
 // Local tip posts table
 export const localTipPosts = pgTable("local_tip_posts", {
@@ -277,7 +562,33 @@ export const localTipPosts = pgTable("local_tip_posts", {
   stats: jsonb("stats").default({likes: 0, comments: 0, reviews: 0}),
   created_at: timestamp("created_at").notNull().defaultNow(),
   updated_at: timestamp("updated_at").notNull().defaultNow(),
-});
+}, (table) => [
+  pgPolicy("local_tip_posts_select_policy", {
+    for: "select",
+    to: "all",
+    as: "permissive",
+    using: sql`true`
+  }),
+  pgPolicy("local_tip_posts_insert_policy", {
+    for: "insert",
+    to: authenticatedRole,
+    as: "permissive",
+    withCheck: sql`${table.author} = ${authUsers.id}`
+  }),
+  pgPolicy("local_tip_posts_update_policy", {
+    for: "update",
+    to: authenticatedRole,
+    as: "permissive",
+    using: sql`${table.author} = ${authUsers.id}`,
+    withCheck: sql`${table.author} = ${authUsers.id}`
+  }),
+  pgPolicy("local_tip_posts_delete_policy", {
+    for: "delete",
+    to: authenticatedRole,
+    as: "permissive",
+    using: sql`${table.author} = ${authUsers.id}`
+  })
+]);
 
 // Local tip comments table
 export const localTipComments = pgTable("local_tip_comments", {
@@ -287,7 +598,33 @@ export const localTipComments = pgTable("local_tip_comments", {
   content: text("content").notNull(),
   likes: integer("likes").notNull().default(0),
   created_at: timestamp("created_at").notNull().defaultNow(),
-});
+}, (table) => [
+  pgPolicy("local_tip_comments_select_policy", {
+    for: "select",
+    to: "all",
+    as: "permissive",
+    using: sql`true`
+  }),
+  pgPolicy("local_tip_comments_insert_policy", {
+    for: "insert",
+    to: authenticatedRole,
+    as: "permissive",
+    withCheck: sql`${table.author} = ${authUsers.id}`
+  }),
+  pgPolicy("local_tip_comments_update_policy", {
+    for: "update",
+    to: authenticatedRole,
+    as: "permissive",
+    using: sql`${table.author} = ${authUsers.id}`,
+    withCheck: sql`${table.author} = ${authUsers.id}`
+  }),
+  pgPolicy("local_tip_comments_delete_policy", {
+    for: "delete",
+    to: authenticatedRole,
+    as: "permissive",
+    using: sql`${table.author} = ${authUsers.id}`
+  })
+]);
 
 // Local tip post likes table
 export const localTipPostLikes = pgTable("local_tip_post_likes", {
@@ -296,6 +633,24 @@ export const localTipPostLikes = pgTable("local_tip_post_likes", {
   created_at: timestamp("created_at").notNull().defaultNow(),
 }, (table) => [
   primaryKey({ columns: [table.post_id, table.user_id] }),
+  pgPolicy("local_tip_post_likes_select_policy", {
+    for: "select",
+    to: "all",
+    as: "permissive",
+    using: sql`true`
+  }),
+  pgPolicy("local_tip_post_likes_insert_policy", {
+    for: "insert",
+    to: authenticatedRole,
+    as: "permissive",
+    withCheck: sql`${table.user_id} = ${authUsers.id}`
+  }),
+  pgPolicy("local_tip_post_likes_delete_policy", {
+    for: "delete",
+    to: authenticatedRole,
+    as: "permissive",
+    using: sql`${table.user_id} = ${authUsers.id}`
+  })
 ]);
 
 // Local tip comment likes table
@@ -305,6 +660,24 @@ export const localTipCommentLikes = pgTable("local_tip_comment_likes", {
   created_at: timestamp("created_at").notNull().defaultNow(),
 }, (table) => [
   primaryKey({ columns: [table.comment_id, table.user_id] }),
+  pgPolicy("local_tip_comment_likes_select_policy", {
+    for: "select",
+    to: "all",
+    as: "permissive",
+    using: sql`true`
+  }),
+  pgPolicy("local_tip_comment_likes_insert_policy", {
+    for: "insert",
+    to: authenticatedRole,
+    as: "permissive",
+    withCheck: sql`${table.user_id} = ${authUsers.id}`
+  }),
+  pgPolicy("local_tip_comment_likes_delete_policy", {
+    for: "delete",
+    to: authenticatedRole,
+    as: "permissive",
+    using: sql`${table.user_id} = ${authUsers.id}`
+  })
 ]);
 
 // Let Go Buddy sessions table
@@ -315,7 +688,33 @@ export const letGoBuddySessions = pgTable("let_go_buddy_sessions", {
   created_at: timestamp().notNull().defaultNow(),
   updated_at: timestamp().notNull().defaultNow(),
   is_completed: boolean().notNull().default(false),
-});
+}, (table) => [
+  pgPolicy("let_go_buddy_sessions_select_policy", {
+    for: "select",
+    to: authenticatedRole,
+    as: "permissive",
+    using: sql`${table.user_id} = ${authUsers.id}`
+  }),
+  pgPolicy("let_go_buddy_sessions_insert_policy", {
+    for: "insert",
+    to: authenticatedRole,
+    as: "permissive",
+    withCheck: sql`${table.user_id} = ${authUsers.id}`
+  }),
+  pgPolicy("let_go_buddy_sessions_update_policy", {
+    for: "update",
+    to: authenticatedRole,
+    as: "permissive",
+    using: sql`${table.user_id} = ${authUsers.id}`,
+    withCheck: sql`${table.user_id} = ${authUsers.id}`
+  }),
+  pgPolicy("let_go_buddy_sessions_delete_policy", {
+    for: "delete",
+    to: authenticatedRole,
+    as: "permissive",
+    using: sql`${table.user_id} = ${authUsers.id}`
+  })
+]);
 
 // Item analyses table
 export const itemAnalyses = pgTable("item_analyses", {
@@ -342,4 +741,50 @@ export const itemAnalyses = pgTable("item_analyses", {
   images: jsonb().notNull().default([]),
   created_at: timestamp().notNull().defaultNow(),
   updated_at: timestamp().notNull().defaultNow(),
-});
+}, (table) => [
+  pgPolicy("item_analyses_select_policy", {
+    for: "select",
+    to: authenticatedRole,
+    as: "permissive",
+    using: sql`EXISTS (
+      SELECT 1 FROM let_go_buddy_sessions lgbs 
+      WHERE lgbs.session_id = ${table.session_id} 
+      AND lgbs.user_id = ${authUsers.id}
+    )`
+  }),
+  pgPolicy("item_analyses_insert_policy", {
+    for: "insert",
+    to: authenticatedRole,
+    as: "permissive",
+    withCheck: sql`EXISTS (
+      SELECT 1 FROM let_go_buddy_sessions lgbs 
+      WHERE lgbs.session_id = ${table.session_id} 
+      AND lgbs.user_id = ${authUsers.id}
+    )`
+  }),
+  pgPolicy("item_analyses_update_policy", {
+    for: "update",
+    to: authenticatedRole,
+    as: "permissive",
+    using: sql`EXISTS (
+      SELECT 1 FROM let_go_buddy_sessions lgbs 
+      WHERE lgbs.session_id = ${table.session_id} 
+      AND lgbs.user_id = ${authUsers.id}
+    )`,
+    withCheck: sql`EXISTS (
+      SELECT 1 FROM let_go_buddy_sessions lgbs 
+      WHERE lgbs.session_id = ${table.session_id} 
+      AND lgbs.user_id = ${authUsers.id}
+    )`
+  }),
+  pgPolicy("item_analyses_delete_policy", {
+    for: "delete",
+    to: authenticatedRole,
+    as: "permissive",
+    using: sql`EXISTS (
+      SELECT 1 FROM let_go_buddy_sessions lgbs 
+      WHERE lgbs.session_id = ${table.session_id} 
+      AND lgbs.user_id = ${authUsers.id}
+    )`
+  })
+]);
