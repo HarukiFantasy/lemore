@@ -16,7 +16,7 @@ import {
   check,
   pgPolicy,
 } from "drizzle-orm/pg-core";
-import { authenticatedRole, authUsers } from "drizzle-orm/supabase";
+import { authenticatedRole, authUid, authUsers } from "drizzle-orm/supabase";
 
 // ===== ENUMS =====
 
@@ -83,7 +83,7 @@ export const categories = pgTable("categories", {
 }, (table) => [
   pgPolicy("categories_select_policy", {
     for: "select",
-    to: "all",
+    to: "public",
     as: "permissive",
     using: sql`true`
   })
@@ -99,7 +99,7 @@ export const locations = pgTable("locations", {
 }, (table) => [
   pgPolicy("locations_select_policy", {
     for: "select",
-    to: "all",
+    to: "public",
     as: "permissive",
     using: sql`true`
   })
@@ -126,7 +126,7 @@ export const products = pgTable("products", {
 }, (table) => [
   pgPolicy("products_select_policy", {
     for: "select",
-    to: "all",
+    to: "public",
     as: "permissive",
     using: sql`true`
   }),
@@ -134,14 +134,14 @@ export const products = pgTable("products", {
     for: "insert",
     to: authenticatedRole,
     as: "permissive",
-    withCheck: sql`${table.seller_id} = ${authUsers.id}`
+    withCheck: sql`${table.seller_id} = ${authUid}`
   }),
   pgPolicy("products_update_policy", {
     for: "update",
     to: authenticatedRole,
     as: "permissive",
-    using: sql`${table.seller_id} = ${authUsers.id}`,
-    withCheck: sql`${table.seller_id} = ${authUsers.id}`
+    using: sql`${table.seller_id} = ${authUid}`,
+    withCheck: sql`${table.seller_id} = ${authUid}`
   }),
 ]);
 
@@ -155,7 +155,7 @@ export const productImages = pgTable("product_images", {
   primaryKey({ columns: [table.product_id, table.image_order] }),
   pgPolicy("product_images_select_policy", {
     for: "select",
-    to: "all",
+    to: "public",
     as: "permissive",
     using: sql`true`
   }),
@@ -163,20 +163,20 @@ export const productImages = pgTable("product_images", {
     for: "insert",
     to: authenticatedRole,
     as: "permissive",
-    withCheck: sql`${table.product_id} = ${products.product_id}`
+    withCheck: sql`true`
   }),
   pgPolicy("product_images_update_policy", {
     for: "update",
     to: authenticatedRole,
     as: "permissive",
-    using: sql`${table.product_id} = ${products.product_id}`,
-    withCheck: sql`${table.product_id} = ${products.product_id}`
+    using: sql`true`,
+    withCheck: sql`true`
   }),
   pgPolicy("product_images_delete_policy", {
     for: "delete",
     to: authenticatedRole,
     as: "permissive",
-    using: sql`${table.product_id} = ${products.product_id}`
+    using: sql`true`
   })
 ]);
 
@@ -189,7 +189,7 @@ export const productLikes = pgTable("product_likes", {
   primaryKey({ columns: [table.product_id, table.user_id] }),
   pgPolicy("product_likes_select_policy", {
     for: "select",
-    to: "all",
+    to: "public",
     as: "permissive",
     using: sql`true`
   }),
@@ -197,13 +197,13 @@ export const productLikes = pgTable("product_likes", {
     for: "insert",
     to: authenticatedRole,
     as: "permissive",
-    withCheck: sql`${table.user_id} = ${authUsers.id}`
+    withCheck: sql`${table.user_id} = ${authUid}`
   }),
   pgPolicy("product_likes_delete_policy", {
     for: "delete",
     to: authenticatedRole,
     as: "permissive",
-    using: sql`${table.user_id} = ${authUsers.id}`
+    using: sql`${table.user_id} = ${authUid}`
   })
 ]);
 
@@ -216,7 +216,7 @@ export const productViews = pgTable("product_views", {
 }, (table) => [
   pgPolicy("product_views_select_policy", {
     for: "select",
-    to: "all",
+    to: "public",
     as: "permissive",
     using: sql`true`
   }),
@@ -224,13 +224,13 @@ export const productViews = pgTable("product_views", {
     for: "insert",
     to: authenticatedRole,
     as: "permissive",
-    withCheck: sql`${table.product_id} = ${products.product_id}`
+    withCheck: sql`true`
   }), 
   pgPolicy("product_views_delete_policy", {
     for: "delete",
     to: authenticatedRole,
     as: "permissive",
-    using: sql`${table.product_id} = ${products.product_id}`
+    using: sql`true`
   })
 ]);
 
@@ -262,7 +262,7 @@ export const userProfiles = pgTable("user_profiles", {
   // SELECT 정책 - 모든 사용자가 프로필을 조회할 수 있음
   pgPolicy("user_profiles_select_policy", {
     for: "select",
-    to: "all",
+    to: "public",
     as: "permissive",
     using: sql`true`
   }),
@@ -272,7 +272,7 @@ export const userProfiles = pgTable("user_profiles", {
     for: "insert",
     to: authenticatedRole,
     as: "permissive",
-    withCheck: sql`${authUsers.id} = ${table.profile_id}`
+    withCheck: sql`${authUid} = ${table.profile_id}`
   }),
   
   // UPDATE 정책 - 사용자는 자신의 프로필만 수정 가능
@@ -280,8 +280,8 @@ export const userProfiles = pgTable("user_profiles", {
     for: "update",
     to: authenticatedRole,
     as: "permissive",
-    using: sql`${authUsers.id} = ${table.profile_id}`,
-    withCheck: sql`${authUsers.id} = ${table.profile_id}`
+    using: sql`${authUid} = ${table.profile_id}`,
+    withCheck: sql`${authUid} = ${table.profile_id}`
   }),
   
   // DELETE 정책 - 사용자는 자신의 프로필만 삭제 가능
@@ -289,7 +289,7 @@ export const userProfiles = pgTable("user_profiles", {
     for: "delete",
     to: authenticatedRole,
     as: "permissive",
-    using: sql`${authUsers.id} = ${table.profile_id}`
+    using: sql`${authUid} = ${table.profile_id}`
   })
 ]);
 
@@ -303,7 +303,7 @@ export const userReviews = pgTable("user_reviews", {
 }, (table) => [
   pgPolicy("user_reviews_select_policy", {
     for: "select",
-    to: "all",
+    to: "public",
     as: "permissive",
     using: sql`true`
   }),
@@ -311,13 +311,13 @@ export const userReviews = pgTable("user_reviews", {
     for: "insert",
     to: authenticatedRole,
     as: "permissive",
-    withCheck: sql`${table.reviewer_id} = ${authUsers.id}`
+    withCheck: sql`${table.reviewer_id} = ${authUid}`
   }),
   pgPolicy("user_reviews_delete_policy", {
     for: "delete",
     to: authenticatedRole,
     as: "permissive",
-    using: sql`${table.reviewer_id} = ${authUsers.id}`
+    using: sql`${table.reviewer_id} = ${authUid}`
   })
 ]);
 
@@ -340,20 +340,20 @@ export const userNotifications = pgTable("user_notifications", {
     for: "select",
     to: authenticatedRole,
     as: "permissive",
-    using: sql`${table.receiver_id} = ${authUsers.id}`
+    using: sql`${table.receiver_id} = ${authUid}`
   }),
   pgPolicy("user_notifications_insert_policy", {
     for: "insert",
     to: authenticatedRole,
     as: "permissive",
-    withCheck: sql`${table.sender_id} = ${authUsers.id}`
+    withCheck: sql`${table.sender_id} = ${authUid}`
   }),
   pgPolicy("user_notifications_update_policy", {
     for: "update",
     to: authenticatedRole,
     as: "permissive",
-    using: sql`${table.receiver_id} = ${authUsers.id}`,
-    withCheck: sql`${table.receiver_id} = ${authUsers.id}`
+    using: sql`${table.receiver_id} = ${authUid}`,
+    withCheck: sql`${table.receiver_id} = ${authUid}`
   })
 ]);
 
@@ -369,7 +369,7 @@ export const userConversations = pgTable("user_conversations", {
     using: sql`EXISTS (
       SELECT 1 FROM message_participants mp 
       WHERE mp.conversation_id = ${table.conversation_id} 
-      AND mp.profile_id = ${authUsers.id}
+      AND mp.profile_id = ${authUid}
     )`
   }),
   pgPolicy("user_conversations_insert_policy", {
@@ -391,19 +391,19 @@ export const messageParticipants = pgTable("message_participants", {
     for: "select",
     to: authenticatedRole,
     as: "permissive",
-    using: sql`${table.profile_id} = ${authUsers.id}`
+    using: sql`${table.profile_id} = ${authUid}`
   }),
   pgPolicy("message_participants_insert_policy", {
     for: "insert",
     to: authenticatedRole,
     as: "permissive",
-    withCheck: sql`${table.profile_id} = ${authUsers.id}`
+    withCheck: sql`${table.profile_id} = ${authUid}`
   }),
   pgPolicy("message_participants_delete_policy", {
     for: "delete",
     to: authenticatedRole,
     as: "permissive",
-    using: sql`${table.profile_id} = ${authUsers.id}`
+    using: sql`${table.profile_id} = ${authUid}`
   })
 ]);
 
@@ -423,26 +423,26 @@ export const userMessages = pgTable("user_messages", {
     for: "select",
     to: authenticatedRole,
     as: "permissive",
-    using: sql`${table.sender_id} = ${authUsers.id} OR ${table.receiver_id} = ${authUsers.id}`
+    using: sql`${table.sender_id} = ${authUid} OR ${table.receiver_id} = ${authUid}`
   }),
   pgPolicy("user_messages_insert_policy", {
     for: "insert",
     to: authenticatedRole,
     as: "permissive",
-    withCheck: sql`${table.sender_id} = ${authUsers.id}`
+    withCheck: sql`${table.sender_id} = ${authUid}`
   }),
   pgPolicy("user_messages_update_policy", {
     for: "update",
     to: authenticatedRole,
     as: "permissive",
-    using: sql`${table.sender_id} = ${authUsers.id}`,
-    withCheck: sql`${table.sender_id} = ${authUsers.id}`
+    using: sql`${table.sender_id} = ${authUid}`,
+    withCheck: sql`${table.sender_id} = ${authUid}`
   }),
   pgPolicy("user_messages_delete_policy", {
     for: "delete",
     to: authenticatedRole,
     as: "permissive",
-    using: sql`${table.sender_id} = ${authUsers.id}`
+    using: sql`${table.sender_id} = ${authUid}`
   })
 ]);
 
@@ -463,7 +463,7 @@ export const giveAndGlowReviews = pgTable("give_and_glow_reviews", {
 }, (table) => [
   pgPolicy("give_and_glow_reviews_select_policy", {
     for: "select",
-    to: "all",
+    to: "public",
     as: "permissive",
     using: sql`true`
   }),
@@ -471,20 +471,20 @@ export const giveAndGlowReviews = pgTable("give_and_glow_reviews", {
     for: "insert",
     to: authenticatedRole,
     as: "permissive",
-    withCheck: sql`${table.giver_id} = ${authUsers.id}`
+    withCheck: sql`${table.giver_id} = ${authUid}`
   }),
   pgPolicy("give_and_glow_reviews_delete_policy", {
     for: "delete",
     to: authenticatedRole,
     as: "permissive",
-    using: sql`${table.giver_id} = ${authUsers.id}`
+    using: sql`${table.giver_id} = ${authUid}`
   }),
   pgPolicy("give_and_glow_reviews_update_policy", {
     for: "update",
     to: authenticatedRole,
     as: "permissive",
-    using: sql`${table.giver_id} = ${authUsers.id}`,
-    withCheck: sql`${table.giver_id} = ${authUsers.id}`
+    using: sql`${table.giver_id} = ${authUid}`,
+    withCheck: sql`${table.giver_id} = ${authUid}`
   })
 ]);
 
@@ -507,7 +507,7 @@ export const localBusinesses = pgTable("local_businesses", {
 }, (table) => [
   pgPolicy("local_businesses_select_policy", {
     for: "select",
-    to: "all",
+    to: "public",
     as: "permissive",
     using: sql`true`
   }),
@@ -532,7 +532,7 @@ export const localBusinessReviews = pgTable("local_business_reviews", {
 }, (table) => [primaryKey({ columns: [table.business_id, table.author] }),
   pgPolicy("local_business_reviews_select_policy", {
     for: "select",
-    to: "all",
+    to: "public",
     as: "permissive",
     using: sql`true`
   }),
@@ -540,14 +540,14 @@ export const localBusinessReviews = pgTable("local_business_reviews", {
     for: "insert",
     to: authenticatedRole,
     as: "permissive",
-    withCheck: sql`${table.author} = ${authUsers.id}`
+    withCheck: sql`${table.author} = ${authUid}`
   }),
   pgPolicy("local_business_reviews_update_policy", {
     for: "update",
     to: authenticatedRole,
     as: "permissive",
-    using: sql`${table.author} = ${authUsers.id}`,
-    withCheck: sql`${table.author} = ${authUsers.id}`
+    using: sql`${table.author} = ${authUid}`,
+    withCheck: sql`${table.author} = ${authUid}`
   })
 ]);
 
@@ -565,7 +565,7 @@ export const localTipPosts = pgTable("local_tip_posts", {
 }, (table) => [
   pgPolicy("local_tip_posts_select_policy", {
     for: "select",
-    to: "all",
+    to: "public",
     as: "permissive",
     using: sql`true`
   }),
@@ -573,20 +573,20 @@ export const localTipPosts = pgTable("local_tip_posts", {
     for: "insert",
     to: authenticatedRole,
     as: "permissive",
-    withCheck: sql`${table.author} = ${authUsers.id}`
+    withCheck: sql`${table.author} = ${authUid}`
   }),
   pgPolicy("local_tip_posts_update_policy", {
     for: "update",
     to: authenticatedRole,
     as: "permissive",
-    using: sql`${table.author} = ${authUsers.id}`,
-    withCheck: sql`${table.author} = ${authUsers.id}`
+    using: sql`${table.author} = ${authUid}`,
+    withCheck: sql`${table.author} = ${authUid}`
   }),
   pgPolicy("local_tip_posts_delete_policy", {
     for: "delete",
     to: authenticatedRole,
     as: "permissive",
-    using: sql`${table.author} = ${authUsers.id}`
+    using: sql`${table.author} = ${authUid}`
   })
 ]);
 
@@ -601,7 +601,7 @@ export const localTipComments = pgTable("local_tip_comments", {
 }, (table) => [
   pgPolicy("local_tip_comments_select_policy", {
     for: "select",
-    to: "all",
+    to: "public",
     as: "permissive",
     using: sql`true`
   }),
@@ -609,20 +609,20 @@ export const localTipComments = pgTable("local_tip_comments", {
     for: "insert",
     to: authenticatedRole,
     as: "permissive",
-    withCheck: sql`${table.author} = ${authUsers.id}`
+    withCheck: sql`${table.author} = ${authUid}`
   }),
   pgPolicy("local_tip_comments_update_policy", {
     for: "update",
     to: authenticatedRole,
     as: "permissive",
-    using: sql`${table.author} = ${authUsers.id}`,
-    withCheck: sql`${table.author} = ${authUsers.id}`
+    using: sql`${table.author} = ${authUid}`,
+    withCheck: sql`${table.author} = ${authUid}`
   }),
   pgPolicy("local_tip_comments_delete_policy", {
     for: "delete",
     to: authenticatedRole,
     as: "permissive",
-    using: sql`${table.author} = ${authUsers.id}`
+    using: sql`${table.author} = ${authUid}`
   })
 ]);
 
@@ -635,7 +635,7 @@ export const localTipPostLikes = pgTable("local_tip_post_likes", {
   primaryKey({ columns: [table.post_id, table.user_id] }),
   pgPolicy("local_tip_post_likes_select_policy", {
     for: "select",
-    to: "all",
+    to: "public",
     as: "permissive",
     using: sql`true`
   }),
@@ -643,13 +643,13 @@ export const localTipPostLikes = pgTable("local_tip_post_likes", {
     for: "insert",
     to: authenticatedRole,
     as: "permissive",
-    withCheck: sql`${table.user_id} = ${authUsers.id}`
+    withCheck: sql`${table.user_id} = ${authUid}`
   }),
   pgPolicy("local_tip_post_likes_delete_policy", {
     for: "delete",
     to: authenticatedRole,
     as: "permissive",
-    using: sql`${table.user_id} = ${authUsers.id}`
+    using: sql`${table.user_id} = ${authUid}`
   })
 ]);
 
@@ -662,7 +662,7 @@ export const localTipCommentLikes = pgTable("local_tip_comment_likes", {
   primaryKey({ columns: [table.comment_id, table.user_id] }),
   pgPolicy("local_tip_comment_likes_select_policy", {
     for: "select",
-    to: "all",
+    to: "public",
     as: "permissive",
     using: sql`true`
   }),
@@ -670,13 +670,13 @@ export const localTipCommentLikes = pgTable("local_tip_comment_likes", {
     for: "insert",
     to: authenticatedRole,
     as: "permissive",
-    withCheck: sql`${table.user_id} = ${authUsers.id}`
+    withCheck: sql`${table.user_id} = ${authUid}`
   }),
   pgPolicy("local_tip_comment_likes_delete_policy", {
     for: "delete",
     to: authenticatedRole,
     as: "permissive",
-    using: sql`${table.user_id} = ${authUsers.id}`
+    using: sql`${table.user_id} = ${authUid}`
   })
 ]);
 
@@ -693,26 +693,26 @@ export const letGoBuddySessions = pgTable("let_go_buddy_sessions", {
     for: "select",
     to: authenticatedRole,
     as: "permissive",
-    using: sql`${table.user_id} = ${authUsers.id}`
+    using: sql`${table.user_id} = ${authUid}`
   }),
   pgPolicy("let_go_buddy_sessions_insert_policy", {
     for: "insert",
     to: authenticatedRole,
     as: "permissive",
-    withCheck: sql`${table.user_id} = ${authUsers.id}`
+    withCheck: sql`${table.user_id} = ${authUid}`
   }),
   pgPolicy("let_go_buddy_sessions_update_policy", {
     for: "update",
     to: authenticatedRole,
     as: "permissive",
-    using: sql`${table.user_id} = ${authUsers.id}`,
-    withCheck: sql`${table.user_id} = ${authUsers.id}`
+    using: sql`${table.user_id} = ${authUid}`,
+    withCheck: sql`${table.user_id} = ${authUid}`
   }),
   pgPolicy("let_go_buddy_sessions_delete_policy", {
     for: "delete",
     to: authenticatedRole,
     as: "permissive",
-    using: sql`${table.user_id} = ${authUsers.id}`
+    using: sql`${table.user_id} = ${authUid}`
   })
 ]);
 
@@ -749,7 +749,7 @@ export const itemAnalyses = pgTable("item_analyses", {
     using: sql`EXISTS (
       SELECT 1 FROM let_go_buddy_sessions lgbs 
       WHERE lgbs.session_id = ${table.session_id} 
-      AND lgbs.user_id = ${authUsers.id}
+      AND lgbs.user_id = ${authUid}
     )`
   }),
   pgPolicy("item_analyses_insert_policy", {
@@ -759,7 +759,7 @@ export const itemAnalyses = pgTable("item_analyses", {
     withCheck: sql`EXISTS (
       SELECT 1 FROM let_go_buddy_sessions lgbs 
       WHERE lgbs.session_id = ${table.session_id} 
-      AND lgbs.user_id = ${authUsers.id}
+      AND lgbs.user_id = ${authUid}
     )`
   }),
   pgPolicy("item_analyses_update_policy", {
@@ -769,12 +769,12 @@ export const itemAnalyses = pgTable("item_analyses", {
     using: sql`EXISTS (
       SELECT 1 FROM let_go_buddy_sessions lgbs 
       WHERE lgbs.session_id = ${table.session_id} 
-      AND lgbs.user_id = ${authUsers.id}
+      AND lgbs.user_id = ${authUid}
     )`,
     withCheck: sql`EXISTS (
       SELECT 1 FROM let_go_buddy_sessions lgbs 
       WHERE lgbs.session_id = ${table.session_id} 
-      AND lgbs.user_id = ${authUsers.id}
+      AND lgbs.user_id = ${authUid}
     )`
   }),
   pgPolicy("item_analyses_delete_policy", {
@@ -784,7 +784,7 @@ export const itemAnalyses = pgTable("item_analyses", {
     using: sql`EXISTS (
       SELECT 1 FROM let_go_buddy_sessions lgbs 
       WHERE lgbs.session_id = ${table.session_id} 
-      AND lgbs.user_id = ${authUsers.id}
+      AND lgbs.user_id = ${authUid}
     )`
   })
 ]);
