@@ -49,9 +49,22 @@ export const getLikedProductsByUserId = async (client: SupabaseClient<Database>,
   if (!profileId) throw new Error("Profile ID is required");
   
   const { data, error } = await client
-    .from("product_likes")
-    .select("*")
-    .eq("user_id", profileId)
+  .from("product_likes")
+  .select(`
+    id,
+    product_id,
+    user_id,
+    created_at,
+    category,
+    title,
+    price,
+    seller,
+    likes,
+    currency,
+    priceType,
+    primary_image
+  `)
+  .eq("user_id", profileId)
     
   if (error) throw new Error(error.message);
   return data;

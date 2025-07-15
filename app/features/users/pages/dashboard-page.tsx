@@ -8,6 +8,10 @@ import { getDashboard } from "../queries";
 import type { Route } from "./+types/dashboard-page";
 import { makeSSRClient } from "~/supa-client";
 
+interface LoaderData {
+  dashboard: any;
+}
+
 export const loader = async ({request}: Route.LoaderArgs) => {
   const { client } = makeSSRClient(request);
   const { data: { user } } = await client.auth.getUser();
@@ -18,7 +22,7 @@ export const loader = async ({request}: Route.LoaderArgs) => {
   return { dashboard };
 };
 
-export default function DashboardPage({ loaderData }: Route.ComponentProps) {
+export default function DashboardPage({ loaderData }: { loaderData: LoaderData }) {
   const { dashboard } = loaderData;
   return (
     <div className="container mx-auto px-0 py-8 md:px-8">
@@ -48,7 +52,7 @@ export default function DashboardPage({ loaderData }: Route.ComponentProps) {
             <CardDescription>Your earnings this month</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-green-600">THB <NumberTicker value={dashboard.total_sales} className="text-3xl font-bold text-green-600"/></div>
+            <div className="text-3xl font-bold text-green-600">THB <NumberTicker value={dashboard.total_sales ?? 0} className="text-3xl font-bold text-green-600"/></div>
             <p className="text-sm text-gray-500 mt-1">{dashboard.total_sales_change}</p>
           </CardContent>
         </Card>

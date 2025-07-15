@@ -8,8 +8,13 @@ import { Button } from '~/common/components/ui/button';
 import { Input } from '~/common/components/ui/input';
 import { Badge } from '~/common/components/ui/badge';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '~/common/components/ui/hover-card';
-import { getConversations, getConversationMessages, sendMessage, getOrCreateConversation } from '../queries';
+import { getConversations, getConversationMessages, sendMessage } from '../queries';
 import { MessageCircle, Send, Clock, User, MoreHorizontal } from 'lucide-react';
+
+interface LoaderData {
+  user: { id: string; [key: string]: any };
+  conversations: any[];
+}
 
 export const loader = async ({ request }: Route.LoaderArgs) => {
   const { client } = makeSSRClient(request);
@@ -23,8 +28,8 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
   return { user, conversations };
 };
 
-export default function MessagesPage({ loaderData }: Route.ComponentProps) {
-  const { user, conversations } = loaderData;
+export default function MessagesPage({ loaderData }: { loaderData: LoaderData }) {
+  const { user, conversations } = loaderData ?? { user: { id: '' }, conversations: [] };
   const [selectedConversation, setSelectedConversation] = useState<any>(null);
   const [messages, setMessages] = useState<any[]>([]);
   const [newMessage, setNewMessage] = useState('');
@@ -57,7 +62,7 @@ export default function MessagesPage({ loaderData }: Route.ComponentProps) {
       setLoading(true);
       const sentMessage = await sendMessage(client, {
         conversationId: selectedConversation.conversation_id,
-        senderId: user.id,
+        senderId: user?.id,
         receiverId: selectedConversation.receiver_id || selectedConversation.sender_id,
         content: newMessage.trim()
       });
@@ -87,7 +92,7 @@ export default function MessagesPage({ loaderData }: Route.ComponentProps) {
   };
 
   const getOtherParticipant = (conversation: any) => {
-    if (conversation.sender_id === user.id) {
+    if (conversation.sender_id === user?.id) {
       return {
         username: conversation.receiver_username,
         avatar: conversation.receiver_avatar_url,
@@ -130,11 +135,11 @@ export default function MessagesPage({ loaderData }: Route.ComponentProps) {
                   conversations.map((conversation) => {
                     const otherUser = getOtherParticipant(conversation);
                     const unreadCount = getUnreadCount(conversation);
-                    const isSelected = selectedConversation?.conversation_id === conversation.conversation_id;
+                    const isSelected = selectedConversation?.conversation_id === conversation.message_room_id;
                     
                     return (
                       <div
-                        key={conversation.conversation_id}
+                        key={conversation.message_room_id}
                         className={`p-4 cursor-pointer transition-colors hover:bg-accent ${
                           isSelected ? 'bg-accent border-l-4 border-primary' : ''
                         }`}
@@ -153,12 +158,12 @@ export default function MessagesPage({ loaderData }: Route.ComponentProps) {
                               <h3 className="font-medium truncate">{otherUser.username}</h3>
                               <div className="flex items-center gap-1 text-xs text-muted-foreground">
                                 <Clock className="w-3 h-3" />
-                                {formatTime(conversation.created_at)}
+                                {formatTime(conversation.message_created_at)}
                               </div>
                             </div>
                             
                             <p className="text-sm text-muted-foreground truncate">
-                              {conversation.content}
+                              {conversation.message_content}
                             </p>
                           </div>
                           
@@ -220,7 +225,7 @@ export default function MessagesPage({ loaderData }: Route.ComponentProps) {
                                 {getOtherParticipant(selectedConversation).username}
                               </h4>
                               <p className="text-sm text-muted-foreground">
-                                대화 시작: {formatTime(selectedConversation.conversation_created_at)}
+                                대화 시작: {formatTime(selectedConversation.message_created_at)}
                               </p>
                             </div>
                           </div>
@@ -249,7 +254,7 @@ export default function MessagesPage({ loaderData }: Route.ComponentProps) {
                         </div>
                       ) : (
                         messages.map((message) => {
-                          const isOwnMessage = message.sender_id === user.id;
+                          const isOwnMessage = message.sender_id === user?.id;
                           
                           return (
                             <div
@@ -262,11 +267,11 @@ export default function MessagesPage({ loaderData }: Route.ComponentProps) {
                                     ? 'bg-primary text-primary-foreground' 
                                     : 'bg-muted'
                                 }`}>
-                                  <p className="text-sm">{message.content}</p>
+                                  <p className="text-sm">{message.message_content}</p>
                                   <p className={`text-xs mt-1 ${
                                     isOwnMessage ? 'text-primary-foreground/70' : 'text-muted-foreground'
                                   }`}>
-                                    {formatTime(message.created_at)}
+                                    {formatTime(message.message_created_at)}
                                   </p>
                                 </div>
                               </div>

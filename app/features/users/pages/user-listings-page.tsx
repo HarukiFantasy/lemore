@@ -73,7 +73,7 @@ export default function UserListingsPage() {
               priceType="fixed"
               seller={listing.sellerId}
               likes={0}
-              isSold={listing.isSold}
+              is_sold={listing.isSold}
             />
           ))}
         </div>

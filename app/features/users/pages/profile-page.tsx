@@ -9,7 +9,7 @@ import type { Route } from "./+types/profile-page";
 import { makeSSRClient } from "~/supa-client";
 import { getUserByProfileId } from "../queries";
 import { redirect, useNavigation, useActionData } from 'react-router';
-import { LOCATIONS } from "~/constants";
+import { LOCATIONS, type Location } from "~/constants";
 import { CircleIcon, CheckCircleIcon, AlertCircleIcon } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
@@ -36,7 +36,7 @@ export const action = async ({request}: Route.ActionArgs) => {
   }
   
   // Validate location is one of the allowed values
-  if (location && !LOCATIONS.includes(location as any)) {
+  if (location && !LOCATIONS.includes(location as Location)) {
     return { error: "Invalid location selected" };
   }
   
@@ -44,7 +44,7 @@ export const action = async ({request}: Route.ActionArgs) => {
     username: username as string,
     email: email as string,
     bio: bio as string,
-    location: location as string,
+    location: location as Location,
     updated_at: new Date().toISOString(),
   }).eq("profile_id", user.id);
   

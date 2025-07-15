@@ -15,6 +15,10 @@ import { makeSSRClient } from "~/supa-client";
 import { Route } from './+types/likes-page';
 import { getLikedProductsByUserId } from '../queries';
 
+interface LoaderData {
+  likedProducts: any[];
+}
+
 export const meta = () => {
   return [
     { title: "My Likes | Lemore" },
@@ -32,7 +36,7 @@ export const loader = async ({request}: Route.LoaderArgs) => {
   return { likedProducts };
 };
 
-export default function LikesPage({ loaderData }: Route.ComponentProps) {
+export default function LikesPage({ loaderData }: { loaderData: LoaderData }) {
   const [sortBy, setSortBy] = useState("date");
   const [filterBy, setFilterBy] = useState("all");
   const [likedProducts, setLikedProducts] = useState(loaderData.likedProducts);

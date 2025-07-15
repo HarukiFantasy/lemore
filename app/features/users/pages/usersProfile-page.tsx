@@ -1,16 +1,14 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../../common/components/ui/card";
-import { Button } from "../../../common/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "../../../common/components/ui/avatar";
 import { Separator } from "../../../common/components/ui/separator";
-import { Input } from "../../../common/components/ui/input";
-import { Textarea } from "../../../common/components/ui/textarea";
 import type { Route } from "./+types/usersProfile-page";
 import { makeSSRClient } from "~/supa-client";
-import { getUserByProfileId, getUserByUsername } from "../queries";
+import {  getUserByUsername } from "../queries";
 import { redirect } from 'react-router';
 import { getProductByUsername } from '~/features/products/queries';
 import { ProductCard } from '~/features/products/components/product-card';
-import { Form } from "react-router";
+import { type Location } from "~/constants";
+
 
 export const loader = async ({request, params}: Route.LoaderArgs) => {
   const { client } = makeSSRClient(request);
@@ -82,14 +80,14 @@ export const action = async ({ request, params }: Route.ActionArgs) => {
   try {
     // 사용자 프로필 업데이트
     const { error } = await client
-      .from('profiles')
+      .from('user_profiles')
       .update({
         bio: bio || null,
-        location: location || null,
+        location: location as Location || null,
         avatar_url: avatar_url || null,
         updated_at: new Date().toISOString()
       })
-      .eq('id', user.id);
+      .eq('profile_id', user.id);
 
     if (error) {
       console.error('Profile update error:', error);
