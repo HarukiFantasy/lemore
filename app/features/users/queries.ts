@@ -278,3 +278,46 @@ export const getUserSalesStatsByProfileId = async (client: SupabaseClient<Databa
   if (error) throw new Error(error.message);
   return data;
 };
+
+export const getNotifications = async (
+  client: SupabaseClient<Database>,
+  { userId }: { userId: string }
+) => {
+  const { data, error } = await client
+    .from('user_notifications')
+    .select(`
+      notification_id,
+      type,
+      sender_id,
+      product_id,
+      message_id,
+      review_id,
+      is_read,
+      read_at,
+      data,
+      created_at
+    `)
+    .eq('receiver_id', userId)
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  
+  // 매핑: DB 필드 → 프론트엔드 타입 (프론트엔드 네이밍 일관성 & 기존 코드와의 호환성위해 notificationSchema를 수정하지 않고 매핑처리)
+  return (data ?? []).map((n) => ({
+    notification_id: n.notification_id,
+    type: n.type,
+    isRead: n.is_read,
+    timestamp: n.created_at,
+    // data 필드에서 추출하거나 기본값 사용
+    title: (n.data as any)?.title ?? '',
+    content: (n.data as any)?.content ?? '',
+    avatar: (n.data as any)?.avatar ?? '',
+    avatarFallback: (n.data as any)?.avatarFallback ?? '',
+    metadata: n.data,
+    // 기존 필드들도 유지
+    sender_id: n.sender_id,
+    product_id: n.product_id,
+    message_id: n.message_id,
+    review_id: n.review_id,
+    read_at: n.read_at,
+  }));
+};
