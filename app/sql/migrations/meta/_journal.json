@@ -15,6 +15,20 @@
       "when": 1752509339100,
       "tag": "0001_bizarre_kree",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1752667721402,
+      "tag": "0002_perfect_marvel_apes",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1752670477675,
+      "tag": "0003_dark_shinko_yamashiro",
+      "breakpoints": true
     }
   ]
 }

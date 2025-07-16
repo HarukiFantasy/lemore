@@ -916,6 +916,114 @@ export type Database = {
           },
         ]
       }
+      local_tip_replies: {
+        Row: {
+          created_at: string
+          parent_id: number | null
+          post_id: number
+          profile_id: string
+          reply: string
+          reply_id: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          parent_id?: number | null
+          post_id: number
+          profile_id: string
+          reply: string
+          reply_id?: never
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          parent_id?: number | null
+          post_id?: number
+          profile_id?: string
+          reply?: string
+          reply_id?: never
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "local_tip_replies_parent_id_local_tip_replies_reply_id_fk"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "local_tip_replies"
+            referencedColumns: ["reply_id"]
+          },
+          {
+            foreignKeyName: "local_tip_replies_post_id_local_tip_posts_id_fk"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "local_tip_posts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "local_tip_replies_post_id_local_tip_posts_id_fk"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "local_tips_list_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "local_tip_replies_profile_id_user_profiles_profile_id_fk"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "give_and_glow_view"
+            referencedColumns: ["giver_profile_id"]
+          },
+          {
+            foreignKeyName: "local_tip_replies_profile_id_user_profiles_profile_id_fk"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "give_and_glow_view"
+            referencedColumns: ["receiver_profile_id"]
+          },
+          {
+            foreignKeyName: "local_tip_replies_profile_id_user_profiles_profile_id_fk"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "product_detail_view"
+            referencedColumns: ["seller_id"]
+          },
+          {
+            foreignKeyName: "local_tip_replies_profile_id_user_profiles_profile_id_fk"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "products_listings_view"
+            referencedColumns: ["seller_id"]
+          },
+          {
+            foreignKeyName: "local_tip_replies_profile_id_user_profiles_profile_id_fk"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "user_dashboard_view"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "local_tip_replies_profile_id_user_profiles_profile_id_fk"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "local_tip_replies_profile_id_user_profiles_profile_id_fk"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "user_sales_stats_view"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "local_tip_replies_profile_id_user_profiles_profile_id_fk"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "users_view"
+            referencedColumns: ["profile_id"]
+          },
+        ]
+      }
       locations: {
         Row: {
           description: string | null

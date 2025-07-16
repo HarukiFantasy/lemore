@@ -15,6 +15,7 @@ import {
   primaryKey,
   check,
   pgPolicy,
+  AnyPgColumn, // 추가
 } from "drizzle-orm/pg-core";
 import { authenticatedRole, authUid, authUsers } from "drizzle-orm/supabase";
 
@@ -623,6 +624,50 @@ export const localTipComments = pgTable("local_tip_comments", {
     to: authenticatedRole,
     as: "permissive",
     using: sql`${table.author} = ${authUid}`
+  })
+]);
+
+// Local tip replies table (for nested comments)
+export const localTipReplies = pgTable("local_tip_replies", {
+  reply_id: bigint("reply_id", { mode: "number" })
+    .primaryKey()
+    .generatedAlwaysAsIdentity(),
+  post_id: bigint("post_id", { mode: "number" })
+    .notNull()
+    .references(() => localTipPosts.id, { onDelete: "cascade" }),
+  parent_id: bigint("parent_id", { mode: "number" })
+    .references((): AnyPgColumn => localTipReplies.reply_id, { onDelete: "cascade" }),
+  profile_id: uuid("profile_id")
+    .notNull()
+    .references(() => userProfiles.profile_id, { onDelete: "cascade" }),
+  reply: text("reply").notNull(),
+  created_at: timestamp("created_at").notNull().defaultNow(),
+  updated_at: timestamp("updated_at").notNull().defaultNow(),
+}, (table) => [
+  pgPolicy("local_tip_replies_select_policy", {
+    for: "select",
+    to: "public",
+    as: "permissive",
+    using: sql`true`
+  }),
+  pgPolicy("local_tip_replies_insert_policy", {
+    for: "insert",
+    to: authenticatedRole,
+    as: "permissive",
+    withCheck: sql`true`
+  }),
+  pgPolicy("local_tip_replies_update_policy", {
+    for: "update",
+    to: authenticatedRole,
+    as: "permissive",
+    using: sql`${table.profile_id} = ${authUid}`,
+    withCheck: sql`${table.profile_id} = ${authUid}`
+  }),
+  pgPolicy("local_tip_replies_delete_policy", {
+    for: "delete",
+    to: authenticatedRole,
+    as: "permissive",
+    using: sql`${table.profile_id} = ${authUid}`
   })
 ]);
 

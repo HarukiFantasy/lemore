@@ -45,6 +45,26 @@ export const getLocalTipComments = async (client: SupabaseClient<Database>, post
   return data;
 }
 
+export const getLocalTipReplies = async (client: SupabaseClient<Database>, postId: string) => {
+  const replyQuery = `
+    reply_id,
+    reply,
+    created_at,
+    profile_id,
+    user:user_profiles (username, avatar_url)
+  `;
+  const { data, error } = await client
+    .from("local_tip_replies")
+    .select(`
+      ${replyQuery},
+      local_tip_replies ( ${replyQuery} )
+    `)
+    .eq("post_id", parseInt(postId))
+    .is("parent_id", null); // 최상위 댓글만
+  if (error) throw new Error(error.message);
+  return data;
+};
+
 export const getGiveAndGlowReviews = async (client: SupabaseClient<Database>) => {
   const { data, error } = await client.from("give_and_glow_view").select(`*`);
   

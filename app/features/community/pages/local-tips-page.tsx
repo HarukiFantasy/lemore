@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { redirect, useSearchParams, Form, useActionData } from "react-router";
+import { redirect, useSearchParams, Form, useActionData, useFetcher } from "react-router";
 import { Button } from "../../../common/components/ui/button";
 import { Input } from "../../../common/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "../../../common/components/ui/card";
@@ -11,7 +11,8 @@ import {
   LocalTipCategoryWithAll, 
   LocalTipCategory 
 } from "../constants";
-import { getLocalTipComments, getLocalTipPosts } from '../queries';
+import { getLocalTipComments, getLocalTipPosts, getLocalTipReplies } from '../queries';
+import { Reply } from '../components/reply';
 import { UserStatsHoverCard } from "../../../common/components/user-stats-hover-card";
 import type { Route } from "./+types/local-tips-page"
 import { makeSSRClient } from "~/supa-client";
@@ -21,6 +22,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { getlocations } from "../queries";
 import { createLocalTip } from '../mutation';
 import z from 'zod';
+import { createLocalTipReply } from '../mutation';
 
 // Types
 
@@ -47,7 +49,12 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
   const comments = await getLocalTipComments(client);
   const locations = await getlocations(client);  // 입력폼에서 사용
   const { data: { user } } = await client.auth.getUser();
-  return { tips, comments, user, locations };
+  // 각 post별로 replies fetch
+  const repliesByPostId: Record<number, any[]> = {};
+  for (const post of tips) {
+    repliesByPostId[post.id] = await getLocalTipReplies(client, post.id.toString());
+  }
+  return { tips, comments, user, locations, repliesByPostId };
 }
 
 
@@ -55,6 +62,21 @@ export const action = async ({ request }: Route.ActionArgs) => {
   const { client } = makeSSRClient(request);
   const { data: { user } } = await client.auth.getUser();
   const formData = await request.formData();
+  // 댓글/대댓글 등록 분기
+  if (formData.get("_action") === "reply") {
+    const postId = Number(formData.get("postId"));
+    const parentId = formData.get("parentId") ? Number(formData.get("parentId")) : null;
+    const reply = formData.get("reply") as string;
+    if (!user || !postId || !reply) return { error: "Invalid input" };
+    await createLocalTipReply(client, {
+      postId,
+      parentId,
+      profileId: user.id,
+      reply,
+    });
+    return { ok: true, postId };
+  }
+  // 기존 tip 등록 로직
   const { success, data, error } = formSchema.safeParse(Object.fromEntries(formData));
   if (!success) {
     return { fieldErrors: error.flatten().fieldErrors };
@@ -67,14 +89,14 @@ export const action = async ({ request }: Route.ActionArgs) => {
     location,
     author: user?.id || '',
   });
-  console.log("Success :", success, "data :", data, "error :", error)
   return { success, data, error };
-}
+};
 
 
 export default function LocalTipsPage({ loaderData }: Route.ComponentProps) {
-  const { tips, comments, user, locations} = loaderData;
+  const { tips, comments, user, locations, repliesByPostId } = loaderData;
   const actionData = useActionData<typeof action>();
+  const fetcher = useFetcher();
   const [searchParams, setSearchParams] = useSearchParams();
   const urlLocation = searchParams.get("location") || "Bangkok";
   const searchQuery = searchParams.get("search") || "";
@@ -88,14 +110,15 @@ export default function LocalTipsPage({ loaderData }: Route.ComponentProps) {
   const [selectedCategory, setSelectedCategory] = useState("");
   const [selectedLocation, setSelectedLocation] = useState("");
   
-  // Close modal when action is successful
+  // 댓글/대댓글 확장 상태 (expandedPosts)
+  const [expandedPosts, setExpandedPosts] = useState<Set<number>>(new Set());
+
+  // 댓글/대댓글 등록 성공 시 해당 post를 확장
   useEffect(() => {
-    if (actionData && !('fieldErrors' in actionData)) {
-      setIsModalOpen(false);
-      setSelectedCategory("");
-      setSelectedLocation("");
+    if (fetcher.data && fetcher.data.ok && fetcher.data.postId) {
+      setExpandedPosts(prev => new Set(prev).add(fetcher.data.postId));
     }
-  }, [actionData]);
+  }, [fetcher.data]);
   
   // Group comments by post_id for easy lookup
   const commentsByPostId = comments.reduce((acc, comment) => {
@@ -106,9 +129,6 @@ export default function LocalTipsPage({ loaderData }: Route.ComponentProps) {
     return acc;
   }, {} as Record<number, Comment[]>);
 
-  // State for comment expansion
-  const [expandedPosts, setExpandedPosts] = useState<Set<number>>(new Set());
-  
   // Filter tips based on search and category
   const filteredTips = tips.filter((post) => {
     const matchesSearch = !searchQuery || 
@@ -190,6 +210,20 @@ export default function LocalTipsPage({ loaderData }: Route.ComponentProps) {
       // Expand comments
       setExpandedPosts(prev => new Set(prev).add(postId));
     }
+  };
+
+  // 댓글/대댓글 작성 핸들러(fetcher 사용)
+  const handleSubmitReply = (postId: number, parentId: number | null, reply: string) => {
+    if (!user) return;
+    fetcher.submit(
+      {
+        _action: "reply",
+        postId: postId.toString(),
+        parentId: parentId?.toString() ?? "",
+        reply,
+      },
+      { method: "post" }
+    );
   };
 
 
@@ -419,6 +453,7 @@ export default function LocalTipsPage({ loaderData }: Route.ComponentProps) {
               {/* Comments Section */}
               {expandedPosts.has(post.id) && (
                 <div className="mt-4 pt-4 border-t">
+                  {/* 기존 comments 렌더링 유지 */}
                   {commentsByPostId[post.id] ? (
                     <div className="space-y-3">
                       <h4 className="font-medium text-sm">Comments ({commentsByPostId[post.id].length})</h4>
@@ -444,6 +479,27 @@ export default function LocalTipsPage({ loaderData }: Route.ComponentProps) {
                   ) : (
                     <div className="text-center py-4">
                       <p className="text-sm text-muted-foreground">No comments yet</p>
+                    </div>
+                  )}
+                  {/* 대댓글(Reply) 작성 폼 (최상위) */}
+                  {user && (
+                    <div className="my-2">
+                      <ReplyInput postId={post.id} onSubmitReply={handleSubmitReply} fetcher={fetcher} />
+                    </div>
+                  )}
+                  {/* 대댓글(Reply) 렌더링 */}
+                  {repliesByPostId[post.id] && repliesByPostId[post.id].length > 0 && (
+                    <div className="mt-4 space-y-2">
+                      <h4 className="font-medium text-sm">Replies</h4>
+                      {repliesByPostId[post.id].map((reply: any) => (
+                        <Reply
+                          key={reply.reply_id}
+                          reply={reply}
+                          postId={post.id}
+                          parentId={null}
+                          onSubmitReply={handleSubmitReply}
+                        />
+                      ))}
                     </div>
                   )}
                 </div>
@@ -573,5 +629,33 @@ export default function LocalTipsPage({ loaderData }: Route.ComponentProps) {
       </Dialog>
 
     </div>
+  );
+} 
+
+// ReplyInput 컴포넌트 수정(fetcher.Form 사용)
+function ReplyInput({ postId, onSubmitReply, fetcher }: { postId: number; onSubmitReply: (postId: number, parentId: number | null, reply: string) => void; fetcher: any }) {
+  const [input, setInput] = useState("");
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (input.trim()) {
+      onSubmitReply(postId, null, input.trim());
+      setInput("");
+    }
+  };
+  return (
+    <fetcher.Form method="post" className="flex gap-2" onSubmit={handleSubmit}>
+      <input type="hidden" name="_action" value="reply" />
+      <input type="hidden" name="postId" value={postId} />
+      <input type="hidden" name="parentId" value="" />
+      <input
+        type="text"
+        className="border rounded px-2 py-1 w-full text-sm"
+        placeholder="댓글을 입력하세요..."
+        value={input}
+        onChange={e => setInput(e.target.value)}
+        name="reply"
+      />
+      <button type="submit" className="text-xs text-blue-600 hover:underline">Submit</button>
+    </fetcher.Form>
   );
 } 

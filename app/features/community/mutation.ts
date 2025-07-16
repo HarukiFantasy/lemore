@@ -93,3 +93,31 @@ export const createLocalReview = async (client: SupabaseClient<Database>, {
     if (error) {throw error};
     return data;
 };
+
+export const createLocalTipReply = async (
+  client: SupabaseClient<Database>,
+  {
+    postId,
+    parentId,
+    profileId,
+    reply,
+  }: {
+    postId: number;
+    parentId?: number | null;
+    profileId: string;
+    reply: string;
+  }
+) => {
+  const { data, error } = await client
+    .from("local_tip_replies")
+    .insert({
+      post_id: postId,
+      parent_id: parentId ?? null,
+      profile_id: profileId,
+      reply,
+    })
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+};
