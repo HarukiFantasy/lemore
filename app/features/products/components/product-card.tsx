@@ -4,6 +4,7 @@ import { HeartIcon } from "lucide-react";
 import { ShineBorder } from "components/magicui/shine-border";
 import { UserStatsHoverCard } from "~/common/components/user-stats-hover-card";
 import { PRODUCT_CATEGORIES } from "../constants";
+import { Badge } from "../../../common/components/ui/badge";
 
 // 가격 포맷팅 함수
 const formatPrice = (price?: number, currency: string = "THB"): string => {
@@ -26,21 +27,53 @@ const productCardSchema = z.object({
   sellerStats: z.any().optional(),
 });
 
-type ProductCardProps = z.infer<typeof productCardSchema>; 
+type ProductCardProps = {
+  product?: any;
+  showSoldBadge?: boolean;
+  image?: string;
+  title?: string;
+  currency?: string;
+  price?: number;
+  productId?: number;
+  priceType?: string;
+  is_sold?: boolean;
+  category?: string;
+  likes?: number;
+  seller?: string;
+  sellerStats?: any;
+  [key: string]: any;
+};
 
-export function ProductCard({ 
-  productId, 
-  image, 
-  title, 
-  price, 
-  currency = "THB",
-  seller = "Multiple Owners", 
-  likes = 0,
-  is_sold = false,
-  priceType = "fixed",
-  category = "Electronics",
-  sellerStats
+export function ProductCard({
+  product,
+  showSoldBadge = false,
+  image,
+  title,
+  currency,
+  price,
+  productId,
+  priceType,
+  is_sold,
+  category,
+  likes,
+  seller,
+  sellerStats,
+  ...props
 }: ProductCardProps) {
+  // Support both product object and individual props
+  const prod = product || {
+    image,
+    title,
+    currency,
+    price,
+    product_id: productId,
+    priceType,
+    is_sold,
+    category,
+    likes,
+    seller,
+    sellerStats,
+  };
   const [searchParams] = useSearchParams();
   const location = searchParams.get("location");
   const isFree = priceType === "free";
@@ -65,12 +98,10 @@ export function ProductCard({
         />
         <div className="bg-white rounded-lg shadow h-full flex flex-col pb-2">
           <div className="relative w-full h-40 sm:h-48 md:h-60 overflow-hidden rounded-t-lg">
-            <img src={image} className="object-cover w-full h-full group-hover:scale-110 group-hover:brightness-110 transition-all duration-300 ease-out" alt={title} />
+            <img src={String(prod.image ?? '')} className="object-cover w-full h-full group-hover:scale-110 group-hover:brightness-110 transition-all duration-300 ease-out" alt={String(prod.title ?? '')} />
             <button className="absolute top-3 left-3 bg-black/60 text-white text-xs px-3 py-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">Save</button>
-            {is_sold && (
-              <div className="absolute top-3 right-3 bg-red-500 text-white text-xs px-2 py-1 rounded-full font-medium shadow-lg">
-                SOLD
-              </div>
+            {showSoldBadge && prod.is_sold && (
+              <Badge className="absolute top-2 right-2 z-10 bg-rose-500 text-white">SOLD</Badge>
             )}
             {isFree && !is_sold && (
               <div className="absolute top-3 right-3 bg-green-500 text-white text-xs px-2 py-1 rounded-full font-medium shadow-lg">
@@ -85,7 +116,7 @@ export function ProductCard({
             </div>
             <UserStatsHoverCard
               profileId={seller}
-              userName={seller}
+              userName={seller ?? ''}
               userStats={sellerStats}
               className="text-xs text-neutral-500 truncate"
             >

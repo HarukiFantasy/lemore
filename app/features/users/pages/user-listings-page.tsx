@@ -3,29 +3,36 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../..
 import { Button } from "../../../common/components/ui/button";
 import { Badge } from "../../../common/components/ui/badge";
 import { Separator } from "../../../common/components/ui/separator";
-import { Link } from "react-router";
+import { Link, useLoaderData, useFetcher } from "react-router";
 import { ProductCard } from "../../products/components/product-card";
+import { makeSSRClient } from "~/supa-client";
+import { markProductAsSold } from "../../products/mutations";
 
+export const loader = async ({ request }: any) => {
+  const { client } = makeSSRClient(request);
+  const { data: { user } } = await client.auth.getUser();
+  if (!user) {
+    return { listings: [] };
+  }
+  const { data: listings, error } = await client
+    .from("products")
+    .select("*")
+    .eq("seller_id", user.id)
+    .order("created_at", { ascending: false });
+  return { listings: listings || [] };
+};
 
+export const action = async ({ request }: any) => {
+  const formData = await request.formData();
+  const productId = formData.get("productId");
+  const { client } = makeSSRClient(request);
+  await markProductAsSold(client, Number(productId));
+  return { success: true };
+};
 
 export default function UserListingsPage() {
-  // Mock data for user listings
-  const conditions = ["New", "Like New", "Good", "Fair", "Poor"] as const;
-  const categories = ["Electronics", "Clothing", "Home goods", "Sports & Outdoor", "Books", "Toys and games"];
-  
-  const listings = Array.from({ length: 6 }, (_, index) => ({
-    id: `user-listing-${index + 1}`,
-    title: `My Product ${index + 1}`,
-    price: Math.floor(Math.random() * 5000) + 100,
-    currency: "THB",
-    condition: conditions[Math.floor(Math.random() * conditions.length)],
-    category: categories[Math.floor(Math.random() * categories.length)],
-    location: "Bangkok, Thailand",
-    image: "/sample.png",
-    sellerId: "current-user",
-    isSold: Math.random() > 0.7,
-    createdAt: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000),
-  }));
+  const { listings } = useLoaderData() as { listings: any[] };
+  const fetcher = useFetcher();
 
   return (
     <div className="container mx-auto px-0 py-8 md:px-8">
@@ -63,18 +70,28 @@ export default function UserListingsPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {listings.map((listing: any) => (
-            <ProductCard 
-              key={listing.id}
-              productId={listing.id}
-              image={listing.image}
-              title={listing.title}
-              price={listing.price}
-              currency={listing.currency}
-              priceType="fixed"
-              seller={listing.sellerId}
-              likes={0}
-              is_sold={listing.isSold}
-            />
+            <div key={listing.product_id} className="relative">
+              <ProductCard
+                productId={listing.product_id}
+                image={listing.primary_image || "/sample.png"}
+                title={listing.title}
+                price={listing.price}
+                currency={listing.currency}
+                priceType={listing.price_type}
+                seller={listing.seller_id}
+                likes={listing.likes_count || 0}
+                is_sold={listing.is_sold}
+                category={listing.category_name}
+                showSoldBadge={true}
+                sellerStats={undefined}
+              />
+              {!listing.is_sold && (
+                <fetcher.Form method="post" action="/my/listings/mark-as-sold">
+                  <input type="hidden" name="productId" value={listing.product_id} />
+                  <Button type="submit" size="sm" className="absolute top-2 right-2 z-20">Mark as Sold</Button>
+                </fetcher.Form>
+              )}
+            </div>
           ))}
         </div>
       )}

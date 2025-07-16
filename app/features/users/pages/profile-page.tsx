@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from ".
 import { Alert, AlertDescription } from "../../../common/components/ui/alert";
 import type { Route } from "./+types/profile-page";
 import { makeSSRClient } from "~/supa-client";
-import { getUserByProfileId } from "../queries";
+import { getUserByProfileId, getUserSalesStatsByProfileId } from "../queries";
 import { redirect, useNavigation, useActionData } from 'react-router';
 import { LOCATIONS, type Location } from "~/constants";
 import { CircleIcon, CheckCircleIcon, AlertCircleIcon } from 'lucide-react';
@@ -18,7 +18,13 @@ export const loader = async ({request}: Route.LoaderArgs) => {
   const { data: {user} } = await client.auth.getUser();
   if (user) {
     const userProfile = await getUserByProfileId(client, { profileId: user?.id ?? null });
-    return { userProfile };
+    let userStats = null;
+    try {
+      userStats = await getUserSalesStatsByProfileId(client, user.id);
+    } catch (e) {
+      userStats = null;
+    }
+    return { userProfile, userStats };
   }
   return redirect('/auth/login');
 };
@@ -60,7 +66,7 @@ export default function ProfilePage({ loaderData }: Route.ComponentProps) {
   const navigation = useNavigation();
   const actionData = useActionData<typeof action>();
   const isSubmitting = navigation.state === "submitting" ;
-  const { userProfile } = loaderData;
+  const { userProfile, userStats } = loaderData;
   const [selectedLocation, setSelectedLocation] = useState(userProfile?.location || "");
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
   
@@ -116,18 +122,28 @@ export default function ProfilePage({ loaderData }: Route.ComponentProps) {
             <CardContent>
               <div className="space-y-4">
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-blue-600">{userProfile?.total_listings}</div>
+                  <div className="text-2xl font-bold text-blue-600">{userStats?.total_listings ?? 'N/A'}</div>
                   <div className="text-sm text-gray-500">Total Listings</div>
                 </div>
                 <Separator />
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-green-600">{userProfile?.total_likes}</div>
-                  <div className="text-sm text-gray-500">Total Likes</div>
+                  <div className="text-2xl font-bold text-green-600">{userStats?.sold_items ?? 'N/A'}</div>
+                  <div className="text-sm text-gray-500">Sold Items</div>
                 </div>
                 <Separator />
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-orange-600">{userProfile?.total_views}</div>
-                  <div className="text-sm text-gray-500">Total Views</div>
+                  <div className="text-2xl font-bold text-orange-600">{userStats?.active_listings ?? 'N/A'}</div>
+                  <div className="text-sm text-gray-500">Active Listings</div>
+                </div>
+                <Separator />
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-purple-600">{userStats?.total_sales ?? 'N/A'}</div>
+                  <div className="text-sm text-gray-500">Total Sales</div>
+                </div>
+                <Separator />
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-yellow-600">{userStats?.avg_sale_price ?? 'N/A'}</div>
+                  <div className="text-sm text-gray-500">Avg Sale Price</div>
                 </div>
               </div>
             </CardContent>

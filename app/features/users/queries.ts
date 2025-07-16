@@ -268,3 +268,13 @@ export const getUserStats = async (
     responseRate: "95%", // 기본값, 나중에 실제 응답률 계산 로직 추가 가능
   };
 };
+
+export const getUserSalesStatsByProfileId = async (client: SupabaseClient<Database>, profileId: string) => {
+  const { data, error } = await client
+    .from("user_sales_stats_view")
+    .select("*")
+    .eq("profile_id", profileId)
+    .single();
+  if (error) throw new Error(error.message);
+  return data;
+};

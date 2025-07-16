@@ -39,3 +39,14 @@ export const createProduct = async (client: SupabaseClient<Database>, {
     if (error) {throw error};
     return data;
   };
+
+export const markProductAsSold = async (client: SupabaseClient<Database>, productId: number) => {
+  const { data, error } = await client
+    .from("products")
+    .update({ is_sold: true })
+    .eq("product_id", productId)
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+};

@@ -4,7 +4,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "../../../common/components/
 import { Separator } from "../../../common/components/ui/separator";
 import { Link, redirect } from "react-router";
 import { NumberTicker } from 'components/magicui/number-ticker';
-import { getDashboard } from "../queries";
+import { getDashboard, getUserSalesStatsByProfileId } from "../queries";
 import type { Route } from "./+types/dashboard-page";
 import { makeSSRClient } from "~/supa-client";
 
@@ -19,11 +19,17 @@ export const loader = async ({request}: Route.LoaderArgs) => {
     return redirect('/auth/login');
   }
   const dashboard = await getDashboard(client, { profileId: user.id });
-  return { dashboard };
+  let userStats = null;
+  try {
+    userStats = await getUserSalesStatsByProfileId(client, user.id);
+  } catch (e) {
+    userStats = null;
+  }
+  return { dashboard, userStats };
 };
 
-export default function DashboardPage({ loaderData }: { loaderData: LoaderData }) {
-  const { dashboard } = loaderData;
+export default function DashboardPage({ loaderData }: { loaderData: LoaderData & { userStats: any } }) {
+  const { dashboard, userStats } = loaderData;
   return (
     <div className="container mx-auto px-0 py-8 md:px-8">
       <div className="mb-8">
@@ -40,7 +46,7 @@ export default function DashboardPage({ loaderData }: { loaderData: LoaderData }
               <CardDescription>Items you've uploaded</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-blue-600">{dashboard.total_listings}</div>
+              <div className="text-3xl font-bold text-blue-600">{userStats?.total_listings ?? 0}</div>
               <p className="text-sm text-gray-500 mt-1">Click to view all</p>
             </CardContent>
           </Card>
@@ -52,7 +58,7 @@ export default function DashboardPage({ loaderData }: { loaderData: LoaderData }
             <CardDescription>Your earnings this month</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-green-600">THB <NumberTicker value={dashboard.total_sales ?? 0} className="text-3xl font-bold text-green-600"/></div>
+            <div className="text-3xl font-bold text-green-600">THB <NumberTicker value={userStats?.total_sales ?? 0} className="text-3xl font-bold text-green-600"/></div>
             <p className="text-sm text-gray-500 mt-1">{dashboard.total_sales_change}</p>
           </CardContent>
         </Card>

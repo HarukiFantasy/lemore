@@ -190,8 +190,8 @@ export default function UsersProfilePage({ loaderData }: Route.ComponentProps) {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 [&_.group]:h-auto [&_.group>div]:h-auto [&_.group>div>div:first-child]:h-32 [&_.group>div>div:first-child]:sm:h-36 [&_.group>div>div:first-child]:md:h-40">
                   {userProducts.map((product: any, index: number) => (
                     <ProductCard
-                      key={product.id || index}
-                      productId={product.id}
+                      key={product.product_id || index}
+                      productId={product.product_id}
                       image={product.image_url || '/toy1.png'}
                       title={product.title || "Product Title"}
                       price={product.price || 0}

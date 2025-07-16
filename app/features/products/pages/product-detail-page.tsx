@@ -4,10 +4,12 @@ import { Card } from "~/common/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "~/common/components/ui/avatar";
 import { useNavigate, useSearchParams } from "react-router";
 import { HeartIcon } from "lucide-react";
-import { getProductById } from "../queries";
+import { PackageIcon, EyeIcon, MessageCircleReplyIcon, ThumbsUpIcon, StarIcon, CalendarIcon } from "lucide-react";
+import { getProductById, getProductByUsername } from "../queries";
 import { Route } from './+types/product-detail-page';
 import {DateTime} from "luxon";
 import { makeSSRClient } from "~/supa-client";
+import { getUserSalesStatsByProfileId } from "~/features/users/queries";
 
 export const meta = () => {
   return [
@@ -23,12 +25,26 @@ export const loader = async ({ params, request }: Route.LoaderArgs) => {
   if (isNaN(Number(id))) {
     throw new Error("Invalid product ID");
   }
-  return { product };
+  // Fetch up to 4 other products by the same seller (excluding current product)
+  let sellerProducts: any[] = [];
+  let userStats = null;
+  if (product?.seller_name) {
+    sellerProducts = await getProductByUsername(client, product.seller_name);
+    sellerProducts = sellerProducts.filter((p: any) => p.product_id !== product.product_id).slice(0, 4);
+  }
+  if (product?.seller_id) {
+    try {
+      userStats = await getUserSalesStatsByProfileId(client, product.seller_id);
+    } catch (e) {
+      userStats = null;
+    }
+  }
+  return { product, sellerProducts, userStats };
 }
 
 
   export default function ProductDetailPage({ loaderData }: Route.ComponentProps) {
-  const { product } = loaderData;
+  const { product, sellerProducts, userStats } = loaderData;
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const location = searchParams.get("location");
@@ -203,46 +219,87 @@ export const loader = async ({ params, request }: Route.LoaderArgs) => {
         {/* Seller Information */}
         <div className="mt-12">
           <Card className="p-6">
-            <h3 className="text-lg font-semibold mb-4">Seller Information</h3>
-            <div className="flex items-start gap-4">
-              <Avatar className="h-16 w-16">
-                <AvatarImage src={product.seller_avatar || undefined} alt={product.seller_name || 'Seller'} />
-                <AvatarFallback>
-                  {product.seller_name?.split(' ').map((n: string) => n[0]).join('').toUpperCase() || 'S'}
-                </AvatarFallback>
-              </Avatar>
-              <div className="flex-1">
-                <h4 className="font-semibold text-lg">{product.seller_name}</h4>
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="flex items-center">
-                    {[...Array(5)].map((_, i) => (
-                      <svg 
-                        key={i}
-                        width="16" 
-                        height="16" 
-                        fill={i < Math.floor(product.seller_rating || 0) ? "currentColor" : "none"}
-                        viewBox="0 0 24 24"
-                        className={i < Math.floor(product.seller_rating || 0) ? "text-yellow-400" : "text-gray-300"}
-                      >
-                        <path fill="currentColor" d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-                      </svg>
-                    ))}
-                  </div>
-                  <span className="text-sm text-gray-600">{product.seller_rating || 0} ({product.seller_total_likes || 0} likes)</span>
-                </div>
-                <div className="grid grid-cols-2 gap-4 text-sm text-gray-600">
-                  <div>
-                    <span className="font-medium">Member since:</span> {product.seller_joined_at || 'N/A'}
-                  </div>
-                  <div>
-                    <span className="font-medium">Response rate:</span> {product.seller_response_rate}
-                  </div>
-                  <div>
-                    <span className="font-medium">Response time:</span> {product.seller_response_time}
-                  </div>
+            {/* 구분선 위 */}
+            <div className="flex flex-row items-center justify-between -mb-1">
+              <div className="w-4/6 flex flex-row text-2xl font-semibold text-gray-700">Seller Information</div>
+              <div className="w-2/6 flex flex-row items-center gap-3 justify-start">
+                <Avatar className="h-12 w-12">
+                  <AvatarImage src={product.seller_avatar || undefined} alt={product.seller_name || 'Seller'} />
+                  <AvatarFallback>
+                    {product.seller_name?.split(' ').map((n: string) => n[0]).join('').toUpperCase() || 'S'}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex flex-col">
+                  <span className="font-medium text-gray-900 text-sm">{product.seller_name}</span>
+                  {product.seller_bio && (
+                    <span className="italic text-gray-500 text-sm mt-0.5">{product.seller_bio}</span>
+                  )}
                 </div>
               </div>
-              <Button variant="outline">View Profile</Button>
+            </div>
+            <hr className="my-3 border-gray-200" />
+            {/* 구분선 아래 */}
+            <div className="flex flex-row items-center gap-8">
+              {/* 왼쪽 80%: 상품 이미지 */}
+              <div className="w-4/6 flex flex-row gap-2">
+                {sellerProducts && sellerProducts.length > 0 ? (
+                  sellerProducts
+                    .slice()
+                    .sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+                    .map((p: any) => (
+                      <a
+                        key={p.product_id}
+                        href={`/secondhand/product/${p.product_id}`}
+                        title={p.title}
+                        className="block flex-1 aspect-square rounded overflow-hidden border border-gray-200 hover:border-purple-400 transition"
+                        style={{ minWidth: 0 }}
+                      >
+                        <img
+                          src={p.primary_image?.startsWith('/') ? p.primary_image : '/toy1.png'}
+                          alt={p.title}
+                          className="w-full h-full object-cover"
+                        />
+                      </a>
+                    ))
+                ) : (
+                  <div className="flex-1 text-xs text-gray-400 italic flex items-center justify-center h-14">No other items</div>
+                )}
+              </div>
+              {/* 오른쪽 20%: user stats */}
+              <div className="w-2/6 min-w-[120px] flex flex-col gap-2 text-sm text-gray-700 pl-8 items-start justify-end">
+                <div className="flex items-center gap-2">
+                  <CalendarIcon className="w-4 h-4 text-blue-500" />
+                  <span className="font-medium">Member since:</span> {product.seller_joined_at ? product.seller_joined_at.slice(0, 10) : 'N/A'}
+                </div>
+                <div className="flex items-center gap-2">
+                  <MessageCircleReplyIcon className="w-4 h-4 text-red-500" />
+                  <span className="font-medium">Response Rate:</span> {product.seller_response_rate || 'N/A'}
+                </div>
+                <div className="flex items-center gap-2">
+                  <EyeIcon className="w-4 h-4 text-green-500" />
+                  <span className="font-medium">Response Time:</span> {product.seller_response_time || 'N/A'}
+                </div>
+                <div className="flex items-center gap-2">
+                  <PackageIcon className="w-4 h-4 text-blue-500" />
+                  <span className="font-medium">Listings:</span> {userStats?.total_listings ?? 'N/A'}
+                </div>
+                <div className="flex items-center gap-2">
+                  <PackageIcon className="w-4 h-4 text-gray-500" />
+                  <span className="font-medium">Sold Items:</span> {userStats?.sold_items ?? 'N/A'}
+                </div>
+                <div className="flex items-center gap-2">
+                  <PackageIcon className="w-4 h-4 text-green-700" />
+                  <span className="font-medium">Active Listings:</span> {userStats?.active_listings ?? 'N/A'}
+                </div>
+                <div className="flex items-center gap-2">
+                  <ThumbsUpIcon className="w-4 h-4 text-purple-500" />
+                  <span className="font-medium">Total Sales:</span> {userStats?.total_sales ?? 'N/A'}
+                </div>
+                <div className="flex items-center gap-2">
+                  <StarIcon className="w-4 h-4 text-yellow-500" />
+                  <span className="font-medium">Avg Sale Price:</span> {userStats?.avg_sale_price ?? 'N/A'}
+                </div>
+              </div>
             </div>
           </Card>
         </div>
