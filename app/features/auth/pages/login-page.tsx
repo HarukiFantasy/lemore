@@ -2,7 +2,6 @@ import { Form, Link, useNavigation } from "react-router";
 import { Button } from "../../../common/components/ui/button";
 import { Input } from "../../../common/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../../common/components/ui/card";
-import { Alert, AlertDescription } from "../../../common/components/ui/alert";
 import { AnimatedGradientText } from "components/magicui/animated-gradient-text";
 import { Route } from './+types/login-page';
 import { CircleIcon } from 'lucide-react';

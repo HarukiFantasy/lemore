@@ -1,7 +1,6 @@
 import { createBrowserClient, createServerClient, parseCookieHeader, serializeCookieHeader } from "@supabase/ssr";
 import { Json, Database as SupabaseDatabase } from "../database.types";
 import { MergeDeep, SetNonNullable } from "type-fest";
-export { Json } from '../database.types'
 
 export type Database = MergeDeep<SupabaseDatabase, {
   __InternalSupabase: {
@@ -57,15 +56,15 @@ export type Database = MergeDeep<SupabaseDatabase, {
 }>;
 
 export const browserClient = createBrowserClient<Database>(
-  process.env.SUPABASE_URL!,
-  process.env.SUPABASE_ANON_KEY!
+  import.meta.env.VITE_SUPABASE_URL!,
+  import.meta.env.VITE_SUPABASE_ANON_KEY!
 );
 
 export const makeSSRClient = (request: Request) => {
   const headers = new Headers();
   const serverSideClient = createServerClient<Database>(
-    process.env.SUPABASE_URL!,
-    process.env.SUPABASE_ANON_KEY!,
+    import.meta.env.VITE_SUPABASE_URL!,
+    import.meta.env.VITE_SUPABASE_ANON_KEY!,
     {
       cookies: {
         getAll() {

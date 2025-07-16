@@ -70,6 +70,7 @@ export default function HomePage() {
   const urlLocation = searchParams.get("location") || location;
 
   return (
+    
     <div className="sm:max-w-[100vw] md:max-w-[100vw] lg:max-w-[100vw] xl:max-w-[100vw]">
       <div className="flex flex-col px-8 py-15 items-center justify-center rounded-md bg-gradient-to-t from-background to-primary/10">
         <h1 className="text-4xl font-bold text-center">Buy Less, Share More, Live Lighter</h1>

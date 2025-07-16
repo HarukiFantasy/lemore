@@ -51,18 +51,9 @@ export const getLikedProductsByUserId = async (client: SupabaseClient<Database>,
   const { data, error } = await client
   .from("product_likes")
   .select(`
-    id,
     product_id,
     user_id,
-    created_at,
-    category,
-    title,
-    price,
-    seller,
-    likes,
-    currency,
-    priceType,
-    primary_image
+    created_at
   `)
   .eq("user_id", profileId)
     
@@ -90,50 +81,48 @@ export const getMessages = async (client: SupabaseClient<Database>, { profileId 
 };
 
 export const getConversations = async (client: SupabaseClient<Database>, { profileId }: { profileId: string|null }) => {
+  console.log("getConversations 시작", profileId);
   if (!profileId) throw new Error("Profile ID is required");
   
-  // 사용자가 참가한 대화들의 conversation_id 가져오기
+  // 사용자가 참여한 대화 ID들 가져오기
   const { data: conversations, error: convError } = await client
     .from("message_participants")
     .select("conversation_id")
     .eq("profile_id", profileId);
-    
+  console.log("message_participants 결과:", conversations, convError);
   if (convError) throw new Error(convError.message);
-  
-  if (conversations.length === 0) return [];
+  if (!conversations || conversations.length === 0) return [];
   
   const conversationIds = conversations.map(c => c.conversation_id);
+  if (conversationIds.length === 0) return [];
   
-  // 각 대화의 최신 메시지와 참가자 정보 가져오기
+  // 새로운 뷰를 사용해서 각 대화의 가장 최근 메시지만 가져오기
   const { data: messages, error: msgError } = await client
-    .from("user_messages_view")
+    .from("user_conversations_view")
     .select("*")
-    .in("conversation_id", conversationIds)
-    .order("created_at", { ascending: false });
-    
+    .in("conversation_id", conversationIds);
+  console.log("user_conversations_view 결과:", messages, msgError);
   if (msgError) throw new Error(msgError.message);
   
-  // 대화별로 그룹화하고 최신 메시지만 선택
-  const conversationMap = new Map();
-  messages.forEach((message: any) => {
-    if (!conversationMap.has(message.conversation_id)) {
-      conversationMap.set(message.conversation_id, message);
-    }
-  });
-  
-  return Array.from(conversationMap.values());
+  const result = messages || [];
+  console.log("최종 conversations 결과:", result);
+  return result;
 };
 
 export const getConversationMessages = async (
   client: SupabaseClient<Database>, 
   { conversationId }: { conversationId: number }
 ) => {
+  console.log("getConversationMessages 시작:", conversationId);
+  
   const { data, error } = await client
     .from("user_messages_view")
     .select("*")
     .eq("conversation_id", conversationId)
     .order("created_at", { ascending: true });
     
+  console.log("getConversationMessages 결과:", data, error);
+  
   if (error) throw new Error(error.message);
   return data;
 };

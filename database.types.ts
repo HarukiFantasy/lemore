@@ -1583,6 +1583,13 @@ export type Database = {
             foreignKeyName: "user_notifications_message_id_user_messages_message_id_fk"
             columns: ["message_id"]
             isOneToOne: false
+            referencedRelation: "user_conversations_view"
+            referencedColumns: ["message_id"]
+          },
+          {
+            foreignKeyName: "user_notifications_message_id_user_messages_message_id_fk"
+            columns: ["message_id"]
+            isOneToOne: false
             referencedRelation: "user_messages"
             referencedColumns: ["message_id"]
           },
@@ -2743,6 +2750,149 @@ export type Database = {
           username: string | null
         }
         Relationships: []
+      }
+      user_conversations_view: {
+        Row: {
+          content: string | null
+          conversation_created_at: string | null
+          conversation_id: number | null
+          created_at: string | null
+          media_url: string | null
+          message_id: number | null
+          message_status: string | null
+          message_type: Database["public"]["Enums"]["message_type"] | null
+          message_type_category: string | null
+          receiver_avatar_url: string | null
+          receiver_id: string | null
+          receiver_location: Database["public"]["Enums"]["location"] | null
+          receiver_username: string | null
+          seen: boolean | null
+          sender_avatar_url: string | null
+          sender_id: string | null
+          sender_location: Database["public"]["Enums"]["location"] | null
+          sender_username: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_messages_conversation_id_user_conversations_conversation_i"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "user_conversations"
+            referencedColumns: ["conversation_id"]
+          },
+          {
+            foreignKeyName: "user_messages_receiver_id_user_profiles_profile_id_fk"
+            columns: ["receiver_id"]
+            isOneToOne: false
+            referencedRelation: "give_and_glow_view"
+            referencedColumns: ["giver_profile_id"]
+          },
+          {
+            foreignKeyName: "user_messages_receiver_id_user_profiles_profile_id_fk"
+            columns: ["receiver_id"]
+            isOneToOne: false
+            referencedRelation: "give_and_glow_view"
+            referencedColumns: ["receiver_profile_id"]
+          },
+          {
+            foreignKeyName: "user_messages_receiver_id_user_profiles_profile_id_fk"
+            columns: ["receiver_id"]
+            isOneToOne: false
+            referencedRelation: "product_detail_view"
+            referencedColumns: ["seller_id"]
+          },
+          {
+            foreignKeyName: "user_messages_receiver_id_user_profiles_profile_id_fk"
+            columns: ["receiver_id"]
+            isOneToOne: false
+            referencedRelation: "products_listings_view"
+            referencedColumns: ["seller_id"]
+          },
+          {
+            foreignKeyName: "user_messages_receiver_id_user_profiles_profile_id_fk"
+            columns: ["receiver_id"]
+            isOneToOne: false
+            referencedRelation: "user_dashboard_view"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "user_messages_receiver_id_user_profiles_profile_id_fk"
+            columns: ["receiver_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "user_messages_receiver_id_user_profiles_profile_id_fk"
+            columns: ["receiver_id"]
+            isOneToOne: false
+            referencedRelation: "user_sales_stats_view"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "user_messages_receiver_id_user_profiles_profile_id_fk"
+            columns: ["receiver_id"]
+            isOneToOne: false
+            referencedRelation: "users_view"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "user_messages_sender_id_user_profiles_profile_id_fk"
+            columns: ["sender_id"]
+            isOneToOne: false
+            referencedRelation: "give_and_glow_view"
+            referencedColumns: ["giver_profile_id"]
+          },
+          {
+            foreignKeyName: "user_messages_sender_id_user_profiles_profile_id_fk"
+            columns: ["sender_id"]
+            isOneToOne: false
+            referencedRelation: "give_and_glow_view"
+            referencedColumns: ["receiver_profile_id"]
+          },
+          {
+            foreignKeyName: "user_messages_sender_id_user_profiles_profile_id_fk"
+            columns: ["sender_id"]
+            isOneToOne: false
+            referencedRelation: "product_detail_view"
+            referencedColumns: ["seller_id"]
+          },
+          {
+            foreignKeyName: "user_messages_sender_id_user_profiles_profile_id_fk"
+            columns: ["sender_id"]
+            isOneToOne: false
+            referencedRelation: "products_listings_view"
+            referencedColumns: ["seller_id"]
+          },
+          {
+            foreignKeyName: "user_messages_sender_id_user_profiles_profile_id_fk"
+            columns: ["sender_id"]
+            isOneToOne: false
+            referencedRelation: "user_dashboard_view"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "user_messages_sender_id_user_profiles_profile_id_fk"
+            columns: ["sender_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "user_messages_sender_id_user_profiles_profile_id_fk"
+            columns: ["sender_id"]
+            isOneToOne: false
+            referencedRelation: "user_sales_stats_view"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "user_messages_sender_id_user_profiles_profile_id_fk"
+            columns: ["sender_id"]
+            isOneToOne: false
+            referencedRelation: "users_view"
+            referencedColumns: ["profile_id"]
+          },
+        ]
       }
       user_dashboard_view: {
         Row: {

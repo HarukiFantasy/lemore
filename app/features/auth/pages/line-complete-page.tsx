@@ -1,12 +1,12 @@
 import { redirect } from "react-router";
-import { Route } from './+types/line-complete-page';
+import type { LoaderFunctionArgs } from "react-router";
 import { makeSSRClient } from '~/supa-client';
 
 const LINE_CLIENT_ID = process.env.LINE_CLIENT_ID || '';
 const LINE_CLIENT_SECRET = process.env.LINE_CLIENT_SECRET || '';
 const REDIRECT_URI = process.env.LINE_REDIRECT_URI || 'http://localhost:5173/auth/line/complete';
 
-export const loader = async ({ request }: Route.LoaderArgs) => {
+export const loader = async ({ request }: LoaderFunctionArgs) => {
   const url = new URL(request.url);
   const code = url.searchParams.get('code');
   const state = url.searchParams.get('state');

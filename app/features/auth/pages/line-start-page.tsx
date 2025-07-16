@@ -1,10 +1,10 @@
 import { redirect } from "react-router";
-import { Route } from './+types/line-start-page';
+import type { LoaderFunctionArgs } from "react-router";
 
 const LINE_CLIENT_ID = process.env.LINE_CLIENT_ID || '';
 const REDIRECT_URI = process.env.LINE_REDIRECT_URI || 'http://localhost:5173/auth/line/complete';
 
-export const loader = async ({ request }: Route.LoaderArgs) => {
+export const loader = async ({ request }: LoaderFunctionArgs) => {
   // Line OAuth URL 생성
   const lineAuthUrl = new URL('https://access.line.me/oauth2/v2.1/authorize');
   lineAuthUrl.searchParams.set('response_type', 'code');
