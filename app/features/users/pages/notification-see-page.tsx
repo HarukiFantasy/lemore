@@ -25,7 +25,6 @@ export const action: ActionFunction = async ({ request, params }) => {
     
     return { ok: true };
   } catch (error) {
-    console.error('Error marking notification as read:', error);
     return new Response('Internal server error', { status: 500 });
   }
 }; 

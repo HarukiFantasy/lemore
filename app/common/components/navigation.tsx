@@ -221,13 +221,22 @@ export function Navigation({
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Avatar className="h-10 w-10 cursor-pointer">
-                  {avatarUrl ? (
-                  <AvatarImage src={avatarUrl} /> 
-                  ) : (
-                  <AvatarFallback>{username.charAt(0)}</AvatarFallback>
-                  )}
-                </Avatar>
+                <div className="h-10 w-10 rounded-full cursor-pointer overflow-hidden">
+                  {avatarUrl && avatarUrl.trim() !== '' ? (
+                    <img 
+                      src={avatarUrl} 
+                      alt={username}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none';
+                        e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                      }}
+                    />
+                  ) : null}
+                  <div className={`h-10 w-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white font-semibold text-lg ${avatarUrl && avatarUrl.trim() !== '' ? 'hidden' : ''}`}>
+                    {username && username.trim() !== '' ? username.charAt(0).toUpperCase() : 'U'}
+                  </div>
+                </div>
               </DropdownMenuTrigger>
               <DropdownMenuContent className="w-56">
                 <DropdownMenuLabel className="flex flex-col">

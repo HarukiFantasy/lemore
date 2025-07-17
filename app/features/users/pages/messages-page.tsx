@@ -24,12 +24,9 @@ interface LoaderData {
 }
 
 export default function MessagesPage({ loaderData }: { loaderData: LoaderData }) {
-  console.log('MessagesPage component 시작');
   
   const { user, conversations } = loaderData;
   
-  // Debug logging
-  console.log('MessagesPage render:', { user, conversations });
   
   // Validate data
   if (!user) {
@@ -63,12 +60,9 @@ export default function MessagesPage({ loaderData }: { loaderData: LoaderData })
     try {
       setLoading(true);
       setError(null);
-      console.log('Loading messages for conversation:', conversationId);
       const conversationMessages = await getConversationMessages(client, { conversationId });
-      console.log('Loaded messages:', conversationMessages);
       setMessages(conversationMessages);
     } catch (error) {
-      console.error('Failed to load messages:', error);
       setError('Failed to load messages');
     } finally {
       setLoading(false);
@@ -93,21 +87,12 @@ export default function MessagesPage({ loaderData }: { loaderData: LoaderData })
         ? selectedConv.receiver_id 
         : selectedConv.sender_id;
 
-      console.log('Sending message:', {
-        conversationId: parseInt(selectedConversation),
-        senderId: user?.id,
-        receiverId: receiverId,
-        content: messageContent.trim()
-      });
-
       const sentMessage = await sendMessage(client, {
         conversationId: parseInt(selectedConversation),
         senderId: user?.id,
         receiverId: receiverId,
         content: messageContent.trim()
       });
-
-      console.log('Message sent:', sentMessage);
 
       // Add the new message to the messages list
       const newMessage = {
@@ -142,10 +127,7 @@ export default function MessagesPage({ loaderData }: { loaderData: LoaderData })
   const selectedUser = conversations.find(conv => conv.conversation_id?.toString() === selectedConversation);
 
   // Transform conversations data to match MessageRoomCard interface
-  console.log('transformedConversations 시작');
   const transformedConversations = conversations.map(conv => {
-    console.log('Processing conversation:', conv);
-    
     const isOwnMessage = conv.sender_username === user?.username;
     const otherUsername = isOwnMessage ? conv.receiver_username : conv.sender_username;
     const otherAvatarUrl = isOwnMessage ? conv.receiver_avatar_url : conv.sender_avatar_url;
@@ -162,12 +144,8 @@ export default function MessagesPage({ loaderData }: { loaderData: LoaderData })
       },
       unread_count: conv.message_status === 'unread' ? 1 : 0,
     };
-    console.log('Transformed conversation:', transformed);
     return transformed;
   });
-  console.log('transformedConversations 완료:', transformedConversations);
-
-  console.log('MessagesPage JSX 렌더링 시작');
   
   return (
     <div className="flex h-screen bg-gray-50">

@@ -52,8 +52,14 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
   const { client } = makeSSRClient(request);
   const { data: {user} } = await client.auth.getUser();
   if (user) {
-    const userProfile = await getUserByProfileId(client, { profileId: user?.id ?? null });
-  return { user, userProfile };
+    try {
+      const userProfile = await getUserByProfileId(client, { profileId: user?.id ?? null });
+      return { user, userProfile };
+    } catch (error) {
+      // User profile not found, but user is authenticated
+      console.warn('User profile not found:', error);
+      return { user, userProfile: null };
+    }
   }
   return { user: null, userProfile: null };
 }
@@ -74,7 +80,7 @@ export default function App({ loaderData }: Route.ComponentProps) {
         {pathname.includes("/auth") ? null : (
           <Navigation
             isLoggedIn={isLoggedIn}
-            username={loaderData.userProfile?.username || ""}
+            username={loaderData.userProfile?.username || "User"}
             avatarUrl={loaderData.userProfile?.avatar_url || ""}
             hasNotifications={true}
             hasMessages={true}

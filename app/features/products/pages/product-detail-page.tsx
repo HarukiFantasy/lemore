@@ -1,8 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "~/common/components/ui/button";
 import { Card } from "~/common/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "~/common/components/ui/avatar";
-import { useNavigate, useSearchParams } from "react-router";
+import { useNavigate, useSearchParams, useFetcher } from "react-router";
 import { HeartIcon } from "lucide-react";
 import { PackageIcon, EyeIcon, MessageCircleReplyIcon, ThumbsUpIcon, StarIcon, CalendarIcon } from "lucide-react";
 import { getProductById, getProductByUsername } from "../queries";
@@ -25,6 +25,25 @@ export const loader = async ({ params, request }: Route.LoaderArgs) => {
   if (isNaN(Number(productId))) {
     throw new Error("Invalid product ID");
   }
+  
+  // Check if current user has liked this product
+  let isLiked = false;
+  try {
+    const { data: { user } } = await client.auth.getUser();
+    if (user) {
+      const { data: likeData } = await client
+        .from('product_likes')
+        .select('*')
+        .eq('product_id', Number(productId))
+        .eq('user_id', user.id)
+        .single();
+      isLiked = !!likeData;
+    }
+  } catch (error) {
+    // User not authenticated or like not found
+    isLiked = false;
+  }
+  
   // Fetch up to 4 other products by the same seller (excluding current product)
   let sellerProducts: any[] = [];
   let userStats = null;
@@ -39,17 +58,22 @@ export const loader = async ({ params, request }: Route.LoaderArgs) => {
       userStats = null;
     }
   }
-  return { product, sellerProducts, userStats };
+  return { product, sellerProducts, userStats, isLiked };
 }
 
 
   export default function ProductDetailPage({ loaderData }: Route.ComponentProps) {
-  const { product, sellerProducts, userStats } = loaderData;
+  const { product, sellerProducts, userStats, isLiked: initialIsLiked } = loaderData;
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const location = searchParams.get("location");
   const [selectedImage, setSelectedImage] = useState(0);
-  const [isLiked, setIsLiked] = useState(false);
+  const fetcher = useFetcher();
+  
+  // Handle optimistic UI for like state
+  const isLiked = fetcher.state === 'idle' ? 
+    (fetcher.data?.isLiked ?? initialIsLiked) : 
+    (fetcher.formData?.get('action') === 'like');
 
 
   const isFree = product.price_type === "Free";
@@ -157,18 +181,21 @@ export const loader = async ({ params, request }: Route.LoaderArgs) => {
               >
                 {product.is_sold ? "Item Sold" : "Contact Seller"}
               </Button>
-              <Button 
-                variant="outline" 
-                size="lg"
-                onClick={() => setIsLiked(!isLiked)}
-                className={isLiked ? "text-rose-500 border-primary" : ""}
-                disabled={product.is_sold || false}
-              >
-                <HeartIcon 
-                  className={`w-5 h-5 ${isLiked ? 'fill-rose-500 text-rose-500' : 'text-gray-600'}`} 
-                />
-                {isLiked ? "Liked" : "Like"}
-              </Button>
+              <fetcher.Form method="post" action={`/secondhand/${product.product_id}/like`}>
+                <input type="hidden" name="action" value={isLiked ? "unlike" : "like"} />
+                <Button 
+                  variant="outline" 
+                  size="lg"
+                  type="submit"
+                  className={isLiked ? "text-rose-500 border-primary" : ""}
+                  disabled={product.is_sold || false || fetcher.state !== 'idle'}
+                >
+                  <HeartIcon 
+                    className={`w-5 h-5 ${isLiked ? 'fill-rose-500 text-rose-500' : 'text-gray-600'}`} 
+                  />
+                  {isLiked ? "Liked" : "Like"}
+                </Button>
+              </fetcher.Form>
             </div>
 
             {/* Product Details */}
