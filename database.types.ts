@@ -3324,7 +3324,14 @@ export type Database = {
       }
     }
     Functions: {
-      [_ in never]: never
+      delete_product_like_safe: {
+        Args: { product_id_param: number; user_id_param: string }
+        Returns: undefined
+      }
+      insert_product_like_safe: {
+        Args: { product_id_param: number; user_id_param: string }
+        Returns: undefined
+      }
     }
     Enums: {
       declutter_situation:

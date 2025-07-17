@@ -81,7 +81,6 @@ export const getMessages = async (client: SupabaseClient<Database>, { profileId 
 };
 
 export const getConversations = async (client: SupabaseClient<Database>, { profileId }: { profileId: string|null }) => {
-  console.log("getConversations 시작", profileId);
   if (!profileId) throw new Error("Profile ID is required");
   
   // 사용자가 참여한 대화 ID들 가져오기
@@ -89,7 +88,6 @@ export const getConversations = async (client: SupabaseClient<Database>, { profi
     .from("message_participants")
     .select("conversation_id")
     .eq("profile_id", profileId);
-  console.log("message_participants 결과:", conversations, convError);
   if (convError) throw new Error(convError.message);
   if (!conversations || conversations.length === 0) return [];
   
@@ -101,11 +99,9 @@ export const getConversations = async (client: SupabaseClient<Database>, { profi
     .from("user_conversations_view")
     .select("*")
     .in("conversation_id", conversationIds);
-  console.log("user_conversations_view 결과:", messages, msgError);
   if (msgError) throw new Error(msgError.message);
   
   const result = messages || [];
-  console.log("최종 conversations 결과:", result);
   return result;
 };
 
@@ -113,7 +109,6 @@ export const getConversationMessages = async (
   client: SupabaseClient<Database>, 
   { conversationId }: { conversationId: number }
 ) => {
-  console.log("getConversationMessages 시작:", conversationId);
   
   const { data, error } = await client
     .from("user_messages_view")
@@ -121,7 +116,6 @@ export const getConversationMessages = async (
     .eq("conversation_id", conversationId)
     .order("created_at", { ascending: true });
     
-  console.log("getConversationMessages 결과:", data, error);
   
   if (error) throw new Error(error.message);
   return data;
@@ -244,7 +238,6 @@ export const getUserStats = async (
     .eq("seller_name", username);
     
   if (listingsError) {
-    console.error("Error fetching user listings:", listingsError);
   }
   
   // 사용자의 리뷰 평점 가져오기
@@ -283,12 +276,18 @@ export const getNotifications = async (
   client: SupabaseClient<Database>,
   { userId }: { userId: string }
 ) => {
+  
+  // 최근 일주일 전 날짜 계산
+  const oneWeekAgo = new Date();
+  oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+  
   const { data, error } = await client
     .from('user_notifications')
     .select(`
       notification_id,
       type,
       sender_id,
+      receiver_id,
       product_id,
       message_id,
       review_id,
@@ -298,11 +297,14 @@ export const getNotifications = async (
       created_at
     `)
     .eq('receiver_id', userId)
-    .order('created_at', { ascending: false });
+    .gte('created_at', oneWeekAgo.toISOString()) // 최근 일주일치만
+    .order('created_at', { ascending: false }); // 최신순 정렬
+    
+  
   if (error) throw error;
   
   // 매핑: DB 필드 → 프론트엔드 타입 (프론트엔드 네이밍 일관성 & 기존 코드와의 호환성위해 notificationSchema를 수정하지 않고 매핑처리)
-  return (data ?? []).map((n) => ({
+  const mappedNotifications = (data ?? []).map((n) => ({
     notification_id: n.notification_id,
     type: n.type,
     isRead: n.is_read,
@@ -320,4 +322,7 @@ export const getNotifications = async (
     review_id: n.review_id,
     read_at: n.read_at,
   }));
+  
+  
+  return mappedNotifications;
 };

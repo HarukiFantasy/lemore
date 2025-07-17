@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { X, Bell, MessageCircle, Heart, User, Settings, EyeIcon } from "lucide-react";
 import { Button } from "~/common/components/ui/button";
@@ -12,6 +12,7 @@ import type { LoaderFunction, ActionFunction } from 'react-router';
 import { useFetcher, useLoaderData } from 'react-router';
 import { getNotifications, getLoggedInUserId } from '~/features/users/queries';
 import { seeNotification } from '~/features/users/mutations';
+import { DateTime } from 'luxon';
 
 // Notification schemas for data validation
 export const notificationFiltersSchema = z.object({
@@ -51,10 +52,12 @@ export const notificationListSchema = z.object({
   }).optional(),
 });
 
-// TypeScript types
-export type NotificationFilters = z.infer<typeof notificationFiltersSchema>;
 export type Notification = z.infer<typeof notificationSchema>;
-export type NotificationList = z.infer<typeof notificationListSchema>;
+
+export interface NotificationsPageProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
 
 const getNotificationIcon = (type: Notification['type']) => {
   switch (type) {
@@ -71,33 +74,44 @@ const getNotificationIcon = (type: Notification['type']) => {
   }
 };
 
-interface NotificationsPageProps {
-  isOpen: boolean;
-  onClose: () => void;
-}
-
 export const loader: LoaderFunction = async ({ request }) => {
   const { client } = makeSSRClient(request);
   const userId = await getLoggedInUserId(client);
-  console.log('userId in notifications loader:', userId);
+  
+  // 현재 인증된 사용자 정보도 확인
+  const { data: { user } } = await client.auth.getUser();
+  
   const notifications = (await getNotifications(client, { userId })) ?? [];
-  console.log('notifications result:', notifications);
+  
+  // 데이터베이스에서 직접 확인
+  const { data: allNotifications, error: dbError } = await client
+    .from('user_notifications')
+    .select('*')
+    .eq('receiver_id', userId);
+  
   return { notifications };
 };
 
-export const action: ActionFunction = async ({ request, params }) => {
-  if (request.method !== 'POST') return new Response('Method not allowed', { status: 405 });
-  const { notificationId } = params;
-  const { client } = makeSSRClient(request);
-  const userId = await getLoggedInUserId(client);
-  if (!userId) throw new Error('User ID not found');
-  await seeNotification(client, { userId, notificationId: notificationId as string });
-  return { ok: true };
-};
 
-function NotificationCard({ notification }: { notification: Notification }) {
+
+function NotificationCard({ notification, onMarkAsRead }: { notification: Notification; onMarkAsRead?: (id: number) => void }) {
   const fetcher = useFetcher();
   const optimisticSeen = fetcher.state === 'idle' ? notification.isRead : true;
+  
+  // Handle successful mark as read
+  useEffect(() => {
+    if (fetcher.state === 'idle' && fetcher.data?.ok && onMarkAsRead) {
+      onMarkAsRead(notification.notification_id);
+    }
+  }, [fetcher.state, fetcher.data, notification.notification_id, onMarkAsRead]);
+  
+  // Luxon을 사용한 간단한 날짜 포맷팅
+  const formatDate = (timestamp: string) => {
+    // UTC 시간을 사용자의 로컬 시간대로 변환
+    const notificationTime = DateTime.fromISO(timestamp, { zone: 'utc' }).toLocal();
+    return notificationTime.toRelative();
+  };
+  
   return (
     <motion.div
       key={notification.notification_id}
@@ -128,7 +142,7 @@ function NotificationCard({ notification }: { notification: Notification }) {
                   <h4 className="text-sm font-medium text-foreground mb-1">{notification.title}</h4>
                   <p className="text-sm text-muted-foreground mb-2">{notification.content}</p>
                   <div className="flex items-center justify-between">
-                    <span className="text-xs text-muted-foreground">{notification.timestamp ?? ''}</span>
+                    <span className="text-xs text-muted-foreground">{formatDate(notification.timestamp)}</span>
                     {!optimisticSeen && (
                       <div className="flex items-center space-x-2">
                         <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
@@ -152,8 +166,37 @@ function NotificationCard({ notification }: { notification: Notification }) {
 }
 
 export function NotificationsPage({ isOpen, onClose }: NotificationsPageProps) {
-  const { notifications = [] } = useLoaderData() as { notifications?: Notification[] };
-  const [localNotifications, setLocalNotifications] = useState<Notification[]>(notifications);
+  const [localNotifications, setLocalNotifications] = useState<Notification[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+
+  // 사이드바가 열릴 때 데이터 로드
+  useEffect(() => {
+    if (isOpen) {
+      loadNotifications();
+    }
+  }, [isOpen]);
+
+  const loadNotifications = async () => {
+    setIsLoading(true);
+    try {
+      // 현재 페이지의 loader 데이터를 사용
+      const response = await fetch('/my/notifications', {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+        },
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setLocalNotifications(data.notifications || []);
+      } else {
+      }
+    } catch (error) {
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const unreadNotifications = localNotifications.filter((notification: Notification) => !notification.isRead);
   const unreadCount = unreadNotifications.length;
@@ -205,9 +248,11 @@ export function NotificationsPage({ isOpen, onClose }: NotificationsPageProps) {
                     )}
                 </div>
               <div>
-                <h2 className="text-xl font-semibold">Unread Notifications</h2>
+                <h2 className="text-xl font-semibold">Notifications</h2>
                 <p className="text-sm text-muted-foreground">
                   {unreadCount > 0 ? `${unreadCount} new notifications` : 'All notifications checked'}
+                  <br />
+                  <span className="text-xs text-muted-foreground">Recent 1 week</span>
                 </p>
                 </div>
               </div>
@@ -220,8 +265,6 @@ export function NotificationsPage({ isOpen, onClose }: NotificationsPageProps) {
                 <X className="w-4 h-4" />
               </Button>
             </div>
-
-
 
             {/* Actions */}
             {unreadCount > 0 && (
@@ -239,20 +282,29 @@ export function NotificationsPage({ isOpen, onClose }: NotificationsPageProps) {
 
             {/* Notifications List */}
             <div className="flex-1 overflow-y-auto">
-              {unreadNotifications.length === 0 ? (
+              {isLoading ? (
+                <div className="flex flex-col items-center justify-center h-full text-center p-6">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                  <p className="text-sm text-muted-foreground mt-2">Loading notifications...</p>
+                </div>
+              ) : unreadNotifications.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-full text-center p-6">
                   <Bell className="w-12 h-12 text-muted-foreground/50 mb-4" />
                   <h3 className="text-lg font-medium text-muted-foreground mb-2">
                     No unread notifications
                   </h3>
                   <p className="text-sm text-muted-foreground">
-                    All notifications have been checked.
+                    No unread notifications in the last week.
                   </p>
                 </div>
               ) : (
                 <AnimatedList className="p-4 space-y-3" delay={200}>
                   {unreadNotifications.map((notification: Notification) => (
-                    <NotificationCard key={notification.notification_id} notification={notification} />
+                    <NotificationCard 
+                      key={notification.notification_id} 
+                      notification={notification} 
+                      onMarkAsRead={markAsRead}
+                    />
                   ))}
                 </AnimatedList>
               )}

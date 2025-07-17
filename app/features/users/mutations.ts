@@ -8,7 +8,10 @@ export const seeNotification = async (
   const id = typeof notificationId === 'string' ? parseInt(notificationId, 10) : notificationId;
   const { error } = await client
     .from('user_notifications')
-    .update({ is_read: true })
+    .update({ 
+      is_read: true,
+      read_at: new Date().toISOString()
+    })
     .eq('notification_id', id)
     .eq('receiver_id', userId);
   if (error) throw error;

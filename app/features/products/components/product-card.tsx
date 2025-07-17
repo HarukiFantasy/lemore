@@ -1,10 +1,11 @@
-import { Link, useSearchParams } from "react-router";
+import { Link, useSearchParams, useFetcher } from "react-router";
 import { z } from "zod";
 import { HeartIcon } from "lucide-react";
 import { ShineBorder } from "components/magicui/shine-border";
 import { UserStatsHoverCard } from "~/common/components/user-stats-hover-card";
 import { PRODUCT_CATEGORIES } from "../constants";
 import { Badge } from "../../../common/components/ui/badge";
+import { useEffect, useState } from "react";
 
 // 가격 포맷팅 함수
 const formatPrice = (price?: number, currency: string = "THB"): string => {
@@ -55,7 +56,7 @@ export function ProductCard({
   priceType,
   is_sold,
   category,
-  likes,
+  likes = 0,
   seller,
   sellerStats,
   ...props
@@ -74,9 +75,15 @@ export function ProductCard({
     seller,
     sellerStats,
   };
+  
   const [searchParams] = useSearchParams();
+  const fetcher = useFetcher();
   const location = searchParams.get("location");
   const isFree = priceType === "free";
+
+  // Optimistic likes count
+  const [optimisticLikes, setOptimisticLikes] = useState(likes);
+  const [isLiked, setIsLiked] = useState(false);
 
   // Helper function to add location to URLs
   const addLocationToUrl = (url: string) => {
@@ -86,6 +93,39 @@ export function ProductCard({
     }
     return url;
   };
+
+  // Handle like button click
+  const handleLikeClick = (e: React.MouseEvent) => {
+    e.preventDefault(); // Prevent navigation
+    e.stopPropagation();
+    
+    const newLikeCount = isLiked ? optimisticLikes - 1 : optimisticLikes + 1;
+    setOptimisticLikes(newLikeCount);
+    setIsLiked(!isLiked);
+    
+    fetcher.submit(
+      { 
+        productId: String(productId),
+        action: isLiked ? 'unlike' : 'like'
+      },
+      { method: "post", action: `/secondhand/${productId}/like` }
+    );
+  };
+
+  // Update optimistic state based on fetcher state
+  useEffect(() => {
+    if (fetcher.state === 'idle' && fetcher.data) {
+      // Server response received, update with actual data
+      if (fetcher.data.success) {
+        setOptimisticLikes(fetcher.data.likes);
+        setIsLiked(fetcher.data.isLiked);
+      } else {
+        // Revert on error
+        setOptimisticLikes(likes);
+        setIsLiked(false);
+      }
+    }
+  }, [fetcher.state, fetcher.data, likes]);
 
     return (
     <Link to={addLocationToUrl(`/secondhand/product/${productId}`)}>
@@ -125,8 +165,15 @@ export function ProductCard({
             <div className="flex items-center justify-between mt-1">
               <span className="text-sm font-semibold text-purple-700">{formatPrice(price, currency)}</span>
               <div className="flex items-center gap-1 text-neutral-500 text-xs">
-                <HeartIcon className="w-4 h-4" />
-                <span>{likes}</span>
+                <button
+                  onClick={handleLikeClick}
+                  className={`flex items-center gap-1 transition-colors duration-200 hover:scale-110 ${
+                    isLiked ? 'text-red-500 hover:text-red-400' : 'text-neutral-500 hover:text-neutral-400'
+                  }`}
+                  disabled={fetcher.state !== 'idle'}                >
+                  <HeartIcon className={`w-4 h-4 ${isLiked ? 'fill-current' : ''}`} />
+                  <span>{optimisticLikes}</span>
+                </button>
               </div>
             </div>
           </div>

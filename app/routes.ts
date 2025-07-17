@@ -6,7 +6,9 @@ export default [
     index("features/products/pages/secondhand-page.tsx"),
     route("/submit-a-listing", "features/products/pages/submit-a-listing-page.tsx"), 
     route("/browse-listings", "features/products/pages/browse-listings-page.tsx"),
-    route("/product/:id", "features/products/pages/product-detail-page.tsx"),
+    route("/product/:productId", "features/products/pages/product-detail-page.tsx"),
+    route("/:productId/like", "features/products/pages/like-product-page.tsx"),
+    
   ]),
   ...prefix("community", [
     index("features/community/pages/community-page.tsx"),
@@ -35,6 +37,7 @@ export default [
     route("/listings", "features/users/pages/user-listings-page.tsx"),
     route("/profile", "features/users/pages/profile-page.tsx"),
     route("/notifications", "features/users/pages/notifications-page.tsx"),
+    route("/notifications/:notificationId/see", "features/users/pages/notification-see-page.tsx"),
     route("/messages", "features/users/pages/messages-page.tsx"),
     route("/likes", "features/users/pages/likes-page.tsx"),
   ]),

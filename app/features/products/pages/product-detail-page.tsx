@@ -19,10 +19,10 @@ export const meta = () => {
 };
 
 export const loader = async ({ params, request }: Route.LoaderArgs) => {
-  const { id } = params;
+  const { productId } = params;
   const { client, headers } = makeSSRClient(request);
-  const product = await getProductById(client, Number(id));
-  if (isNaN(Number(id))) {
+  const product = await getProductById(client, Number(productId));
+  if (isNaN(Number(productId))) {
     throw new Error("Invalid product ID");
   }
   // Fetch up to 4 other products by the same seller (excluding current product)
