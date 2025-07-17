@@ -6,6 +6,7 @@ import { Input } from "~/common/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "~/common/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "~/common/components/ui/avatar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "~/common/components/ui/dialog";
+import { ScrollArea } from "~/common/components/ui/scroll-area";
 import { Marquee } from "components/magicui/marquee";
 import { getLocalBusinesses, getLocalReviews } from "../queries";
 import { createLocalReview } from "../mutation";
@@ -484,31 +485,42 @@ export default function LocalReviewsPage({ loaderData }: Route.ComponentProps) {
                   </div>
                 </div>
                 {/* 우측: 해당 비즈니스의 모든 리뷰 */}
-                <CardContent className="flex-1 flex flex-col justify-between p-4 -mt-5 -mb-5">
-                  <div className="max-h-64 overflow-y-auto pr-2">
-                    <div className="flex flex-col gap-4 w-full">
-                      {businessReviews.length > 0 ? businessReviews.map((review) => (
-                        <div key={`${review.business_id}-${review.author_username}-${review.created_at}`} className="border-b last:border-b-0 pb-4 last:pb-0">
-                          <div className="flex items-start gap-3">
-                            <Avatar className="w-10 h-10">
-                              <AvatarImage src={review.author_avatar ?? ""} alt={review.author_username ?? ""} />
-                              <AvatarFallback>{(review.author_username ?? "").split(' ').map((n: string) => n[0]).join('')}</AvatarFallback>
-                            </Avatar>
-                            <div className="flex-1">
-                              <div className="font-semibold text-md text-gray-900">{review.author_username}</div>
-                              <div className="text-xs text-gray-500">{new Date(review.created_at ?? "").toLocaleDateString()}</div>
-                              <div className="flex items-center gap-2 mt-1">
-                                {renderStars(review.rating ?? 0)}
+                <CardContent className="flex-1 flex flex-col justify-between p-4 -mt-5 -mb-5 ml-4">
+                  {businessReviews.length > 0 ? (
+                    <Marquee 
+                      vertical 
+                      pauseOnHover 
+                      className="h-64"
+                      repeat={1}
+                    >
+                      <div className="flex flex-col gap-3 w-full">
+                        {businessReviews.map((review) => (
+                          <div key={`${review.business_id}-${review.author_username}-${review.created_at}`} className="border-b last:border-b-0 pb-3 last:pb-0 bg-white rounded-lg p-3 shadow-sm">
+                            <div className="flex items-start gap-2">
+                              <Avatar className="w-8 h-8 flex-shrink-0">
+                                <AvatarImage src={review.author_avatar ?? ""} alt={review.author_username ?? ""} />
+                                <AvatarFallback className="text-xs">{(review.author_username ?? "").split(' ').map((n: string) => n[0]).join('')}</AvatarFallback>
+                              </Avatar>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <span className="font-medium text-sm text-gray-900 truncate">{review.author_username}</span>
+                                  <span className="text-xs text-gray-400">•</span>
+                                  <span className="text-xs text-gray-500">{new Date(review.created_at ?? "").toLocaleDateString()}</span>
+                                  <span className="text-xs text-gray-400">•</span>
+                                  <div className="flex items-center">
+                                    {renderStars(review.rating ?? 0)}
+                                  </div>
+                                </div>
+                                <div className="text-sm text-gray-700 leading-relaxed overflow-hidden" style={{ display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical' }}>{review.content}</div>
                               </div>
-                              <div className="text-gray-700 mt-2 leading-relaxed">{review.content}</div>
                             </div>
                           </div>
-                        </div>
-                      )) : (
-                        <div className="text-gray-500 text-center">No reviews yet for this business.</div>
-                      )}
-                    </div>
-                  </div>
+                        ))}
+                      </div>
+                    </Marquee>
+                  ) : (
+                    <div className="text-gray-500 text-center text-sm py-4">No reviews yet for this business.</div>
+                  )}
                 </CardContent>
               </div>
             </Card>

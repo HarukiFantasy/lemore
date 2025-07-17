@@ -70,6 +70,26 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
     filteredReviews = reviews.filter(review => review.product_location === location);
   }
   
+  // Get current user
+  const { data: { user } } = await client.auth.getUser();
+  
+  // Get current user's products if logged in
+  let userProducts: any[] = [];
+  if (user) {
+    const { data: products, error: productsError } = await client
+      .from("products_listings_view")
+      .select("*")
+      .eq("seller_id", user.id)
+      .eq("is_sold", false) // Only show available products
+      .order("created_at", { ascending: false });
+      
+    if (productsError) {
+      console.error("Error fetching user products:", productsError);
+    } else {
+      userProducts = products || [];
+    }
+  }
+  
   // Get all users for the dropdown
   const { data: users, error: usersError } = await client
     .from("users_view")
@@ -115,7 +135,14 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
     }
   }
   
-  return { reviews: filteredReviews, userStats: Object.fromEntries(userStatsMap), users: users || [], location };
+  return { 
+    reviews: filteredReviews, 
+    userStats: Object.fromEntries(userStatsMap), 
+    users: users || [], 
+    userProducts,
+    user,
+    location 
+  };
 }
 
 export const action = async ({ request }: Route.ActionArgs) => {
@@ -153,7 +180,7 @@ export const action = async ({ request }: Route.ActionArgs) => {
 }
 
 export default function GiveAndGlowPage({ loaderData }: Route.ComponentProps) {
-  const { reviews, userStats, users, location } = loaderData;
+  const { reviews, userStats, users, userProducts, user, location } = loaderData;
   const actionData = useActionData<typeof action>();
   const [searchParams, setSearchParams] = useSearchParams();
   const urlLocation = searchParams.get("location");
@@ -180,6 +207,11 @@ export default function GiveAndGlowPage({ loaderData }: Route.ComponentProps) {
   const [selectedGiver, setSelectedGiver] = useState<any>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [showDropdown, setShowDropdown] = useState(false);
+  
+  // Product selection state
+  const [selectedProduct, setSelectedProduct] = useState<any>(null);
+  const [productSearchTerm, setProductSearchTerm] = useState("");
+  const [showProductDropdown, setShowProductDropdown] = useState(false);
 
   // Filter reviews based on search and category
   const filteredReviews = reviews
@@ -266,12 +298,35 @@ export default function GiveAndGlowPage({ loaderData }: Route.ComponentProps) {
     user.username?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // Close dropdown when clicking outside
+  // Filter products based on search term
+  const filteredProducts = userProducts.filter((product) =>
+    product.title?.toLowerCase().includes(productSearchTerm.toLowerCase()) ||
+    product.category_name?.toLowerCase().includes(productSearchTerm.toLowerCase())
+  );
+
+  // Handle product selection
+  const handleProductSelect = (product: any) => {
+    setSelectedProduct(product);
+    setNewReview({
+      ...newReview,
+      itemName: product.title,
+      itemCategory: product.category_name,
+      giverId: product.seller_id,
+      giverName: product.seller_name
+    });
+    setProductSearchTerm(product.title);
+    setShowProductDropdown(false);
+  };
+
+  // Close dropdowns when clicking outside
   React.useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as Element;
       if (!target.closest('.user-search-container')) {
         setShowDropdown(false);
+      }
+      if (!target.closest('.product-search-container')) {
+        setShowProductDropdown(false);
       }
     };
 
@@ -299,6 +354,9 @@ export default function GiveAndGlowPage({ loaderData }: Route.ComponentProps) {
       setSearchTerm("");
       setSelectedGiver(null);
       setShowDropdown(false);
+      setSelectedProduct(null);
+      setProductSearchTerm("");
+      setShowProductDropdown(false);
       
       // Reload the page to show the new review
       window.location.reload();
@@ -499,13 +557,64 @@ export default function GiveAndGlowPage({ loaderData }: Route.ComponentProps) {
                 </div>
               )}
 
+              {/* Product Selection (if user has products) */}
+              {user && userProducts.length > 0 && (
+                <div className="relative product-search-container">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Select Your Product (Optional)</label>
+                  <Input
+                    placeholder="Search your products..."
+                    value={productSearchTerm}
+                    onChange={(e) => {
+                      setProductSearchTerm(e.target.value);
+                      setShowProductDropdown(true);
+                    }}
+                    onFocus={() => setShowProductDropdown(true)}
+                  />
+                  
+                  {/* Product Search Results Dropdown */}
+                  {showProductDropdown && filteredProducts.length > 0 && (
+                    <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-y-auto">
+                      {filteredProducts.map((product) => (
+                        <button
+                          key={product.product_id}
+                          type="button"
+                          onClick={() => handleProductSelect(product)}
+                          className="w-full px-4 py-3 text-left hover:bg-gray-100 flex items-center gap-3 border-b last:border-b-0"
+                        >
+                          <div className="flex-shrink-0">
+                            <img 
+                              src={product.primary_image || '/sample.png'} 
+                              alt={product.title}
+                              className="w-12 h-12 rounded-lg object-cover"
+                            />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="font-medium text-gray-900 truncate">{product.title}</div>
+                            <div className="text-sm text-gray-500">{product.category_name}</div>
+                            <div className="text-sm text-gray-400">{product.location}</div>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  
+                  {/* No results message */}
+                  {showProductDropdown && productSearchTerm && filteredProducts.length === 0 && (
+                    <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg p-4 text-center text-gray-500">
+                      No products found matching "{productSearchTerm}"
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* Item Name */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Item Name *</label>
                 <Input
                   placeholder="What item did you receive?"
                   name="itemName"
-                  defaultValue={newReview.itemName}
+                  value={newReview.itemName}
+                  onChange={(e) => setNewReview({ ...newReview, itemName: e.target.value })}
                   className={actionData?.fieldErrors?.itemName ? "border-red-500" : ""}
                 />
                 {actionData?.fieldErrors?.itemName && (
@@ -519,19 +628,28 @@ export default function GiveAndGlowPage({ loaderData }: Route.ComponentProps) {
                 <div className="flex flex-wrap gap-2">
                   {PRODUCT_CATEGORIES.map((category) => {
                     const colors = getCategoryColors(category);
+                    const isSelected = newReview.itemCategory === category;
                     return (
                       <Button
                         key={category}
-                        variant={newReview.itemCategory === category ? "default" : "outline"}
+                        variant={isSelected ? "default" : "outline"}
                         size="sm"
                         onClick={() => setNewReview({ ...newReview, itemCategory: category })}
-                        className={newReview.itemCategory === category ? `${colors.bg} ${colors.text} ${colors.border} ${colors.hover}` : ""}
+                        className={isSelected ? `${colors.bg} ${colors.text} ${colors.border} ${colors.hover}` : ""}
+                        disabled={!!selectedProduct} // Disable if product is selected
                       >
                         {category}
                       </Button>
                     );
                   })}
                 </div>
+                {selectedProduct && (
+                  <div className="mt-2 p-3 bg-green-50 border border-green-200 rounded-md">
+                    <div className="text-sm text-green-800">
+                      <strong>Auto-filled from selected product:</strong> {newReview.itemCategory}
+                    </div>
+                  </div>
+                )}
                 {actionData?.fieldErrors?.itemCategory && (
                   <p className="text-red-500 text-sm mt-1">{actionData.fieldErrors.itemCategory[0]}</p>
                 )}
@@ -543,21 +661,46 @@ export default function GiveAndGlowPage({ loaderData }: Route.ComponentProps) {
                 <label className="block text-sm font-medium text-gray-700 mb-2">Giver *</label>
                 <Input
                   placeholder="Search for a user..."
-                  value={searchTerm}
+                  value={selectedProduct ? newReview.giverName : searchTerm}
                   onChange={(e) => {
                     setSearchTerm(e.target.value);
                     setShowDropdown(true);
                   }}
                   onFocus={() => setShowDropdown(true)}
                   className={actionData?.fieldErrors?.giverId ? "border-red-500" : ""}
+                  disabled={!!selectedProduct} // Disable if product is selected
                 />
                 <input type="hidden" name="giverId" value={newReview.giverId || ""} />
                 {actionData?.fieldErrors?.giverId && (
                   <p className="text-red-500 text-sm mt-1">{actionData.fieldErrors.giverId[0]}</p>
                 )}
                 
+                {/* Selected product info */}
+                {selectedProduct && (
+                  <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-md">
+                    <div className="text-sm text-blue-800">
+                      <strong>Auto-filled from selected product:</strong> {newReview.giverName}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedProduct(null);
+                        setNewReview({
+                          ...newReview,
+                          giverId: "",
+                          giverName: ""
+                        });
+                        setProductSearchTerm("");
+                      }}
+                      className="text-xs text-blue-600 hover:text-blue-800 mt-1 underline"
+                    >
+                      Clear selection
+                    </button>
+                  </div>
+                )}
+                
                 {/* Search Results Dropdown */}
-                {showDropdown && filteredUsers.length > 0 && (
+                {showDropdown && !selectedProduct && filteredUsers.length > 0 && (
                   <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-y-auto">
                     {filteredUsers.map((user) => (
                       <button
@@ -582,7 +725,7 @@ export default function GiveAndGlowPage({ loaderData }: Route.ComponentProps) {
                 )}
                 
                 {/* No results message */}
-                {showDropdown && searchTerm && filteredUsers.length === 0 && (
+                {showDropdown && !selectedProduct && searchTerm && filteredUsers.length === 0 && (
                   <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg p-4 text-center text-gray-500">
                     No users found matching "{searchTerm}"
                   </div>
@@ -665,6 +808,9 @@ export default function GiveAndGlowPage({ loaderData }: Route.ComponentProps) {
                     setSearchTerm("");
                     setSelectedGiver(null);
                     setShowDropdown(false);
+                    setSelectedProduct(null);
+                    setProductSearchTerm("");
+                    setShowProductDropdown(false);
                   }}
                 >
                   Cancel

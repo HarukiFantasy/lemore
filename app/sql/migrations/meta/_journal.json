@@ -29,6 +29,13 @@
       "when": 1752670477675,
       "tag": "0003_dark_shinko_yamashiro",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1752737656008,
+      "tag": "0004_light_famine",
+      "breakpoints": true
     }
   ]
 }

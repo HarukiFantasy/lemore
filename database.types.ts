@@ -401,7 +401,6 @@ export type Database = {
           created_at: string
           rating: number
           tags: Json
-          timestamp: string
         }
         Insert: {
           author: string
@@ -411,7 +410,6 @@ export type Database = {
           created_at?: string
           rating: number
           tags?: Json
-          timestamp: string
         }
         Update: {
           author?: string
@@ -421,7 +419,6 @@ export type Database = {
           created_at?: string
           rating?: number
           tags?: Json
-          timestamp?: string
         }
         Relationships: [
           {

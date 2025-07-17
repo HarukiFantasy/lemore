@@ -86,13 +86,13 @@ export const createLocalReview = async (client: SupabaseClient<Database>, {
         content,
         rating,
         tags,
-        timestamp: new Date().toISOString(),
+        created_at: new Date().toISOString(),
       })
       .select()
       .single();
     if (error) {throw error};
     return data;
-};
+  };
 
 export const createLocalTipReply = async (
   client: SupabaseClient<Database>,
