@@ -26,11 +26,13 @@ export const loader = async ({ params, request }: Route.LoaderArgs) => {
     throw new Error("Invalid product ID");
   }
   
-  // Check if current user has liked this product
+  // Check if current user has liked this product and get current user ID
   let isLiked = false;
+  let currentUserId = null;
   try {
     const { data: { user } } = await client.auth.getUser();
     if (user) {
+      currentUserId = user.id;
       const { data: likeData } = await client
         .from('product_likes')
         .select('*')
@@ -58,7 +60,7 @@ export const loader = async ({ params, request }: Route.LoaderArgs) => {
       userStats = null;
     }
   }
-  return { product, sellerProducts, userStats, isLiked };
+  return { product, sellerProducts, userStats, isLiked, currentUserId };
 }
 
 
@@ -74,6 +76,9 @@ export const loader = async ({ params, request }: Route.LoaderArgs) => {
   const isLiked = fetcher.state === 'idle' ? 
     (fetcher.data?.isLiked ?? initialIsLiked) : 
     (fetcher.formData?.get('action') === 'like');
+
+  // Check if current user is the seller
+  const isCurrentUserSeller = product.seller_id === loaderData.currentUserId;
 
 
   const isFree = product.price_type === "Free";
@@ -172,15 +177,28 @@ export const loader = async ({ params, request }: Route.LoaderArgs) => {
 
             {/* Action Buttons */}
             <div className="flex gap-3">
-              <Button 
-                size="lg" 
-                className="flex-1"
-                disabled={product.is_sold || false}
-                variant={product.is_sold ? "secondary" : "default"}
-                onClick={handleContactSeller}
-              >
-                {product.is_sold ? "Item Sold" : "Contact Seller"}
-              </Button>
+              {isCurrentUserSeller ? (
+                // Seller's view - Edit Product button
+                <Button 
+                  size="lg" 
+                  className="flex-1"
+                  variant="default"
+                  onClick={() => navigate(`/secondhand/product/${product.product_id}/edit`)}
+                >
+                  Edit Product
+                </Button>
+              ) : (
+                // Buyer's view - Contact Seller button
+                <Button 
+                  size="lg" 
+                  className="flex-1"
+                  disabled={product.is_sold || false}
+                  variant={product.is_sold ? "secondary" : "default"}
+                  onClick={handleContactSeller}
+                >
+                  {product.is_sold ? "Item Sold" : "Contact Seller"}
+                </Button>
+              )}
               <fetcher.Form method="post" action={`/secondhand/${product.product_id}/like`}>
                 <input type="hidden" name="action" value={isLiked ? "unlike" : "like"} />
                 <Button 

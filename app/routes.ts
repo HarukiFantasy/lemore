@@ -7,6 +7,7 @@ export default [
     route("/submit-a-listing", "features/products/pages/submit-a-listing-page.tsx"), 
     route("/browse-listings", "features/products/pages/browse-listings-page.tsx"),
     route("/product/:productId", "features/products/pages/product-detail-page.tsx"),
+    route("/product/:productId/edit", "features/products/pages/edit-product-page.tsx"),
     route("/:productId/like", "features/products/pages/like-product-page.tsx"),
     
   ]),
