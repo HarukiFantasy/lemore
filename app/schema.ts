@@ -361,6 +361,7 @@ export const userNotifications = pgTable("user_notifications", {
 // User conversations table
 export const userConversations = pgTable("user_conversations", {
   conversation_id: bigint("conversation_id", {mode: "number"}).primaryKey().generatedAlwaysAsIdentity(),
+  product_id: bigint("product_id", {mode: "number"}).references(() => products.product_id, {onDelete: "set null"}),
   created_at: timestamp("created_at").notNull().defaultNow(),
 }, (table) => [
   pgPolicy("user_conversations_select_policy", {
@@ -385,6 +386,7 @@ export const userConversations = pgTable("user_conversations", {
 export const messageParticipants = pgTable("message_participants", {
   conversation_id: bigint("conversation_id", {mode: "number"}).notNull().references(() => userConversations.conversation_id, {onDelete: "cascade"}),
   profile_id: uuid().notNull().references(() => userProfiles.profile_id, {onDelete: "cascade"}),
+  is_hidden: boolean().default(false),
   created_at: timestamp("created_at").notNull().defaultNow(),
 }, (table) => [
   primaryKey({ columns: [table.conversation_id, table.profile_id] }),

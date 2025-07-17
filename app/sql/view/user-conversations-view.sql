@@ -40,11 +40,15 @@ SELECT
         WHEN m.message_type = 'Video' THEN 'video'
         WHEN m.message_type = 'Location' THEN 'location'
         ELSE 'unknown'
-    END as message_type_category
+    END as message_type_category,
+    -- 상품 정보 (마지막에 추가)
+    p.product_id,
+    p.title as product_title
 FROM user_messages m
 LEFT JOIN user_profiles sender ON m.sender_id = sender.profile_id
 LEFT JOIN user_profiles receiver ON m.receiver_id = receiver.profile_id
 LEFT JOIN user_conversations c ON m.conversation_id = c.conversation_id
+LEFT JOIN products p ON c.product_id = p.product_id
 INNER JOIN latest_messages lm ON m.conversation_id = lm.conversation_id 
   AND m.message_id = lm.latest_message_id
 ORDER BY m.created_at DESC;

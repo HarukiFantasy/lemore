@@ -1,5 +1,5 @@
 import { Route } from './+types/messages-page';
-import { getLoggedInUserId, getUserByProfileId, getConversations, sendMessage, getConversationMessages } from '../queries';
+import { getLoggedInUserId, getUserByProfileId, getConversations, sendMessage, getConversationMessages, createConversation, getOrCreateConversation } from '../queries';
 import { browserClient, makeSSRClient } from '~/supa-client';
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '~/common/components/ui/card';
@@ -9,6 +9,8 @@ import { MessageRoomCard } from '../components/message/MessageRoomCard';
 import { MessageInput } from '../components/message/MessageInput';
 import { MessageHeader } from '../components/message/MessageHeader';
 import { MessageCircle, User } from 'lucide-react';
+import { useLocation } from 'react-router';
+
 
 export const loader = async ({ request }: Route.LoaderArgs) => {
   const { client } = makeSSRClient(request);
@@ -26,7 +28,8 @@ interface LoaderData {
 export default function MessagesPage({ loaderData }: { loaderData: LoaderData }) {
   
   const { user, conversations } = loaderData;
-  
+  const location = useLocation();
+  const productContext = location.state as any;
   
   // Validate data
   if (!user) {
@@ -48,7 +51,66 @@ export default function MessagesPage({ loaderData }: { loaderData: LoaderData })
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [client] = useState(() => browserClient);
+  const [conversationsList, setConversationsList] = useState(conversations);
 
+  // Handle product context and create new conversation if needed
+  useEffect(() => {
+    const handleProductContext = async () => {
+      if (productContext?.fromProduct && productContext?.sellerId && user?.profile_id) {
+        try {
+          setLoading(true);
+          setError(null);
+          
+          // Check if conversation already exists with this seller
+          const existingConversation = conversations.find(conv => 
+            conv.sender_id === productContext.sellerId || conv.receiver_id === productContext.sellerId
+          );
+          
+          if (existingConversation) {
+            // Use existing conversation
+            setSelectedConversation(existingConversation.conversation_id.toString());
+            await loadMessages(existingConversation.conversation_id);
+          } else {
+            // Create new conversation
+            console.log('Creating new conversation with seller:', productContext.sellerId);
+            
+            const newConversation = await getOrCreateConversation(client, {
+              userId: user.profile_id,
+              otherUserId: productContext.sellerId
+            });
+            
+            console.log('New conversation created:', newConversation);
+            
+            // Add initial message about the product
+            const initialMessage = `Hi! I'm interested in your product "${productContext.productTitle}". Can you tell me more about it?`;
+            
+            const sentMessage = await sendMessage(client, {
+              conversationId: newConversation.conversation_id,
+              senderId: user.profile_id,
+              receiverId: productContext.sellerId,
+              content: initialMessage
+            });
+            
+            // Refresh conversations list
+            const updatedConversations = await getConversations(client, { profileId: user.profile_id });
+            setConversationsList(updatedConversations);
+            
+            // Select the new conversation
+            setSelectedConversation(newConversation.conversation_id.toString());
+            await loadMessages(newConversation.conversation_id);
+          }
+        } catch (error) {
+          console.error('Failed to handle product context:', error);
+          setError(`Failed to create conversation: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        } finally {
+          setLoading(false);
+        }
+      }
+    };
+    
+    handleProductContext();
+  }, [productContext, user?.profile_id]);
+  
   // Load messages when conversation is selected
   useEffect(() => {
     if (selectedConversation) {
@@ -61,6 +123,9 @@ export default function MessagesPage({ loaderData }: { loaderData: LoaderData })
       setLoading(true);
       setError(null);
       const conversationMessages = await getConversationMessages(client, { conversationId });
+      // 읽음 처리
+      // markMessagesAsRead 관련 import, action, 함수 호출 모두 삭제
+      // 실제 코드에서는 해당 부분을 모두 제거
       setMessages(conversationMessages);
     } catch (error) {
       setError('Failed to load messages');
@@ -77,9 +142,10 @@ export default function MessagesPage({ loaderData }: { loaderData: LoaderData })
       setError(null);
       
       // Get receiver ID from the selected conversation
-      const selectedConv = conversations.find(conv => conv.conversation_id?.toString() === selectedConversation);
+      const selectedConv = conversationsList.find(conv => conv.conversation_id?.toString() === selectedConversation);
       if (!selectedConv) {
         console.error('Selected conversation not found');
+        setError('Selected conversation not found');
         return;
       }
 
@@ -89,7 +155,7 @@ export default function MessagesPage({ loaderData }: { loaderData: LoaderData })
 
       const sentMessage = await sendMessage(client, {
         conversationId: parseInt(selectedConversation),
-        senderId: user?.id,
+        senderId: user?.profile_id,
         receiverId: receiverId,
         content: messageContent.trim()
       });
@@ -118,16 +184,29 @@ export default function MessagesPage({ loaderData }: { loaderData: LoaderData })
       setMessages(prev => [...prev, newMessage]);
     } catch (error) {
       console.error('Failed to send message:', error);
-      setError('Failed to send message');
+      setError(`Failed to send message: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setLoading(false);
     }
   };
 
-  const selectedUser = conversations.find(conv => conv.conversation_id?.toString() === selectedConversation);
+  const selectedUser = conversationsList.find(conv => conv.conversation_id?.toString() === selectedConversation);
+
+  const handleLeaveChatRoom = async () => {
+    if (!selectedConversation || !user?.profile_id) return;
+    await client
+      .from("message_participants")
+      .update({ is_hidden: true })
+      .eq("conversation_id", parseInt(selectedConversation))
+      .eq("profile_id", user.profile_id);
+
+    // 목록에서 제거
+    setConversationsList(prev => prev.filter(c => c.conversation_id?.toString() !== selectedConversation));
+    setSelectedConversation(null);
+  };
 
   // Transform conversations data to match MessageRoomCard interface
-  const transformedConversations = conversations.map(conv => {
+  const transformedConversations = conversationsList.map(conv => {
     const isOwnMessage = conv.sender_username === user?.username;
     const otherUsername = isOwnMessage ? conv.receiver_username : conv.sender_username;
     const otherAvatarUrl = isOwnMessage ? conv.receiver_avatar_url : conv.sender_avatar_url;
@@ -143,28 +222,26 @@ export default function MessagesPage({ loaderData }: { loaderData: LoaderData })
         created_at: conv.created_at || new Date().toISOString(),
       },
       unread_count: conv.message_status === 'unread' ? 1 : 0,
+      productInfo: conv.product_title ? {
+        title: conv.product_title,
+        productId: conv.product_id
+      } : undefined,
     };
     return transformed;
   });
   
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex h-[calc(100vh-120px)] bg-gray-50">
       {/* Sidebar - Conversations List */}
       <div className="w-80 bg-white border-r border-gray-200 flex flex-col">
         <Card className="border-0 rounded-none">
-          <CardHeader className="border-b border-gray-200">
-            <CardTitle className="flex items-center gap-2">
-              <MessageCircle className="w-5 h-5" />
-              메시지
-            </CardTitle>
-          </CardHeader>
           <CardContent className="p-0">
-            <ScrollArea className="h-[calc(100vh-80px)]">
-              <div className="space-y-1">
+            <ScrollArea className="h-[calc(100vh-180px)]">
+              <div className="space-y-0.5">
                 {transformedConversations.length === 0 ? (
-                  <div className="p-4 text-center text-muted-foreground">
-                    <MessageCircle className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                    <p>No conversation</p>
+                  <div className="p-3 text-center text-muted-foreground">
+                    <MessageCircle className="w-8 h-8 mx-auto mb-1 opacity-50" />
+                    <p className="text-sm">No conversation</p>
                   </div>
                 ) : (
                   transformedConversations.map((conversation) => (
@@ -196,6 +273,14 @@ export default function MessagesPage({ loaderData }: { loaderData: LoaderData })
                   : selectedUser?.sender_avatar_url,
                 isOnline: true,
               }}
+              productInfo={selectedUser?.product_title ? {
+                title: selectedUser.product_title,
+                productId: selectedUser.product_id
+              } : (productContext?.fromProduct ? {
+                title: productContext.productTitle,
+                productId: productContext.productId
+              } : undefined)}
+              onLeaveChatRoom={handleLeaveChatRoom}
             />
             
             <ScrollArea className="flex-1 p-4">
@@ -219,7 +304,7 @@ export default function MessagesPage({ loaderData }: { loaderData: LoaderData })
                       <MessageBubble
                         key={message.message_id}
                         message={message}
-                        isOwnMessage={message.sender_id === user?.id}
+                        isOwnMessage={message.sender_id === user?.profile_id}
                       />
                     ))
                   )}

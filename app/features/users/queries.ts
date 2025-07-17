@@ -154,12 +154,14 @@ export const sendMessage = async (
 
 export const createConversation = async (
   client: SupabaseClient<Database>,
-  { participantIds }: { participantIds: string[] }
+  { participantIds, productId }: { participantIds: string[]; productId?: number }
 ) => {
   // 대화 생성
   const { data: conversation, error: conversationError } = await client
     .from("user_conversations")
-    .insert({})
+    .insert({
+      product_id: productId || null
+    } as any)
     .select()
     .single();
     

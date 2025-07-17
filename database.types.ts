@@ -151,6 +151,13 @@ export type Database = {
             referencedColumns: ["product_id"]
           },
           {
+            foreignKeyName: "give_and_glow_reviews_product_id_products_product_id_fk"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "user_conversations_view"
+            referencedColumns: ["product_id"]
+          },
+          {
             foreignKeyName: "give_and_glow_reviews_receiver_id_user_profiles_profile_id_fk"
             columns: ["receiver_id"]
             isOneToOne: false
@@ -1052,16 +1059,19 @@ export type Database = {
         Row: {
           conversation_id: number
           created_at: string
+          is_hidden: boolean | null
           profile_id: string
         }
         Insert: {
           conversation_id: number
           created_at?: string
+          is_hidden?: boolean | null
           profile_id: string
         }
         Update: {
           conversation_id?: number
           created_at?: string
+          is_hidden?: boolean | null
           profile_id?: string
         }
         Relationships: [
@@ -1171,6 +1181,13 @@ export type Database = {
             referencedRelation: "products_listings_view"
             referencedColumns: ["product_id"]
           },
+          {
+            foreignKeyName: "product_images_product_id_products_product_id_fk"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "user_conversations_view"
+            referencedColumns: ["product_id"]
+          },
         ]
       }
       product_likes: {
@@ -1209,6 +1226,13 @@ export type Database = {
             columns: ["product_id"]
             isOneToOne: false
             referencedRelation: "products_listings_view"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "product_likes_product_id_products_product_id_fk"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "user_conversations_view"
             referencedColumns: ["product_id"]
           },
           {
@@ -1476,16 +1500,48 @@ export type Database = {
         Row: {
           conversation_id: number
           created_at: string
+          product_id: number | null
         }
         Insert: {
           conversation_id?: never
           created_at?: string
+          product_id?: number | null
         }
         Update: {
           conversation_id?: never
           created_at?: string
+          product_id?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "user_conversations_product_id_products_product_id_fk"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "product_detail_view"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "user_conversations_product_id_products_product_id_fk"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "user_conversations_product_id_products_product_id_fk"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products_listings_view"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "user_conversations_product_id_products_product_id_fk"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "user_conversations_view"
+            referencedColumns: ["product_id"]
+          },
+        ]
       }
       user_messages: {
         Row: {
@@ -1724,6 +1780,13 @@ export type Database = {
             columns: ["product_id"]
             isOneToOne: false
             referencedRelation: "products_listings_view"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "user_notifications_product_id_products_product_id_fk"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "user_conversations_view"
             referencedColumns: ["product_id"]
           },
           {
@@ -2240,6 +2303,13 @@ export type Database = {
             columns: ["product_id"]
             isOneToOne: false
             referencedRelation: "products_listings_view"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "give_and_glow_reviews_product_id_products_product_id_fk"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "user_conversations_view"
             referencedColumns: ["product_id"]
           },
           {
@@ -2867,6 +2937,8 @@ export type Database = {
           message_status: string | null
           message_type: Database["public"]["Enums"]["message_type"] | null
           message_type_category: string | null
+          product_id: number | null
+          product_title: string | null
           receiver_avatar_url: string | null
           receiver_id: string | null
           receiver_location: Database["public"]["Enums"]["location"] | null

@@ -2,60 +2,67 @@ import { Avatar, AvatarFallback, AvatarImage } from '~/common/components/ui/avat
 import { Button } from '~/common/components/ui/button';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '~/common/components/ui/hover-card';
 import { MoreHorizontal, User } from 'lucide-react';
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '~/common/components/ui/dropdown-menu';
+import { UserStatsHoverCard } from '~/common/components/user-stats-hover-card';
 
 interface MessageHeaderProps {
   user: {
     username: string;
     avatar_url?: string;
     isOnline?: boolean;
+    profile_id?: number;
   };
+  productInfo?: {
+    title?: string;
+    productId?: number;
+  };
+  onLeaveChatRoom: () => void;
 }
 
-export function MessageHeader({ user }: MessageHeaderProps) {
+export function MessageHeader({ user, productInfo, onLeaveChatRoom }: MessageHeaderProps) {
   return (
-    <div className="bg-white border-b border-gray-200 p-4">
+    <div className="bg-white border-b border-gray-200 py-3 px-4">
       <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-3">
-          <Avatar className="w-10 h-10">
+        <div className="flex items-center space-x-2">
+          <Avatar className="w-8 h-8">
             <AvatarImage src={user.avatar_url} alt={user.username} />
             <AvatarFallback>
-              <User className="w-5 h-5" />
+              <User className="w-4 h-4" />
             </AvatarFallback>
           </Avatar>
-          
-          <HoverCard>
-            <HoverCardTrigger asChild>
-              <Button variant="ghost" className="p-0 h-auto">
-                <div>
-                  <h2 className="text-lg font-semibold text-gray-900">{user.username}</h2>
-                  <p className="text-sm text-gray-500">
-                    {user.isOnline ? '온라인' : '오프라인'}
-                  </p>
-                </div>
-              </Button>
-            </HoverCardTrigger>
-            <HoverCardContent className="w-80">
-              <div className="flex items-center gap-3">
-                <Avatar className="w-12 h-12">
-                  <AvatarImage src={user.avatar_url} alt={user.username} />
-                  <AvatarFallback>
-                    <User className="w-6 h-6" />
-                  </AvatarFallback>
-                </Avatar>
-                <div>
-                  <h4 className="font-medium">{user.username}</h4>
-                  <p className="text-sm text-muted-foreground">
-                    {user.isOnline ? '온라인' : '오프라인'}
-                  </p>
-                </div>
-              </div>
-            </HoverCardContent>
-          </HoverCard>
+          <Button variant="ghost" className="p-0 h-auto">
+            <div className="flex flex-col items-start">
+              <UserStatsHoverCard profileId={user.profile_id ? String(user.profile_id) : undefined} userName={user.username}>
+                <h2 className="text-base font-semibold text-gray-900 cursor-pointer">{user.username}</h2>
+              </UserStatsHoverCard>
+              <p className="text-xs text-gray-500">
+                {user.isOnline ? 'Online' : 'Offline'}
+              </p>
+            </div>
+          </Button>
         </div>
-        
-        <Button variant="ghost" size="icon">
-          <MoreHorizontal className="w-4 h-4" />
-        </Button>
+        <div className="flex items-center gap-2">
+          {productInfo?.title && (
+            <div className="text-right">
+              <p className="text-xs text-gray-500">About product</p>
+              <p className="text-sm font-medium text-gray-900 truncate max-w-[150px]">
+                {productInfo.title}
+              </p>
+            </div>
+          )}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-8 w-8">
+                <MoreHorizontal className="w-4 h-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem onClick={onLeaveChatRoom}>
+                Leave chat room
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
     </div>
   );

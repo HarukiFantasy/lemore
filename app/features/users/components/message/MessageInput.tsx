@@ -31,7 +31,7 @@ export function MessageInput({ onSendMessage, disabled = false }: MessageInputPr
         <div className="flex-1">
           <Input
             type="text"
-            placeholder="메시지를 입력하세요..."
+            placeholder="Type your message..."
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             onKeyPress={handleKeyPress}

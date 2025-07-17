@@ -36,6 +36,20 @@
       "when": 1752737656008,
       "tag": "0004_light_famine",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1752741612383,
+      "tag": "0005_broad_the_renegades",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1752743162103,
+      "tag": "0006_peaceful_kang",
+      "breakpoints": true
     }
   ]
 }
