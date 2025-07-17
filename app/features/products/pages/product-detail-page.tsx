@@ -115,7 +115,7 @@ export const loader = async ({ params, request }: Route.LoaderArgs) => {
           <div className="space-y-4">
             <div className="aspect-square bg-white rounded-lg overflow-hidden shadow-sm relative">
               <img 
-                src={product.primary_image?.startsWith('/') ? product.primary_image : `/toy1.png`}
+                src={product.primary_image || `/toy1.png`}
                 alt={product.title || 'Product image'}
                 className="w-full h-full object-cover"
               />
@@ -142,7 +142,7 @@ export const loader = async ({ params, request }: Route.LoaderArgs) => {
                   }`}
                 >
                   <img 
-                    src={image.image_url?.startsWith('/') ? image.image_url : `/toy1.png`}
+                    src={image.image_url || `/toy1.png`}
                     alt={`${product.title || 'Product'} ${index + 1}`}
                     className="w-full h-full object-cover"
                   />
@@ -264,29 +264,29 @@ export const loader = async ({ params, request }: Route.LoaderArgs) => {
         {/* Seller Information */}
         <div className="mt-12">
           <Card className="p-6">
-            {/* 구분선 위 */}
+            {/* Seller Information Title (항상 한 줄) */}
             <div className="flex flex-row items-center justify-between -mb-1">
-              <div className="w-4/6 flex flex-row text-2xl font-semibold text-gray-700">Seller Information</div>
-              <div className="w-2/6 flex flex-row items-center gap-3 justify-start">
-                <Avatar className="h-12 w-12">
-                  <AvatarImage src={product.seller_avatar || undefined} alt={product.seller_name || 'Seller'} />
-                  <AvatarFallback>
-                    {product.seller_name?.split(' ').map((n: string) => n[0]).join('').toUpperCase() || 'S'}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="flex flex-col">
-                  <span className="font-medium text-gray-900 text-sm">{product.seller_name}</span>
-                  {product.seller_bio && (
-                    <span className="italic text-gray-500 text-sm mt-0.5">{product.seller_bio}</span>
-                  )}
-                </div>
+              <div className="w-full text-2xl font-semibold text-gray-700">Seller Information</div>
+            </div>
+            <div className="flex flex-row items-center gap-3 mb-2">
+              <Avatar className="h-12 w-12">
+                <AvatarImage src={product.seller_avatar || undefined} alt={product.seller_name || 'Seller'} />
+                <AvatarFallback>
+                  {product.seller_name?.split(' ').map((n: string) => n[0]).join('').toUpperCase() || 'S'}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex flex-col">
+                <span className="font-medium text-gray-900 text-sm">{product.seller_name}</span>
+                {product.seller_bio && (
+                  <span className="italic text-gray-500 text-sm mt-0.5">{product.seller_bio}</span>
+                )}
               </div>
             </div>
             <hr className="my-3 border-gray-200" />
             {/* 구분선 아래 */}
-            <div className="flex flex-row items-center gap-8">
-              {/* 왼쪽 80%: 상품 이미지 */}
-              <div className="w-4/6 flex flex-row gap-2">
+            <div className="flex flex-col lg:flex-row items-center gap-8">
+              {/* 왼쪽: 상품 이미지 (모바일에서는 위) */}
+              <div className="w-full lg:w-4/6 grid grid-cols-2 gap-2 mb-4 lg:mb-0 lg:flex lg:flex-row">
                 {sellerProducts && sellerProducts.length > 0 ? (
                   sellerProducts
                     .slice()
@@ -296,53 +296,43 @@ export const loader = async ({ params, request }: Route.LoaderArgs) => {
                         key={p.product_id}
                         href={`/secondhand/product/${p.product_id}`}
                         title={p.title}
-                        className="block flex-1 aspect-square rounded overflow-hidden border border-gray-200 hover:border-purple-400 transition"
+                        className="block aspect-square rounded overflow-hidden border border-gray-200 hover:border-purple-400 transition"
                         style={{ minWidth: 0 }}
                       >
                         <img
-                          src={p.primary_image?.startsWith('/') ? p.primary_image : '/toy1.png'}
+                          src={p.primary_image || '/toy1.png'}
                           alt={p.title}
                           className="w-full h-full object-cover"
                         />
                       </a>
                     ))
                 ) : (
-                  <div className="flex-1 text-xs text-gray-400 italic flex items-center justify-center h-14">No other items</div>
+                  <div className="col-span-2 text-xs text-gray-400 italic flex items-center justify-center h-14">No other items</div>
                 )}
               </div>
-              {/* 오른쪽 20%: user stats */}
-              <div className="w-2/6 min-w-[120px] flex flex-col gap-2 text-sm text-gray-700 pl-8 items-start justify-end">
-                <div className="flex items-center gap-2">
-                  <CalendarIcon className="w-4 h-4 text-blue-500" />
-                  <span className="font-medium">Member since:</span> {product.seller_joined_at ? product.seller_joined_at.slice(0, 10) : 'N/A'}
-                </div>
-                <div className="flex items-center gap-2">
-                  <MessageCircleReplyIcon className="w-4 h-4 text-red-500" />
-                  <span className="font-medium">Response Rate:</span> {product.seller_response_rate || 'N/A'}
-                </div>
-                <div className="flex items-center gap-2">
-                  <EyeIcon className="w-4 h-4 text-green-500" />
-                  <span className="font-medium">Response Time:</span> {product.seller_response_time || 'N/A'}
-                </div>
-                <div className="flex items-center gap-2">
-                  <PackageIcon className="w-4 h-4 text-blue-500" />
-                  <span className="font-medium">Listings:</span> {userStats?.total_listings ?? 'N/A'}
-                </div>
-                <div className="flex items-center gap-2">
-                  <PackageIcon className="w-4 h-4 text-gray-500" />
-                  <span className="font-medium">Sold Items:</span> {userStats?.sold_items ?? 'N/A'}
-                </div>
-                <div className="flex items-center gap-2">
-                  <PackageIcon className="w-4 h-4 text-green-700" />
-                  <span className="font-medium">Active Listings:</span> {userStats?.active_listings ?? 'N/A'}
-                </div>
-                <div className="flex items-center gap-2">
-                  <ThumbsUpIcon className="w-4 h-4 text-purple-500" />
-                  <span className="font-medium">Total Sales:</span> {userStats?.total_sales ?? 'N/A'}
-                </div>
-                <div className="flex items-center gap-2">
-                  <StarIcon className="w-4 h-4 text-yellow-500" />
-                  <span className="font-medium">Avg Sale Price:</span> {userStats?.avg_sale_price ?? 'N/A'}
+              {/* 오른쪽: user stats만 */}
+              <div className="w-full lg:w-2/6 min-w-[120px] flex flex-col gap-2 text-sm text-gray-700 pl-0 lg:pl-8 items-start justify-end">
+                <div className="flex flex-col gap-2 w-full">
+                  <div className="flex items-center gap-2">
+                    <CalendarIcon className="w-4 h-4 text-blue-500" />
+                    <span className="font-medium">Member since:</span> {product.seller_joined_at ? product.seller_joined_at.slice(0, 10) : 'N/A'}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <MessageCircleReplyIcon className="w-4 h-4 text-red-500" />
+                    <span className="font-medium">Response Rate:</span> {product.seller_response_rate || 'N/A'}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <EyeIcon className="w-4 h-4 text-green-500" />
+                    <span className="font-medium">Response Time:</span> {product.seller_response_time || 'N/A'}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <PackageIcon className="w-4 h-4 text-blue-500" />
+                    <span className="font-medium">Listings:</span> {userStats?.total_listings ?? 'N/A'}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <PackageIcon className="w-4 h-4 text-gray-500" />
+                    <span className="font-medium">Sold Items:</span> {userStats?.sold_items ?? 'N/A'}
+                  </div>
                 </div>
               </div>
             </div>

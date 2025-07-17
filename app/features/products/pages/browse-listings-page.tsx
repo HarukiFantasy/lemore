@@ -237,7 +237,7 @@ export default function BrowseListingsPage({ loaderData }: Route.ComponentProps)
               <BlurFade key={product.product_id}>
                 <ProductCard
                   productId={product.product_id}
-                  image={product.primary_image?.startsWith('/') ? product.primary_image : `/toy1.png`}
+                  image={product.primary_image || `/toy1.png`}
                   title={product.title || "No title"}
                   price={product.price}
                   currency={product.currency || "THB"}

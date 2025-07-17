@@ -164,20 +164,36 @@ export const productImages = pgTable("product_images", {
     for: "insert",
     to: authenticatedRole,
     as: "permissive",
-    withCheck: sql`true`
+    withCheck: sql`EXISTS (
+      SELECT 1 FROM products 
+      WHERE products.product_id = ${table.product_id} 
+      AND products.seller_id = ${authUid}
+    )`
   }),
   pgPolicy("product_images_update_policy", {
     for: "update",
     to: authenticatedRole,
     as: "permissive",
-    using: sql`true`,
-    withCheck: sql`true`
+    using: sql`EXISTS (
+      SELECT 1 FROM products 
+      WHERE products.product_id = ${table.product_id} 
+      AND products.seller_id = ${authUid}
+    )`,
+    withCheck: sql`EXISTS (
+      SELECT 1 FROM products 
+      WHERE products.product_id = ${table.product_id} 
+      AND products.seller_id = ${authUid}
+    )`
   }),
   pgPolicy("product_images_delete_policy", {
     for: "delete",
     to: authenticatedRole,
     as: "permissive",
-    using: sql`true`
+    using: sql`EXISTS (
+      SELECT 1 FROM products 
+      WHERE products.product_id = ${table.product_id} 
+      AND products.seller_id = ${authUid}
+    )`
   })
 ]);
 

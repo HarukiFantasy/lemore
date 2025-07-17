@@ -138,7 +138,15 @@ export function ProductCard({
         />
         <div className="bg-white rounded-lg shadow h-full flex flex-col pb-2">
           <div className="relative w-full h-40 sm:h-48 md:h-60 overflow-hidden rounded-t-lg">
-            <img src={String(prod.image ?? '')} className="object-cover w-full h-full group-hover:scale-110 group-hover:brightness-110 transition-all duration-300 ease-out" alt={String(prod.title ?? '')} />
+            <img 
+              src={prod.image || '/toy1.png'} 
+              className="object-cover w-full h-full group-hover:scale-110 group-hover:brightness-110 transition-all duration-300 ease-out" 
+              alt={prod.title || 'Product image'} 
+              onError={(e) => {
+                const target = e.target as HTMLImageElement;
+                target.src = '/toy1.png';
+              }}
+            />
             <button className="absolute top-3 left-3 bg-black/60 text-white text-xs px-3 py-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">Save</button>
             {showSoldBadge && prod.is_sold && (
               <Badge className="absolute top-2 right-2 z-10 bg-rose-500 text-white">SOLD</Badge>

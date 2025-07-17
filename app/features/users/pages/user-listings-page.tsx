@@ -7,6 +7,7 @@ import { Link, useLoaderData, useFetcher } from "react-router";
 import { ProductCard } from "../../products/components/product-card";
 import { makeSSRClient } from "~/supa-client";
 import { markProductAsSold } from "../../products/mutations";
+import { getUserListings } from "../queries";
 
 export const loader = async ({ request }: any) => {
   const { client } = makeSSRClient(request);
@@ -14,12 +15,8 @@ export const loader = async ({ request }: any) => {
   if (!user) {
     return { listings: [] };
   }
-  const { data: listings, error } = await client
-    .from("products")
-    .select("*")
-    .eq("seller_id", user.id)
-    .order("created_at", { ascending: false });
-  return { listings: listings || [] };
+  const listings = await getUserListings(client, { userId: user.id });
+  return { listings };
 };
 
 export const action = async ({ request }: any) => {
@@ -33,6 +30,14 @@ export const action = async ({ request }: any) => {
 export default function UserListingsPage() {
   const { listings } = useLoaderData() as { listings: any[] };
   const fetcher = useFetcher();
+
+  // Debug: listings 데이터 확인
+  console.log("User listings:", listings.map(listing => ({
+    id: listing.product_id,
+    title: listing.title,
+    primary_image: listing.primary_image,
+    has_image: !!listing.primary_image
+  })));
 
   return (
     <div className="container mx-auto px-0 py-8 md:px-8">
@@ -68,17 +73,17 @@ export default function UserListingsPage() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 items-start mx-auto sm:max-w-[100vw] md:max-w-[100vw]">
           {listings.map((listing: any) => (
             <div key={listing.product_id} className="relative">
               <ProductCard
                 productId={listing.product_id}
-                image={listing.primary_image || "/sample.png"}
+                image={listing.primary_image || "/toy1.png"}
                 title={listing.title}
                 price={listing.price}
                 currency={listing.currency}
                 priceType={listing.price_type}
-                seller={listing.seller_id}
+                seller={listing.seller_name}
                 likes={listing.likes_count || 0}
                 is_sold={listing.is_sold}
                 category={listing.category_name}

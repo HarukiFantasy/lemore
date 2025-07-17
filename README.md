@@ -35,6 +35,67 @@ npm run dev
 
 Your application will be available at `http://localhost:5173`.
 
+## Supabase Storage Setup
+
+### Avatar Upload Feature
+
+The profile page includes avatar upload functionality that stores images in Supabase Storage. To enable this feature:
+
+1. **Create Storage Bucket**
+   
+   In your Supabase dashboard, go to Storage and create a new bucket named `avatars`:
+   
+   ```bash
+   # Using Supabase CLI
+   supabase storage create avatars
+   ```
+
+2. **Configure Bucket Policies**
+   
+   Set up the following RLS policies for the `avatars` bucket:
+   
+   ```sql
+   -- Allow authenticated users to upload their own avatars
+   CREATE POLICY "Users can upload their own avatars" ON storage.objects
+   FOR INSERT WITH CHECK (
+     bucket_id = 'avatars' AND 
+     auth.uid()::text = (storage.foldername(name))[1]
+   );
+   
+   -- Allow public read access to avatars
+   CREATE POLICY "Public read access to avatars" ON storage.objects
+   FOR SELECT USING (bucket_id = 'avatars');
+   
+   -- Allow users to update their own avatars
+   CREATE POLICY "Users can update their own avatars" ON storage.objects
+   FOR UPDATE USING (
+     bucket_id = 'avatars' AND 
+     auth.uid()::text = (storage.foldername(name))[1]
+   );
+   
+   -- Allow users to delete their own avatars
+   CREATE POLICY "Users can delete their own avatars" ON storage.objects
+   FOR DELETE USING (
+     bucket_id = 'avatars' AND 
+     auth.uid()::text = (storage.foldername(name))[1]
+   );
+   ```
+
+3. **Environment Variables**
+   
+   Make sure your environment variables are set up correctly:
+   
+   ```env
+   VITE_SUPABASE_URL=your_supabase_url
+   VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+   ```
+
+### File Upload Limits
+
+- **Maximum file size**: 5MB
+- **Allowed formats**: JPEG, PNG, WebP
+- **Storage path**: `avatars/{user_id}/{timestamp}`
+
 ## Today's Picks Selection Algorithm
 
 The "Today's Picks" feature on the home page uses a sophisticated scoring algorithm to select the best 4 products to showcase. Here's how it works:

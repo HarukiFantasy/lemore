@@ -11,7 +11,7 @@ import { Route } from "./+types/submit-a-listing-page";
 import { makeSSRClient } from "~/supa-client";
 import { getLoggedInUserId } from "~/features/users/queries";
 import { getCategories, getlocations } from '../queries';
-import { createProduct } from '../mutations';
+import { createProduct, uploadProductImages, saveProductImages } from '../mutations';
 import { z } from 'zod';
 import { CircleIcon } from 'lucide-react';
 
@@ -25,7 +25,7 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
 
 const formSchema = z.object({
   title: z.string().min(1),
-  price: z.string().min(1),
+  price: z.string().min(1).optional(),
   currency: z.string().min(1),
   priceType: z.string().min(1),
   description: z.string().min(1),
@@ -42,31 +42,68 @@ export const action = async ({ request }: Route.ActionArgs) => {
     return redirect("/auth/login");
   }
   const formData = await request.formData();
+  
+  // Handle image files
+  const imageFiles: File[] = [];
+  for (let i = 0; i < 5; i++) {
+    const image = formData.get(`image-${i}`) as File;
+    if (image && image instanceof File) {
+      imageFiles.push(image);
+    }
+  }
+  
   const { success, data, error } = formSchema.safeParse(Object.fromEntries(formData));
   if (!success) {
     return { fieldErrors: error.flatten().fieldErrors };
   }
   const { title, price, currency, priceType, description, condition, category, location } = data;
-  const product  = await createProduct(client, { 
-    title, 
-    price: parseFloat(price), 
-    currency,  
-    priceType, 
-    userId: user.id,
-    description,
-    condition,
-    category,
-    location
-  });
   
-  // Get location from URL params to preserve it in redirect
-  const url = new URL(request.url);
-  const locationParam = url.searchParams.get("location");
-  const redirectUrl = locationParam && locationParam !== "Bangkok" 
-    ? `/secondhand/product/${product.product_id}?location=${locationParam}`
-    : `/secondhand/product/${product.product_id}`;
+  // Handle Free products - set price to 0 if not provided
+  const finalPrice = priceType === "Free" ? "0" : (price || "0");
+  
+  try {
+    const product = await createProduct(client, { 
+      title, 
+      price: parseFloat(finalPrice), 
+      currency,  
+      priceType, 
+      userId: user.id,
+      description,
+      condition,
+      category,
+      location
+    });
     
-  return redirect(redirectUrl);
+    // Upload images if any
+    if (imageFiles.length > 0) {
+      console.log(`Uploading ${imageFiles.length} images for product ${product.product_id}`);
+      const imageUrls = await uploadProductImages(client, {
+        productId: product.product_id,
+        userId: user.id,
+        images: imageFiles,
+      });
+      console.log("Images uploaded successfully:", imageUrls);
+      
+      // Save image URLs to database
+      await saveProductImages(client, {
+        productId: product.product_id,
+        imageUrls: imageUrls,
+      });
+      console.log("Images saved to database");
+    }
+    
+    // Get location from URL params to preserve it in redirect
+    const url = new URL(request.url);
+    const locationParam = url.searchParams.get("location");
+    const redirectUrl = locationParam && locationParam !== "Bangkok" 
+      ? `/secondhand/product/${product.product_id}?location=${locationParam}`
+      : `/secondhand/product/${product.product_id}`;
+      
+    return redirect(redirectUrl);
+  } catch (error) {
+    console.error("Error creating product:", error);
+    return { error: "Failed to create product. Please try again." };
+  }
 };
 
 export default function SubmitAListingPage({loaderData, actionData }: Route.ComponentProps) {
@@ -159,7 +196,25 @@ export default function SubmitAListingPage({loaderData, actionData }: Route.Comp
   };
 
   return (
-    <Form method="post" className="flex flex-col md:flex-row gap-8 p-8 max-w-4xl mx-auto">
+    <Form method="post" encType="multipart/form-data" className="flex flex-col md:flex-row gap-8 p-8 max-w-4xl mx-auto">
+      {/* Hidden file inputs for form submission */}
+      {images.map((_, index) => (
+        <input
+          key={index}
+          name={`image-${index}`}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          ref={(input) => {
+            if (input && images[index]) {
+              const dataTransfer = new DataTransfer();
+              dataTransfer.items.add(images[index]);
+              input.files = dataTransfer.files;
+            }
+          }}
+        />
+      ))}
+      
       {/* Left: Image Upload */}
       <div className="flex-1 flex flex-col items-center justify-center border rounded-lg p-6 bg-white shadow">
         <label className="w-full flex flex-col items-center cursor-pointer">
@@ -207,9 +262,9 @@ export default function SubmitAListingPage({loaderData, actionData }: Route.Comp
             placeholder="Product Title"
             value={title}
             onChange={e => setTitle(e.target.value)}
-            className={actionData && "fieldErrors" in actionData && actionData.fieldErrors.title ? "border-red-500" : ""}
+            className={actionData && "fieldErrors" in actionData && actionData.fieldErrors?.title ? "border-red-500" : ""}
           />
-          {actionData && "fieldErrors" in actionData && ( 
+          {actionData && "fieldErrors" in actionData && actionData.fieldErrors?.title && ( 
             <div className="text-xs text-red-500 mt-1">
               {actionData.fieldErrors.title}
             </div>
@@ -218,7 +273,7 @@ export default function SubmitAListingPage({loaderData, actionData }: Route.Comp
         <div>
           <input type="hidden" name="priceType" value={priceType} />
           <Select value={priceType} onValueChange={setPriceType}>
-            <SelectTrigger className={actionData && "fieldErrors" in actionData && actionData.fieldErrors.priceType ? "border-red-500" : ""}>
+            <SelectTrigger className={actionData && "fieldErrors" in actionData && actionData.fieldErrors?.priceType ? "border-red-500" : ""}>
               <SelectValue placeholder="Select Price Type" />
             </SelectTrigger>
             <SelectContent>
@@ -229,7 +284,7 @@ export default function SubmitAListingPage({loaderData, actionData }: Route.Comp
               ))}
             </SelectContent>
           </Select>
-          {actionData && "fieldErrors" in actionData && (
+          {actionData && "fieldErrors" in actionData && actionData.fieldErrors?.priceType && (
             <div className="text-xs text-red-500 mt-1">
               {actionData.fieldErrors.priceType}
             </div>
@@ -252,7 +307,7 @@ export default function SubmitAListingPage({loaderData, actionData }: Route.Comp
                       setPrice(value);
                     }
                   }}
-                  className={`${actionData && "fieldErrors" in actionData && actionData.fieldErrors.price ? "border-red-500" : ""} ${
+                  className={`${actionData && "fieldErrors" in actionData && actionData.fieldErrors?.price ? "border-red-500" : ""} ${
                     isFree ? "bg-green-50 border-green-300 text-green-700" : ""
                   } pr-12 text-lg font-medium`}
                   disabled={isFree}
@@ -265,6 +320,7 @@ export default function SubmitAListingPage({loaderData, actionData }: Route.Comp
                 )}
               </div>
               <input type="hidden" name="currency" value={currency} />
+              <input type="hidden" name="price" value={isFree ? "0" : price} />
               <Select value={currency} onValueChange={setCurrency} disabled={isFree}>
                 <SelectTrigger className={`w-20 ${isFree ? "bg-green-50 border-green-300" : ""}`}>
                   <SelectValue />
@@ -280,7 +336,7 @@ export default function SubmitAListingPage({loaderData, actionData }: Route.Comp
             </div>
           </div>
           
-          {actionData && "fieldErrors" in actionData && (
+          {actionData && "fieldErrors" in actionData && actionData.fieldErrors?.price && (
             <div className="text-xs text-red-500">
               {actionData.fieldErrors.price}
             </div>
@@ -302,9 +358,9 @@ export default function SubmitAListingPage({loaderData, actionData }: Route.Comp
             placeholder="Description & Specifications"
             value={description}
             onChange={e => setDescription(e.target.value)}
-            className={`min-h-[100px] ${actionData && "fieldErrors" in actionData && actionData.fieldErrors.description ? "border-red-500" : ""}`}
+            className={`min-h-[100px] ${actionData && "fieldErrors" in actionData && actionData.fieldErrors?.description ? "border-red-500" : ""}`}
           />
-          {actionData && "fieldErrors" in actionData && (
+          {actionData && "fieldErrors" in actionData && actionData.fieldErrors?.description && (
             <div className="text-xs text-red-500 mt-1">
               {actionData.fieldErrors.description}
             </div>
@@ -314,7 +370,7 @@ export default function SubmitAListingPage({loaderData, actionData }: Route.Comp
         <div>
           <input type="hidden" name="condition" value={condition} />
           <Select value={condition} onValueChange={setCondition}>
-            <SelectTrigger className={actionData && "fieldErrors" in actionData && actionData.fieldErrors.condition ? "border-red-500" : ""}>
+            <SelectTrigger className={actionData && "fieldErrors" in actionData && actionData.fieldErrors?.condition ? "border-red-500" : ""}>
               <SelectValue placeholder="Select Condition" />
             </SelectTrigger>
             <SelectContent> 
@@ -325,7 +381,7 @@ export default function SubmitAListingPage({loaderData, actionData }: Route.Comp
               ))}
             </SelectContent>
           </Select>
-          {actionData && "fieldErrors" in actionData && (
+          {actionData && "fieldErrors" in actionData && actionData.fieldErrors?.condition && (
             <div className="text-xs text-red-500 mt-1">
               {actionData.fieldErrors.condition}
             </div>
@@ -335,7 +391,7 @@ export default function SubmitAListingPage({loaderData, actionData }: Route.Comp
         <div>
           <input type="hidden" name="category" value={category} />
           <Select value={category} onValueChange={setCategory}>
-            <SelectTrigger className={actionData && "fieldErrors" in actionData && actionData.fieldErrors.category ? "border-red-500" : ""}>
+            <SelectTrigger className={actionData && "fieldErrors" in actionData && actionData.fieldErrors?.category ? "border-red-500" : ""}>
               <SelectValue placeholder="Select Category" />
             </SelectTrigger>
             <SelectContent>
@@ -346,7 +402,7 @@ export default function SubmitAListingPage({loaderData, actionData }: Route.Comp
               ))}
             </SelectContent>
           </Select>
-          {actionData && "fieldErrors" in actionData && (
+          {actionData && "fieldErrors" in actionData && actionData.fieldErrors?.category && (
             <div className="text-xs text-red-500 mt-1">
               {actionData.fieldErrors.category}
             </div>
@@ -356,7 +412,7 @@ export default function SubmitAListingPage({loaderData, actionData }: Route.Comp
         <div>
           <input type="hidden" name="location" value={location} />
           <Select value={location} onValueChange={setLocation}>
-            <SelectTrigger className={actionData && "fieldErrors" in actionData && actionData.fieldErrors.location ? "border-red-500" : ""}>
+            <SelectTrigger className={actionData && "fieldErrors" in actionData && actionData.fieldErrors?.location ? "border-red-500" : ""}>
               <SelectValue placeholder="Select Location" />
             </SelectTrigger>
             <SelectContent>
@@ -367,7 +423,7 @@ export default function SubmitAListingPage({loaderData, actionData }: Route.Comp
               ))}
             </SelectContent>
           </Select>
-          {actionData && "fieldErrors" in actionData && (
+          {actionData && "fieldErrors" in actionData && actionData.fieldErrors?.location && (
             <div className="text-xs text-red-500 mt-1">
               {actionData.fieldErrors.location}
             </div>
@@ -375,7 +431,7 @@ export default function SubmitAListingPage({loaderData, actionData }: Route.Comp
         </div>
           
         <Button type="submit" className="w-full" disabled={isSubmitting}>
-          {isSubmitting ? <CircleIcon className="animate-spin" /> : "Create account"}
+          {isSubmitting ? <CircleIcon className="animate-spin" /> : "Submit Listing"}
         </Button>
       </div>
     </Form>

@@ -106,7 +106,7 @@ export default function HomePage() {
               <ProductCard
                 key={product.product_id}
                 productId={product.product_id}
-                image={product.primary_image?.startsWith('/') ? product.primary_image : `/toy1.png`}
+                image={product.primary_image || `/toy1.png`}
                 title={product.title}
                 price={product.price}
                 currency={product.currency || "THB"}

@@ -45,18 +45,29 @@ export const getDashboard = async (client: SupabaseClient<Database>, { profileId
   return data;
 };
 
-export const getLikedProductsByUserId = async (client: SupabaseClient<Database>, { profileId }: { profileId: string|null }) => {
+export const getLikedProductsByUserId = async (
+  client: SupabaseClient<Database>,
+  { profileId }: { profileId: string | null }
+) => {
   if (!profileId) throw new Error("Profile ID is required");
-  
+
   const { data, error } = await client
-  .from("product_likes")
-  .select(`
-    product_id,
-    user_id,
-    created_at
-  `)
-  .eq("user_id", profileId)
-    
+    .from("product_likes")
+    .select(`
+      product_id,
+      created_at,
+      products:products_listings_view!product_id (
+        product_id,
+        primary_image,
+        title,
+        price,
+        currency,
+        price_type,
+        seller_name
+      )
+    `)
+    .eq("user_id", profileId);
+
   if (error) throw new Error(error.message);
   return data;
 };
@@ -233,35 +244,28 @@ export const getUserStats = async (
   client: SupabaseClient<Database>,
   { username }: { username: string }
 ) => {
-  // 사용자의 리스팅 수 가져오기
-  const { data: listings, error: listingsError } = await client
-    .from("products_listings_view")
-    .select("product_id")
-    .eq("seller_name", username);
+  const { data, error } = await client
+    .from("user_activity_view")
+    .select("*")
+    .eq("username", username)
+    .single();
     
-  if (listingsError) {
-  }
-  
-  // 사용자의 리뷰 평점 가져오기
-  const { data: reviews, error: reviewsError } = await client
-    .from("local_reviews_list_view")
-    .select("rating")
-    .eq("author_username", username);
-    
-  if (reviewsError) {
-    console.error("Error fetching user reviews:", reviewsError);
-  }
-  
-  // 평균 평점 계산
-  const averageRating = reviews && reviews.length > 0 
-    ? reviews.reduce((sum, review) => sum + (review.rating || 0), 0) / reviews.length 
-    : 0;
+  if (error) throw new Error(error.message);
+  return data;
+};
 
-  return {
-    totalListings: listings?.length || 0,
-    rating: Math.round(averageRating * 10) / 10,
-    responseRate: "95%", // 기본값, 나중에 실제 응답률 계산 로직 추가 가능
-  };
+export const getUserListings = async (
+  client: SupabaseClient<Database>,
+  { userId }: { userId: string }
+) => {
+  const { data, error } = await client
+    .from("products_listings_view")
+    .select("*")
+    .eq("seller_id", userId)
+    .order("created_at", { ascending: false });
+    
+  if (error) throw new Error(error.message);
+  return data || [];
 };
 
 export const getUserSalesStatsByProfileId = async (client: SupabaseClient<Database>, profileId: string) => {

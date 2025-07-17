@@ -2,6 +2,18 @@
 
 // 위치 정보
 export const LOCATIONS = [
+  "Bangkok",
+  "ChiangMai", 
+  "Phuket",
+  "HuaHin",
+  "Pattaya",
+  "Krabi",
+  "Koh Samui",
+  "Other Cities"
+] as const;
+
+// 모든 위치 (필터링용)
+export const ALL_LOCATIONS = [
   "All Locations",
   "Bangkok",
   "ChiangMai", 
@@ -39,4 +51,5 @@ export const FILE_UPLOAD_LIMITS = {
 
 // 타입 정의
 export type Location = typeof LOCATIONS[number];
+export type AllLocation = typeof ALL_LOCATIONS[number];
 export type Currency = typeof CURRENCIES[number];

@@ -12,7 +12,8 @@ import { CURRENCIES } from '~/constants';
 import { Route } from "./+types/edit-product-page";
 import { makeSSRClient } from "~/supa-client";
 import { getLoggedInUserId } from "~/features/users/queries";
-import { getCategories, getlocations, getProductById } from '../queries';
+import { getCategories, getlocations, getProductById, getProductImages } from '../queries';
+import { updateProductImages } from '../mutations';
 import { z } from 'zod';
 import { CircleIcon, ArrowLeft } from 'lucide-react';
 
@@ -29,15 +30,18 @@ export const loader = async ({ request, params }: Route.LoaderArgs) => {
     throw redirect("/secondhand/product/" + productId);
   }
   
+  // Get product images
+  const productImages = await getProductImages(client, Number(productId));
+  
   const categories = await getCategories(client);
   const locations = await getlocations(client);
   
-  return { product, categories, locations };
+  return { product, productImages, categories, locations };
 };
 
 const formSchema = z.object({
   title: z.string().min(1),
-  price: z.string().min(1),
+  price: z.string().optional().default("0"), // price를 optional로 변경
   currency: z.string().min(1),
   priceType: z.string().min(1),
   description: z.string().min(1),
@@ -55,6 +59,25 @@ export const action = async ({ request, params }: Route.ActionArgs) => {
     return redirect("/auth/login");
   }
   const formData = await request.formData();
+  
+  // Handle image files
+  const imageFiles: File[] = [];
+  for (let i = 0; i < 5; i++) {
+    const image = formData.get(`image-${i}`) as File;
+    if (image && image instanceof File) {
+      imageFiles.push(image);
+    }
+  }
+  
+  // Handle existing images
+  const existingImages: string[] = [];
+  for (let i = 0; i < 10; i++) {
+    const existingImage = formData.get(`existing-image-${i}`) as string;
+    if (existingImage) {
+      existingImages.push(existingImage);
+    }
+  }
+  
   const { success, data, error } = formSchema.safeParse(Object.fromEntries(formData));
   if (!success) {
     return { fieldErrors: error.flatten().fieldErrors };
@@ -62,22 +85,21 @@ export const action = async ({ request, params }: Route.ActionArgs) => {
   
   const { title, price, currency, priceType, description, condition, category, location, isSold } = data;
   
-  // Update product
-  const { data: categoryData, error: categoryError } = await client
-    .from("categories")
-    .select("category_id")
-    .eq("name", category as any)
-    .single();
+  try {
+    // Update product
+    const { data: categoryData, error: categoryError } = await client
+      .from("categories")
+      .select("category_id")
+      .eq("name", category as any)
+      .single();
+      
+    if (categoryError) {
+      throw categoryError;
+    }
     
-  if (categoryError) {
-    throw categoryError;
-  }
-  
-  const { error: updateError } = await client
-    .from("products")
-    .update({
+    const updateData = {
       title,
-      price: parseFloat(price),
+      price: priceType === "Free" ? 0 : parseFloat(price || "0"),
       currency,
       price_type: priceType as any,
       description,
@@ -86,29 +108,55 @@ export const action = async ({ request, params }: Route.ActionArgs) => {
       category_id: categoryData.category_id,
       is_sold: isSold === "true",
       updated_at: new Date().toISOString()
-    })
-    .eq("product_id", Number(productId))
-    .eq("seller_id", user.id); // Ensure only the seller can update
+    };
     
-  if (updateError) {
-    throw updateError;
+    const { error: updateError } = await client
+      .from("products")
+      .update(updateData)
+      .eq("product_id", Number(productId))
+      .eq("seller_id", user.id); // Ensure only the seller can update
+      
+    if (updateError) {
+      throw updateError;
+    }
+    
+    // Update images if any changes
+    if (imageFiles.length > 0 || existingImages.length > 0) {
+      try {
+        await updateProductImages(client, {
+          productId: Number(productId),
+          newImages: imageFiles,
+          existingImages: existingImages,
+          userId: user.id,
+        });
+      } catch (imageError) {
+        // 이미지 업데이트 실패해도 제품 업데이트는 성공으로 처리
+        console.error("Image update failed:", imageError);
+      }
+    }
+    
+    // Get location from URL params to preserve it in redirect
+    const url = new URL(request.url);
+    const locationParam = url.searchParams.get("location");
+    const redirectUrl = locationParam && locationParam !== "Bangkok" 
+      ? `/secondhand/product/${productId}?location=${locationParam}`
+      : `/secondhand/product/${productId}`;
+      
+    return redirect(redirectUrl);
+  } catch (error) {
+    console.error("Error updating product:", error);
+    return { error: "Failed to update product. Please try again." };
   }
-  
-  // Get location from URL params to preserve it in redirect
-  const url = new URL(request.url);
-  const locationParam = url.searchParams.get("location");
-  const redirectUrl = locationParam && locationParam !== "Bangkok" 
-    ? `/secondhand/product/${productId}?location=${locationParam}`
-    : `/secondhand/product/${productId}`;
-    
-  return redirect(redirectUrl);
 };
 
 export default function EditProductPage({ loaderData, actionData }: Route.ComponentProps) {
-  const { product, categories, locations } = loaderData;
+  const { product, productImages, categories, locations } = loaderData;
   
   const [images, setImages] = useState<File[]>([]);
   const [previews, setPreviews] = useState<string[]>([]);
+  const [existingImages, setExistingImages] = useState<string[]>(
+    productImages.map((img: any) => img.image_url)
+  );
   const [title, setTitle] = useState(product.title || "");
   const [price, setPrice] = useState(product.price ? String(product.price) : "");
   const [currency, setCurrency] = useState(product.currency || "THB");
@@ -182,29 +230,83 @@ export default function EditProductPage({ loaderData, actionData }: Route.Compon
           <h1 className="text-2xl font-bold text-gray-900">Edit Product</h1>
         </div>
 
+        {/* Error Message */}
+        {actionData?.error && (
+          <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-md">
+            <p className="text-red-600 text-sm">{actionData.error}</p>
+          </div>
+        )}
+
         <Form 
           method="post" 
+          encType="multipart/form-data"
           className="flex flex-col md:flex-row gap-8"
           onSubmit={() => setIsSubmitting(true)}
         >
+          {/* Hidden file inputs for form submission */}
+          {images.map((_, index) => (
+            <input
+              key={index}
+              name={`image-${index}`}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              ref={(input) => {
+                if (input && images[index]) {
+                  const dataTransfer = new DataTransfer();
+                  dataTransfer.items.add(images[index]);
+                  input.files = dataTransfer.files;
+                }
+              }}
+            />
+          ))}
+          
+          {/* Hidden inputs for existing images */}
+          {existingImages.map((imageUrl, index) => (
+            <input
+              key={`existing-${index}`}
+              name={`existing-image-${index}`}
+              type="hidden"
+              value={imageUrl}
+            />
+          ))}
+          
           {/* Left: Image Upload */}
           <div className="flex-1 flex flex-col items-center justify-center border rounded-lg p-6 bg-white shadow">
             <label className="w-full flex flex-col items-center cursor-pointer">
               <div className="flex flex-wrap gap-2 justify-center mb-4">
-                {previews.length > 0 ? (
-                  previews.map((src, idx) => (
-                    <div key={idx} className="relative group">
-                      <img src={src} alt={`Preview ${idx + 1}`} className="w-24 h-24 object-cover rounded" />
-                      <button
-                        type="button"
-                        className="absolute top-1 right-1 bg-black/60 text-white text-xs px-2 py-0.5 rounded-full opacity-80 group-hover:opacity-100 transition-opacity"
-                        onClick={() => handleRemoveImage(idx)}
-                      >
-                        ×
-                      </button>
-                    </div>
-                  ))
-                ) : (
+                {/* Existing Images */}
+                {existingImages.map((imageUrl, idx) => (
+                  <div key={`existing-${idx}`} className="relative group">
+                    <img src={imageUrl} alt={`Existing ${idx + 1}`} className="w-24 h-24 object-cover rounded" />
+                    <button
+                      type="button"
+                      className="absolute top-1 right-1 bg-red-500 text-white text-xs px-2 py-0.5 rounded-full opacity-80 group-hover:opacity-100 transition-opacity"
+                      onClick={() => {
+                        setExistingImages(prev => prev.filter((_, i) => i !== idx));
+                      }}
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+                
+                {/* New Images */}
+                {previews.map((src, idx) => (
+                  <div key={`new-${idx}`} className="relative group">
+                    <img src={src} alt={`Preview ${idx + 1}`} className="w-24 h-24 object-cover rounded" />
+                    <button
+                      type="button"
+                      className="absolute top-1 right-1 bg-black/60 text-white text-xs px-2 py-0.5 rounded-full opacity-80 group-hover:opacity-100 transition-opacity"
+                      onClick={() => handleRemoveImage(idx)}
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+                
+                {/* Upload placeholder */}
+                {existingImages.length === 0 && previews.length === 0 && (
                   <div className="w-48 h-48 flex items-center justify-center bg-gray-100 rounded text-gray-400">
                     Click to upload images
                   </div>
@@ -218,7 +320,9 @@ export default function EditProductPage({ loaderData, actionData }: Route.Compon
                 onChange={handleImageChange}
                 disabled={images.length >= 5}
               />
-              <span className="text-xs text-neutral-500 mt-2">{images.length}/5 images</span>
+              <span className="text-xs text-neutral-500 mt-2">
+                {existingImages.length + images.length}/5 images
+              </span>
               <span className="text-xs text-gray-400 mt-1">
                 Supported formats: JPEG, PNG, WebP (max 10MB each)
               </span>
@@ -266,13 +370,13 @@ export default function EditProductPage({ loaderData, actionData }: Route.Compon
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
-                                         <SelectContent>
-                       {CURRENCIES.map((currency) => (
-                         <SelectItem key={currency} value={currency}>
-                           {currency}
-                         </SelectItem>
-                       ))}
-                     </SelectContent>
+                    <SelectContent>
+                      {CURRENCIES.map((currency) => (
+                      <SelectItem key={currency} value={currency}>
+                        {currency}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
                   </Select>
                 </div>
               </div>

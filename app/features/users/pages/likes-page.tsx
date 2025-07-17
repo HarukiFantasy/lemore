@@ -128,23 +128,22 @@ export default function LikesPage({ loaderData }: { loaderData: LoaderData }) {
         {filteredAndSortedProducts.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
             {filteredAndSortedProducts.map((product) => (
-              <div key={product.id} className="relative group">
+              <div key={product.product_id} className="relative group">
                 <ProductCard
-                  productId={product.id}
-                  image={product.primary_image?.startsWith('/') ? product.primary_image : `/toy1.png`}
-                  title={product.title}
-                  price={product.price}
-                  seller={product.seller}
-                  likes={product.likes}
-                  currency={product.currency}
-                  priceType={product.priceType}
+                  productId={product.product_id}
+                  image={product.products?.primary_image || '/toy1.png'}
+                  title={product.products?.title}
+                  price={product.products?.price}
+                  seller={product.products?.seller_name}
+                  currency={product.products?.currency}
+                  priceType={product.products?.price_type}
                 />
                 {/* Unlike Button */}
                 <Button
                   variant="destructive"
                   size="sm"
                   className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-10"
-                  onClick={() => handleUnlike(product.id)}
+                  onClick={() => handleUnlike(product.product_id)}
                 >
                   Unlike
                 </Button>

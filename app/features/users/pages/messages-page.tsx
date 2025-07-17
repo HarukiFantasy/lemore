@@ -52,6 +52,7 @@ export default function MessagesPage({ loaderData }: { loaderData: LoaderData })
   const [error, setError] = useState<string | null>(null);
   const [client] = useState(() => browserClient);
   const [conversationsList, setConversationsList] = useState(conversations);
+  const [showSidebar, setShowSidebar] = useState(false); // 모바일 사이드바 토글
 
   // Handle product context and create new conversation if needed
   useEffect(() => {
@@ -230,10 +231,46 @@ export default function MessagesPage({ loaderData }: { loaderData: LoaderData })
     return transformed;
   });
   
+  // 모바일에서 대화방 진입 시 사이드바 닫기
+  const handleSelectConversation = (id: string) => {
+    setSelectedConversation(id);
+    setShowSidebar(false);
+  };
+
   return (
-    <div className="flex h-[calc(100vh-120px)] bg-gray-50">
-      {/* Sidebar - Conversations List */}
-      <div className="w-80 bg-white border-r border-gray-200 flex flex-col">
+    <div className="flex h-[calc(100vh-120px)] bg-gray-50 flex-col md:flex-row">
+      {/* 모바일: 대화 목록 오버레이 */}
+      <div className={`fixed inset-0 z-30 bg-black/30 md:hidden ${showSidebar ? '' : 'hidden'}`}>
+        <div className="absolute left-0 top-0 bottom-0 w-4/5 max-w-xs bg-white shadow-lg h-full flex flex-col">
+          <div className="flex items-center justify-between px-4 py-3 border-b">
+            <span className="font-semibold">대화 목록</span>
+            <button className="text-2xl" onClick={() => setShowSidebar(false)}>×</button>
+          </div>
+          <ScrollArea className="flex-1">
+            <div className="space-y-0.5">
+              {transformedConversations.length === 0 ? (
+                <div className="p-3 text-center text-muted-foreground">
+                  <MessageCircle className="w-8 h-8 mx-auto mb-1 opacity-50" />
+                  <p className="text-sm">No conversation</p>
+                </div>
+              ) : (
+                transformedConversations.map((conversation) => (
+                  <MessageRoomCard
+                    key={conversation.id}
+                    conversation={conversation}
+                    isSelected={selectedConversation === conversation.id}
+                    onClick={() => handleSelectConversation(conversation.id)}
+                  />
+                ))
+              )}
+            </div>
+          </ScrollArea>
+        </div>
+        <div className="w-full h-full" onClick={() => setShowSidebar(false)} />
+      </div>
+
+      {/* 데스크탑: 좌측 대화 목록 */}
+      <div className="hidden md:flex w-80 bg-white border-r border-gray-200 flex-col">
         <Card className="border-0 rounded-none">
           <CardContent className="p-0">
             <ScrollArea className="h-[calc(100vh-180px)]">
@@ -249,7 +286,7 @@ export default function MessagesPage({ loaderData }: { loaderData: LoaderData })
                       key={conversation.id}
                       conversation={conversation}
                       isSelected={selectedConversation === conversation.id}
-                      onClick={() => setSelectedConversation(conversation.id)}
+                      onClick={() => handleSelectConversation(conversation.id)}
                     />
                   ))
                 )}
@@ -258,47 +295,77 @@ export default function MessagesPage({ loaderData }: { loaderData: LoaderData })
           </CardContent>
         </Card>
       </div>
-      
-      {/* Main Chat Area */}
-      <div className="flex-1 flex flex-col">
-        {selectedConversation ? (
-          <>
-            <MessageHeader 
-              user={{
-                username: selectedUser?.sender_username === user?.username 
-                  ? selectedUser?.receiver_username 
-                  : selectedUser?.sender_username || 'Unknown',
-                avatar_url: selectedUser?.sender_username === user?.username 
-                  ? selectedUser?.receiver_avatar_url 
-                  : selectedUser?.sender_avatar_url,
-                isOnline: true,
-              }}
-              productInfo={selectedUser?.product_title ? {
-                title: selectedUser.product_title,
-                productId: selectedUser.product_id
-              } : (productContext?.fromProduct ? {
-                title: productContext.productTitle,
-                productId: productContext.productId
-              } : undefined)}
-              onLeaveChatRoom={handleLeaveChatRoom}
-            />
-            
-            <ScrollArea className="flex-1 p-4">
-              <div className="space-y-4">
-                {error && (
-                  <div className="text-center text-red-500 py-4">
-                    <p>{error}</p>
-                  </div>
-                )}
-                {loading ? (
-                  <div className="flex justify-center items-center h-32">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                  </div>
-                ) : messages.length === 0 ? (
-                  <div className="text-center text-muted-foreground py-8">
-                    <MessageCircle className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                    <p>Start a message</p>
-                  </div>
+      {/* 메인 채팅 영역 */}
+      <div className="flex-1 flex flex-col min-h-0">
+        {/* 모바일: 상단바 - 뒤로가기/목록 버튼 */}
+        {selectedConversation && (
+          <div className="md:hidden flex items-center border-b px-2 py-2 bg-white">
+            <button onClick={() => setSelectedConversation(null)} className="mr-2 px-2 py-1 rounded hover:bg-gray-100">
+              ←
+            </button>
+            <span className="font-semibold text-base">
+              {selectedUser?.sender_username === user?.username
+                ? selectedUser?.receiver_username
+                : selectedUser?.sender_username || 'Unknown'}
+            </span>
+          </div>
+        )}
+        {/* 모바일: 대화 목록 버튼 (대화방 미선택 시) */}
+        {!selectedConversation && (
+          <div className="md:hidden flex-1 flex items-center justify-center">
+            <button
+              className="px-4 py-2 bg-primary text-white rounded shadow"
+              onClick={() => setShowSidebar(true)}
+            >
+              대화 목록 보기
+            </button>
+          </div>
+        )}
+        {/* 채팅방 내용 */}
+        {(selectedConversation || window.innerWidth >= 768) && (
+          <div className={`flex-1 flex flex-col min-h-0 ${!selectedConversation && window.innerWidth < 768 ? 'hidden' : ''}`}>
+            {/* 데스크탑: 채팅방 헤더 */}
+            <div className="hidden md:block">
+              {selectedConversation && (
+                <MessageHeader
+                  user={{
+                    username: selectedUser?.sender_username === user?.username
+                      ? selectedUser?.receiver_username
+                      : selectedUser?.sender_username || 'Unknown',
+                    avatar_url: selectedUser?.sender_username === user?.username
+                      ? selectedUser?.receiver_avatar_url
+                      : selectedUser?.sender_avatar_url,
+                    isOnline: true,
+                  }}
+                  productInfo={selectedUser?.product_title ? {
+                    title: selectedUser.product_title,
+                    productId: selectedUser.product_id
+                  } : (productContext?.fromProduct ? {
+                    title: productContext.productTitle,
+                    productId: productContext.productId
+                  } : undefined)}
+                  onLeaveChatRoom={handleLeaveChatRoom}
+                />
+              )}
+            </div>
+            {/* 채팅 메시지 영역 */}
+            {selectedConversation && (
+              <ScrollArea className="flex-1 p-2 md:p-4">
+                <div className="space-y-4">
+                  {error && (
+                    <div className="text-center text-red-500 py-4">
+                      <p>{error}</p>
+                    </div>
+                  )}
+                  {loading ? (
+                    <div className="flex justify-center items-center h-32">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                    </div>
+                  ) : messages.length === 0 ? (
+                    <div className="text-center text-muted-foreground py-8">
+                      <MessageCircle className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                      <p>Start a message</p>
+                    </div>
                   ) : (
                     messages.map((message) => (
                       <MessageBubble
@@ -308,18 +375,13 @@ export default function MessagesPage({ loaderData }: { loaderData: LoaderData })
                       />
                     ))
                   )}
-              </div>
-            </ScrollArea>
-            
-            <MessageInput onSendMessage={handleSendMessage} disabled={loading} />
-          </>
-        ) : (
-          <div className="flex-1 flex items-center justify-center">
-            <div className="text-center text-muted-foreground">
-              <MessageCircle className="w-16 h-16 mx-auto mb-4 opacity-50" />
-              <h3 className="text-lg font-medium mb-2">Choose a conversation</h3>
-              <p>To send and receive messages, select a conversation from the left</p>
-            </div>
+                </div>
+              </ScrollArea>
+            )}
+            {/* 입력창 */}
+            {selectedConversation && (
+              <MessageInput onSendMessage={handleSendMessage} disabled={loading} />
+            )}
           </div>
         )}
       </div>

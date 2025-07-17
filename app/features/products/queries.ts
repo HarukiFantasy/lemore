@@ -40,3 +40,13 @@ export const getProductByUsername = async (client: SupabaseClient<Database>, use
   if (error) throw new Error(error.message);
   return data;
 };
+
+export const getProductImages = async (client: SupabaseClient<Database>, productId: number) => {
+  const { data, error } = await client
+    .from("product_images")
+    .select("*")
+    .eq("product_id", productId)
+    .order("image_order");
+  if (error) throw new Error(error.message);
+  return data;
+};
