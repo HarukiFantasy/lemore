@@ -59,7 +59,16 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
 
 export const loader = async ({ request }: Route.LoaderArgs) => {
   const { client, headers } = makeSSRClient(request);
+  const url = new URL(request.url);
+  const location = url.searchParams.get("location");
+  
   const reviews = await getGiveAndGlowReviews(client);
+  
+  // Location filtering
+  let filteredReviews = reviews;
+  if (location && location !== "All Locations" && location !== "Other Cities") {
+    filteredReviews = reviews.filter(review => review.product_location === location);
+  }
   
   // Get all users for the dropdown
   const { data: users, error: usersError } = await client
@@ -74,7 +83,7 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
   // 각 리뷰의 giver와 receiver에 대한 통계 수집
   const userStatsMap = new Map();
   
-  for (const review of reviews) {
+  for (const review of filteredReviews) {
     // giver 통계
     if (review.giver_username && !userStatsMap.has(review.giver_username)) {
       try {
@@ -106,7 +115,7 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
     }
   }
   
-  return { reviews, userStats: Object.fromEntries(userStatsMap), users: users || [] };
+  return { reviews: filteredReviews, userStats: Object.fromEntries(userStatsMap), users: users || [], location };
 }
 
 export const action = async ({ request }: Route.ActionArgs) => {
@@ -144,11 +153,11 @@ export const action = async ({ request }: Route.ActionArgs) => {
 }
 
 export default function GiveAndGlowPage({ loaderData }: Route.ComponentProps) {
-  const { reviews, userStats, users } = loaderData;
+  const { reviews, userStats, users, location } = loaderData;
   const actionData = useActionData<typeof action>();
   const [searchParams, setSearchParams] = useSearchParams();
-  const location = "Bangkok";
-  const urlLocation = searchParams.get("location") || location;
+  const urlLocation = searchParams.get("location");
+  const currentLocation = urlLocation || "Bangkok";
   const urlSearchQuery = searchParams.get("search") || "";
   const urlCategoryFilter = searchParams.get("category") || "All";
   
@@ -182,7 +191,7 @@ export default function GiveAndGlowPage({ loaderData }: Route.ComponentProps) {
         review.review?.toLowerCase().includes(urlSearchQuery.toLowerCase());
       
       const matchesCategory = urlCategoryFilter === "All" || review.category === urlCategoryFilter;
-      const matchesLocation = urlLocation === "All Cities" || review.product_location === urlLocation;
+      const matchesLocation = !urlLocation || urlLocation === "Other Cities" || review.product_location === urlLocation;
       
       return matchesSearch && matchesCategory && matchesLocation;
     })
@@ -319,7 +328,7 @@ export default function GiveAndGlowPage({ loaderData }: Route.ComponentProps) {
       <div className="text-center space-y-2">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">Give and Glow</h1>
         <p className="text-muted-foreground pb-6">
-          Share appreciation for free items received and spread kindness in {urlLocation}</p>
+          Share appreciation for free items received and spread kindness {!urlLocation ? "across all locations" : `in ${currentLocation}`}</p>
       </div>
 
       {/* Search and Filters */}
@@ -409,7 +418,7 @@ export default function GiveAndGlowPage({ loaderData }: Route.ComponentProps) {
       <div className="flex justify-between items-center">
         <p className="text-sm text-gray-600">
           Found <span className="font-semibold text-blue-600">{filteredReviews.length}</span> reviews
-          {urlLocation === "All Cities" ? " across all cities" : ` in ${urlLocation}`}
+          {!urlLocation ? " across all locations" : urlLocation === "Other Cities" ? " across all cities" : ` in ${currentLocation}`}
           {(urlSearchQuery || urlCategoryFilter !== "All") && (
             <span className="ml-2">
               {urlSearchQuery && ` for "${urlSearchQuery}"`}

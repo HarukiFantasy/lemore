@@ -2,6 +2,7 @@
 
 // 위치 정보
 export const LOCATIONS = [
+  "All Locations",
   "Bangkok",
   "ChiangMai", 
   "Phuket",

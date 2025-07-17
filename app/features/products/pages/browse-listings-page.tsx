@@ -20,12 +20,21 @@ export const meta: Route.MetaFunction = () => {
 
 export const loader = async ({ request }: Route.LoaderArgs) => {
   const { client, headers } = makeSSRClient(request);
+  const url = new URL(request.url);
+  const location = url.searchParams.get("location");
+  
   const products = await getProductsListings(client);
+  
+  // Location filtering
+  let filteredProducts = products;
+  if (location && location !== "All Locations" && location !== "Other Cities") {
+    filteredProducts = products.filter(product => product.location === location);
+  }
   
   // 각 제품의 판매자에 대한 통계 수집
   const userStatsMap = new Map();
   
-  for (const product of products) {
+  for (const product of filteredProducts) {
     if (product.seller_name && !userStatsMap.has(product.seller_name)) {
       try {
         const sellerStats = await getUserStats(client, { username: product.seller_name });
@@ -41,7 +50,7 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
     }
   }
   
-  return { products, userStats: Object.fromEntries(userStatsMap) };
+  return { products: filteredProducts, userStats: Object.fromEntries(userStatsMap), location };
 }
 
 export default function BrowseListingsPage({ loaderData }: Route.ComponentProps) {
@@ -49,7 +58,7 @@ export default function BrowseListingsPage({ loaderData }: Route.ComponentProps)
   const [searchInput, setSearchInput] = useState(searchParams.get("q") || "");
   const [currentPage, setCurrentPage] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
-  const { products, userStats } = loaderData;
+  const { products, userStats, location } = loaderData;
   const [displayedProducts, setDisplayedProducts] = useState<any[]>(products || []);
   const [hasMore, setHasMore] = useState(true);
   const observerRef = useRef<IntersectionObserver | null>(null);
@@ -60,6 +69,8 @@ export default function BrowseListingsPage({ loaderData }: Route.ComponentProps)
   // Get search query from URL params
   const searchQuery = searchParams.get("q") || "";
   const categoryFilter = searchParams.get("category") || "";
+  const urlLocation = searchParams.get("location");
+  const currentLocation = urlLocation || "Bangkok";
 
   // Filter products based on search query and category
   useEffect(() => {
@@ -210,11 +221,13 @@ export default function BrowseListingsPage({ loaderData }: Route.ComponentProps)
         {/* 검색 결과 타이틀 */}
         <h2 className="text-3xl font-bold mb-6">
           {searchQuery ? `"${searchQuery}" Search Results` : categoryFilter ? `${categoryFilter} Category` : "All Listings"}
+          {!urlLocation ? "" : ` in ${currentLocation}`}
         </h2>
 
         {/* 표시된 상품 수 정보 */}
         <div className="mb-4 text-sm text-gray-600 mx-auto sm:max-w-[100vw] md:max-w-[100vw]">
           Showing {displayedProducts.length} of {products?.length || 0} items
+          {!urlLocation ? "" : ` in ${currentLocation}`}
         </div>
 
         {/* 상품 카드 그리드 */}

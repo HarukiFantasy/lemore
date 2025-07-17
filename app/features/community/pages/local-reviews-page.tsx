@@ -21,26 +21,55 @@ const LocationSchema = z.enum(["Bangkok", "Chiang Mai", "Phuket", "Pattaya", "Kr
 
 export const loader = async ({ request }: Route.LoaderArgs) => {
   const { client, headers } = makeSSRClient(request);
+  const url = new URL(request.url);
+  const location = url.searchParams.get("location");
+  
   const businesses = await getLocalBusinesses(client);
   const reviews = await getLocalReviews(client);
-  return { businesses, reviews };
+  
+  // Get current user
+  const { data: { user } } = await client.auth.getUser();
+  
+  // Location filtering
+  let filteredBusinesses = businesses;
+  if (location && location !== "All Locations" && location !== "Other Cities") {
+    filteredBusinesses = businesses.filter(business => business.location === location);
+  }
+  
+  return { businesses: filteredBusinesses, reviews, location, user };
 }
 
 export const action = async ({ request }: Route.ActionArgs) => {
   const { client } = makeSSRClient(request);
+  const { data: { user } } = await client.auth.getUser();
+  
+  if (!user) {
+    return { error: "You must be logged in to write a review" };
+  }
+  
   const formData = await request.formData();
   const { content, rating, tags, businessId } = Object.fromEntries(formData);
-  const data = await createLocalReview(client, { 
-    content: content as string, 
-    rating: parseInt(rating as string), 
-    tags: tags as string, 
-    businessId: parseInt(businessId as string) 
-  });
-  return { data };
+  
+  try {
+    const data = await createLocalReview(client, { 
+      content: content as string, 
+      rating: parseInt(rating as string), 
+      tags: tags as string, 
+      businessId: parseInt(businessId as string) 
+    });
+    return { data };
+  } catch (error) {
+    console.error("Error creating review:", error);
+    // Check if it's a duplicate key error
+    if (error && typeof error === 'object' && 'code' in error && error.code === '23505') {
+      return { error: "You have already reviewed this business" };
+    }
+    return { error: "Failed to submit review. Please try again." };
+  }
 } 
 // Main component
 export default function LocalReviewsPage({ loaderData }: Route.ComponentProps) {
-  const { businesses, reviews } = loaderData;
+  const { businesses, reviews, location, user } = loaderData;
   const actionData = useActionData<typeof action>();
   
   // Debug logging
@@ -74,7 +103,8 @@ export default function LocalReviewsPage({ loaderData }: Route.ComponentProps) {
       window.location.reload();
     }
   }, [actionData]);
-  const urlLocation = searchParams.get("location") || "Bangkok";
+  const urlLocation = searchParams.get("location");
+  const currentLocation = urlLocation || "Bangkok";
   
   // State variables
   const [searchQuery, setSearchQuery] = useState(searchParams.get("search") || "");
@@ -109,6 +139,31 @@ export default function LocalReviewsPage({ loaderData }: Route.ComponentProps) {
   const validBusinessTypes = BUSINESS_TYPES;
   const validPriceRanges: z.infer<typeof PriceRangeSchema>[] = ["All", "$", "$$", "$$$", "$$$$"];
 
+  // Check if user has already reviewed a business
+  const hasUserReviewedBusiness = (businessId: number) => {
+    if (!user) return false;
+    
+    console.log('Checking if user reviewed business:', { businessId, userId: user.id });
+    console.log('Available reviews:', reviews);
+    
+    const hasReviewed = reviews.some((review: any) => {
+      // In local_reviews_list_view, author field contains the user ID
+      const reviewUserId = review.author;
+      const matches = review.business_id === businessId && reviewUserId === user.id;
+      console.log('Review check:', { 
+        reviewId: review.id, 
+        reviewBusinessId: review.business_id, 
+        reviewUserId, 
+        userId: user.id, 
+        matches 
+      });
+      return matches;
+    });
+    
+    console.log('Has reviewed result:', hasReviewed);
+    return hasReviewed;
+  };
+
   // Filter businesses for the selection modal
   const filteredBusinessesForSelection = businesses.filter(business => 
     (business.name ?? "").toLowerCase().includes(businessSearchQuery.toLowerCase()) ||
@@ -130,7 +185,7 @@ export default function LocalReviewsPage({ loaderData }: Route.ComponentProps) {
                             )
                           );
     const matchesType = selectedType === "All" || business.type === selectedType;
-    const matchesLocation = urlLocation === "All Cities" || business.location === urlLocation;
+    const matchesLocation = !urlLocation || urlLocation === "Other Cities" || business.location === urlLocation;
     const matchesPrice = selectedPriceRange === "All" || business.price_range === selectedPriceRange;
     
     return matchesSearch && matchesType && matchesLocation && matchesPrice;
@@ -260,7 +315,7 @@ export default function LocalReviewsPage({ loaderData }: Route.ComponentProps) {
       <div className="text-center space-y-2">
         <h1 className="text-3xl font-bold text-gray-900">Local Reviews</h1>
         <p className="text-gray-600">
-          Discover and review the best local businesses in {urlLocation}</p>
+          Discover and review the best local businesses {!urlLocation ? "across all locations" : `in ${currentLocation}`}</p>
       </div>
 
       {/* Search and Filters */}
@@ -369,7 +424,7 @@ export default function LocalReviewsPage({ loaderData }: Route.ComponentProps) {
       <div className="flex justify-between items-center mb-4">
         <p className="text-sm text-gray-600">
           Found <span className="font-semibold text-blue-600">{businessReviewPairs.length}</span> businesses
-          {urlLocation === "All Cities" ? " across all cities" : ` in ${urlLocation}`}
+          {!urlLocation ? " across all locations" : urlLocation === "Other Cities" ? " across all cities" : ` in ${currentLocation}`}
           {(searchQuery || selectedType !== "All" || selectedPriceRange !== "All") && (
             <span className="ml-2">
               {searchQuery && ` for "${searchQuery}"`}
@@ -390,7 +445,7 @@ export default function LocalReviewsPage({ loaderData }: Route.ComponentProps) {
       {/* 비즈니스별 리뷰 매핑 */}
       <div className="space-y-4">
         {businessReviewPairs.length > 0 ? (
-          businessReviewPairs.map(({ business, reviews }) => (
+          businessReviewPairs.map(({ business, reviews: businessReviews }) => (
             <Card key={business.id} className="w-full">
               <div className="flex flex-col md:flex-row">
                 {/* 좌측: 비즈니스 정보 */}
@@ -431,30 +486,28 @@ export default function LocalReviewsPage({ loaderData }: Route.ComponentProps) {
                 {/* 우측: 해당 비즈니스의 모든 리뷰 */}
                 <CardContent className="flex-1 flex flex-col justify-between p-4 -mt-5 -mb-5">
                   <div className="max-h-64 overflow-y-auto pr-2">
-                    <Marquee pauseOnHover vertical className="w-full">
-                      <div className="flex flex-col gap-4 w-full">
-                        {reviews.length > 0 ? reviews.map((review) => (
-                          <div key={`${review.business_id}-${review.author}`} className="border-b last:border-b-0 pb-4 last:pb-0">
-                            <div className="flex items-start gap-3">
-                              <Avatar className="w-10 h-10">
-                                <AvatarImage src={review.author_avatar ?? ""} alt={review.author_username ?? ""} />
-                                <AvatarFallback>{(review.author_username ?? "").split(' ').map((n: string) => n[0]).join('')}</AvatarFallback>
-                              </Avatar>
-                              <div className="flex-1">
-                                <div className="font-semibold text-md text-gray-900">{review.author_username}</div>
-                                <div className="text-xs text-gray-500">{new Date(review.created_at ?? "").toLocaleDateString()}</div>
-                                <div className="flex items-center gap-2 mt-1">
-                                  {renderStars(review.rating ?? 0)}
-                                </div>
-                                <div className="text-gray-700 mt-2 leading-relaxed">{review.content}</div>
+                    <div className="flex flex-col gap-4 w-full">
+                      {businessReviews.length > 0 ? businessReviews.map((review) => (
+                        <div key={`${review.business_id}-${review.author_username}-${review.created_at}`} className="border-b last:border-b-0 pb-4 last:pb-0">
+                          <div className="flex items-start gap-3">
+                            <Avatar className="w-10 h-10">
+                              <AvatarImage src={review.author_avatar ?? ""} alt={review.author_username ?? ""} />
+                              <AvatarFallback>{(review.author_username ?? "").split(' ').map((n: string) => n[0]).join('')}</AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1">
+                              <div className="font-semibold text-md text-gray-900">{review.author_username}</div>
+                              <div className="text-xs text-gray-500">{new Date(review.created_at ?? "").toLocaleDateString()}</div>
+                              <div className="flex items-center gap-2 mt-1">
+                                {renderStars(review.rating ?? 0)}
                               </div>
+                              <div className="text-gray-700 mt-2 leading-relaxed">{review.content}</div>
                             </div>
                           </div>
-                        )) : (
-                          <div className="text-gray-500 text-center">No reviews yet for this business.</div>
-                        )}
-                      </div>
-                    </Marquee>
+                        </div>
+                      )) : (
+                        <div className="text-gray-500 text-center">No reviews yet for this business.</div>
+                      )}
+                    </div>
                   </div>
                 </CardContent>
               </div>
@@ -518,18 +571,33 @@ export default function LocalReviewsPage({ loaderData }: Route.ComponentProps) {
                       
                       <div className="space-y-2 max-h-60 overflow-y-auto">
                         {filteredBusinessesForSelection.length > 0 ? (
-                          filteredBusinessesForSelection.map((business) => (
+                          filteredBusinessesForSelection.map((business) => {
+                            const hasReviewed = hasUserReviewedBusiness(business.id);
+                            return (
                             <div
                               key={business.id}
-                              className="p-3 bg-white border border-blue-200 rounded-lg cursor-pointer hover:bg-blue-100 transition-colors"
+                              className={`p-3 border rounded-lg transition-colors ${
+                                hasReviewed 
+                                  ? 'bg-green-50 border-green-200 cursor-not-allowed' 
+                                  : 'bg-white border-blue-200 cursor-pointer hover:bg-blue-100'
+                              }`}
                               onClick={() => {
-                                setSelectedBusiness(business);
-                                setReviewStep('write-review');
+                                if (!hasReviewed) {
+                                  setSelectedBusiness(business);
+                                  setReviewStep('write-review');
+                                }
                               }}
                             >
                               <div className="flex items-center justify-between">
-                                <div>
-                                  <h4 className="font-medium text-gray-900">{business.name}</h4>
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-2">
+                                    <h4 className="font-medium text-gray-900">{business.name}</h4>
+                                    {hasReviewed && (
+                                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                        Reviewed
+                                      </span>
+                                    )}
+                                  </div>
                                   <p className="text-sm text-gray-600">{business.type} • {business.location}</p>
                                 </div>
                                 <div className="flex items-center gap-2">
@@ -540,7 +608,8 @@ export default function LocalReviewsPage({ loaderData }: Route.ComponentProps) {
                                 </div>
                               </div>
                             </div>
-                          ))
+                          );
+                        })
                         ) : (
                           <div className="p-4 text-center text-gray-500 bg-white border border-blue-200 rounded-lg">
                             <p className="mb-2">No businesses found matching "{businessSearchQuery}"</p>
@@ -637,6 +706,19 @@ export default function LocalReviewsPage({ loaderData }: Route.ComponentProps) {
                   {/* Step 2: Write Review */}
                   <Form method="post" id="review-form" className="space-y-4">
                     <input type="hidden" name="businessId" value={selectedBusiness?.id} />
+                    
+                    {/* Error/Success Display */}
+                    {actionData?.error && (
+                      <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md">
+                        {actionData.error}
+                      </div>
+                    )}
+                    
+                    {actionData && !('error' in actionData) && actionData.data && (
+                      <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-md">
+                        Review submitted successfully! The page will reload shortly.
+                      </div>
+                    )}
                     
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">Rating</label>

@@ -98,7 +98,8 @@ export default function LocalTipsPage({ loaderData }: Route.ComponentProps) {
   const actionData = useActionData<typeof action>();
   const fetcher = useFetcher();
   const [searchParams, setSearchParams] = useSearchParams();
-  const urlLocation = searchParams.get("location") || "Bangkok";
+  const urlLocation = searchParams.get("location");
+  const currentLocation = urlLocation || "Bangkok";
   const searchQuery = searchParams.get("search") || "";
   const categoryFilter = searchParams.get("category") || "All";
   
@@ -119,6 +120,17 @@ export default function LocalTipsPage({ loaderData }: Route.ComponentProps) {
       setExpandedPosts(prev => new Set(prev).add(fetcher.data.postId));
     }
   }, [fetcher.data]);
+
+  // Share Tip 성공 시 모달 닫기 및 페이지 새로고침
+  useEffect(() => {
+    if (actionData && actionData.success) {
+      setIsModalOpen(false);
+      setSelectedCategory("");
+      setSelectedLocation("");
+      // 새로 추가된 tip을 보기 위해 페이지 새로고침
+      window.location.reload();
+    }
+  }, [actionData]);
   
   // Group comments by post_id for easy lookup
   const commentsByPostId = comments.reduce((acc, comment) => {
@@ -137,7 +149,7 @@ export default function LocalTipsPage({ loaderData }: Route.ComponentProps) {
       (post.username && post.username.toLowerCase().includes(searchQuery.toLowerCase()));
     
     const matchesCategory = categoryFilter === "All" || post.category === categoryFilter;
-    const matchesLocation = urlLocation === "Other Cities" || post.location === urlLocation;
+    const matchesLocation = !urlLocation || urlLocation === "Other Cities" || post.location === urlLocation;
     
     return matchesSearch && matchesCategory && matchesLocation;
   }).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
@@ -231,7 +243,7 @@ export default function LocalTipsPage({ loaderData }: Route.ComponentProps) {
   const openTipModal = () => {
     setIsModalOpen(true);
     setSelectedCategory("Other");
-    setSelectedLocation(urlLocation);
+    setSelectedLocation(currentLocation);
   };
 
   // Close modal
@@ -253,7 +265,7 @@ export default function LocalTipsPage({ loaderData }: Route.ComponentProps) {
       <div className="text-center mb-2">
         <h1 className="text-3xl font-bold mb-2">Local Tips</h1>
         <p className="text-muted-foreground pb-6">
-          Share and discover helpful tips from the local community  in {urlLocation}</p>
+          Share and discover helpful tips from the local community {!urlLocation ? "across all locations" : `in ${currentLocation}`}</p>
       </div>
 
       {/* Search andFilters */}
@@ -342,7 +354,7 @@ export default function LocalTipsPage({ loaderData }: Route.ComponentProps) {
       <div className="flex justify-between items-center mb-4">
         <p className="text-muted-foreground">
           {filteredTips.length} tip{filteredTips.length !== 1 ? 's' : ''} found 
-          {urlLocation === "Other Cities" ? " across all cities" : ` in ${urlLocation}`}
+          {!urlLocation ? " across all locations" : urlLocation === "Other Cities" ? " across all cities" : ` in ${currentLocation}`}
           {(searchQuery || categoryFilter !== "All") && (
             <span className="ml-2">
               {searchQuery && ` for "${searchQuery}"`}
@@ -377,24 +389,22 @@ export default function LocalTipsPage({ loaderData }: Route.ComponentProps) {
                       }`}
                       dangerouslySetInnerHTML={{ __html: post.content }}
                     />
-                    {(isContentLong(post.content) || commentsByPostId[post.id]?.length > 0) && (
-                      <button
-                        onClick={() => handleCommentToggle(post.id)}
-                        className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800 mt-1"
-                      >
-                        {expandedPosts.has(post.id) ? (
-                          <>
-                            <ChevronUpIcon className="h-4 w-4" />
-                            Show less
-                          </>
-                        ) : (
-                          <>
-                            <ChevronDownIcon className="h-4 w-4" />
-                            Show more
-                          </>
-                        )}
-                      </button>
-                    )}
+                    <button
+                      onClick={() => handleCommentToggle(post.id)}
+                      className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800 mt-1"
+                    >
+                      {expandedPosts.has(post.id) ? (
+                        <>
+                          <ChevronUpIcon className="h-4 w-4" />
+                          Show less
+                        </>
+                      ) : (
+                        <>
+                          <ChevronDownIcon className="h-4 w-4" />
+                          Show more
+                        </>
+                      )}
+                    </button>
                   </div>
                   <div className="flex items-center gap-4 text-sm text-muted-foreground">
                     <div className="flex items-center gap-2">
@@ -650,7 +660,7 @@ function ReplyInput({ postId, onSubmitReply, fetcher }: { postId: number; onSubm
       <input
         type="text"
         className="border rounded px-2 py-1 w-full text-sm"
-        placeholder="댓글을 입력하세요..."
+        placeholder="Reply..."
         value={input}
         onChange={e => setInput(e.target.value)}
         name="reply"

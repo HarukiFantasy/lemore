@@ -72,7 +72,14 @@ export function Navigation({
   const updateLocation = (newLocation: string) => {
     setLocation(newLocation);
     const params = new URLSearchParams(searchParams);
-    params.set("location", newLocation);
+    
+    if (newLocation === "All Locations") {
+      // All Locations를 선택하면 location 파라미터를 제거
+      params.delete("location");
+    } else {
+      params.set("location", newLocation);
+    }
+    
     setSearchParams(params);
   };
 

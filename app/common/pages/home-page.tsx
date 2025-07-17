@@ -20,10 +20,23 @@ export const meta: Route.MetaFunction = () => {
 
 export const loader = async ({ request }: Route.LoaderArgs) => {
   const { client, headers } = makeSSRClient(request);
-  const todaysPicks = await getProductsListings(client, 4);
-  const communityPosts = await getLocalTipPosts(client, 10);
-  // Mock data for location - 나중에 실제 사용자 위치로 교체
-  const location = "Bangkok";
+  const url = new URL(request.url);
+  const location = url.searchParams.get("location");
+  
+  // Get all products and filter by location
+  let todaysPicks = await getProductsListings(client, 20); // Get more to filter
+  if (location && location !== "All Locations" && location !== "Other Cities") {
+    todaysPicks = todaysPicks.filter(product => product.location === location);
+  }
+  todaysPicks = todaysPicks.slice(0, 4); // Limit to 4 after filtering
+  
+  // Get all community posts and filter by location
+  let communityPosts = await getLocalTipPosts(client, 20); // Get more to filter
+  if (location && location !== "All Locations" && location !== "Other Cities") {
+    communityPosts = communityPosts.filter(post => post.location === location);
+  }
+  communityPosts = communityPosts.slice(0, 10); // Limit to 10 after filtering
+  
   return { todaysPicks, location, communityPosts };
 };
 
@@ -64,23 +77,28 @@ export default function HomePage() {
   const [searchParams] = useSearchParams();
   const { todaysPicks, location, communityPosts } = useLoaderData() as {
     todaysPicks: any[];
-    location: string;
+    location: string | null;
     communityPosts: any[];
   };
-  const urlLocation = searchParams.get("location") || location;
+  const urlLocation = searchParams.get("location");
+  const currentLocation = urlLocation || "Bangkok";
 
   return (
     
     <div className="sm:max-w-[100vw] md:max-w-[100vw] lg:max-w-[100vw] xl:max-w-[100vw]">
       <div className="flex flex-col px-8 py-15 items-center justify-center rounded-md bg-gradient-to-t from-background to-primary/10">
         <h1 className="text-4xl font-bold text-center">Buy Less, Share More, Live Lighter</h1>
-        <p className="text-lg text-gray-600 mt-2">in {urlLocation}</p>
+        <p className="text-lg text-gray-600 mt-2">
+          {!urlLocation ? "across all locations" : `in ${currentLocation}`}
+        </p>
       </div>
       <Form className="flex items-center justify-center max-w-screen-sm mx-auto mt-1 gap-2">
         <Input name="query" type="text" placeholder="Search for items" />
         <Button type="submit" variant="outline">Search</Button>
       </Form>
-      <div className="text-2xl font-bold mt-10 mx-auto sm:max-w-[100vw] md:max-w-[100vw]">Today's Picks</div>
+      <div className="text-2xl font-bold mt-10 mx-auto sm:max-w-[100vw] md:max-w-[100vw]">
+        Today's Picks {!urlLocation ? "" : `in ${currentLocation}`}
+      </div>
       <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-4 items-start mx-auto sm:max-w-[100vw] md:max-w-[100vw]">
         {todaysPicks.length > 0 ? (
           todaysPicks.map((product) => (
@@ -101,7 +119,9 @@ export default function HomePage() {
         ): "No products found"}
 
       </div>
-      <div className="text-2xl font-bold mt-10 w-full lg:max-w-[70vw] mx-auto sm:max-w-[100vw] md:max-w-[100vw]">Community</div>
+      <div className="text-2xl font-bold mt-10 w-full lg:max-w-[70vw] mx-auto sm:max-w-[100vw] md:max-w-[100vw]">
+        Community {!urlLocation ? "" : `in ${currentLocation}`}
+      </div>
       <div className="bg-white rounded-2xl shadow-sm border mt-2 overflow-hidden w-full lg:max-w-[70vw] mx-auto sm:max-w-[100vw] md:max-w-[100vw]">
         {communityPosts.length > 0 ? (
           communityPosts.map((post, index) => {
