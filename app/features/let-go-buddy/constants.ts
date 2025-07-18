@@ -2,14 +2,10 @@ import { declutterSituations, recommendationActions, environmentalImpactLevels }
 
 // UI 전용 상수들
 export const DECLUTTER_SITUATIONS = [
-  { value: "moving", label: "Moving" },
-  { value: "downsizing", label: "Downsizing" },
-  { value: "spring_cleaning", label: "Spring Cleaning" },
-  { value: "digital_declutter", label: "Digital Declutter" },
-  { value: "minimalism", label: "Minimalism" },
-  { value: "inheritance", label: "Inheritance" },
-  { value: "relationship_change", label: "Relationship Change" },
-  { value: "other", label: "Other" }
+  { value: "Moving", label: "Moving" },
+  { value: "Minimalism", label: "Minimalism" },
+  { value: "Spring Cleaning", label: "Spring Cleaning" },
+  { value: "Other", label: "Other" }
 ] as const;
 
 export const EMOTIONAL_QUESTIONS = [

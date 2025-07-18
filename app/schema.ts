@@ -63,8 +63,7 @@ export const priceTypes = pgEnum("price_type", [
 
 // Let Go Buddy related enums
 export const declutterSituations = pgEnum("declutter_situation", [
-  "Moving", "Downsizing", "Spring Cleaning", "Digital Declutter", 
-  "Minimalism", "Inheritance", "Relationship Change", "Other"
+  "Moving", "Minimalism", "Spring Cleaning", "Other"
 ]);
 
 export const recommendationActions = pgEnum("recommendation_action", [

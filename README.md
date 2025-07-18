@@ -81,6 +81,50 @@ The profile page includes avatar upload functionality that stores images in Supa
    );
    ```
 
+### Let Go Buddy Product Images
+
+The Let Go Buddy feature includes AI-powered image analysis. To enable this feature:
+
+1. **Create Storage Bucket**
+   
+   In your Supabase dashboard, go to Storage and create a new bucket named `letgobuddy-product`:
+   
+   ```bash
+   # Using Supabase CLI
+   supabase storage create letgobuddy-product
+   ```
+
+2. **Configure Bucket Policies**
+   
+   Run the SQL from `app/sql/setup_let_go_buddy_storage.sql` in your Supabase SQL Editor:
+   
+   ```sql
+   -- Allow authenticated users to upload their own let-go-buddy product images
+   CREATE POLICY "Users can upload their own let-go-buddy product images" ON storage.objects
+   FOR INSERT WITH CHECK (
+     bucket_id = 'letgobuddy-product' AND 
+     auth.uid()::text = (storage.foldername(name))[1]
+   );
+   
+   -- Allow public read access to let-go-buddy product images
+   CREATE POLICY "Public read access to let-go-buddy product images" ON storage.objects
+   FOR SELECT USING (bucket_id = 'letgobuddy-product');
+   
+   -- Allow users to update their own let-go-buddy product images
+   CREATE POLICY "Users can update their own let-go-buddy product images" ON storage.objects
+   FOR UPDATE USING (
+     bucket_id = 'letgobuddy-product' AND 
+     auth.uid()::text = (storage.foldername(name))[1]
+   );
+   
+   -- Allow users to delete their own let-go-buddy product images
+   CREATE POLICY "Users can delete their own let-go-buddy product images" ON storage.objects
+   FOR DELETE USING (
+     bucket_id = 'letgobuddy-product' AND 
+     auth.uid()::text = (storage.foldername(name))[1]
+   );
+   ```
+
 3. **Environment Variables**
    
    Make sure your environment variables are set up correctly:
@@ -88,13 +132,15 @@ The profile page includes avatar upload functionality that stores images in Supa
    ```env
    VITE_SUPABASE_URL=your_supabase_url
    VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+   OPENAI_API_KEY=your_openai_api_key
    ```
 
 ### File Upload Limits
 
 - **Maximum file size**: 5MB
 - **Allowed formats**: JPEG, PNG, WebP
-- **Storage path**: `avatars/{user_id}/{timestamp}`
+- **Avatar storage path**: `avatars/{user_id}/{timestamp}`
+- **Let Go Buddy storage path**: `letgobuddy-product/{user_id}/{timestamp}`
 
 ## Today's Picks Selection Algorithm
 

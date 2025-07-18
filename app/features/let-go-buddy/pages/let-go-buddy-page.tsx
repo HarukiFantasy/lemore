@@ -16,24 +16,19 @@ import {
   LightBulbIcon as TipsIcon
 } from "@heroicons/react/24/outline";
 import { useNavigate, useSearchParams } from "react-router";
-import { EMOTIONAL_QUESTIONS, ENVIRONMENTAL_IMPACT, DECLUTTER_SITUATIONS } from '../constants';
-import { getEnvironmentalImpactSummary, getLetGoBuddySessionsWithItems,getItemAnalysesDetailed } from '../queries';
+import { EMOTIONAL_QUESTIONS, DECLUTTER_SITUATIONS } from '../constants';
+import { uploadLetGoBuddyImages, createLetGoBuddySession } from '../mutations';
+import { makeSSRClient, browserClient } from "~/supa-client";
 import { Route } from './+types/let-go-buddy-page';
-import { makeSSRClient } from "~/supa-client";
 
-
-export async function loader({ request }: Route.LoaderArgs) {
-  const { client, headers } = makeSSRClient(request);
-  const [sessions, analyses, impact] = await Promise.all([
-    getLetGoBuddySessionsWithItems(client),
-    getItemAnalysesDetailed(client),
-    getEnvironmentalImpactSummary(client)
-  ]);
-  return { sessions, analyses, impact };
-}
+export const loader = async ({ request }: Route.LoaderArgs) => {
+  const { client } = makeSSRClient(request);
+  const { data: { user } } = await client.auth.getUser();
+  return { user };
+};
 
 export default function LetGoBuddyPage({ loaderData }: Route.ComponentProps) {
-  const { sessions, analyses, impact } = loaderData;
+  const { user } = loaderData || { user: null };
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const currentLocation = searchParams.get("location") || "Bangkok";
@@ -61,6 +56,8 @@ export default function LetGoBuddyPage({ loaderData }: Route.ComponentProps) {
     pros: "",
     cons: ""
   });
+  const [analyses, setAnalyses] = useState<any[]>([]);
+  const [currentItemIndex, setCurrentItemIndex] = useState(0);
 
   // Handle file upload
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -69,93 +66,76 @@ export default function LetGoBuddyPage({ loaderData }: Route.ComponentProps) {
       alert("You can upload maximum 5 files");
       return;
     }
-
-    // MIME 타입 검증
     const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
-    const invalidFiles = files.filter(file => 
-      !allowedTypes.includes(file.type)
-    );
-    
+    const invalidFiles = files.filter(file => !allowedTypes.includes(file.type));
     if (invalidFiles.length > 0) {
       const invalidTypes = invalidFiles.map(file => file.type).join(", ");
       alert(`Invalid file type(s): ${invalidTypes}. Only JPEG, PNG, and WebP images are allowed.`);
       return;
     }
-
-    // 파일 크기 검증
     const maxFileSize = 10 * 1024 * 1024; // 10MB
-    const oversizedFiles = files.filter(file => 
-      file.size > maxFileSize
-    );
-    
+    const oversizedFiles = files.filter(file => file.size > maxFileSize);
     if (oversizedFiles.length > 0) {
       const maxSizeMB = maxFileSize / (1024 * 1024);
       alert(`File(s) too large. Maximum file size is ${maxSizeMB}MB.`);
       return;
     }
-    
     setUploadedFiles(files);
-    
-    // Create preview URLs
     const urls = files.map(file => URL.createObjectURL(file));
     setPreviewUrls(urls);
   };
 
-  // Current item being analyzed (single item mode)
-  const [currentItemIndex, setCurrentItemIndex] = useState(0);
-  const currentItem = analyses[currentItemIndex] ? {
-    ...analyses[currentItemIndex],
-    name: analyses[currentItemIndex].item_name,
-    photo: (Array.isArray(analyses[currentItemIndex].images) && analyses[currentItemIndex].images.length > 0 
-      ? String(analyses[currentItemIndex].images[0]) 
-      : '/sample.png'),
-    category: analyses[currentItemIndex].item_category,
-    recommendation: analyses[currentItemIndex].recommendation,
-    aiListing: {
-      title: analyses[currentItemIndex].ai_listing_title || `${analyses[currentItemIndex].item_name} - Great condition!`,
-      desc: analyses[currentItemIndex].ai_listing_description ?? `Well-maintained ${analyses[currentItemIndex].item_name} in good condition.`,
-      price: analyses[currentItemIndex].ai_listing_price ? `THB ${analyses[currentItemIndex].ai_listing_price}` : 'THB 250',
-      location: currentLocation,
+  // 분석 요청 및 결과 반영
+  const handleGenerateAnalysis = async () => {
+    if (!selectedSituation) {
+      alert("Please select your situation first");
+      return;
     }
-  } as any : null;
+    if (uploadedFiles.length === 0) {
+      alert("Please upload at least one image first");
+      return;
+    }
+    if (!user) {
+      alert("로그인이 필요합니다.");
+      return;
+    }
+    setIsAnalyzing(true);
+    setAnalysisComplete(false);
+    setAnalyses([]);
+    try {
+      // 1. 이미지 업로드
+      const imageUrls = await uploadLetGoBuddyImages(browserClient, { userId: (user as any).id, images: uploadedFiles });
+      // 2. 세션 생성
+      const { session_id } = await createLetGoBuddySession(browserClient, { userId: (user as any).id, situation: selectedSituation });
+      // 3. AI 분석 요청
+      const res = await fetch(
+        `/let-go-buddy/analysis?sessionId=${session_id}&imageUrls=${encodeURIComponent(JSON.stringify(imageUrls))}&situation=${encodeURIComponent(selectedSituation)}`,
+        { method: 'GET' }
+      );
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.error || "AI 분석 실패");
+      setAnalyses([data.analysis]);
+      setAnalysisComplete(true);
+      setCurrentItemIndex(0);
+      setTimeout(() => {
+        const analysisSection = document.getElementById('analysis-results');
+        if (analysisSection) {
+          analysisSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 100);
+    } catch (err: any) {
+      console.error('Analysis error:', err);
+      alert(err.message || "분석 중 오류 발생");
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
 
   // Handle image removal
   const handleRemoveImage = (index: number) => {
     const newPreviewUrls = previewUrls.filter((_, i) => i !== index);
     setPreviewUrls(newPreviewUrls);
     setUploadedFiles(uploadedFiles.filter((_, i) => i !== index));
-  };
-
-  // Handle AI analysis generation
-  const handleGenerateAnalysis = async () => {
-    if (!selectedSituation) {
-      alert("Please select your situation first");
-      return;
-    }
-    
-    if (uploadedFiles.length === 0) {
-      alert("Please upload at least one image first");
-      return;
-    }
-
-    setIsAnalyzing(true);
-    
-    // Simulate AI analysis delay with enhanced analysis based on user input
-    setTimeout(() => {
-      setIsAnalyzing(false);
-      setAnalysisComplete(true);
-      
-      // Scroll to analysis results after completion
-      setTimeout(() => {
-        const analysisSection = document.getElementById('analysis-results');
-        if (analysisSection) {
-          analysisSection.scrollIntoView({ 
-            behavior: 'smooth', 
-            block: 'center' 
-          });
-        }
-      }, 100);
-    }, 3000);
   };
 
   // Handle emotional assessment
@@ -194,13 +174,16 @@ export default function LetGoBuddyPage({ loaderData }: Route.ComponentProps) {
       const listingData = {
         title: selectedItem.aiListing.title,
         description: selectedItem.aiListing.desc,
-        price: selectedItem.aiListing.price,
+        price: selectedItem.aiListing.price.replace('THB ', ''), // Remove 'THB ' prefix
+        currency: "THB",
+        priceType: "Fixed",
         location: currentLocation,
         images: uploadedFiles, // Pass the uploaded images
         category: selectedItem.category || "Electronics",
         condition: "Used - Good",
         aiGenerated: true,
-        originalItem: selectedItem
+        originalItem: selectedItem,
+        fromLetGoBuddy: true
       };
 
       // Navigate to submit-a-listing-page with the data
@@ -289,14 +272,17 @@ export default function LetGoBuddyPage({ loaderData }: Route.ComponentProps) {
       const giveawayData = {
         title: `FREE: ${selectedItem.name} - Giving away for free!`,
         description: `Free giveaway! This ${selectedItem.name} is in good condition and I'm giving it away for free. Perfect for someone who needs it. Please contact me if you're interested.`,
-        price: "THB 0",
+        price: "0",
+        currency: "THB",
+        priceType: "Free",
         location: currentLocation,
         images: uploadedFiles,
         category: selectedItem.category || "Electronics",
         condition: "Used - Good",
         aiGenerated: true,
         isGiveaway: true,
-        originalItem: selectedItem
+        originalItem: selectedItem,
+        fromLetGoBuddy: true
       };
 
       // Navigate to submit-a-listing-page with free giveaway data
@@ -403,6 +389,20 @@ export default function LetGoBuddyPage({ loaderData }: Route.ComponentProps) {
     setGiveawayMessage(message);
     setShowGiveawayMessage(true);
   };
+
+  const currentItem = analyses.length > 0 && analyses[currentItemIndex] ? {
+    ...analyses[currentItemIndex],
+    name: analyses[currentItemIndex].item_name,
+    photo: previewUrls.length > 0 ? previewUrls[0] : '/sample.png',
+    category: analyses[currentItemIndex].item_category,
+    recommendation: analyses[currentItemIndex].recommendation,
+    aiListing: {
+      title: analyses[currentItemIndex].ai_listing_title || `${analyses[currentItemIndex].item_name} - Great condition!`,
+      desc: analyses[currentItemIndex].ai_listing_description ?? `Well-maintained ${analyses[currentItemIndex].item_name} in good condition.`,
+      price: analyses[currentItemIndex].ai_listing_price ? `THB ${analyses[currentItemIndex].ai_listing_price}` : 'THB 250',
+      location: currentLocation,
+    }
+  } as any : null;
 
   return (
     <div className="max-w-xl mx-auto py-12 px-4">

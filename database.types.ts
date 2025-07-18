@@ -3403,15 +3403,7 @@ export type Database = {
       }
     }
     Enums: {
-      declutter_situation:
-        | "Moving"
-        | "Downsizing"
-        | "Spring Cleaning"
-        | "Digital Declutter"
-        | "Minimalism"
-        | "Inheritance"
-        | "Relationship Change"
-        | "Other"
+      declutter_situation: "Moving" | "Minimalism" | "Spring Cleaning" | "Other"
       environmental_impact_level: "Low" | "Medium" | "High" | "Critical"
       local_tip_categories:
         | "Visa"
@@ -3586,16 +3578,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      declutter_situation: [
-        "Moving",
-        "Downsizing",
-        "Spring Cleaning",
-        "Digital Declutter",
-        "Minimalism",
-        "Inheritance",
-        "Relationship Change",
-        "Other",
-      ],
+      declutter_situation: ["Moving", "Minimalism", "Spring Cleaning", "Other"],
       environmental_impact_level: ["Low", "Medium", "High", "Critical"],
       local_tip_categories: [
         "Visa",

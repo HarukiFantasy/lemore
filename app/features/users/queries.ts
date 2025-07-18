@@ -248,10 +248,11 @@ export const getUserStats = async (
     .from("user_activity_view")
     .select("*")
     .eq("username", username)
-    .single();
-    
+    .limit(1); // 첫 번째 행만 가져오기
+
   if (error) throw new Error(error.message);
-  return data;
+  if (!data || data.length === 0) return null; // 데이터가 없으면 null 반환
+  return data[0]; // 첫 번째 행 반환
 };
 
 export const getUserListings = async (

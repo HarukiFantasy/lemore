@@ -17,7 +17,11 @@ export default [
     route("/local-reviews", "features/community/pages/local-reviews-page.tsx"),
     route("/give-and-glow", "features/community/pages/give-and-glow-page.tsx"),
   ]),
-  route("/let-go-buddy", "features/let-go-buddy/pages/let-go-buddy-page.tsx"),
+  ...prefix("let-go-buddy", [
+    index("features/let-go-buddy/pages/let-go-buddy-page.tsx"),
+    route("/analysis", "features/let-go-buddy/pages/let-go-buddy-analysis-page.tsx"),
+  ]),
+
   ...prefix("/auth", [
     layout("features/auth/layouts/auth-layout.tsx", [
       route("/login", "features/auth/pages/login-page.tsx"),
