@@ -51,6 +51,7 @@ export const insertItemAnalysis = async (
     item_category: Database["public"]["Enums"]["product_category"];
     item_condition: Database["public"]["Enums"]["product_condition"];
     recommendation: Database["public"]["Enums"]["recommendation_action"];
+    recommendation_reason?: string;
     ai_suggestion: string;
     emotional_score: number;
     environmental_impact: Database["public"]["Enums"]["environmental_impact_level"];

@@ -237,6 +237,7 @@ export type Database = {
           maintenance_cost: number | null
           original_price: number | null
           recommendation: Database["public"]["Enums"]["recommendation_action"]
+          recommendation_reason: string | null
           session_id: number
           space_value: number | null
           updated_at: string
@@ -262,6 +263,7 @@ export type Database = {
           maintenance_cost?: number | null
           original_price?: number | null
           recommendation: Database["public"]["Enums"]["recommendation_action"]
+          recommendation_reason?: string | null
           session_id: number
           space_value?: number | null
           updated_at?: string
@@ -287,6 +289,7 @@ export type Database = {
           maintenance_cost?: number | null
           original_price?: number | null
           recommendation?: Database["public"]["Enums"]["recommendation_action"]
+          recommendation_reason?: string | null
           session_id?: number
           space_value?: number | null
           updated_at?: string

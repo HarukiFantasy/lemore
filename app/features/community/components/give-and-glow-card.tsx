@@ -95,10 +95,10 @@ export function GiveAndGlowCard({
 
   return (
     <Card className="hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 transition-all duration-300 hover:scale-[1.02] hover:shadow-lg w-full">
-      <CardContent className="py-1">
-        <div className="flex items-start gap-4">
+      <CardContent style={{ paddingTop: '5px', paddingBottom: '5px', paddingLeft: '15px', paddingRight: '8px' }}>
+        <div className="flex items-start gap-3">
           {/* Giver Avatar */}
-          <div className="flex items-center space-x-3 mb-4">
+          <div className="flex-shrink-0">
             <Avatar className="h-10 w-10">
               <AvatarImage src={giverAvatar} alt={giverName} />
               <AvatarFallback>{giverName.split(' ').map(n => n[0]).join('')}</AvatarFallback>
@@ -107,10 +107,10 @@ export function GiveAndGlowCard({
           
           <div className="flex-1">
             {/* Review Header */}
-            <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center justify-between mb-1">
               <div>
                 <h3 className="text-lg font-semibold text-gray-900">{itemName}</h3>
-                <div className="flex items-center gap-2 text-sm text-gray-600">
+                <div className="flex items-center gap-1 text-sm text-gray-600">
                   <span>Given by </span>
                   <UserStatsHoverCard
                     profileId={giverId}
@@ -134,8 +134,8 @@ export function GiveAndGlowCard({
             </div>
             
             {/* Rating and Category */}
-            <div className="flex items-center gap-4 mb-3">
-              <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 mb-1">
+              <div className="flex items-center gap-1">
                 {renderStars(rating)}
                 <span className="text-sm text-gray-600">{rating}/5</span>
               </div>
@@ -148,15 +148,15 @@ export function GiveAndGlowCard({
             </div>
             
             {/* Review Content */}
-            <p className="text-gray-700 mb-4 leading-relaxed">{review}</p>
+            <p className="text-sm text-gray-700 mb-1 leading-relaxed">{review}</p>
             
             {/* Tags */}
             {tags.length > 0 && (
-              <div className="flex flex-wrap gap-1 mb-4">
+              <div className="flex flex-wrap gap-1">
                 {tags.map((tag: string, index: number) => (
                   <Badge variant="outline"
                     key={index}
-                    className="bg-purple-100 text-purple-700 px-2 py-1 rounded-full text-xs"
+                    className="bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded-full text-xs"
                   >
                     {tag}
                   </Badge>

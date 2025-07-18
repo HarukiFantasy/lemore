@@ -147,7 +147,7 @@ export const products = pgTable("products", {
 
 // Product images table
 export const productImages = pgTable("product_images", {
-  product_id: bigint("product_id", {mode: "number"}).notNull().references(() => products.product_id),
+  product_id: bigint("product_id", {mode: "number"}).notNull().references(() => products.product_id, {onDelete: "cascade"}),
   image_url: text("image_url").notNull(),
   image_order: integer().notNull().default(0),
   is_primary: boolean().notNull().default(false),
@@ -785,6 +785,7 @@ export const itemAnalyses = pgTable("item_analyses", {
   item_category: productCategories().notNull(),
   item_condition: productConditions().notNull(),
   recommendation: recommendationActions().notNull(),
+  recommendation_reason: text(),
   ai_suggestion: text().notNull(),
   emotional_score: integer().notNull(),
   environmental_impact: environmentalImpactLevels().notNull(),

@@ -1,0 +1,1 @@
+ALTER TABLE "item_analyses" ADD COLUMN "recommendation_reason" text;

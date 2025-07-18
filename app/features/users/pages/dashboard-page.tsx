@@ -131,12 +131,6 @@ export default function DashboardPage({ loaderData }: { loaderData: LoaderData &
                   View My Listings
                 </Link>
               </Button>
-              <Button className="w-full justify-start" variant="outline" asChild>
-                <Link to="/my/settings">
-                  <span className="mr-2">⚙️</span>
-                  Account Settings
-                </Link>
-              </Button>
             </div>
           </CardContent>
         </Card>

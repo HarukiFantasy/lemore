@@ -53,19 +53,23 @@ export default function MessagesPage({ loaderData }: { loaderData: LoaderData })
   const [client] = useState(() => browserClient);
   const [conversationsList, setConversationsList] = useState(conversations);
   const [showSidebar, setShowSidebar] = useState(false); // 모바일 사이드바 토글
+  const [hasHandledProductContext, setHasHandledProductContext] = useState(false);
 
   // Handle product context and create new conversation if needed
   useEffect(() => {
     const handleProductContext = async () => {
-      if (productContext?.fromProduct && productContext?.sellerId && user?.profile_id) {
+      if (productContext?.fromProduct && productContext?.sellerId && user?.profile_id && !hasHandledProductContext) {
         try {
           setLoading(true);
           setError(null);
           
           // Check if conversation already exists with this seller
-          const existingConversation = conversations.find(conv => 
-            conv.sender_id === productContext.sellerId || conv.receiver_id === productContext.sellerId
-          );
+          const existingConversation = conversations.find(conv => {
+            const isSameSeller = conv.sender_id === productContext.sellerId || conv.receiver_id === productContext.sellerId;
+            const isSameProduct = conv.product_id === productContext.productId;
+            // 같은 셀러 + 같은 상품인 경우에만 기존 대화 사용
+            return isSameSeller && isSameProduct;
+          });
           
           if (existingConversation) {
             // Use existing conversation
@@ -77,7 +81,8 @@ export default function MessagesPage({ loaderData }: { loaderData: LoaderData })
             
             const newConversation = await getOrCreateConversation(client, {
               userId: user.profile_id,
-              otherUserId: productContext.sellerId
+              otherUserId: productContext.sellerId,
+              productId: productContext.productId,
             });
             
             console.log('New conversation created:', newConversation);
@@ -100,6 +105,7 @@ export default function MessagesPage({ loaderData }: { loaderData: LoaderData })
             setSelectedConversation(newConversation.conversation_id.toString());
             await loadMessages(newConversation.conversation_id);
           }
+          setHasHandledProductContext(true);
         } catch (error) {
           console.error('Failed to handle product context:', error);
           setError(`Failed to create conversation: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -110,7 +116,7 @@ export default function MessagesPage({ loaderData }: { loaderData: LoaderData })
     };
     
     handleProductContext();
-  }, [productContext, user?.profile_id]);
+  }, [productContext, user?.profile_id, hasHandledProductContext]);
   
   // Load messages when conversation is selected
   useEffect(() => {

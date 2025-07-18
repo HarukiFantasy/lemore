@@ -669,6 +669,12 @@ export default function LetGoBuddyPage({ loaderData }: Route.ComponentProps) {
                 <div className="font-semibold text-lg mb-1">Photo: {currentItem.name}</div>
                 <div className="text-gray-600 mb-1">Recognition: <span className="font-medium">"{currentItem.name}"</span></div>
                 <div className="mb-2">Recommendation: <span className="font-medium">{currentItem.recommendation}</span></div>
+                {currentItem.recommendation_reason && (
+                  <div className="mb-3 p-3 bg-blue-50 rounded-lg border border-blue-100">
+                    <div className="text-sm font-medium text-blue-800 mb-1">Why this recommendation?</div>
+                    <div className="text-xs text-blue-700 leading-relaxed">{currentItem.recommendation_reason}</div>
+                  </div>
+                )}
                 
                 {/* User Provided Details */}
                 {(itemDetails.usagePeriod || itemDetails.pros || itemDetails.cons) && (
@@ -739,14 +745,6 @@ export default function LetGoBuddyPage({ loaderData }: Route.ComponentProps) {
                   <Button 
                     variant="outline" 
                     size="sm"
-                    onClick={handleCostBenefitAnalysis}
-                    className="text-xs"
-                  >
-                    Cost Analysis
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
                     onClick={handleEnvironmentalImpact}
                     className="text-xs"
                   >
@@ -779,7 +777,7 @@ export default function LetGoBuddyPage({ loaderData }: Route.ComponentProps) {
               <div className="grid grid-cols-2 gap-4">
                 <div className="bg-gray-50 p-3 rounded-lg">
                   <div className="text-sm text-gray-500 mb-1">Suggested Price</div>
-                  <div className="font-semibold text-green-600">{selectedItem.aiListing.price}</div>
+                  <div className="font-semibold text-green-600">Preparing...</div>
                 </div>
                 <div className="bg-gray-50 p-3 rounded-lg">
                   <div className="text-sm text-gray-500 mb-1">Location</div>
@@ -843,8 +841,8 @@ export default function LetGoBuddyPage({ loaderData }: Route.ComponentProps) {
                 <div className="font-semibold text-gray-800 mb-2">Emotional Attachment Score: <span className="text-blue-600">{calculateEmotionalScore()}%</span></div>
                 <div className="text-sm text-gray-600">
                   {calculateEmotionalScore() > 70 ? "High attachment - Consider keeping" :
-                   calculateEmotionalScore() > 40 ? "Moderate attachment - Think carefully" :
-                   "Low attachment - Safe to let go"}
+                  calculateEmotionalScore() > 40 ? "Moderate attachment - Think carefully" :
+                  "Low attachment - Safe to let go"}
                 </div>
               </div>
             </div>
@@ -1016,7 +1014,7 @@ export default function LetGoBuddyPage({ loaderData }: Route.ComponentProps) {
           onClick={() => navigate("/community/local-tips")}
         >
           <TipsIcon className="w-4 h-4 mr-2" />
-          Get Tips
+          Analyze another item
         </Button>
       </div>
 

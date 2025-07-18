@@ -7,7 +7,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "~/common/components/ui
 import { Avatar, AvatarFallback, AvatarImage } from "~/common/components/ui/avatar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "~/common/components/ui/dialog";
 import { ScrollArea } from "~/common/components/ui/scroll-area";
-import { Marquee } from "components/magicui/marquee";
 import { getLocalBusinesses, getLocalReviews } from "../queries";
 import { createLocalReview } from "../mutation";
 import type { Route } from "./+types/local-reviews-page";
@@ -450,13 +449,13 @@ export default function LocalReviewsPage({ loaderData }: Route.ComponentProps) {
             <Card key={business.id} className="w-full">
               <div className="flex flex-col md:flex-row">
                 {/* 좌측: 비즈니스 정보 */}
-                <div className="flex-shrink-0 w-full md:w-1/3 flex flex-col items-center md:items-start -mb-6 -mt-6">
+                <div className="flex-shrink-0 w-full md:w-1/3 flex flex-col items-center md:items-start md:-mb-6 md:-mt-6">
                   {/* 비즈니스 사진 - 카드 상단에 여백 없이 */}
                   <div className="w-full">
                     <img
                       src="/cafe1.png"
                       alt={business.name ?? ""}
-                      className="w-full h-32 object-cover rounded-t-lg mb-0"
+                      className="w-full h-32 object-cover rounded-t-lg md:rounded-t-lg mb-0"
                     />
                   </div>
                   {/* 비즈니스 정보 */}
@@ -485,14 +484,9 @@ export default function LocalReviewsPage({ loaderData }: Route.ComponentProps) {
                   </div>
                 </div>
                 {/* 우측: 해당 비즈니스의 모든 리뷰 */}
-                <CardContent className="flex-1 flex flex-col justify-between p-4 -mt-5 -mb-5 ml-4">
+                <CardContent className="flex-1 flex flex-col justify-between p-4 md:-mt-5 md:-mb-5 md:ml-4">
                   {businessReviews.length > 0 ? (
-                    <Marquee 
-                      vertical 
-                      pauseOnHover 
-                      className="h-64"
-                      repeat={1}
-                    >
+                    <ScrollArea className="h-64">
                       <div className="flex flex-col gap-3 w-full">
                         {businessReviews.map((review) => (
                           <div key={`${review.business_id}-${review.author_username}-${review.created_at}`} className="border-b last:border-b-0 pb-3 last:pb-0 bg-white rounded-lg p-3 shadow-sm">
@@ -517,7 +511,7 @@ export default function LocalReviewsPage({ loaderData }: Route.ComponentProps) {
                           </div>
                         ))}
                       </div>
-                    </Marquee>
+                    </ScrollArea>
                   ) : (
                     <div className="text-gray-500 text-center text-sm py-4">No reviews yet for this business.</div>
                   )}

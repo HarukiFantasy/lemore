@@ -10,7 +10,7 @@ import type { Route } from "./+types/profile-page";
 import { makeSSRClient } from "~/supa-client";
 import { getUserByProfileId, getUserSalesStatsByProfileId } from "../queries";
 import { updateUserAvatar } from "../mutations";
-import { redirect, useNavigation, useActionData, Form } from 'react-router';
+import { redirect, useNavigation, useActionData, Form, useRevalidator } from 'react-router';
 import { LOCATIONS, type Location } from "~/constants";
 import { CircleIcon, CheckCircleIcon, AlertCircleIcon, UploadIcon } from 'lucide-react';
 import { useState, useEffect } from 'react';
@@ -45,18 +45,10 @@ export const action = async ({request}: Route.ActionArgs) => {
     return redirect('/auth/login');
   }
   
-  // Handle avatar upload
-  console.log("Avatar file received:", avatar); // Debug log
-  if (avatar && avatar instanceof File) {
-    console.log("File details:", {
-      name: avatar.name,
-      size: avatar.size,
-      type: avatar.type
-    }); // Debug log
-    
-    if (avatar.size <= 2 * 1024 * 1024 && avatar.type.startsWith("image/")) {
+  // Handle avatar upload only if a valid file is provided
+  if (avatar && avatar instanceof File && avatar.size > 0 && avatar.type.startsWith("image/")) {
+    if (avatar.size <= 2 * 1024 * 1024) {
       try {
-        console.log("Uploading to Supabase storage..."); // Debug log
         const { data, error } = await client.storage
           .from("avatars")
           .upload(`${user.id}/${Date.now()}`, avatar, {
@@ -64,30 +56,23 @@ export const action = async ({request}: Route.ActionArgs) => {
             upsert: true,
           });
         if (error) {
-          console.log("Storage upload error:", error);
           return { error: "Failed to upload avatar. Please make sure the 'avatars' storage bucket exists." };
         }
-        console.log("File uploaded successfully:", data); // Debug log
         
         const {
           data: { publicUrl },
         } = await client.storage.from("avatars").getPublicUrl(data.path);
-        console.log("Public URL generated:", publicUrl); // Debug log
         
         await updateUserAvatar(client, {
           id: user.id,
           avatarUrl: publicUrl,
         });
-        console.log("Avatar URL updated in database"); // Debug log
       } catch (error) {
-        console.error("Avatar upload error:", error);
         return { error: "Failed to upload avatar. Please try again." };
       }
     } else {
       return { error: "Invalid file size or type. Please upload an image under 2MB." };
     }
-  } else if (avatar) {
-    console.log("Avatar is not a File:", typeof avatar, avatar); // Debug log
   }
   
   // Validate location is one of the allowed values
@@ -108,10 +93,9 @@ export const action = async ({request}: Route.ActionArgs) => {
     updateData.location = location as Location;
   }
   
-  const { error } = await client.from("user_profiles").update(updateData).eq("profile_id", user.id);
+  const { data, error } = await client.from("user_profiles").update(updateData).eq("profile_id", user.id).select();
   
   if (error) {
-    console.error("Error updating profile:", error);
     return { error: "Failed to update profile" };
   }
   
@@ -121,6 +105,7 @@ export const action = async ({request}: Route.ActionArgs) => {
 export default function ProfilePage({ loaderData }: Route.ComponentProps) { 
   const navigation = useNavigation();
   const actionData = useActionData<typeof action>();
+  const revalidator = useRevalidator();
   const isSubmitting = navigation.state === "submitting" ;
   const { userProfile, userStats } = loaderData;
   const [selectedLocation, setSelectedLocation] = useState(userProfile?.location || "");
@@ -136,13 +121,15 @@ export default function ProfilePage({ loaderData }: Route.ComponentProps) {
         // Clear file selection after successful upload
         setSelectedFile(null);
         setPreviewUrl(null);
+        // Revalidate data to refresh the UI
+        revalidator.revalidate();
       } else if ('error' in actionData) {
         setMessage({ type: 'error', text: actionData.error });
       }
       // Clear message after 5 seconds
       setTimeout(() => setMessage(null), 5000);
     }
-  }, [actionData]);
+  }, [actionData, revalidator]);
 
   // navigation이 idle이 되면 Dialog를 닫음
   useEffect(() => {
@@ -153,15 +140,13 @@ export default function ProfilePage({ loaderData }: Route.ComponentProps) {
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    console.log("File selected:", file); // Debug log
     if (file) {
       if (file.size <= 2 * 1024 * 1024 && file.type.startsWith("image/")) {
         setSelectedFile(file);
         const url = URL.createObjectURL(file);
         setPreviewUrl(url);
-        console.log("File validated and preview set"); // Debug log
       } else {
-        setMessage({ type: 'error', text: 'Please select an image file under 5MB.' });
+        setMessage({ type: 'error', text: 'Please select an image file under 2MB.' });
         setTimeout(() => setMessage(null), 5000);
       }
     }
@@ -243,20 +228,22 @@ export default function ProfilePage({ loaderData }: Route.ComponentProps) {
             </CardHeader>
             <CardContent>
               <Form method="post" encType="multipart/form-data">
-                {/* Hidden file input inside the form */}
-                <input
-                  name="avatar"
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  ref={(input) => {
-                    if (input && selectedFile) {
-                      const dataTransfer = new DataTransfer();
-                      dataTransfer.items.add(selectedFile);
-                      input.files = dataTransfer.files;
-                    }
-                  }}
-                />
+                {/* Hidden file input inside the form - only include if file is selected */}
+                {selectedFile && (
+                  <input
+                    name="avatar"
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    ref={(input) => {
+                      if (input && selectedFile) {
+                        const dataTransfer = new DataTransfer();
+                        dataTransfer.items.add(selectedFile);
+                        input.files = dataTransfer.files;
+                      }
+                    }}
+                  />
+                )}
                 <div className="space-y-6">
                   {/* Avatar Upload Section */}
                   <div>

@@ -195,7 +195,7 @@ export const createConversation = async (
 
 export const getOrCreateConversation = async (
   client: SupabaseClient<Database>,
-  { userId, otherUserId }: { userId: string; otherUserId: string }
+  { userId, otherUserId, productId }: { userId: string; otherUserId: string; productId?: number }
 ) => {
   // 기존 대화가 있는지 확인
   const { data: conversations, error: findError } = await client
@@ -223,7 +223,7 @@ export const getOrCreateConversation = async (
   }
   
   // 새 대화 생성
-  return await createConversation(client, { participantIds: [userId, otherUserId] });
+  return await createConversation(client, { participantIds: [userId, otherUserId], productId });
 };
 
 export const searchUsers = async (

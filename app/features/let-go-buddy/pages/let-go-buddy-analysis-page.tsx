@@ -6,6 +6,24 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
+// 이미지를 Base64로 변환하는 함수
+async function convertImageUrlToBase64(imageUrl: string): Promise<string> {
+  try {
+    const response = await fetch(imageUrl);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch image: ${response.statusText}`);
+    }
+    const buffer = await response.arrayBuffer();
+    const base64 = Buffer.from(buffer).toString('base64');
+    const mimeType = response.headers.get('content-type') || 'image/jpeg';
+    return `data:${mimeType};base64,${base64}`;
+  } catch (error: unknown) {
+    console.error('Error converting image to base64:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    throw new Error(`Failed to convert image to base64: ${errorMessage}`);
+  }
+}
+
 export const loader = async ({ request }: { request: Request }) => {
   const url = new URL(request.url);
   const sessionId = url.searchParams.get("sessionId");
@@ -21,6 +39,11 @@ export const loader = async ({ request }: { request: Request }) => {
 
   try {
     const parsedImageUrls = JSON.parse(decodeURIComponent(imageUrls));
+    
+    // 이미지들을 Base64로 변환
+    const base64Images = await Promise.all(
+      parsedImageUrls.map((url: string) => convertImageUrlToBase64(url))
+    );
     
     // OpenAI Vision API를 사용해서 이미지 분석
     const completion = await openai.chat.completions.create({
@@ -50,8 +73,9 @@ Please respond with a JSON object containing the analysis with the following str
   "item_name": "string",
   "item_category": "Electronics|Clothing|Books|Home|Sports|Beauty|Toys|Automotive|Health|Other",
   "item_condition": "New|Like New|Excellent|Good|Fair|Poor",
-  "recommendation": "Keep|Sell|Donate|Recycle|Repair|Repurpose|Discard",
-  "ai_suggestion": "string",
+            "recommendation": "Keep|Sell|Donate|Recycle|Repair|Repurpose|Discard",
+          "recommendation_reason": "string (detailed explanation of why this recommendation was chosen)",
+          "ai_suggestion": "string",
   "emotional_score": number (1-10),
   "environmental_impact": "Low|Medium|High|Critical",
   "co2_impact": number,
@@ -74,10 +98,10 @@ Please respond with a JSON object containing the analysis with the following str
               type: "text",
               text: `Please analyze these images and provide a comprehensive decluttering recommendation. Consider the user's situation: ${situation}. Respond with valid JSON only.`
             },
-            ...parsedImageUrls.map((url: string) => ({
+            ...base64Images.map((base64Image: string) => ({
               type: "image_url" as const,
               image_url: {
-                url: url
+                url: base64Image
               }
             }))
           ]

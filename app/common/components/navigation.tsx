@@ -73,8 +73,8 @@ export function Navigation({
     setLocation(newLocation);
     const params = new URLSearchParams(searchParams);
     
-    if (newLocation === "All Locations") {
-      // All Locations를 선택하면 location 파라미터를 제거
+    if (newLocation === "All Locations" || newLocation === "All Cities") {
+      // All Locations 또는 All Cities를 선택하면 location 파라미터를 제거
       params.delete("location");
     } else {
       params.set("location", newLocation);
@@ -116,20 +116,6 @@ export function Navigation({
               ))}
             </div>
           ))}
-          {isLoggedIn && (
-            <>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem 
-                className="cursor-pointer text-sm text-neutral-800"
-                onClick={() => setIsNotificationsOpen(true)}
-              >
-                <BellIcon className="size-4 mr-2" /> Notifications
-                {hasNotifications && (
-                  <div className="ml-auto size-2 bg-red-500 rounded-full" />
-                )}
-              </DropdownMenuItem>
-            </>
-          )}
         </DropdownMenuContent>
       </DropdownMenu>
       <NavigationMenu className="hidden md:flex">
@@ -194,12 +180,13 @@ export function Navigation({
           </Button>
         </DropdownMenuTrigger>
       <DropdownMenuContent>
-          {LOCATIONS.map((city) => (
-            <DropdownMenuItem key={city} onClick={() => updateLocation(city)}>
-              {city}
-            </DropdownMenuItem>
-          ))}
-        </DropdownMenuContent>
+        <DropdownMenuItem onClick={() => updateLocation("All Cities")}>All Cities</DropdownMenuItem>
+        {LOCATIONS.map((city) => (
+          <DropdownMenuItem key={city} onClick={() => updateLocation(city)}>
+            {city}
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
       </DropdownMenu>
 
         {isLoggedIn ? (

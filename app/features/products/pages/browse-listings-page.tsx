@@ -155,24 +155,27 @@ export default function BrowseListingsPage({ loaderData }: Route.ComponentProps)
         {/* 카테고리 */}
         <div className="flex justify-center mb-8">
           <div className="flex space-x-2 sm:space-x-3 md:space-x-4 lg:space-x-5 xl:space-x-6">
-            {PRODUCT_CATEGORIES.slice(0, 10).map(category => {
+            {PRODUCT_CATEGORIES.slice(0, 10).map((category, index) => {
               const isActive = categoryFilter.toLowerCase() === category.toLowerCase();
+              const isHiddenOnMobile = index >= 6; // 7번째부터 모바일에서 숨김
               return (
                 <div 
                   key={category} 
-                  className={`flex flex-col items-center min-w-[65px] cursor-pointer hover:scale-105 transition-transform ${
+                  className={`flex flex-col items-center min-w-[50px] md:min-w-[65px] cursor-pointer hover:scale-105 transition-transform ${
+                    isHiddenOnMobile ? 'hidden md:flex' : ''
+                  } ${
                     isActive ? 'ring-2 ring-purple-500 ring-offset-2' : ''
                   }`}
                   onClick={() => handleCategoryClick(category)}
                 >
-                  <div className={`w-15 h-15 flex items-center justify-center rounded-full text-2xl mb-2 transition-colors ${
+                  <div className={`w-10 h-10 md:w-15 md:h-15 flex items-center justify-center rounded-full text-lg md:text-2xl mb-1 md:mb-2 transition-colors ${
                     isActive 
                       ? 'bg-purple-500 text-white' 
                       : 'bg-purple-100 hover:bg-purple-200'
                   }`}>
                     {CATEGORY_ICONS[category] || "📦"}
                   </div>
-                  <span className={`text-sm text-center ${
+                  <span className={`text-xs md:text-sm text-center leading-tight ${
                     isActive ? 'font-semibold text-purple-600' : ''
                   }`}>
                     {category}

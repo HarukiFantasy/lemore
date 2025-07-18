@@ -9,6 +9,7 @@ import { BlurFade } from 'components/magicui/blur-fade';
 import { makeSSRClient } from '~/supa-client';
 import { getProductsListings } from '../../features/products/queries';
 import { getLocalTipPosts } from "~/features/community/queries";
+import { DateTime } from "luxon";
 
 
 export const meta: Route.MetaFunction = () => {
@@ -40,37 +41,10 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
   return { todaysPicks, location, communityPosts };
 };
 
-// 시간 문자열을 밀리초로 변환하는 헬퍼 함수
-function getTimeInMs(timeAgo: string): number {
-  const match = timeAgo.match(/(\d+)\s+(hour|day|minute)s?\s+ago/);
-  if (!match) return 0;
-  
-  const [, amount, unit] = match;
-  const num = parseInt(amount);
-  
-  switch (unit) {
-    case 'minute': return num * 60 * 1000;
-    case 'hour': return num * 60 * 60 * 1000;
-    case 'day': return num * 24 * 60 * 60 * 1000;
-    default: return 0;
-  }
-}
-
-// Date 객체를 시간 문자열로 변환하는 헬퍼 함수
-function getTimeAgo(date: Date): string {
-  const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
-  const diffMinutes = Math.floor(diffMs / (1000 * 60));
-  const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-  
-  if (diffMinutes < 60) {
-    return `${diffMinutes} minute${diffMinutes !== 1 ? 's' : ''} ago`;
-  } else if (diffHours < 24) {
-    return `${diffHours} hour${diffHours !== 1 ? 's' : ''} ago`;
-  } else {
-    return `${diffDays} day${diffDays !== 1 ? 's' : ''} ago`;
-  }
+// Date 객체 또는 ISO 문자열을 시간 문자열로 변환하는 헬퍼 함수 (Luxon 사용)
+function getTimeAgo(date: Date | string): string {
+  const dt = typeof date === "string" ? DateTime.fromISO(date) : DateTime.fromJSDate(date);
+  return dt.toRelative() ?? "";
 }
 
 export default function HomePage() {
@@ -97,9 +71,9 @@ export default function HomePage() {
         <Button type="submit" variant="outline">Search</Button>
       </Form>
       <div className="text-2xl font-bold mt-10 mx-auto sm:max-w-[100vw] md:max-w-[100vw]">
-        Today's Picks {!urlLocation ? "" : `in ${currentLocation}`}
+        Latest Listings {!urlLocation ? "" : `in ${currentLocation}`}
       </div>
-      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-4 items-start mx-auto sm:max-w-[100vw] md:max-w-[100vw]">
+      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-4 items-start w-full max-w-none px-0 mx-0">
         {todaysPicks.length > 0 ? (
           todaysPicks.map((product) => (
             <BlurFade key={product.product_id}>
@@ -122,7 +96,7 @@ export default function HomePage() {
       <div className="text-2xl font-bold mt-10 w-full lg:max-w-[70vw] mx-auto sm:max-w-[100vw] md:max-w-[100vw]">
         Community {!urlLocation ? "" : `in ${currentLocation}`}
       </div>
-      <div className="bg-white rounded-2xl shadow-sm border mt-2 overflow-hidden w-full lg:max-w-[70vw] mx-auto sm:max-w-[100vw] md:max-w-[100vw]">
+      <div className="bg-white rounded-2xl shadow-sm border mt-2 overflow-hidden w-full lg:max-w-[70vw] mx-auto sm:max-w-[100vw] md:max-w-[100vw] grid grid-cols-2 gap-0">
         {communityPosts.length > 0 ? (
           communityPosts.map((post, index) => {
             // Transform the data to match CommunityPostCard expectations
@@ -148,6 +122,20 @@ export default function HomePage() {
               console.error('Error parsing stats:', error);
             }
             
+            // Calculate position for 2-column grid
+            const row = Math.floor(index / 2);
+            const col = index % 2;
+            const totalRows = Math.ceil(communityPosts.length / 2);
+            
+            const position = {
+              row,
+              col,
+              isFirstRow: row === 0,
+              isLastRow: row === totalRows - 1,
+              isFirstCol: col === 0,
+              isLastCol: col === 1,
+            };
+            
             return (
               <CommunityPostCard
                 key={post.id}
@@ -159,6 +147,8 @@ export default function HomePage() {
                 likes={stats.likes || 0}
                 comments={stats.comments || 0}
                 isLast={index === communityPosts.length - 1}
+                content={post.content}
+                position={position}
               />
             );
           })
