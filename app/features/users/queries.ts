@@ -73,11 +73,49 @@ export const getLikedProductsByUserId = async (
 };
 
 export const getLoggedInUserId = async (client: SupabaseClient<Database>) => {
-  const { data, error } = await client.auth.getUser();
-  if (error || data.user === null) {
+  try {
+    const { data, error } = await client.auth.getUser();
+    
+    if (error) {
+      console.warn('Authentication error in getLoggedInUserId:', error.message);
+      
+      // Handle specific refresh token errors
+      if (error.message.includes('refresh_token_not_found') || 
+          error.message.includes('Invalid Refresh Token') ||
+          error.code === 'refresh_token_not_found') {
+        // Clear the invalid session
+        await client.auth.signOut();
+      }
+      
+      throw redirect("/auth/login");
+    }
+    
+    if (data.user === null) {
+      throw redirect("/auth/login");
+    }
+    
+    return data.user.id;
+  } catch (error: any) {
+    // If it's already a redirect, re-throw it
+    if (error?.status === 302) {
+      throw error;
+    }
+    
+    console.error('Unexpected error in getLoggedInUserId:', error);
+    
+    // Handle token-related errors
+    if (error?.message?.includes('refresh_token_not_found') || 
+        error?.message?.includes('Invalid Refresh Token') ||
+        error?.code === 'refresh_token_not_found') {
+      try {
+        await client.auth.signOut();
+      } catch (signOutError) {
+        console.warn('Error during forced sign out:', signOutError);
+      }
+    }
+    
     throw redirect("/auth/login");
   }
-  return data.user.id;
 };
 
 export const getMessages = async (client: SupabaseClient<Database>, { profileId }: { profileId: string|null }) => {
@@ -332,4 +370,42 @@ export const getNotifications = async (
   
   
   return mappedNotifications;
+};
+
+// Add a utility function to safely get user with better error handling
+export const getSafeUser = async (client: SupabaseClient<Database>) => {
+  try {
+    const { data, error } = await client.auth.getUser();
+    
+    if (error) {
+      console.warn('Authentication error in getSafeUser:', error.message);
+      
+      // Handle specific refresh token errors
+      if (error.message.includes('refresh_token_not_found') || 
+          error.message.includes('Invalid Refresh Token') ||
+          error.code === 'refresh_token_not_found') {
+        // Clear the invalid session
+        await client.auth.signOut();
+      }
+      
+      return null;
+    }
+    
+    return data.user;
+  } catch (error: any) {
+    console.error('Unexpected error in getSafeUser:', error);
+    
+    // Handle token-related errors
+    if (error?.message?.includes('refresh_token_not_found') || 
+        error?.message?.includes('Invalid Refresh Token') ||
+        error?.code === 'refresh_token_not_found') {
+      try {
+        await client.auth.signOut();
+      } catch (signOutError) {
+        console.warn('Error during forced sign out:', signOutError);
+      }
+    }
+    
+    return null;
+  }
 };

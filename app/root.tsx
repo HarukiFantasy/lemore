@@ -14,6 +14,7 @@ import { Navigation } from "./common/components/navigation";
 import { makeSSRClient } from './supa-client';
 import { cn } from './lib/utils';
 import { getUserByProfileId } from "./features/users/queries";
+import { useAuthErrorHandler } from "./hooks/use-auth-error-handler";
 
 export const links: Route.LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -49,19 +50,52 @@ export function Layout({ children }: { children: React.ReactNode }) {
 }
 
 export const loader = async ({ request }: Route.LoaderArgs) => {
-  const { client } = makeSSRClient(request);
-  const { data: {user} } = await client.auth.getUser();
-  if (user) {
-    try {
-      const userProfile = await getUserByProfileId(client, { profileId: user?.id ?? null });
-      return { user, userProfile };
-    } catch (error) {
-      // User profile not found, but user is authenticated
-      console.warn('User profile not found:', error);
-      return { user, userProfile: null };
+  const { client, headers } = makeSSRClient(request);
+  
+  try {
+    const { data: {user}, error: authError } = await client.auth.getUser();
+    
+    // If there's an authentication error (like refresh token not found)
+    if (authError) {
+      console.warn('Authentication error detected:', authError.message);
+      
+      // Clear the invalid session
+      await client.auth.signOut();
+      
+      // Return user as null to force logout state
+      return { user: null, userProfile: null };
     }
+    
+    if (user) {
+      try {
+        const userProfile = await getUserByProfileId(client, { profileId: user?.id ?? null });
+        return { user, userProfile };
+      } catch (error) {
+        // User profile not found, but user is authenticated
+        console.warn('User profile not found:', error);
+        return { user, userProfile: null };
+      }
+    }
+    
+    return { user: null, userProfile: null };
+  } catch (error: any) {
+    // Handle any other authentication-related errors
+    console.error('Root loader authentication error:', error);
+    
+    // If it's a refresh token error or similar, clear the session
+    if (error?.message?.includes('refresh_token_not_found') || 
+        error?.message?.includes('Invalid Refresh Token') ||
+        error?.code === 'refresh_token_not_found') {
+      try {
+        await client.auth.signOut();
+      } catch (signOutError) {
+        console.warn('Error during forced sign out:', signOutError);
+      }
+    }
+    
+    // Return user as null to ensure clean state
+    return { user: null, userProfile: null };
   }
-  return { user: null, userProfile: null };
 }
 
 export default function App({ loaderData }: Route.ComponentProps) {
@@ -70,6 +104,10 @@ export default function App({ loaderData }: Route.ComponentProps) {
   const navigation = useNavigation();
   const isLoading = navigation.state === "loading";
   const isLoggedIn = user !== null;
+  
+  // Add global auth error handling
+  useAuthErrorHandler();
+  
   return (
       <div
       className={cn({

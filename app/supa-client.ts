@@ -57,8 +57,36 @@ export type Database = MergeDeep<SupabaseDatabase, {
 
 export const browserClient = createBrowserClient<Database>(
   import.meta.env.VITE_SUPABASE_URL!,
-  import.meta.env.VITE_SUPABASE_ANON_KEY!
+  import.meta.env.VITE_SUPABASE_ANON_KEY!,
+  {
+    auth: {
+      autoRefreshToken: true,
+      persistSession: true,
+      detectSessionInUrl: true,
+      // Improved token refresh handling
+      flowType: 'pkce'
+    },
+    global: {
+      headers: {
+        'x-application-name': 'lemore'
+      }
+    }
+  }
 );
+
+// Add authentication state change listener for better error handling
+if (typeof window !== 'undefined') {
+  browserClient.auth.onAuthStateChange(async (event, session) => {
+    if (event === 'TOKEN_REFRESHED') {
+      console.log('Token refreshed successfully');
+    } else if (event === 'SIGNED_OUT') {
+      console.log('User signed out');
+      // Clear any cached data if needed
+    } else if (event === 'USER_UPDATED') {
+      console.log('User updated');
+    }
+  });
+}
 
 export const makeSSRClient = (request: Request) => {
   const headers = new Headers();
@@ -66,6 +94,12 @@ export const makeSSRClient = (request: Request) => {
     import.meta.env.VITE_SUPABASE_URL!,
     import.meta.env.VITE_SUPABASE_ANON_KEY!,
     {
+      auth: {
+        autoRefreshToken: false, // Server-side doesn't need auto refresh
+        persistSession: false,   // Server-side doesn't persist
+        detectSessionInUrl: false, // Server-side doesn't detect URL session
+        flowType: 'pkce'
+      },
       cookies: {
         getAll() {
           const cookies = parseCookieHeader(request.headers.get("Cookie") ?? "");
@@ -80,6 +114,11 @@ export const makeSSRClient = (request: Request) => {
           });
         },
       },
+      global: {
+        headers: {
+          'x-application-name': 'lemore'
+        }
+      }
     }
   );
 
