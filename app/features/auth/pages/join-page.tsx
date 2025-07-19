@@ -8,7 +8,10 @@ import { Route } from "./+types/join-page";
 import { makeSSRClient } from "~/supa-client";
 import z from 'zod';
 import { checkUsernameExists } from '../queries';
-import { CircleIcon } from "lucide-react";
+import { CircleIcon } from "lucide-react";   
+import { Resend } from "resend";
+import { LemoreWelcomeEmail } from 'react-email-starter/emails/welcome-user';
+
 
 export const meta: Route.MetaFunction = () => {
   return [
@@ -16,6 +19,8 @@ export const meta: Route.MetaFunction = () => {
     { name: "description", content: "Create an account" },
   ];
 };
+
+const resendClient = new Resend(process.env.RESEND_API_KEY);
 
 const formSchema = z.object({
   username: z.string().min(2, "Username must be at least 2 characters"),
@@ -55,6 +60,26 @@ export const action = async ({ request }: Route.ActionArgs) => {
       signUpError: signUpError.message,
     };
   }
+     // Send welcome email after successful signup
+     try {
+      console.log('Sending welcome email to:', data.email);
+      const { data: emailData, error: emailError } = await resendClient.emails.send({
+        from: "Sena <sena@mail.lemore.life>",
+        to: data.email,
+        subject: "Welcome to Lemore",
+        react: <LemoreWelcomeEmail username={data.username} />,
+      });
+      
+      if (emailError) {
+        console.error('Email send error:', emailError);
+      } else {
+        console.log('Welcome email sent successfully');
+      }
+    } catch (emailError) {
+      console.error('Email send exception:', emailError);
+      // Don't fail the signup process if email fails
+    }
+
   return redirect("/", { headers });
 };
 
