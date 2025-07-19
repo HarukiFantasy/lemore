@@ -120,7 +120,7 @@ export const products = pgTable("products", {
   tags: jsonb().notNull().default([]),
   is_sold: boolean().notNull().default(false),
   price_type: priceTypes().notNull().default("Fixed"),
-  stats: jsonb().notNull().default({views: 0, likes: 0}),
+  stats: jsonb().notNull().default({likes: 0}),
   created_at: timestamp("created_at").notNull().defaultNow(),
   updated_at: timestamp("updated_at").notNull().defaultNow(),
 }, (table) => [
@@ -266,7 +266,6 @@ export const userProfiles = pgTable("user_profiles", {
   bio: text("bio"),
   location: locationList(),
   total_likes: integer().default(0),
-  total_views: integer().default(0),
   total_listings: integer().default(0),
   response_rate: decimal({ precision: 10, scale: 2 }).default("0.00"),
   response_time: text("response_time").default("< 1 hour"),
@@ -472,7 +471,6 @@ export const giveAndGlowReviews = pgTable("give_and_glow_reviews", {
   receiver_id: uuid().notNull().references(() => userProfiles.profile_id, {onDelete: "cascade"}),
   category: productCategories().notNull(),
   rating: integer("rating").notNull(),
-  review: text("review").notNull(),
   timestamp: text("timestamp").notNull(),
   location: locationList().notNull(),
   tags: jsonb("tags").notNull().default([]),
@@ -576,7 +574,7 @@ export const localTipPosts = pgTable("local_tip_posts", {
   category: localTipCategories().notNull(),
   location: locationList().notNull(),
   author: uuid().notNull().references(() => userProfiles.profile_id),
-  stats: jsonb("stats").default({likes: 0, comments: 0, reviews: 0}),
+  stats: jsonb("stats").default({likes: 0, comments: 0 }),
   created_at: timestamp("created_at").notNull().defaultNow(),
   updated_at: timestamp("updated_at").notNull().defaultNow(),
 }, (table) => [

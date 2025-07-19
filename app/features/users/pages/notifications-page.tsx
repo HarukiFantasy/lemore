@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { X, Bell, MessageCircle, Heart, User, Settings, EyeIcon } from "lucide-react";
+import { X, Bell, MessageCircle, Heart, User, Settings, Check } from "lucide-react";
 import { Button } from "~/common/components/ui/button";
 import { Card, CardContent } from "~/common/components/ui/card";
 import { Badge } from "~/common/components/ui/badge";
@@ -149,7 +149,7 @@ function NotificationCard({ notification, onMarkAsRead }: { notification: Notifi
                         <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-700">New</Badge>
                         <fetcher.Form method="post" action={`/my/notifications/${notification.notification_id}/see`}>
                           <Button variant="outline" size="icon">
-                            <EyeIcon className="w-4 h-4" />
+                            <Check className="w-4 h-4" />
                           </Button>
                         </fetcher.Form>
                       </div>

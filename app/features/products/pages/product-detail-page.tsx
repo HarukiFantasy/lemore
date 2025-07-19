@@ -4,7 +4,7 @@ import { Card } from "~/common/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "~/common/components/ui/avatar";
 import { useNavigate, useSearchParams, useFetcher } from "react-router";
 import { HeartIcon } from "lucide-react";
-import { PackageIcon, EyeIcon, MessageCircleReplyIcon, ThumbsUpIcon, StarIcon, CalendarIcon } from "lucide-react";
+import { PackageIcon, MessageCircleReplyIcon, ThumbsUpIcon, StarIcon, CalendarIcon } from "lucide-react";
 import { getProductById, getProductByUsername } from "../queries";
 import { Route } from './+types/product-detail-page';
 import {DateTime} from "luxon";
@@ -319,10 +319,6 @@ export const loader = async ({ params, request }: Route.LoaderArgs) => {
                   <div className="flex items-center gap-2">
                     <MessageCircleReplyIcon className="w-4 h-4 text-red-500" />
                     <span className="font-medium">Response Rate:</span> {product.seller_response_rate || 'N/A'}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <EyeIcon className="w-4 h-4 text-green-500" />
-                    <span className="font-medium">Response Time:</span> {product.seller_response_time || 'N/A'}
                   </div>
                   <div className="flex items-center gap-2">
                     <PackageIcon className="w-4 h-4 text-blue-500" />

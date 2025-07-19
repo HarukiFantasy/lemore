@@ -127,7 +127,7 @@ export default function HomePage() {
             
             const author = post.username || post.author || 'Anonymous';
             
-            let stats = { likes: 0, comments: 0, reviews: 0 };
+            let stats = { likes: 0, comments: 0 };
             try {
               if (post.stats && typeof post.stats === 'string') {
                 stats = JSON.parse(post.stats);
@@ -151,7 +151,6 @@ export default function HomePage() {
                 category={post.category}
                 likes={stats.likes || 0}
                 comments={stats.comments || 0}
-                reviews={stats.reviews || 0}
                 variant="compact"
                 gridIndex={index}
                 totalItems={communityPosts.length}

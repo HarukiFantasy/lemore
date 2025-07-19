@@ -4,7 +4,7 @@ import { Button } from "../../../common/components/ui/button";
 import { Input } from "../../../common/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "../../../common/components/ui/card";
 import { Avatar, AvatarImage, AvatarFallback } from "../../../common/components/ui/avatar";
-import { HandThumbUpIcon as HandThumbUpOutlineIcon, ChatBubbleLeftEllipsisIcon, ChevronDownIcon, ChevronUpIcon, EyeIcon, HandThumbUpIcon } from "@heroicons/react/24/outline";
+import { HandThumbUpIcon as HandThumbUpOutlineIcon, ChatBubbleLeftEllipsisIcon, ChevronDownIcon, ChevronUpIcon, HandThumbUpIcon } from "@heroicons/react/24/outline";
 import { HandThumbUpIcon as HandThumbUpSolidIcon } from "@heroicons/react/24/solid";
 import { getCategoryColors, formatTimeAgo } from "~/lib/utils";
 import { 
@@ -556,10 +556,6 @@ export default function LocalTipsPage({ loaderData }: Route.ComponentProps) {
                   })()}
                 </div>
                 <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                  <div className="flex items-center gap-1">
-                    <EyeIcon className="h-4 w-4 text-muted-foreground" />
-                    <span>{(post.stats as { likes: number; comments: number; reviews: number }).reviews }</span>
-                  </div>
                   {user ? (
                     <button
                       onClick={() => handleLikeToggle(post.id)}
@@ -587,7 +583,7 @@ export default function LocalTipsPage({ loaderData }: Route.ComponentProps) {
                     className="flex items-center gap-1 hover:text-foreground transition-colors cursor-pointer"
                   >
                     <ChatBubbleLeftEllipsisIcon className="h-4 w-4" />
-                    <span>{(post.stats as { likes: number; comments: number; reviews: number}).comments }</span>
+                    <span>{(post.stats as { likes: number; comments: number}).comments }</span>
                   </button>
                 </div>
               </div>

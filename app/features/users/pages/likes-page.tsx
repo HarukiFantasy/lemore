@@ -203,7 +203,6 @@ export default function LikesPage({ loaderData }: { loaderData: LoaderData }) {
                     category={item.posts?.category}
                     likes={item.posts?.stats?.likes || 0}
                     comments={item.posts?.stats?.comments || 0}
-                    reviews={item.posts?.stats?.reviews || 0}
                     variant="compact"
                     isLiked={true}
                   />

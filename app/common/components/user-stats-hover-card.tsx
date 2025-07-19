@@ -1,6 +1,6 @@
 import { HoverCard, HoverCardTrigger, HoverCardContent } from "./ui/hover-card";
 import { Badge } from "./ui/badge";
-import { PackageIcon, EyeIcon, MessageCircleReplyIcon } from "lucide-react";
+import { PackageIcon, MessageCircleReplyIcon } from "lucide-react";
 import { Button } from './ui/button';
 import { Link } from "react-router";
 
@@ -48,26 +48,13 @@ export function UserStatsHoverCard({
             )}
           </div>
           <div className="grid grid-cols-3 gap-2">
-            <div className="flex flex-col items-center gap-1">
+            <div className="flex items-center gap-2 text-xs text-gray-600">
               <PackageIcon className="w-3 h-3 text-blue-500" />
-              <span className="text-xs text-neutral-600">Listings</span>
-              <span className="text-xs font-semibold">
-                {userStats?.totalListings || 0}
-              </span>
+              <span>Listings: {userStats?.totalListings ?? 'N/A'}</span>
             </div>
-            <div className="flex flex-col items-center gap-1">
-              <EyeIcon className="w-3 h-3 text-green-500" />
-              <span className="text-xs text-neutral-600">Rating</span>
-              <span className="text-xs font-semibold">
-                {userStats?.rating || 0}
-              </span>
-            </div>
-            <div className="flex flex-col items-center gap-1">
+            <div className="flex items-center gap-2 text-xs text-gray-600">
               <MessageCircleReplyIcon className="w-3 h-3 text-red-500" />
-              <span className="text-xs text-neutral-600">Response</span>
-              <span className="text-xs font-semibold">
-                {userStats?.responseRate || "0%"}
-              </span>
+              <span>Response Rate: {userStats?.responseRate ?? 'N/A'}</span>
             </div>
           </div>
           <div className="pt-1 border-t border-gray-100">

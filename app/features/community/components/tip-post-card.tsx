@@ -1,7 +1,6 @@
 import { z } from "zod";
 import { 
   ChatBubbleLeftEllipsisIcon, 
-  EyeIcon, 
   ChevronDownIcon, 
   ChevronUpIcon,
   HeartIcon
@@ -25,7 +24,6 @@ const tipPostCardSchema = z.object({
   category: z.string().optional(),
   likes: z.number().min(0).default(0),
   comments: z.number().min(0).default(0),
-  reviews: z.number().min(0).default(0),
   variant: z.enum(["compact", "full"]).default("compact"),
   
   // Grid positioning for rounded corners
@@ -78,7 +76,6 @@ export function TipPostCard({
   category,
   likes = 0,
   comments = 0,
-  reviews = 0,
   variant = "compact",
   gridIndex,
   totalItems,
@@ -294,10 +291,6 @@ export function TipPostCard({
             })()}
           </div>
           <div className="flex items-center gap-4 text-sm text-muted-foreground">
-            <div className="flex items-center gap-1">
-              <EyeIcon className="h-4 w-4 text-muted-foreground" />
-              <span>{reviews}</span>
-            </div>
             {onLikeToggle ? (
               <button
                 onClick={() => onLikeToggle(id)}
