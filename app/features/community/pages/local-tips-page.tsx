@@ -4,14 +4,15 @@ import { Button } from "../../../common/components/ui/button";
 import { Input } from "../../../common/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "../../../common/components/ui/card";
 import { Avatar, AvatarImage, AvatarFallback } from "../../../common/components/ui/avatar";
-import { HandThumbUpIcon, ChatBubbleLeftEllipsisIcon, ChevronDownIcon, ChevronUpIcon, EyeIcon } from "@heroicons/react/24/outline";
+import { HandThumbUpIcon as HandThumbUpOutlineIcon, ChatBubbleLeftEllipsisIcon, ChevronDownIcon, ChevronUpIcon, EyeIcon, HandThumbUpIcon } from "@heroicons/react/24/outline";
+import { HandThumbUpIcon as HandThumbUpSolidIcon } from "@heroicons/react/24/solid";
 import { getCategoryColors, formatTimeAgo } from "~/lib/utils";
 import { 
   LOCAL_TIP_CATEGORIES_WITH_ALL, 
   LocalTipCategoryWithAll, 
   LocalTipCategory 
 } from "../constants";
-import { getLocalTipComments, getLocalTipPosts, getLocalTipReplies } from '../queries';
+import { getLocalTipComments, getLocalTipPosts, getLocalTipReplies, getLocalTipPostLikes } from '../queries';
 import { Reply } from '../components/reply';
 import { UserStatsHoverCard } from "../../../common/components/user-stats-hover-card";
 import type { Route } from "./+types/local-tips-page"
@@ -20,7 +21,7 @@ import { Textarea } from "../../../common/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../../common/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "../../../common/components/ui/dialog";
 import { getlocations } from "../queries";
-import { createLocalTip } from '../mutation';
+import { createLocalTip, likeLocalTipPost, unlikeLocalTipPost } from '../mutation';
 import z from 'zod';
 import { createLocalTipReply } from '../mutation';
 
@@ -49,12 +50,19 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
   const comments = await getLocalTipComments(client);
   const locations = await getlocations(client);  // 입력폼에서 사용
   const { data: { user } } = await client.auth.getUser();
+  
+  // Get user's like status if logged in
+  let userLikedPosts: number[] = [];
+  if (user) {
+    userLikedPosts = await getLocalTipPostLikes(client, user.id);
+  }
+  
   // 각 post별로 replies fetch
   const repliesByPostId: Record<number, any[]> = {};
   for (const post of tips) {
     repliesByPostId[post.id] = await getLocalTipReplies(client, post.id.toString());
   }
-  return { tips, comments, user, locations, repliesByPostId };
+  return { tips, comments, user, locations, repliesByPostId, userLikedPosts };
 }
 
 
@@ -62,6 +70,32 @@ export const action = async ({ request }: Route.ActionArgs) => {
   const { client } = makeSSRClient(request);
   const { data: { user } } = await client.auth.getUser();
   const formData = await request.formData();
+  
+  // Like/Unlike 처리
+  if (formData.get("_action") === "like") {
+    const postId = Number(formData.get("postId"));
+    if (!user || !postId) return { error: "Invalid input" };
+    
+    try {
+      await likeLocalTipPost(client, postId, user.id);
+      return { ok: true, action: "liked", postId };
+    } catch (error) {
+      return { error: "Failed to like post" };
+    }
+  }
+  
+  if (formData.get("_action") === "unlike") {
+    const postId = Number(formData.get("postId"));
+    if (!user || !postId) return { error: "Invalid input" };
+    
+    try {
+      await unlikeLocalTipPost(client, postId, user.id);
+      return { ok: true, action: "unliked", postId };
+    } catch (error) {
+      return { error: "Failed to unlike post" };
+    }
+  }
+  
   // 댓글/대댓글 등록 분기
   if (formData.get("_action") === "reply") {
     const postId = Number(formData.get("postId"));
@@ -94,7 +128,7 @@ export const action = async ({ request }: Route.ActionArgs) => {
 
 
 export default function LocalTipsPage({ loaderData }: Route.ComponentProps) {
-  const { tips, comments, user, locations, repliesByPostId } = loaderData;
+  const { tips, comments, user, locations, repliesByPostId, userLikedPosts } = loaderData;
   const actionData = useActionData<typeof action>();
   const fetcher = useFetcher();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -102,6 +136,8 @@ export default function LocalTipsPage({ loaderData }: Route.ComponentProps) {
   const currentLocation = urlLocation || "Bangkok";
   const searchQuery = searchParams.get("search") || "";
   const categoryFilter = searchParams.get("category") || "All";
+  
+
   
   // State for form inputs
   const [searchInput, setSearchInput] = useState(searchQuery);
@@ -113,6 +149,18 @@ export default function LocalTipsPage({ loaderData }: Route.ComponentProps) {
   
   // 댓글/대댓글 확장 상태 (expandedPosts)
   const [expandedPosts, setExpandedPosts] = useState<Set<number>>(new Set());
+  
+  // 좋아요 상태 관리
+  const [likedPosts, setLikedPosts] = useState<Set<number>>(new Set(userLikedPosts));
+  
+  // 각 포스트의 좋아요 수 관리
+  const [postLikeCounts, setPostLikeCounts] = useState<Record<number, number>>(() => {
+    const initialCounts: Record<number, number> = {};
+    tips.forEach(post => {
+      initialCounts[post.id] = (post.stats as { likes: number; comments: number; reviews: number }).likes;
+    });
+    return initialCounts;
+  });
 
   // 댓글/대댓글 등록 성공 시 해당 post를 확장
   useEffect(() => {
@@ -120,6 +168,16 @@ export default function LocalTipsPage({ loaderData }: Route.ComponentProps) {
       setExpandedPosts(prev => new Set(prev).add(fetcher.data.postId));
     }
   }, [fetcher.data]);
+
+  // 좋아요/언라이크 성공 시 데이터베이스에서 실제 수치 반영
+  useEffect(() => {
+    if (fetcher.data && fetcher.data.ok && fetcher.data.action && fetcher.data.postId) {
+      // 서버 응답 후에는 데이터베이스의 실제 값으로 다시 로드
+      window.location.reload();
+    }
+  }, [fetcher.data]);
+
+
 
   // Share Tip 성공 시 모달 닫기 및 페이지 새로고침
   useEffect(() => {
@@ -233,6 +291,41 @@ export default function LocalTipsPage({ loaderData }: Route.ComponentProps) {
         postId: postId.toString(),
         parentId: parentId?.toString() ?? "",
         reply,
+      },
+      { method: "post" }
+    );
+  };
+
+  // 좋아요 버튼 핸들러
+  const handleLikeToggle = (postId: number) => {
+    if (!user) return;
+    
+    const isLiked = likedPosts.has(postId);
+    const action = isLiked ? "unlike" : "like";
+    
+    // 낙관적 업데이트 (즉시 UI 반영)
+    if (isLiked) {
+      setLikedPosts(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(postId);
+        return newSet;
+      });
+      setPostLikeCounts(prev => ({
+        ...prev,
+        [postId]: Math.max((prev[postId] || 0) - 1, 0)
+      }));
+    } else {
+      setLikedPosts(prev => new Set(prev).add(postId));
+      setPostLikeCounts(prev => ({
+        ...prev,
+        [postId]: (prev[postId] || 0) + 1
+      }));
+    }
+    
+    fetcher.submit(
+      {
+        _action: action,
+        postId: postId.toString(),
       },
       { method: "post" }
     );
@@ -390,6 +483,8 @@ export default function LocalTipsPage({ loaderData }: Route.ComponentProps) {
         
       </div>
 
+
+
       {/* Tips List */}
       <div className="space-y-4">
         {filteredTips.map((post) => (
@@ -465,10 +560,28 @@ export default function LocalTipsPage({ loaderData }: Route.ComponentProps) {
                     <EyeIcon className="h-4 w-4 text-muted-foreground" />
                     <span>{(post.stats as { likes: number; comments: number; reviews: number }).reviews }</span>
                   </div>
-                  <div className="flex items-center gap-1">
-                    <HandThumbUpIcon className="h-4 w-4 text-muted-foreground" />
-                    <span>{(post.stats as { likes: number; comments: number; reviews: number}).likes }</span>
-                  </div>
+                  {user ? (
+                    <button
+                      onClick={() => handleLikeToggle(post.id)}
+                      className={`flex items-center gap-1 transition-colors cursor-pointer ${
+                        likedPosts.has(post.id) 
+                          ? 'text-red-500 hover:text-red-600' 
+                          : 'text-muted-foreground hover:text-foreground'
+                      }`}
+                    >
+                      {likedPosts.has(post.id) ? (
+                        <HandThumbUpSolidIcon className="h-4 w-4" />
+                      ) : (
+                        <HandThumbUpOutlineIcon className="h-4 w-4" />
+                      )}
+                      <span>{postLikeCounts[post.id] || 0}</span>
+                    </button>
+                  ) : (
+                    <div className="flex items-center gap-1 text-muted-foreground">
+                      <HandThumbUpOutlineIcon className="h-4 w-4" />
+                      <span>{postLikeCounts[post.id] || 0}</span>
+                    </div>
+                  )}
                   <button
                     onClick={() => {}}
                     className="flex items-center gap-1 hover:text-foreground transition-colors cursor-pointer"
@@ -498,7 +611,7 @@ export default function LocalTipsPage({ loaderData }: Route.ComponentProps) {
                           />
                           <div className="flex items-center gap-2 mt-2">
                             <button className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors">
-                              <HandThumbUpIcon className="h-3 w-3" />
+                              <HandThumbUpOutlineIcon className="h-3 w-3" />
                               <span>{comment.likes}</span>
                             </button>
                           </div>

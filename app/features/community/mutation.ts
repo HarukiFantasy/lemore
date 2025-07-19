@@ -121,3 +121,37 @@ export const createLocalTipReply = async (
   if (error) throw error;
   return data;
 };
+
+// Local tip post like functions
+export const likeLocalTipPost = async (
+  client: SupabaseClient<Database>,
+  postId: number,
+  userId: string
+) => {
+  const { data, error } = await client
+    .from("local_tip_post_likes")
+    .insert({
+      post_id: postId,
+      user_id: userId,
+    })
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+};
+
+export const unlikeLocalTipPost = async (
+  client: SupabaseClient<Database>,
+  postId: number,
+  userId: string
+) => {
+  const { data, error } = await client
+    .from("local_tip_post_likes")
+    .delete()
+    .eq("post_id", postId)
+    .eq("user_id", userId)
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+};

@@ -112,7 +112,7 @@ export function CommunityPostCard({
   return (
     <Link to={addLocationToUrl(`/community/local-tips?search=${title}`)} className="block">
       <Card className={`hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 transition-all duration-300 hover:scale-[1.01] md:hover:scale-[1.02] hover:shadow-md md:hover:shadow-lg ${getCornerRounding()} ${!isLast ? 'border-b border-gray-200' : ''}`}>
-        <CardHeader className="pb-0 px-3 md:px-6 pt-2 md:pt-3">
+        <CardHeader className="pb-0 px-3 md:px-6 pt-2 ">
           <div className="flex items-center gap-1 md:gap-2 mb-0.5 md:mb-1">
             {type && (
               <span className={`text-xs px-1.5 py-0.5 md:px-2 md:py-1 rounded-full ${
@@ -136,23 +136,9 @@ export function CommunityPostCard({
             </span>
           )}
         </CardHeader>
-        <CardFooter className="-mt-1 px-3 md:px-6 pb-2 md:pb-3">
+        <CardFooter className="-mt-1 px-3 md:px-6">
           <div className="flex items-center justify-between w-full">
             <span className="text-xs md:text-sm text-gray-500 truncate">{timeAgo}</span>
-            <div className="flex items-center gap-2 md:gap-4 text-xs text-gray-400 flex-shrink-0">
-              {likes !== undefined && (
-                <span className="flex items-center gap-0.5 md:gap-1">
-                  <HandThumbUpIcon className="w-3 h-3 md:w-4 md:h-4" />
-                  <span className="text-xs">{likes}</span>
-                </span>
-              )}
-              {comments !== undefined && (
-                <span className="flex items-center gap-0.5 md:gap-1">
-                  <ChatBubbleLeftEllipsisIcon className="w-3 h-3 md:w-4 md:h-4" />
-                  <span className="text-xs">{comments}</span>
-                </span>
-              )}
-            </div>
           </div>
         </CardFooter>
       </Card>

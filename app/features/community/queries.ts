@@ -65,6 +65,20 @@ export const getLocalTipReplies = async (client: SupabaseClient<Database>, postI
   return data;
 };
 
+// Get user's like status for local tip posts
+export const getLocalTipPostLikes = async (
+  client: SupabaseClient<Database>,
+  userId: string
+) => {
+  const { data, error } = await client
+    .from("local_tip_post_likes")
+    .select("post_id")
+    .eq("user_id", userId);
+  
+  if (error) throw new Error(error.message);
+  return data?.map(like => like.post_id) || [];
+};
+
 export const getGiveAndGlowReviews = async (client: SupabaseClient<Database>) => {
   const { data, error } = await client.from("give_and_glow_view").select(`*`);
   
