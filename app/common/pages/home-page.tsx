@@ -20,8 +20,7 @@ export const meta: Route.MetaFunction = () => {
 };
 
 export const loader = async ({ request }: Route.LoaderArgs) => {
-  throw new Error("some error thrown in a loader");
-  
+
   const { client, headers } = makeSSRClient(request);
   const url = new URL(request.url);
   const location = url.searchParams.get("location");
