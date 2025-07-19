@@ -9,7 +9,7 @@ const paramSchema = z.object({
 
 const LINE_CHANNEL_ID = process.env.LINE_CHANNEL_ID || '';
 const LINE_CHANNEL_SECRET = process.env.LINE_CHANNEL_SECRET || '';
-const LINE_REDIRECT_URI = process.env.LINE_REDIRECT_URI || 'https://84d5b8aeeed2.ngrok-free.app/auth/social/line/complete';
+const LINE_REDIRECT_URI = process.env.LINE_REDIRECT_URI || 'https://lemore.life/auth/social/line/complete';
 
 export const loader = async ({ params, request }: Route.LoaderArgs) => {
   const { success, data } = paramSchema.safeParse(params);

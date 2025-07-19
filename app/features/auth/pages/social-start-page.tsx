@@ -8,7 +8,7 @@ const paramSchema = z.object({
 });
 
 const LINE_CHANNEL_ID = process.env.LINE_CHANNEL_ID || '';
-const LINE_REDIRECT_URI = process.env.LINE_REDIRECT_URI || 'https://84d5b8aeeed2.ngrok-free.app/auth/social/line/complete';
+const LINE_REDIRECT_URI = process.env.LINE_REDIRECT_URI || 'https://lemore.life/auth/social/line/complete';
 
 export const loader = async ({ params, request }: Route.LoaderArgs) => {
   const { success, data } = paramSchema.safeParse(params);
@@ -30,7 +30,7 @@ export const loader = async ({ params, request }: Route.LoaderArgs) => {
   }
   
   // Google, Facebook는 Supabase OAuth 사용
-  const redirectTo = `http://localhost:5173/auth/social/${provider}/complete`;
+  const redirectTo = `http://lemore.life/auth/social/${provider}/complete`;
   const { client, headers } = makeSSRClient(request);
   const { data: { url } , error } = await client.auth.signInWithOAuth({
     provider,

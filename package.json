@@ -4,8 +4,8 @@
   "type": "module",
   "scripts": {
     "build": "react-router build",
-    "dev": "react-router dev",
-    "start": "react-router-serve ./build/server/index.js",
+    "dev": "NODE_OPTIONS='--import ./instrument.server.mjs' react-router dev",
+    "start": "NODE_OPTIONS='--import ./instrument.server.mjs' react-router-serve ./build/server/index.js",
     "typecheck": "react-router typegen && tsc",
     "db:generate": "drizzle-kit --config=app/drizzle.config.ts generate",
     "db:push": "drizzle-kit --config=app/drizzle.config.ts push",
@@ -34,6 +34,7 @@
     "@react-email/components": "^0.3.1",
     "@react-router/node": "^7.5.3",
     "@react-router/serve": "^7.5.3",
+    "@sentry/react-router": "^9.40.0",
     "@supabase/auth-helpers-react": "^0.5.0",
     "@supabase/ssr": "^0.6.1",
     "@supabase/supabase-js": "^2.50.4",

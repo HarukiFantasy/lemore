@@ -2,7 +2,7 @@ import { redirect } from "react-router";
 import type { LoaderFunctionArgs } from "react-router";
 
 const LINE_CLIENT_ID = process.env.LINE_CLIENT_ID || '';
-const REDIRECT_URI = process.env.LINE_REDIRECT_URI || 'http://localhost:5173/auth/line/complete';
+const REDIRECT_URI = process.env.LINE_REDIRECT_URI || 'http://lemore.life/auth/line/complete';
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   // Line OAuth URL 생성
