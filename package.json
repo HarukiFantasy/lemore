@@ -57,6 +57,7 @@
     "@tiptap/react": "^2.23.1",
     "@tiptap/starter-kit": "^2.23.1",
     "@types/canvas-confetti": "^1.9.0",
+    "@vercel/react-router": "^1.2.2",
     "@vonage/server-sdk": "^3.22.0",
     "canvas-confetti": "^1.9.3",
     "class-variance-authority": "^0.7.1",
