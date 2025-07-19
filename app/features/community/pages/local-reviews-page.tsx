@@ -291,7 +291,7 @@ export default function LocalReviewsPage({ loaderData }: Route.ComponentProps) {
   });
 
   return (
-    <div className="w-full md:w-4/5 mx-auto px-0 py-6 md:p-6 space-y-6">
+    <div className="w-full md:w-4/5 mx-auto px-5 py-6 md:py-6 space-y-6">
       {/* Header */}
       <div className="text-center space-y-2">
         <h1 className="text-3xl font-bold text-gray-900">Local Reviews</h1>
@@ -402,7 +402,7 @@ export default function LocalReviewsPage({ loaderData }: Route.ComponentProps) {
         <div className="mb-6 flex flex-wrap items-center gap-2 justify-center">
           <span className="text-sm text-gray-600">Active filters:</span>
           {searchQuery && (
-            <div className="flex items-center gap-1 bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-sm">
+            <div className="flex items-center gap-1  bg-gray-200/70 text-gray-700 px-3 py-1 rounded-full text-sm">
               <span>Search: "{searchQuery}"</span>
               <button
                 onClick={() => handleClearFilter('search')}
@@ -413,7 +413,7 @@ export default function LocalReviewsPage({ loaderData }: Route.ComponentProps) {
             </div>
           )}
           {selectedType !== "All" && (
-            <div className="flex items-center gap-1 bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm">
+            <div className="flex items-center gap-1  bg-gray-200/70 text-gray-700 px-3 py-1 rounded-full text-sm">
               <span>Type: {selectedType}</span>
               <button
                 onClick={() => handleClearFilter('type')}
@@ -424,7 +424,7 @@ export default function LocalReviewsPage({ loaderData }: Route.ComponentProps) {
             </div>
           )}
           {selectedPriceRange !== "All" && (
-            <div className="flex items-center gap-1 bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm">
+            <div className="flex items-center gap-1  bg-gray-200/70 text-gray-700 px-3 py-1 rounded-full text-sm">
               <span>Price: {selectedPriceRange}</span>
               <button
                 onClick={() => handleClearFilter('priceRange')}

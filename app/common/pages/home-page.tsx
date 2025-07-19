@@ -3,7 +3,7 @@ import { Input } from "../components/ui/input";
 import type { Route } from "../../+types/root";
 import { Button } from '../components/ui/button';
 import { ProductCard } from "../../features/products/components/product-card";
-import { CommunityPostCard } from "../../features/community/components/community-post-card";
+import { TipPostCard } from "../../features/community/components/tip-post-card";
 import { useLoaderData } from "react-router";
 import { BlurFade } from 'components/magicui/blur-fade';
 import { makeSSRClient } from '~/supa-client';
@@ -73,8 +73,8 @@ export default function HomePage() {
 
   return (
     
-    <div className="sm:max-w-[100vw] md:max-w-[100vw] lg:max-w-[100vw] xl:max-w-[100vw]">
-      <div className="flex flex-col px-8 py-15 items-center justify-center rounded-md bg-gradient-to-t from-background to-primary/10">
+    <div className="sm:max-w-[100vw] md:max-w-[100vw] lg:max-w-[100vw] xl:max-w-[100vw] px-5">
+      <div className="flex flex-col px-0 py-15 items-center justify-center rounded-md bg-gradient-to-t from-background to-primary/10">
         <h1 className="text-4xl font-bold text-center">Buy Less, Share More, Live Lighter</h1>
         <p className="text-lg text-gray-600 mt-2">
           {!urlLocation ? "across all locations" : `in ${currentLocation}`}
@@ -87,7 +87,7 @@ export default function HomePage() {
       <div className="text-2xl font-bold mt-10 mx-auto sm:max-w-[100vw] md:max-w-[100vw]">
         Latest Listings {!urlLocation ? "" : `in ${currentLocation}`}
       </div>
-      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-4 items-start w-full max-w-none px-0 mx-0">
+      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-4 items-start w-full max-w-none">
         {todaysPicks.length > 0 ? (
           todaysPicks.map((product) => (
             <BlurFade key={product.product_id}>
@@ -115,7 +115,7 @@ export default function HomePage() {
       <div className="bg-white rounded-2xl shadow-sm border mt-2 overflow-hidden w-full lg:max-w-[70vw] mx-auto sm:max-w-[100vw] md:max-w-[100vw] grid grid-cols-1 md:grid-cols-2 gap-0">
         {communityPosts.length > 0 ? (
           communityPosts.map((post, index) => {
-            // Transform the data to match CommunityPostCard expectations
+            // Transform the data to match TipPostCard expectations
             let timeAgo = 'Unknown time';
             try {
               if (post.created_at) {
@@ -138,27 +138,25 @@ export default function HomePage() {
               console.error('Error parsing stats:', error);
             }
             
-            const position = {
-              isLast: index === communityPosts.length - 1,
-              isFirst: index === 0,
-              index: index,
-              totalItems: communityPosts.length,
-              isInLastRow: index >= Math.floor((communityPosts.length - 1) / 2) * 2, // 마지막 줄에 있는지
-            };
-            
             return (
-              <CommunityPostCard
+              <TipPostCard
                 key={post.id}
                 id={post.id}
                 title={post.title}
-                timeAgo={timeAgo}
+                content={post.content}
                 author={author}
-                type="tip"
+                avatar_url={post.avatar_url}
+                timeAgo={timeAgo}
+                location={post.location}
+                category={post.category}
                 likes={stats.likes || 0}
                 comments={stats.comments || 0}
-                isLast={index === communityPosts.length - 1}
-                content={post.content}
-                position={position}
+                reviews={stats.reviews || 0}
+                variant="compact"
+                gridIndex={index}
+                totalItems={communityPosts.length}
+                columnsDesktop={2}
+                columnsMobile={1}
               />
             );
           })

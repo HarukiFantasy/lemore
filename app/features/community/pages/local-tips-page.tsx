@@ -352,7 +352,7 @@ export default function LocalTipsPage({ loaderData }: Route.ComponentProps) {
   };
   
   return (
-    <div className="max-w-6xl mx-auto px-0 py-6 md:p-6">
+    <div className="max-w-6xl mx-auto px-5 py-6 md:py-6">
       
       {/* Header */}
       <div className="text-center mb-2">
@@ -431,7 +431,7 @@ export default function LocalTipsPage({ loaderData }: Route.ComponentProps) {
         <div className="mb-6 flex flex-wrap items-center gap-2 justify-center">
           <span className="text-sm text-gray-600">Active filters:</span>
           {searchQuery && (
-            <div className="flex items-center gap-1 bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-sm">
+            <div className="flex items-center gap-1 urple-100  bg-gray-200/70 text-gray-700 px-3 py-1 rounded-full text-sm">
               <span>Search: "{searchQuery}"</span>
               <button
                 onClick={() => handleClearFilter('search')}
@@ -442,7 +442,7 @@ export default function LocalTipsPage({ loaderData }: Route.ComponentProps) {
             </div>
           )}
           {categoryFilter !== "All" && (
-            <div className="flex items-center gap-1 bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm">
+            <div className="flex items-center gap-1 bg-gray-200/70 text-gray-700  px-3 py-1 rounded-full text-sm">
               <span>Category: {categoryFilter}</span>
               <button
                 onClick={() => handleClearFilter('category')}

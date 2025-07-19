@@ -39,7 +39,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Links />
       </head>
       <body>
-        <main className="px-5">
+        <main>
           {children}
         </main>
         <ScrollRestoration />
@@ -111,7 +111,7 @@ export default function App({ loaderData }: Route.ComponentProps) {
   return (
       <div
       className={cn({
-        "py-20 px-0": !pathname.includes("/auth/"),
+        "py-20": !pathname.includes("/auth/"),
         "transition-opacity animate-pulse": isLoading,
       })}
       > 

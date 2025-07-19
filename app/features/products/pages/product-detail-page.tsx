@@ -107,7 +107,7 @@ export const loader = async ({ params, request }: Route.LoaderArgs) => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 px-5">
       <div className="w-full md:w-[90%] mx-auto py-4 md:py-8">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-8">
           
@@ -286,7 +286,7 @@ export const loader = async ({ params, request }: Route.LoaderArgs) => {
             {/* 구분선 아래 */}
             <div className="flex flex-col lg:flex-row items-center gap-8">
               {/* 왼쪽: 상품 이미지 (모바일에서는 위) */}
-              <div className="w-full lg:w-4/6 grid grid-cols-2 gap-2 mb-4 lg:mb-0 lg:flex lg:flex-row">
+              <div className="w-full lg:w-4/6 flex flex-wrap gap-2 mb-4 lg:mb-0">
                 {sellerProducts && sellerProducts.length > 0 ? (
                   sellerProducts
                     .slice()
@@ -296,8 +296,7 @@ export const loader = async ({ params, request }: Route.LoaderArgs) => {
                         key={p.product_id}
                         href={`/secondhand/product/${p.product_id}`}
                         title={p.title}
-                        className="block aspect-square rounded overflow-hidden border border-gray-200 hover:border-purple-400 transition"
-                        style={{ minWidth: 0 }}
+                        className="block w-20 h-20 md:w-35 md:h-35 rounded overflow-hidden border border-gray-200 hover:border-purple-400 transition flex-shrink-0"
                       >
                         <img
                           src={p.primary_image || '/toy1.png'}
@@ -307,7 +306,7 @@ export const loader = async ({ params, request }: Route.LoaderArgs) => {
                       </a>
                     ))
                 ) : (
-                  <div className="col-span-2 text-xs text-gray-400 italic flex items-center justify-center h-14">No other items</div>
+                  <div className="w-full text-xs text-gray-400 italic flex items-center justify-center h-14">No other items</div>
                 )}
               </div>
               {/* 오른쪽: user stats만 */}

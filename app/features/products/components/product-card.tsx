@@ -137,25 +137,35 @@ export function ProductCard({
 
     return (
     <Link to={addLocationToUrl(`/secondhand/product/${productId}`)}>
-      <div className="relative group p-1">
+      <div className="relative group p-1 
+        transition-all duration-200 ease-out
+        active:scale-95 
+        md:hover:scale-100
+      ">
         <ShineBorder 
           borderWidth={2} 
           duration={8} 
           shineColor={["#fef3c7", "#fed7aa", "#fdba74"]}
-          className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-lg"
+          className="opacity-0 md:group-hover:opacity-100 transition-opacity duration-300 rounded-lg"
         />
-        <div className="bg-white rounded-lg shadow h-full flex flex-col pb-2">
+        <div className="bg-white rounded-lg shadow h-full flex flex-col pb-2 
+          active:bg-gray-50 
+          md:active:bg-white
+        ">
           <div className="relative w-full h-40 sm:h-48 md:h-60 overflow-hidden rounded-t-lg">
             <img 
               src={prod.image || '/toy1.png'} 
-              className="object-cover w-full h-full group-hover:scale-110 group-hover:brightness-110 transition-all duration-300 ease-out" 
+              className="object-cover w-full h-full 
+                md:group-hover:scale-110 md:group-hover:brightness-110 
+                transition-all duration-300 ease-out" 
               alt={prod.title || 'Product image'} 
               onError={(e) => {
                 const target = e.target as HTMLImageElement;
                 target.src = '/toy1.png';
               }}
             />
-            <button className="absolute top-3 left-3 bg-black/60 text-white text-xs px-3 py-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">Save</button>
+            <button className="absolute top-3 left-3 bg-black/60 text-white text-xs px-3 py-1 rounded-full 
+              opacity-0 md:group-hover:opacity-100 transition-opacity">Save</button>
             {showSoldBadge && prod.is_sold && (
               <Badge className="absolute top-2 right-2 z-10 bg-rose-500 text-white">SOLD</Badge>
             )}

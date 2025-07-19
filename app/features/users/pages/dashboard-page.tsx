@@ -31,7 +31,7 @@ export const loader = async ({request}: Route.LoaderArgs) => {
 export default function DashboardPage({ loaderData }: { loaderData: LoaderData & { userStats: any } }) {
   const { dashboard, userStats } = loaderData;
   return (
-    <div className="container mx-auto px-0 py-8 md:px-8">
+    <div className="container mx-auto px-5 py-8">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
         <p className="text-gray-600 mt-2">Welcome back! Here's what's happening with your account.</p>

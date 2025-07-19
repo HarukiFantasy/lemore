@@ -154,7 +154,7 @@ export default function BrowseListingsPage({ loaderData }: Route.ComponentProps)
   };
 
   return (
-    <div className="mx-auto sm:max-w-[100vw] md:max-w-[100vw] lg:max-w-[100vw] xl:max-w-[100vw]">
+    <div className="mx-auto sm:max-w-[100vw] md:max-w-[100vw] lg:max-w-[100vw] xl:max-w-[100vw] px-5">
 
       {/* 메인 컨텐츠  */}
       <main className="mx-auto sm:max-w-[100vw] md:max-w-[100vw] lg:max-w-[100vw] xl:max-w-[100vw]">
@@ -181,14 +181,12 @@ export default function BrowseListingsPage({ loaderData }: Route.ComponentProps)
                   key={category} 
                   className={`flex flex-col items-center min-w-[50px] md:min-w-[65px] cursor-pointer hover:scale-105 transition-transform ${
                     isHiddenOnMobile ? 'hidden md:flex' : ''
-                  } ${
-                    isActive ? 'ring-2 ring-purple-500 ring-offset-2' : ''
                   }`}
                   onClick={() => handleCategoryClick(category)}
                 >
-                  <div className={`w-10 h-10 md:w-15 md:h-15 flex items-center justify-center rounded-full text-lg md:text-2xl mb-1 md:mb-2 transition-colors ${
+                  <div className={`w-9 h-9 md:w-14 md:h-14 flex items-center justify-center rounded-full text-base md:text-xl mb-1 md:mb-2 transition-colors ${
                     isActive 
-                      ? 'bg-purple-500 text-white' 
+                      ? 'bg-purple-200 text-purple-700' 
                       : 'bg-purple-100 hover:bg-purple-200'
                   }`}>
                     {CATEGORY_ICONS[category] || "📦"}
@@ -220,11 +218,11 @@ export default function BrowseListingsPage({ loaderData }: Route.ComponentProps)
               </div>
             )}
             {categoryFilter && (
-              <div className="flex items-center gap-1 bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm">
+              <div className="flex items-center gap-1 bg-gray-200/70 text-gray-700 px-3 py-1 rounded-full text-sm">
                 <span>Category: {categoryFilter}</span>
                 <button
                   onClick={() => handleClearFilter('category')}
-                  className="ml-1 text-blue-600 hover:text-blue-800"
+                  className="ml-1 text-gray-700 hover:text-gray-800"
                 >
                   ×
                 </button>

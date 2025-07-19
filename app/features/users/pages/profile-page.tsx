@@ -153,7 +153,7 @@ export default function ProfilePage({ loaderData }: Route.ComponentProps) {
   };
   
   return (
-    <div className="container mx-auto px-0 py-8 md:px-8">
+    <div className="container mx-auto px-5 py-8">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900">Profile</h1>
         <p className="text-gray-600 mt-2">Manage your personal information and preferences.</p>
