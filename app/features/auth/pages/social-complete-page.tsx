@@ -9,7 +9,6 @@ const paramSchema = z.object({
 
 const LINE_CHANNEL_ID = process.env.LINE_CHANNEL_ID || '';
 const LINE_CHANNEL_SECRET = process.env.LINE_CHANNEL_SECRET || '';
-const LINE_REDIRECT_URI = process.env.LINE_REDIRECT_URI || 'https://lemore.life/auth/social/line/complete';
 
 export const loader = async ({ params, request }: Route.LoaderArgs) => {
   const { success, data } = paramSchema.safeParse(params);
@@ -18,9 +17,13 @@ export const loader = async ({ params, request }: Route.LoaderArgs) => {
   }
   const { provider } = data;
   
+  // Get the current origin from the request
+  const url = new URL(request.url);
+  const origin = url.origin;
+  const LINE_REDIRECT_URI = `${origin}/auth/social/line/complete`;
+  
   // Line provider는 커스텀 처리
   if (provider === "line") {
-    const url = new URL(request.url);
     const code = url.searchParams.get('code');
     const state = url.searchParams.get('state');
     const error = url.searchParams.get('error');
@@ -128,8 +131,7 @@ export const loader = async ({ params, request }: Route.LoaderArgs) => {
     }
   }
   
-  // Google, Kakao는 Supabase OAuth 처리
-  const url = new URL(request.url);
+  // Google, Facebook는 Supabase OAuth 처리
   const code = url.searchParams.get('code');
   if (!code) {
     return redirect('/auth/login');
@@ -145,7 +147,7 @@ export default function SocialCompletePage() {
     <div className="flex items-center justify-center min-h-screen p-4">
       <div className="text-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-        <p className="mt-2 text-sm text-muted-foreground">소셜 로그인 처리 중...</p>
+        <p className="mt-2 text-sm text-muted-foreground">Social Login...</p>
       </div>
     </div>
   );
