@@ -35,7 +35,7 @@ export const LemoreWelcomeEmail = ({ username }: { username: string }) => {
                 We're excited to have you on board.
               </Text>
 
-              <Button style={button} href="https://www.lemore.life">
+              <Button style={button} href="https://lemore.life">
                 Go to Lemore
               </Button>
             </Row>

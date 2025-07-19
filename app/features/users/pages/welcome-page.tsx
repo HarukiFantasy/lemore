@@ -1,4 +1,3 @@
-import { LoaderFunctionArgs } from 'react-router';
 import { Resend } from "resend";
 import { Route } from './+types/welcome-page';
 import { LemoreWelcomeEmail } from 'react-email-starter/emails/welcome-user';
