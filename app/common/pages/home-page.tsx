@@ -96,7 +96,7 @@ export default function HomePage() {
       <div className="text-2xl font-bold mt-10 w-full lg:max-w-[70vw] mx-auto sm:max-w-[100vw] md:max-w-[100vw]">
         Community {!urlLocation ? "" : `in ${currentLocation}`}
       </div>
-      <div className="bg-white rounded-2xl shadow-sm border mt-2 overflow-hidden w-full lg:max-w-[70vw] mx-auto sm:max-w-[100vw] md:max-w-[100vw] grid grid-cols-2 gap-0">
+      <div className="bg-white rounded-2xl shadow-sm border mt-2 overflow-hidden w-full lg:max-w-[70vw] mx-auto sm:max-w-[100vw] md:max-w-[100vw] grid grid-cols-1 md:grid-cols-2 gap-0">
         {communityPosts.length > 0 ? (
           communityPosts.map((post, index) => {
             // Transform the data to match CommunityPostCard expectations
@@ -122,18 +122,12 @@ export default function HomePage() {
               console.error('Error parsing stats:', error);
             }
             
-            // Calculate position for 2-column grid
-            const row = Math.floor(index / 2);
-            const col = index % 2;
-            const totalRows = Math.ceil(communityPosts.length / 2);
-            
             const position = {
-              row,
-              col,
-              isFirstRow: row === 0,
-              isLastRow: row === totalRows - 1,
-              isFirstCol: col === 0,
-              isLastCol: col === 1,
+              isLast: index === communityPosts.length - 1,
+              isFirst: index === 0,
+              index: index,
+              totalItems: communityPosts.length,
+              isInLastRow: index >= Math.floor((communityPosts.length - 1) / 2) * 2, // 마지막 줄에 있는지
             };
             
             return (

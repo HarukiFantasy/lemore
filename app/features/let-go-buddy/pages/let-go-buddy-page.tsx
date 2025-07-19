@@ -405,7 +405,7 @@ export default function LetGoBuddyPage({ loaderData }: Route.ComponentProps) {
   } as any : null;
 
   return (
-    <div className="max-w-xl mx-auto py-12 px-4">
+    <div className="max-w-xl mx-auto py-12 px-1">
       {/* Title & Subtitle */}
       <h1 className="text-4xl font-bold text-center mb-2">Let Go Buddy</h1>
       <p className="text-center text-lg mb-1">Declutter smarter, not harder.</p>
@@ -654,7 +654,7 @@ export default function LetGoBuddyPage({ loaderData }: Route.ComponentProps) {
                 </div>
               )}
               
-              <div className={`bg-white border rounded-xl p-5 flex gap-4 items-center shadow-sm relative ${
+              <div className={`bg-white border rounded-xl p-5 shadow-sm relative ${
                 completedActions.has(`keep-${currentItem.name}`) ? 'ring-2 ring-green-200 bg-green-50/30' : ''
               }`}>
               {completedActions.has(`keep-${currentItem.name}`) && (
@@ -664,8 +664,7 @@ export default function LetGoBuddyPage({ loaderData }: Route.ComponentProps) {
                   </div>
                 </div>
               )}
-              <img src={currentItem.photo} alt={currentItem.name} className="w-20 h-20 object-cover rounded-lg border" />
-              <div className="flex-1">
+              <div className="w-full">
                 <div className="font-semibold text-lg mb-1">Photo: {currentItem.name}</div>
                 <div className="text-gray-600 mb-1">Recognition: <span className="font-medium">"{currentItem.name}"</span></div>
                 <div className="mb-2">Recommendation: <span className="font-medium">{currentItem.recommendation}</span></div>
@@ -1014,7 +1013,7 @@ export default function LetGoBuddyPage({ loaderData }: Route.ComponentProps) {
           onClick={() => navigate("/community/local-tips")}
         >
           <TipsIcon className="w-4 h-4 mr-2" />
-          Analyze another item
+          Try another item
         </Button>
       </div>
 

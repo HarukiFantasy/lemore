@@ -5,6 +5,7 @@ import { Input } from "~/common/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "~/common/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "~/common/components/ui/dialog";
 import { ScrollArea } from "~/common/components/ui/scroll-area";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/common/components/ui/select";
 import type { Route } from './+types/give-and-glow-page';
 import { getCategoryColors } from "~/lib/utils";
 import { GiveAndGlowCard } from '../components/give-and-glow-card';
@@ -381,7 +382,7 @@ export default function GiveAndGlowPage({ loaderData }: Route.ComponentProps) {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-0 py-6 md:p-6 space-y-6">
+    <div className="w-full md:w-4/5 mx-auto px-2 py-6 md:p-6 space-y-6">
       {/* Header */}
       <div className="text-center space-y-2">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">Give and Glow</h1>
@@ -416,7 +417,25 @@ export default function GiveAndGlowPage({ loaderData }: Route.ComponentProps) {
           {/* Category Filter */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Item Category</label>
-            <div className="flex flex-wrap gap-2">
+            
+            {/* Mobile: Select dropdown */}
+            <div className="md:hidden">
+              <Select value={urlCategoryFilter} onValueChange={handleCategoryChange}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select category" />
+                </SelectTrigger>
+                <SelectContent>
+                  {PRODUCT_CATEGORIES.map((category) => (
+                    <SelectItem key={category} value={category}>
+                      {category}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Desktop: Button filters */}
+            <div className="hidden md:flex flex-wrap gap-2">
               {PRODUCT_CATEGORIES.map((category) => {
                 const colors = getCategoryColors(category);
                 const isActive = urlCategoryFilter === category;
@@ -490,7 +509,7 @@ export default function GiveAndGlowPage({ loaderData }: Route.ComponentProps) {
       </div>
 
       {/* Reviews List */}
-      <div className="flex flex-col gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {filteredReviews.map((review: any) => (
           <GiveAndGlowCard 
             key={review.id}

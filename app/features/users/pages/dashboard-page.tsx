@@ -78,32 +78,6 @@ export default function DashboardPage({ loaderData }: { loaderData: LoaderData &
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Recent Activity */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Recent Activity</CardTitle>
-            <CardDescription>Your latest interactions and updates</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {(dashboard.recent_activity || []).map((activity: any, index: number) => (
-                <div key={activity.id}>
-                  <div className="flex items-center space-x-3">
-                    <Avatar className="h-10 w-10">
-                      <AvatarImage src="/sample.png" alt="John Doe" />
-                      <AvatarFallback>JD</AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1">
-                      <p className="text-sm font-medium">{activity.title}</p>
-                      <p className="text-xs text-gray-500">{activity.timestamp}</p>
-                    </div>
-                  </div>
-                  {index < (dashboard.recent_activity || []).length - 1 && <Separator className="mt-4" />}
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
 
         {/* Quick Actions */}
         <Card>

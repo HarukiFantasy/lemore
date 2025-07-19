@@ -76,20 +76,17 @@ export const action = async ({ request }: Route.ActionArgs) => {
     
     // Upload images if any
     if (imageFiles.length > 0) {
-      console.log(`Uploading ${imageFiles.length} images for product ${product.product_id}`);
       const imageUrls = await uploadProductImages(client, {
         productId: product.product_id,
         userId: user.id,
         images: imageFiles,
       });
-      console.log("Images uploaded successfully:", imageUrls);
       
       // Save image URLs to database
       await saveProductImages(client, {
         productId: product.product_id,
         imageUrls: imageUrls,
       });
-      console.log("Images saved to database");
     }
     
     // Get location from URL params to preserve it in redirect
@@ -150,6 +147,13 @@ export default function SubmitAListingPage({loaderData, actionData }: Route.Comp
     }
   }, [prefillData, fromLetGoBuddy]);
 
+  // Reset submission state when action completes
+  useEffect(() => {
+    if (actionData) {
+      setIsSubmitting(false);
+    }
+  }, [actionData]);
+
   const isFree = priceType === "Free";
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -195,12 +199,21 @@ export default function SubmitAListingPage({loaderData, actionData }: Route.Comp
     setPreviews(prev => prev.filter((_, i) => i !== index));
   };
 
+  const handleSubmit = (e: React.FormEvent) => {
+    if (isSubmitting) {
+      e.preventDefault();
+      return;
+    }
+    setIsSubmitting(true);
+  };
+
   return (
-    <Form method="post" encType="multipart/form-data" className="flex flex-col md:flex-row gap-8 p-8 max-w-4xl mx-auto">
+    <div className="min-h-screen bg-gray-50 md:bg-white md:py-8">
+      <Form method="post" encType="multipart/form-data" className="flex flex-col md:flex-row gap-4 md:gap-8 w-full md:max-w-4xl md:mx-auto" onSubmit={handleSubmit}>
       {/* Hidden file inputs for form submission */}
-      {images.map((_, index) => (
+      {images.map((file, index) => (
         <input
-          key={index}
+          key={`${file.name}-${file.size}-${index}`}
           name={`image-${index}`}
           type="file"
           accept="image/*"
@@ -216,12 +229,12 @@ export default function SubmitAListingPage({loaderData, actionData }: Route.Comp
       ))}
       
       {/* Left: Image Upload */}
-      <div className="flex-1 flex flex-col items-center justify-center border rounded-lg p-6 bg-white shadow">
+      <div className="flex-1 flex flex-col items-center justify-center border-0 md:border rounded-none md:rounded-lg px-4 py-6 md:p-6 bg-white shadow-none md:shadow">
         <label className="w-full flex flex-col items-center cursor-pointer">
           <div className="flex flex-wrap gap-2 justify-center mb-4">
             {previews.length > 0 ? (
               previews.map((src, idx) => (
-                <div key={idx} className="relative group">
+                <div key={`preview-${images[idx]?.name}-${images[idx]?.size}-${idx}`} className="relative group">
                   <img src={src} alt={`Preview ${idx + 1}`} className="w-24 h-24 object-cover rounded" />
                   <button
                     type="button"
@@ -254,7 +267,7 @@ export default function SubmitAListingPage({loaderData, actionData }: Route.Comp
       </div>
       
       {/* Right: Product Details */}
-      <div className="flex-1 flex flex-col gap-4 border rounded-lg p-6 bg-white shadow">
+      <div className="flex-1 flex flex-col gap-4 border-0 md:border rounded-none md:rounded-lg px-4 py-6 md:p-6 bg-white shadow-none md:shadow">
         <div>
           <Input
             type="text"
@@ -277,8 +290,8 @@ export default function SubmitAListingPage({loaderData, actionData }: Route.Comp
               <SelectValue placeholder="Select Price Type" />
             </SelectTrigger>
             <SelectContent>
-              {PRICE_TYPES.map(type => (
-                <SelectItem key={type.value} value={type.value}>
+              {PRICE_TYPES.map((type, index) => (
+                <SelectItem key={`${type.value}-${index}`} value={type.value}>
                   {type.label}
                 </SelectItem>
               ))}
@@ -326,8 +339,8 @@ export default function SubmitAListingPage({loaderData, actionData }: Route.Comp
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {CURRENCIES.map((currency: string) => (
-                    <SelectItem key={currency} value={currency}>
+                  {CURRENCIES.map((currency: string, index: number) => (
+                    <SelectItem key={`${currency}-${index}`} value={currency}>
                       {currency}
                     </SelectItem>
                   ))}
@@ -374,8 +387,8 @@ export default function SubmitAListingPage({loaderData, actionData }: Route.Comp
               <SelectValue placeholder="Select Condition" />
             </SelectTrigger>
             <SelectContent> 
-              {PRODUCT_CONDITIONS.map((condition: any) => (
-                <SelectItem key={condition.value} value={condition.value}>
+              {PRODUCT_CONDITIONS.map((condition: any, index: number) => (
+                <SelectItem key={`${condition.value}-${index}`} value={condition.value}>
                   {condition.label}
                 </SelectItem>
               ))}
@@ -395,8 +408,8 @@ export default function SubmitAListingPage({loaderData, actionData }: Route.Comp
               <SelectValue placeholder="Select Category" />
             </SelectTrigger>
             <SelectContent>
-              {categories.map((category: any) => (
-                <SelectItem key={category.category_id} value={category.name}>
+              {categories.map((category: any, index: number) => (
+                <SelectItem key={category.category_id || `category-${index}`} value={category.name}>
                   {category.name}
                 </SelectItem>
               ))}
@@ -416,8 +429,8 @@ export default function SubmitAListingPage({loaderData, actionData }: Route.Comp
               <SelectValue placeholder="Select Location" />
             </SelectTrigger>
             <SelectContent>
-              {locations.map((location: any) => (
-                <SelectItem key={location.id} value={location.name}>
+              {locations.map((location: any, index: number) => (
+                <SelectItem key={location.id || `location-${index}`} value={location.name}>
                   {location.name}
                 </SelectItem>
               ))}
@@ -430,10 +443,27 @@ export default function SubmitAListingPage({loaderData, actionData }: Route.Comp
           )}
         </div>
           
-        <Button type="submit" className="w-full" disabled={isSubmitting}>
-          {isSubmitting ? <CircleIcon className="animate-spin" /> : "Submit Listing"}
+        <Button 
+          type="submit" 
+          className="w-full" 
+          disabled={isSubmitting}
+          onClick={(e) => {
+            if (isSubmitting) {
+              e.preventDefault();
+            }
+          }}
+        >
+          {isSubmitting ? (
+            <>
+              <CircleIcon className="animate-spin w-4 h-4 mr-2" />
+              Submitting...
+            </>
+          ) : (
+            "Submit Listing"
+          )}
         </Button>
       </div>
     </Form>
+    </div>
   );
 } 

@@ -91,7 +91,7 @@ export function Navigation({
   }, [searchParams, location]);
 
   return (
-    <nav className="flex items-center justify-between px-3 sm:px-5 h-14 sm:h-16 bg-primary fixed top-0 left-0 right-0 z-50">
+    <nav className="flex items-center justify-between px-4 sm:px-5 h-14 sm:h-16 bg-primary fixed top-0 left-0 right-0 z-50">
       {/* 왼쪽 메뉴 */}
       <div className="flex items-center gap-2 sm:gap-4 min-w-0">
         {/* 모바일 메뉴 */}

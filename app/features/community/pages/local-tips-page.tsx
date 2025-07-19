@@ -294,7 +294,25 @@ export default function LocalTipsPage({ loaderData }: Route.ComponentProps) {
           {/* Category Filter */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
-            <div className="flex flex-wrap gap-2">
+            
+            {/* Mobile: Select Dropdown */}
+            <div className="block md:hidden">
+              <Select value={categoryFilter} onValueChange={handleCategoryClick}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select a category" />
+                </SelectTrigger>
+                <SelectContent>
+                  {LOCAL_TIP_CATEGORIES_WITH_ALL.map((category: LocalTipCategoryWithAll) => (
+                    <SelectItem key={category} value={category}>
+                      {category}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Desktop: Buttons */}
+            <div className="hidden md:flex flex-wrap gap-2">
               {LOCAL_TIP_CATEGORIES_WITH_ALL.map((category: LocalTipCategoryWithAll) => {
                 const colors = getCategoryColors(category);
                 const isActive = categoryFilter === category;
@@ -406,10 +424,10 @@ export default function LocalTipsPage({ loaderData }: Route.ComponentProps) {
                       )}
                     </button>
                   </div>
-                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                    <div className="flex items-center gap-2">
-                      <span>By</span>
-                      <Avatar className="h-6 w-6">
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-sm text-muted-foreground">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="text-xs sm:text-sm">By</span>
+                      <Avatar className="h-5 w-5 sm:h-6 sm:w-6 flex-shrink-0">
                         <AvatarImage src={post.avatar_url || undefined} alt={(post as any).username || 'Unknown User'} />
                         <AvatarFallback className="text-xs">
                           {(post as any).username ? (post as any).username.charAt(0).toUpperCase() : 'U'}
@@ -418,13 +436,14 @@ export default function LocalTipsPage({ loaderData }: Route.ComponentProps) {
                       <UserStatsHoverCard
                         userName={(post as any).username || 'Unknown User'}
                       >
-                        {(post as any).username || 'Unknown User'}
+                        <span className="text-xs sm:text-sm font-medium truncate">{(post as any).username || 'Unknown User'}</span>
                       </UserStatsHoverCard>
                     </div>
-                    <span>•</span>
-                    <span>{formatTimeAgo(new Date(post.created_at))}</span>
-                    <span>•</span>
-                    <span>{post.location}</span>
+                    <div className="flex items-center gap-2 text-xs sm:text-sm">
+                      <span className="truncate">{formatTimeAgo(new Date(post.created_at))}</span>
+                      <span className="text-gray-400">•</span>
+                      <span className="truncate">{post.location}</span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -469,9 +488,9 @@ export default function LocalTipsPage({ loaderData }: Route.ComponentProps) {
                       <h4 className="font-medium text-sm">Comments ({commentsByPostId[post.id].length})</h4>
                       {commentsByPostId[post.id].map((comment: any ) => (
                         <div key={comment.comment_id} className="bg-gray-50 rounded-lg p-3">
-                          <div className="flex items-start justify-between mb-2">
-                            <span className="font-medium text-sm">{comment.author.username}</span>
-                            <span className="text-xs text-muted-foreground">{formatTimeAgo(new Date(comment.created_at))}</span>
+                          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-2 mb-2">
+                            <span className="font-medium text-sm truncate">{comment.author.username}</span>
+                            <span className="text-xs text-muted-foreground self-start sm:self-auto">{formatTimeAgo(new Date(comment.created_at))}</span>
                           </div>
                           <div
                             className="text-sm text-gray-700"

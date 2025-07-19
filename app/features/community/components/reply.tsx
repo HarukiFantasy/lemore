@@ -39,17 +39,17 @@ export function Reply({ reply, isChild = false, postId, parentId, onSubmitReply 
 
   return (
     <div style={{ marginLeft: isChild ? 24 : 0 }} className={isChild ? 'pl-6 border-l' : ''}>
-      <div className="flex items-start justify-between mb-1">
-        <div className="flex items-center gap-2">
-          <Avatar className="h-6 w-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-2 mb-1">
+        <div className="flex items-center gap-2 min-w-0">
+          <Avatar className="h-5 w-5 sm:h-6 sm:w-6 flex-shrink-0">
             <AvatarImage src={reply.user?.avatar_url || undefined} alt={reply.user?.username || 'U'} />
             <AvatarFallback className="text-xs">
               {reply.user?.username ? reply.user.username.charAt(0).toUpperCase() : 'U'}
             </AvatarFallback>
           </Avatar>
-          <span className="font-medium text-sm">{reply.user?.username || 'Unknown'}</span>
+          <span className="font-medium text-xs sm:text-sm truncate">{reply.user?.username || 'Unknown'}</span>
         </div>
-        <span className="text-xs text-muted-foreground">{formatTimeAgo(new Date(reply.created_at))}</span>
+        <span className="text-xs text-muted-foreground self-start sm:self-auto">{formatTimeAgo(new Date(reply.created_at))}</span>
       </div>
       <div className="text-sm text-gray-700 mb-1">{reply.reply}</div>
       <div className="flex gap-2 mb-2">

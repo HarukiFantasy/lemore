@@ -4,6 +4,7 @@ import { z } from "zod";;
 import { Button } from "~/common/components/ui/button";
 import { Input } from "~/common/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "~/common/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/common/components/ui/select";
 import { Avatar, AvatarFallback, AvatarImage } from "~/common/components/ui/avatar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "~/common/components/ui/dialog";
 import { ScrollArea } from "~/common/components/ui/scroll-area";
@@ -59,8 +60,6 @@ export const action = async ({ request }: Route.ActionArgs) => {
     });
     return { data };
   } catch (error) {
-    console.error("Error creating review:", error);
-    // Check if it's a duplicate key error
     if (error && typeof error === 'object' && 'code' in error && error.code === '23505') {
       return { error: "You have already reviewed this business" };
     }
@@ -72,16 +71,12 @@ export default function LocalReviewsPage({ loaderData }: Route.ComponentProps) {
   const { businesses, reviews, location, user } = loaderData;
   const actionData = useActionData<typeof action>();
   
-  // Debug logging
-  console.log('Businesses data:', businesses);
-  console.log('Reviews data:', reviews);
-  console.log('Action data:', actionData);
+  
   const [searchParams, setSearchParams] = useSearchParams();
   
   // Close modal when action is successful
   useEffect(() => {
     if (actionData?.data) {
-      console.log("Review submitted successfully:", actionData.data);
       setShowReviewForm(false);
       setSelectedBusiness(null);
       setReviewStep('select-business');
@@ -143,24 +138,13 @@ export default function LocalReviewsPage({ loaderData }: Route.ComponentProps) {
   const hasUserReviewedBusiness = (businessId: number) => {
     if (!user) return false;
     
-    console.log('Checking if user reviewed business:', { businessId, userId: user.id });
-    console.log('Available reviews:', reviews);
-    
     const hasReviewed = reviews.some((review: any) => {
       // In local_reviews_list_view, author field contains the user ID
       const reviewUserId = review.author;
       const matches = review.business_id === businessId && reviewUserId === user.id;
-      console.log('Review check:', { 
-        reviewId: review.id, 
-        reviewBusinessId: review.business_id, 
-        reviewUserId, 
-        userId: user.id, 
-        matches 
-      });
       return matches;
     });
     
-    console.log('Has reviewed result:', hasReviewed);
     return hasReviewed;
   };
 
@@ -260,7 +244,6 @@ export default function LocalReviewsPage({ loaderData }: Route.ComponentProps) {
   const handleSubmitReview = () => {
     if (selectedBusiness && newReview.review.trim()) {
       // TODO: Submit to backend
-      console.log("Submitting review:", { business: selectedBusiness, review: newReview });
       setShowReviewForm(false);
       setSelectedBusiness(null);
       setNewReview({ rating: 5, review: "", priceRange: "$" as z.infer<typeof PriceRangeSchema>, tags: [] });
@@ -270,7 +253,6 @@ export default function LocalReviewsPage({ loaderData }: Route.ComponentProps) {
   const handleSubmitBusiness = () => {
     if (newBusiness.name.trim() && newBusiness.address.trim()) {
       // TODO: Submit to backend
-      console.log("Submitting business:", newBusiness);
       setNewBusiness({
         name: "",
         type: "Restaurant" as z.infer<typeof BusinessTypeSchema>,
@@ -305,12 +287,11 @@ export default function LocalReviewsPage({ loaderData }: Route.ComponentProps) {
   // 비즈니스별 리뷰 매핑 - 필터링된 비즈니스만 사용
   const businessReviewPairs = filteredBusinesses.map((business) => {
     const businessReviews = reviews.filter((r: any) => r.business_id === business.id);
-    console.log(`Business ${business.name} (ID: ${business.id}) has ${businessReviews.length} reviews:`, businessReviews);
     return { business, reviews: businessReviews };
   });
 
   return (
-    <div className="max-w-7xl mx-auto px-0 py-6 md:p-6 space-y-6">
+    <div className="w-full md:w-4/5 mx-auto px-0 py-6 md:p-6 space-y-6">
       {/* Header */}
       <div className="text-center space-y-2">
         <h1 className="text-3xl font-bold text-gray-900">Local Reviews</h1>
@@ -336,38 +317,80 @@ export default function LocalReviewsPage({ loaderData }: Route.ComponentProps) {
           </div>
 
           {/* Filters */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Business Type */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Business Type</label>
-              <div className="flex flex-wrap gap-2">
-                {validBusinessTypes.map((type) => (
-                  <Button
-                    key={type}
-                    variant={selectedType === type ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => handleTypeChange(type)}
-                  >
-                    {type}
-                  </Button>
-                ))}
+          {/* Mobile: Select Dropdowns in one row */}
+          <div className="block md:hidden">
+            <div className="grid grid-cols-2 gap-3">
+              {/* Business Type */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Business Type</label>
+                <Select value={selectedType} onValueChange={handleTypeChange}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {validBusinessTypes.map((type) => (
+                      <SelectItem key={type} value={type}>
+                        {type}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Price Range */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Price Range</label>
+                <Select value={selectedPriceRange} onValueChange={handlePriceRangeChange}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Price" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {validPriceRanges.map((range) => (
+                      <SelectItem key={range} value={range}>
+                        {range}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
+          </div>
 
-            {/* Price Range */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Price Range</label>
-              <div className="flex flex-wrap gap-2">
-                {validPriceRanges.map((range) => (
-                  <Button
-                    key={range}
-                    variant={selectedPriceRange === range ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => handlePriceRangeChange(range)}
-                  >
-                    {range}
-                  </Button>
-                ))}
+          {/* Desktop: Button Filters */}
+          <div className="hidden md:block">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Business Type */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Business Type</label>
+                <div className="flex flex-wrap gap-2">
+                  {validBusinessTypes.map((type) => (
+                    <Button
+                      key={type}
+                      variant={selectedType === type ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => handleTypeChange(type)}
+                    >
+                      {type}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Price Range */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Price Range</label>
+                <div className="flex flex-wrap gap-2">
+                  {validPriceRanges.map((range) => (
+                    <Button
+                      key={range}
+                      variant={selectedPriceRange === range ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => handlePriceRangeChange(range)}
+                    >
+                      {range}
+                    </Button>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
@@ -446,20 +469,20 @@ export default function LocalReviewsPage({ loaderData }: Route.ComponentProps) {
       <div className="space-y-4">
         {businessReviewPairs.length > 0 ? (
           businessReviewPairs.map(({ business, reviews: businessReviews }) => (
-            <Card key={business.id} className="w-full">
-              <div className="flex flex-col md:flex-row">
+            <Card key={business.id} className="w-full overflow-hidden">
+              <div className="flex flex-col md:flex-row md:items-start">
                 {/* 좌측: 비즈니스 정보 */}
-                <div className="flex-shrink-0 w-full md:w-1/3 flex flex-col items-center md:items-start md:-mb-6 md:-mt-6">
+                <div className="flex-shrink-0 w-full md:w-1/3 flex flex-col items-center md:items-start">
                   {/* 비즈니스 사진 - 카드 상단에 여백 없이 */}
-                  <div className="w-full">
+                  <div className="w-full -mt-6 -mx-6 mb-0 md:-mt-6 md:-mb-2 md:mx-0">
                     <img
                       src="/cafe1.png"
                       alt={business.name ?? ""}
-                      className="w-full h-32 object-cover rounded-t-lg md:rounded-t-lg mb-0"
+                      className="w-full h-32 object-cover rounded-t-lg md:rounded-none md:rounded-tl-lg"
                     />
                   </div>
                   {/* 비즈니스 정보 */}
-                  <div className="space-y-1 w-full p-4">
+                  <div className="space-y-1 w-full px-6 py-4 md:px-4 md:pt-6 md:pb-4">
                     <h3 className="font-semibold text-lg text-gray-900">{business.name}</h3>
                     <div className="flex flex-wrap gap-2 text-xs text-gray-600">
                       <span>{business.type}</span>
@@ -484,36 +507,49 @@ export default function LocalReviewsPage({ loaderData }: Route.ComponentProps) {
                   </div>
                 </div>
                 {/* 우측: 해당 비즈니스의 모든 리뷰 */}
-                <CardContent className="flex-1 flex flex-col justify-between p-4 md:-mt-5 md:-mb-5 md:ml-4">
+                <CardContent className="flex-1 flex flex-col p-4 md:-mt-5 md:-mb-5 md:ml-4 min-h-32">
                   {businessReviews.length > 0 ? (
-                    <ScrollArea className="h-64">
-                      <div className="flex flex-col gap-3 w-full">
-                        {businessReviews.map((review) => (
-                          <div key={`${review.business_id}-${review.author_username}-${review.created_at}`} className="border-b last:border-b-0 pb-3 last:pb-0 bg-white rounded-lg p-3 shadow-sm">
-                            <div className="flex items-start gap-2">
-                              <Avatar className="w-8 h-8 flex-shrink-0">
-                                <AvatarImage src={review.author_avatar ?? ""} alt={review.author_username ?? ""} />
-                                <AvatarFallback className="text-xs">{(review.author_username ?? "").split(' ').map((n: string) => n[0]).join('')}</AvatarFallback>
-                              </Avatar>
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2 mb-1">
-                                  <span className="font-medium text-sm text-gray-900 truncate">{review.author_username}</span>
-                                  <span className="text-xs text-gray-400">•</span>
-                                  <span className="text-xs text-gray-500">{new Date(review.created_at ?? "").toLocaleDateString()}</span>
-                                  <span className="text-xs text-gray-400">•</span>
-                                  <div className="flex items-center">
-                                    {renderStars(review.rating ?? 0)}
+                    <div className="relative">
+                      <ScrollArea className="max-h-64 min-h-0 pr-3 [&>[data-radix-scroll-area-viewport]]:max-h-64 [&>[data-radix-scroll-area-scrollbar]]:w-2">
+                        <div className="flex flex-col gap-3 w-full">
+                          {businessReviews.map((review) => (
+                            <div key={`${review.business_id}-${review.author_username}-${review.created_at}`} className="border-b last:border-b-0 pb-3 last:pb-0 shadow-sm">
+                              <div className="flex items-start gap-2">
+                                <Avatar className="w-8 h-8 flex-shrink-0">
+                                  <AvatarImage src={review.author_avatar ?? ""} alt={review.author_username ?? ""} />
+                                  <AvatarFallback className="text-xs">{(review.author_username ?? "").split(' ').map((n: string) => n[0]).join('')}</AvatarFallback>
+                                </Avatar>
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 mb-1">
+                                    <div className="flex items-center gap-1 min-w-0">
+                                      <span className="font-medium text-sm text-gray-900 truncate">{review.author_username}</span>
+                                      <div className="flex items-center ml-1">
+                                        {renderStars(review.rating ?? 0)}
+                                      </div>
+                                    </div>
+                                    <div className="flex items-center gap-1 text-xs text-gray-500">
+                                      <span className="hidden sm:inline text-gray-400">•</span>
+                                      <span className="truncate">{new Date(review.created_at ?? "").toLocaleDateString()}</span>
+                                    </div>
                                   </div>
+                                  <div className="text-sm text-gray-700 leading-relaxed overflow-hidden" style={{ display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical' }}>{review.content}</div>
                                 </div>
-                                <div className="text-sm text-gray-700 leading-relaxed overflow-hidden" style={{ display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical' }}>{review.content}</div>
                               </div>
                             </div>
+                          ))}
+                        </div>
+                      </ScrollArea>
+                      {/* 스크롤 인디케이터 - 리뷰가 많을 때만 표시 */}
+                      {businessReviews.length > 2 && (
+                        <div className="absolute bottom-0 left-0 right-3 h-6 bg-gradient-to-t from-white via-white/80 to-transparent pointer-events-none flex items-end justify-center pb-1">
+                          <div className="text-xs text-gray-500 bg-white px-3 py-1 rounded-full border border-gray-200 shadow-sm">
+                            ↓ Scroll for more reviews
                           </div>
-                        ))}
-                      </div>
-                    </ScrollArea>
+                        </div>
+                      )}
+                    </div>
                   ) : (
-                    <div className="text-gray-500 text-center text-sm py-4">No reviews yet for this business.</div>
+                    <div className="text-gray-500 text-center text-sm py-8">No reviews yet for this business.</div>
                   )}
                 </CardContent>
               </div>

@@ -108,11 +108,11 @@ export const loader = async ({ params, request }: Route.LoaderArgs) => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className="w-full md:w-[90%] mx-auto py-4 md:py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-8">
           
           {/* Product Images */}
-          <div className="space-y-4">
+          <div className="space-y-4 px-2 md:px-0">
             <div className="aspect-square bg-white rounded-lg overflow-hidden shadow-sm relative">
               <img 
                 src={product.primary_image || `/toy1.png`}
@@ -162,7 +162,7 @@ export const loader = async ({ params, request }: Route.LoaderArgs) => {
           </div>
 
           {/* Product Info */}
-          <div className="space-y-6">
+          <div className="space-y-6 px-2 md:px-0">
             {/* Title and Price */}
             <div>
               <h1 className="text-3xl font-bold text-gray-900 mb-2">
@@ -262,7 +262,7 @@ export const loader = async ({ params, request }: Route.LoaderArgs) => {
         </div>
 
         {/* Seller Information */}
-        <div className="mt-12">
+        <div className="mt-8 md:mt-12 px-2 md:px-0">
           <Card className="p-6">
             {/* Seller Information Title (항상 한 줄) */}
             <div className="flex flex-row items-center justify-between -mb-1">
