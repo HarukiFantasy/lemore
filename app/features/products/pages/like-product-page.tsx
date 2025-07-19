@@ -19,22 +19,16 @@ export const action = async ({ request, params }: Route.ActionArgs) => {
   const { data: { user } } = await client.auth.getUser();
   try {
     if (action === "like") {
- 
-      const { error } = await client.rpc('insert_product_like_safe', {
-        product_id_param: Number(productId),
-        user_id_param: userId
-      });
-        
-      if (error) {
-        console.error("Like insert error:", error);
-        console.error("Error details:", {
-          code: error.code,
-          message: error.message,
-          details: error.details,
-          hint: error.hint
+      const { error } = await client
+        .from("product_likes")
+        .insert({
+          product_id: Number(productId),
+          user_id: userId
         });
         
-        if (error.message?.includes('Already liked')) {
+      if (error) {
+        // 중복 좋아요 체크 (primary key violation)
+        if (error.code === '23505') {
           return { success: false, error: "Already liked this product" };
         }
         
@@ -42,19 +36,13 @@ export const action = async ({ request, params }: Route.ActionArgs) => {
       }
       
     } else if (action === "unlike") {
-      // 좋아요 취소 - RPC 함수 사용
-      console.log("Attempting to delete like with RPC:", {
-        product_id: Number(productId),
-        user_id: userId
-      });
-      
-      const { error } = await client.rpc('delete_product_like_safe', {
-        product_id_param: Number(productId),
-        user_id_param: userId
-      });
+      const { error } = await client
+        .from("product_likes")
+        .delete()
+        .eq("product_id", Number(productId))
+        .eq("user_id", userId);
         
       if (error) {
-        console.error("Unlike delete error:", error);
         return { success: false, error: error.message };
       }
       
@@ -72,6 +60,7 @@ export const action = async ({ request, params }: Route.ActionArgs) => {
     
     const likesCount = likesData?.length || 0;
     const isLiked = action === "like";
+    
     return { 
       success: true, 
       likes: likesCount,

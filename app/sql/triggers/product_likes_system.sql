@@ -1,3 +1,6 @@
+DROP FUNCTION IF EXISTS public.handle_products_like() CASCADE;
+DROP FUNCTION IF EXISTS public.handle_products_unlike() CASCADE;
+
 CREATE FUNCTION public.handle_products_like()
 RETURNS TRIGGER
 LANGUAGE plpgsql
@@ -17,6 +20,8 @@ AFTER INSERT ON public.product_likes
 FOR EACH ROW
 EXECUTE FUNCTION public.handle_products_like();
 
+
+
 CREATE FUNCTION public.handle_products_unlike()
 RETURNS TRIGGER
 LANGUAGE plpgsql
@@ -35,3 +40,4 @@ CREATE TRIGGER products_unlike_trigger
 AFTER DELETE ON public.product_likes
 FOR EACH ROW
 EXECUTE FUNCTION public.handle_products_unlike();
+

@@ -6,7 +6,7 @@ import { Input } from '~/common/components/ui/input';
 import { Button } from '~/common/components/ui/button';
 import { PRODUCT_CATEGORIES, CATEGORY_ICONS } from "../constants";
 import { BlurFade } from 'components/magicui/blur-fade';
-import { getProductsListings } from '../queries';
+import { getProductsListings, getUserLikedProducts } from '../queries';
 import { makeSSRClient } from '~/supa-client';
 import { getUserStats } from '~/features/users/queries';
 
@@ -24,6 +24,19 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
   const location = url.searchParams.get("location");
   
   const products = await getProductsListings(client);
+  
+  // 사용자 인증 정보 가져오기
+  const { data: { user } } = await client.auth.getUser();
+  let userLikedProducts: number[] = [];
+  
+  // 로그인한 사용자의 좋아요 목록 가져오기
+  if (user) {
+    try {
+      userLikedProducts = await getUserLikedProducts(client, user.id);
+    } catch (error) {
+      console.error('Error fetching user liked products:', error);
+    }
+  }
   
   // Location filtering
   let filteredProducts = products;
@@ -50,7 +63,12 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
     }
   }
   
-  return { products: filteredProducts, userStats: Object.fromEntries(userStatsMap), location };
+  return { 
+    products: filteredProducts, 
+    userStats: Object.fromEntries(userStatsMap), 
+    location,
+    userLikedProducts
+  };
 }
 
 export default function BrowseListingsPage({ loaderData }: Route.ComponentProps) {
@@ -58,7 +76,7 @@ export default function BrowseListingsPage({ loaderData }: Route.ComponentProps)
   const [searchInput, setSearchInput] = useState(searchParams.get("q") || "");
   const [currentPage, setCurrentPage] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
-  const { products, userStats, location } = loaderData;
+  const { products, userStats, location, userLikedProducts } = loaderData;
   const [displayedProducts, setDisplayedProducts] = useState<any[]>(products || []);
   const [hasMore, setHasMore] = useState(true);
   const observerRef = useRef<IntersectionObserver | null>(null);
@@ -248,7 +266,9 @@ export default function BrowseListingsPage({ loaderData }: Route.ComponentProps)
                   seller={product.seller_name}
                   is_sold={product.is_sold || false}
                   category={product.category_name || "electronics"}
+                  likes={product.likes_count || 0}
                   sellerStats={userStats[product.seller_name]}
+                  isLikedByUser={userLikedProducts?.includes(product.product_id) || false}
                 />
               </BlurFade>
             ))

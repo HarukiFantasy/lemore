@@ -137,6 +137,8 @@ export default function LikesPage({ loaderData }: { loaderData: LoaderData }) {
                   seller={product.products?.seller_name}
                   currency={product.products?.currency}
                   priceType={product.products?.price_type}
+                  likes={product.products?.likes_count || 0}
+                  isLikedByUser={true}
                 />
                 {/* Unlike Button */}
                 <Button

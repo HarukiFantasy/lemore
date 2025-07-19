@@ -42,6 +42,7 @@ type ProductCardProps = {
   likes?: number;
   seller?: string;
   sellerStats?: any;
+  isLikedByUser?: boolean; // 사용자가 이미 좋아요한 제품인지
   [key: string]: any;
 };
 
@@ -59,6 +60,7 @@ export function ProductCard({
   likes = 0,
   seller,
   sellerStats,
+  isLikedByUser = false,
   ...props
 }: ProductCardProps) {
   // Support both product object and individual props
@@ -83,7 +85,7 @@ export function ProductCard({
 
   // Optimistic likes count
   const [optimisticLikes, setOptimisticLikes] = useState(likes);
-  const [isLiked, setIsLiked] = useState(false);
+  const [isLiked, setIsLiked] = useState(isLikedByUser);
 
   // Helper function to add location to URLs
   const addLocationToUrl = (url: string) => {
@@ -112,6 +114,12 @@ export function ProductCard({
     );
   };
 
+  // Update state when props change
+  useEffect(() => {
+    setOptimisticLikes(likes);
+    setIsLiked(isLikedByUser);
+  }, [likes, isLikedByUser]);
+
   // Update optimistic state based on fetcher state
   useEffect(() => {
     if (fetcher.state === 'idle' && fetcher.data) {
@@ -122,10 +130,10 @@ export function ProductCard({
       } else {
         // Revert on error
         setOptimisticLikes(likes);
-        setIsLiked(false);
+        setIsLiked(isLikedByUser);
       }
     }
-  }, [fetcher.state, fetcher.data, likes]);
+  }, [fetcher.state, fetcher.data, likes, isLikedByUser]);
 
     return (
     <Link to={addLocationToUrl(`/secondhand/product/${productId}`)}>

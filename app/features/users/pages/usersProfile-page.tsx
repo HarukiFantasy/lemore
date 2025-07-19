@@ -192,15 +192,15 @@ export default function UsersProfilePage({ loaderData }: Route.ComponentProps) {
                     <ProductCard
                       key={product.product_id || index}
                       productId={product.product_id}
-                      image={product.image_url || '/toy1.png'}
+                      image={product.primary_image || '/toy1.png'}
                       title={product.title || "Product Title"}
                       price={product.price || 0}
                       currency="THB"
                       seller={targetUserProfile?.username || "Unknown"}
-                      likes={product.likes || 0}
+                      likes={product.likes_count || 0}
                       is_sold={product.is_sold || false}
                       priceType={product.price_type || "fixed"}
-                      category={product.category || "Electronics"}
+                      category={product.category_name || "Electronics"}
                     />
                   ))}
                 </div>

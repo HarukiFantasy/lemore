@@ -50,3 +50,16 @@ export const getProductImages = async (client: SupabaseClient<Database>, product
   if (error) throw new Error(error.message);
   return data;
 };
+
+// 사용자가 좋아요한 제품 목록 조회
+export const getUserLikedProducts = async (client: SupabaseClient<Database>, userId?: string) => {
+  if (!userId) return [];
+  
+  const { data, error } = await client
+    .from("product_likes")
+    .select("product_id")
+    .eq("user_id", userId);
+    
+  if (error) throw new Error(error.message);
+  return data?.map(like => like.product_id) || [];
+};

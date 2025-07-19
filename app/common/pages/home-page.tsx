@@ -7,7 +7,7 @@ import { CommunityPostCard } from "../../features/community/components/community
 import { useLoaderData } from "react-router";
 import { BlurFade } from 'components/magicui/blur-fade';
 import { makeSSRClient } from '~/supa-client';
-import { getProductsListings } from '../../features/products/queries';
+import { getProductsListings, getUserLikedProducts } from '../../features/products/queries';
 import { getLocalTipPosts } from "~/features/community/queries";
 import { DateTime } from "luxon";
 
@@ -24,6 +24,19 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
   const url = new URL(request.url);
   const location = url.searchParams.get("location");
   
+  // 사용자 인증 정보 가져오기
+  const { data: { user } } = await client.auth.getUser();
+  let userLikedProducts: number[] = [];
+  
+  // 로그인한 사용자의 좋아요 목록 가져오기
+  if (user) {
+    try {
+      userLikedProducts = await getUserLikedProducts(client, user.id);
+    } catch (error) {
+      console.error('Error fetching user liked products:', error);
+    }
+  }
+  
   // Get all products and filter by location
   let todaysPicks = await getProductsListings(client, 20); // Get more to filter
   if (location && location !== "All Locations" && location !== "Other Cities") {
@@ -38,7 +51,7 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
   }
   communityPosts = communityPosts.slice(0, 10); // Limit to 10 after filtering
   
-  return { todaysPicks, location, communityPosts };
+  return { todaysPicks, location, communityPosts, userLikedProducts };
 };
 
 // Date 객체 또는 ISO 문자열을 시간 문자열로 변환하는 헬퍼 함수 (Luxon 사용)
@@ -49,10 +62,11 @@ function getTimeAgo(date: Date | string): string {
 
 export default function HomePage() {
   const [searchParams] = useSearchParams();
-  const { todaysPicks, location, communityPosts } = useLoaderData() as {
+  const { todaysPicks, location, communityPosts, userLikedProducts } = useLoaderData() as {
     todaysPicks: any[];
     location: string | null;
     communityPosts: any[];
+    userLikedProducts: number[];
   };
   const urlLocation = searchParams.get("location");
   const currentLocation = urlLocation || "Bangkok";
@@ -87,6 +101,8 @@ export default function HomePage() {
                 priceType={product.price_type || "Fixed"}
                 seller={product.seller_name}
                 is_sold={product.is_sold || false}
+                likes={product.likes_count || 0}
+                isLikedByUser={userLikedProducts?.includes(product.product_id) || false}
               />
             </BlurFade>
           ))

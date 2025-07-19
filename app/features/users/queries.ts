@@ -63,7 +63,8 @@ export const getLikedProductsByUserId = async (
         price,
         currency,
         price_type,
-        seller_name
+        seller_name,
+        likes_count
       )
     `)
     .eq("user_id", profileId);
