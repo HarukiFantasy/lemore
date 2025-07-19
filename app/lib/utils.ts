@@ -259,36 +259,38 @@ export function isAnonymousUser(userId: string | null): boolean {
 // }
 
 // Check if user has appreciation badge based on give-and-glow reviews
-export const checkAppreciationBadge = async (sellerId: string): Promise<boolean> => {
+export const checkAppreciationBadge = async (client: any, sellerId: string): Promise<boolean> => {
   try {
-    const { db } = await import("~/db");
-    const { userProfiles, giveAndGlowReviews } = await import("~/schema");
-    const { eq, gt, and } = await import("drizzle-orm");
-    
     // First, check if the user already has the appreciation_badge set in their profile
-    const userProfile = await db
-      .select({ appreciation_badge: userProfiles.appreciation_badge })
-      .from(userProfiles)
-      .where(eq(userProfiles.profile_id, sellerId))
-      .limit(1);
+    const { data: userProfile, error: profileError } = await client
+      .from('user_profiles')
+      .select('appreciation_badge')
+      .eq('profile_id', sellerId)
+      .single();
     
-    if (userProfile.length > 0 && userProfile[0].appreciation_badge) {
+    if (profileError) {
+      console.error("Error fetching user profile:", profileError);
+      return false;
+    }
+    
+    if (userProfile?.appreciation_badge) {
       return true;
     }
     
     // If not found in profile or badge is false, check the give-and-glow reviews
-    const highRatingReviews = await db
-      .select()
-      .from(giveAndGlowReviews)
-      .where(
-        and(
-          eq(giveAndGlowReviews.giver_id, sellerId),
-          gt(giveAndGlowReviews.rating, 4)
-        )
-      );
+    const { data: highRatingReviews, error: reviewsError } = await client
+      .from('give_and_glow_reviews')
+      .select('*')
+      .eq('giver_id', sellerId)
+      .gt('rating', 4);
+    
+    if (reviewsError) {
+      console.error("Error fetching give-and-glow reviews:", reviewsError);
+      return false;
+    }
     
     // User gets appreciation badge if they have at least one review with rating > 4
-    return highRatingReviews.length > 0;
+    return (highRatingReviews?.length ?? 0) > 0;
   } catch (error) {
     console.error("Error checking appreciation badge:", error);
     return false;

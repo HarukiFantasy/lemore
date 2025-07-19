@@ -5,6 +5,14 @@ import tsconfigPaths from "vite-tsconfig-paths";
 
 export default defineConfig({
   plugins: [tailwindcss(), reactRouter(), tsconfigPaths()],
+  build: {
+    rollupOptions: {
+      external: [
+        "postgres",
+        "drizzle-orm/node-postgres"
+      ]
+    }
+  },
   server: {
     host: "localhost",
     port: 5173,

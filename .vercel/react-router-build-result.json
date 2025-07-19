@@ -1,0 +1,535 @@
+{
+  "buildManifest": {
+    "serverBundles": {
+      "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0": {
+        "id": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
+        "file": "build/server/nodejs_eyJydW50aW1lIjoibm9kZWpzIn0/index.js",
+        "config": {
+          "runtime": "nodejs"
+        }
+      }
+    },
+    "routeIdToServerBundleId": {
+      "common/pages/home-page": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
+      "features/products/pages/secondhand-page": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
+      "features/products/pages/submit-a-listing-page": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
+      "features/products/pages/browse-listings-page": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
+      "features/products/pages/product-detail-page": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
+      "features/products/pages/edit-product-page": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
+      "features/products/pages/like-product-page": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
+      "features/community/pages/community-page": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
+      "features/community/pages/local-tips-page": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
+      "features/community/pages/local-reviews-page": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
+      "features/community/pages/give-and-glow-page": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
+      "features/let-go-buddy/pages/let-go-buddy-page": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
+      "features/let-go-buddy/pages/let-go-buddy-analysis-page": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
+      "features/auth/pages/login-page": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
+      "features/auth/pages/join-page": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
+      "features/auth/pages/otp-start-page": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
+      "features/auth/pages/otp-complete-page": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
+      "features/auth/pages/social-start-page": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
+      "features/auth/pages/social-complete-page": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
+      "features/auth/pages/logout-page": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
+      "features/users/pages/dashboard-page": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
+      "features/users/pages/user-listings-page": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
+      "features/users/pages/profile-page": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
+      "features/users/pages/notifications-page": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
+      "features/users/pages/notification-see-page": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
+      "features/users/pages/messages-page": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
+      "features/users/pages/likes-page": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
+      "features/users/pages/usersProfile-page": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
+      "features/users/pages/welcome-page": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0"
+    },
+    "routes": {
+      "root": {
+        "path": "",
+        "id": "root",
+        "file": "app/root.tsx",
+        "config": {}
+      },
+      "common/pages/home-page": {
+        "id": "common/pages/home-page",
+        "parentId": "root",
+        "file": "app/common/pages/home-page.tsx",
+        "index": true,
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "features/products/pages/secondhand-page": {
+        "id": "features/products/pages/secondhand-page",
+        "parentId": "root",
+        "file": "app/features/products/pages/secondhand-page.tsx",
+        "path": "secondhand",
+        "index": true,
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "features/products/pages/submit-a-listing-page": {
+        "id": "features/products/pages/submit-a-listing-page",
+        "parentId": "root",
+        "file": "app/features/products/pages/submit-a-listing-page.tsx",
+        "path": "secondhand/submit-a-listing",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "features/products/pages/browse-listings-page": {
+        "id": "features/products/pages/browse-listings-page",
+        "parentId": "root",
+        "file": "app/features/products/pages/browse-listings-page.tsx",
+        "path": "secondhand/browse-listings",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "features/products/pages/product-detail-page": {
+        "id": "features/products/pages/product-detail-page",
+        "parentId": "root",
+        "file": "app/features/products/pages/product-detail-page.tsx",
+        "path": "secondhand/product/:productId",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "features/products/pages/edit-product-page": {
+        "id": "features/products/pages/edit-product-page",
+        "parentId": "root",
+        "file": "app/features/products/pages/edit-product-page.tsx",
+        "path": "secondhand/product/:productId/edit",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "features/products/pages/like-product-page": {
+        "id": "features/products/pages/like-product-page",
+        "parentId": "root",
+        "file": "app/features/products/pages/like-product-page.tsx",
+        "path": "secondhand/:productId/like",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "features/community/pages/community-page": {
+        "id": "features/community/pages/community-page",
+        "parentId": "root",
+        "file": "app/features/community/pages/community-page.tsx",
+        "path": "community",
+        "index": true,
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "features/community/pages/local-tips-page": {
+        "id": "features/community/pages/local-tips-page",
+        "parentId": "root",
+        "file": "app/features/community/pages/local-tips-page.tsx",
+        "path": "community/local-tips",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "features/community/pages/local-reviews-page": {
+        "id": "features/community/pages/local-reviews-page",
+        "parentId": "root",
+        "file": "app/features/community/pages/local-reviews-page.tsx",
+        "path": "community/local-reviews",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "features/community/pages/give-and-glow-page": {
+        "id": "features/community/pages/give-and-glow-page",
+        "parentId": "root",
+        "file": "app/features/community/pages/give-and-glow-page.tsx",
+        "path": "community/give-and-glow",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "features/let-go-buddy/pages/let-go-buddy-page": {
+        "id": "features/let-go-buddy/pages/let-go-buddy-page",
+        "parentId": "root",
+        "file": "app/features/let-go-buddy/pages/let-go-buddy-page.tsx",
+        "path": "let-go-buddy",
+        "index": true,
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "features/let-go-buddy/pages/let-go-buddy-analysis-page": {
+        "id": "features/let-go-buddy/pages/let-go-buddy-analysis-page",
+        "parentId": "root",
+        "file": "app/features/let-go-buddy/pages/let-go-buddy-analysis-page.tsx",
+        "path": "let-go-buddy/analysis",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "features/auth/layouts/auth-layout": {
+        "id": "features/auth/layouts/auth-layout",
+        "parentId": "root",
+        "file": "app/features/auth/layouts/auth-layout.tsx",
+        "config": {}
+      },
+      "features/auth/pages/login-page": {
+        "id": "features/auth/pages/login-page",
+        "parentId": "features/auth/layouts/auth-layout",
+        "file": "app/features/auth/pages/login-page.tsx",
+        "path": "/auth/login",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "features/auth/pages/join-page": {
+        "id": "features/auth/pages/join-page",
+        "parentId": "features/auth/layouts/auth-layout",
+        "file": "app/features/auth/pages/join-page.tsx",
+        "path": "/auth/join",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "features/auth/pages/otp-start-page": {
+        "id": "features/auth/pages/otp-start-page",
+        "parentId": "features/auth/layouts/auth-layout",
+        "file": "app/features/auth/pages/otp-start-page.tsx",
+        "path": "/auth/otp/start",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "features/auth/pages/otp-complete-page": {
+        "id": "features/auth/pages/otp-complete-page",
+        "parentId": "features/auth/layouts/auth-layout",
+        "file": "app/features/auth/pages/otp-complete-page.tsx",
+        "path": "/auth/otp/complete",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "features/auth/pages/social-start-page": {
+        "id": "features/auth/pages/social-start-page",
+        "parentId": "features/auth/layouts/auth-layout",
+        "file": "app/features/auth/pages/social-start-page.tsx",
+        "path": "/auth/social/:provider/start",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "features/auth/pages/social-complete-page": {
+        "id": "features/auth/pages/social-complete-page",
+        "parentId": "features/auth/layouts/auth-layout",
+        "file": "app/features/auth/pages/social-complete-page.tsx",
+        "path": "/auth/social/:provider/complete",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "features/auth/pages/logout-page": {
+        "id": "features/auth/pages/logout-page",
+        "parentId": "root",
+        "file": "app/features/auth/pages/logout-page.tsx",
+        "path": "/auth/logout",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "features/users/pages/dashboard-page": {
+        "id": "features/users/pages/dashboard-page",
+        "parentId": "root",
+        "file": "app/features/users/pages/dashboard-page.tsx",
+        "path": "/my/dashboard",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "features/users/pages/user-listings-page": {
+        "id": "features/users/pages/user-listings-page",
+        "parentId": "root",
+        "file": "app/features/users/pages/user-listings-page.tsx",
+        "path": "/my/listings",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "features/users/pages/profile-page": {
+        "id": "features/users/pages/profile-page",
+        "parentId": "root",
+        "file": "app/features/users/pages/profile-page.tsx",
+        "path": "/my/profile",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "features/users/pages/notifications-page": {
+        "id": "features/users/pages/notifications-page",
+        "parentId": "root",
+        "file": "app/features/users/pages/notifications-page.tsx",
+        "path": "/my/notifications",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "features/users/pages/notification-see-page": {
+        "id": "features/users/pages/notification-see-page",
+        "parentId": "root",
+        "file": "app/features/users/pages/notification-see-page.tsx",
+        "path": "/my/notifications/:notificationId/see",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "features/users/pages/messages-page": {
+        "id": "features/users/pages/messages-page",
+        "parentId": "root",
+        "file": "app/features/users/pages/messages-page.tsx",
+        "path": "/my/messages",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "features/users/pages/likes-page": {
+        "id": "features/users/pages/likes-page",
+        "parentId": "root",
+        "file": "app/features/users/pages/likes-page.tsx",
+        "path": "/my/likes",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "features/users/pages/usersProfile-page": {
+        "id": "features/users/pages/usersProfile-page",
+        "parentId": "root",
+        "file": "app/features/users/pages/usersProfile-page.tsx",
+        "path": "/users/:username",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "features/users/pages/welcome-page": {
+        "id": "features/users/pages/welcome-page",
+        "parentId": "root",
+        "file": "app/features/users/pages/welcome-page.tsx",
+        "path": "/users/:username/welcome",
+        "config": {
+          "runtime": "nodejs"
+        }
+      }
+    }
+  },
+  "reactRouterConfig": {
+    "appDirectory": "/Users/sena/lemore/app",
+    "basename": "/",
+    "buildDirectory": "/Users/sena/lemore/build",
+    "future": {
+      "unstable_middleware": false,
+      "unstable_optimizeDeps": false,
+      "unstable_splitRouteModules": false,
+      "unstable_subResourceIntegrity": false,
+      "unstable_viteEnvironmentApi": false
+    },
+    "routes": {
+      "root": {
+        "path": "",
+        "id": "root",
+        "file": "root.tsx"
+      },
+      "common/pages/home-page": {
+        "id": "common/pages/home-page",
+        "parentId": "root",
+        "file": "common/pages/home-page.tsx",
+        "index": true
+      },
+      "features/products/pages/secondhand-page": {
+        "id": "features/products/pages/secondhand-page",
+        "parentId": "root",
+        "file": "features/products/pages/secondhand-page.tsx",
+        "path": "secondhand",
+        "index": true
+      },
+      "features/products/pages/submit-a-listing-page": {
+        "id": "features/products/pages/submit-a-listing-page",
+        "parentId": "root",
+        "file": "features/products/pages/submit-a-listing-page.tsx",
+        "path": "secondhand/submit-a-listing"
+      },
+      "features/products/pages/browse-listings-page": {
+        "id": "features/products/pages/browse-listings-page",
+        "parentId": "root",
+        "file": "features/products/pages/browse-listings-page.tsx",
+        "path": "secondhand/browse-listings"
+      },
+      "features/products/pages/product-detail-page": {
+        "id": "features/products/pages/product-detail-page",
+        "parentId": "root",
+        "file": "features/products/pages/product-detail-page.tsx",
+        "path": "secondhand/product/:productId"
+      },
+      "features/products/pages/edit-product-page": {
+        "id": "features/products/pages/edit-product-page",
+        "parentId": "root",
+        "file": "features/products/pages/edit-product-page.tsx",
+        "path": "secondhand/product/:productId/edit"
+      },
+      "features/products/pages/like-product-page": {
+        "id": "features/products/pages/like-product-page",
+        "parentId": "root",
+        "file": "features/products/pages/like-product-page.tsx",
+        "path": "secondhand/:productId/like"
+      },
+      "features/community/pages/community-page": {
+        "id": "features/community/pages/community-page",
+        "parentId": "root",
+        "file": "features/community/pages/community-page.tsx",
+        "path": "community",
+        "index": true
+      },
+      "features/community/pages/local-tips-page": {
+        "id": "features/community/pages/local-tips-page",
+        "parentId": "root",
+        "file": "features/community/pages/local-tips-page.tsx",
+        "path": "community/local-tips"
+      },
+      "features/community/pages/local-reviews-page": {
+        "id": "features/community/pages/local-reviews-page",
+        "parentId": "root",
+        "file": "features/community/pages/local-reviews-page.tsx",
+        "path": "community/local-reviews"
+      },
+      "features/community/pages/give-and-glow-page": {
+        "id": "features/community/pages/give-and-glow-page",
+        "parentId": "root",
+        "file": "features/community/pages/give-and-glow-page.tsx",
+        "path": "community/give-and-glow"
+      },
+      "features/let-go-buddy/pages/let-go-buddy-page": {
+        "id": "features/let-go-buddy/pages/let-go-buddy-page",
+        "parentId": "root",
+        "file": "features/let-go-buddy/pages/let-go-buddy-page.tsx",
+        "path": "let-go-buddy",
+        "index": true
+      },
+      "features/let-go-buddy/pages/let-go-buddy-analysis-page": {
+        "id": "features/let-go-buddy/pages/let-go-buddy-analysis-page",
+        "parentId": "root",
+        "file": "features/let-go-buddy/pages/let-go-buddy-analysis-page.tsx",
+        "path": "let-go-buddy/analysis"
+      },
+      "features/auth/layouts/auth-layout": {
+        "id": "features/auth/layouts/auth-layout",
+        "parentId": "root",
+        "file": "features/auth/layouts/auth-layout.tsx"
+      },
+      "features/auth/pages/login-page": {
+        "id": "features/auth/pages/login-page",
+        "parentId": "features/auth/layouts/auth-layout",
+        "file": "features/auth/pages/login-page.tsx",
+        "path": "/auth/login"
+      },
+      "features/auth/pages/join-page": {
+        "id": "features/auth/pages/join-page",
+        "parentId": "features/auth/layouts/auth-layout",
+        "file": "features/auth/pages/join-page.tsx",
+        "path": "/auth/join"
+      },
+      "features/auth/pages/otp-start-page": {
+        "id": "features/auth/pages/otp-start-page",
+        "parentId": "features/auth/layouts/auth-layout",
+        "file": "features/auth/pages/otp-start-page.tsx",
+        "path": "/auth/otp/start"
+      },
+      "features/auth/pages/otp-complete-page": {
+        "id": "features/auth/pages/otp-complete-page",
+        "parentId": "features/auth/layouts/auth-layout",
+        "file": "features/auth/pages/otp-complete-page.tsx",
+        "path": "/auth/otp/complete"
+      },
+      "features/auth/pages/social-start-page": {
+        "id": "features/auth/pages/social-start-page",
+        "parentId": "features/auth/layouts/auth-layout",
+        "file": "features/auth/pages/social-start-page.tsx",
+        "path": "/auth/social/:provider/start"
+      },
+      "features/auth/pages/social-complete-page": {
+        "id": "features/auth/pages/social-complete-page",
+        "parentId": "features/auth/layouts/auth-layout",
+        "file": "features/auth/pages/social-complete-page.tsx",
+        "path": "/auth/social/:provider/complete"
+      },
+      "features/auth/pages/logout-page": {
+        "id": "features/auth/pages/logout-page",
+        "parentId": "root",
+        "file": "features/auth/pages/logout-page.tsx",
+        "path": "/auth/logout"
+      },
+      "features/users/pages/dashboard-page": {
+        "id": "features/users/pages/dashboard-page",
+        "parentId": "root",
+        "file": "features/users/pages/dashboard-page.tsx",
+        "path": "/my/dashboard"
+      },
+      "features/users/pages/user-listings-page": {
+        "id": "features/users/pages/user-listings-page",
+        "parentId": "root",
+        "file": "features/users/pages/user-listings-page.tsx",
+        "path": "/my/listings"
+      },
+      "features/users/pages/profile-page": {
+        "id": "features/users/pages/profile-page",
+        "parentId": "root",
+        "file": "features/users/pages/profile-page.tsx",
+        "path": "/my/profile"
+      },
+      "features/users/pages/notifications-page": {
+        "id": "features/users/pages/notifications-page",
+        "parentId": "root",
+        "file": "features/users/pages/notifications-page.tsx",
+        "path": "/my/notifications"
+      },
+      "features/users/pages/notification-see-page": {
+        "id": "features/users/pages/notification-see-page",
+        "parentId": "root",
+        "file": "features/users/pages/notification-see-page.tsx",
+        "path": "/my/notifications/:notificationId/see"
+      },
+      "features/users/pages/messages-page": {
+        "id": "features/users/pages/messages-page",
+        "parentId": "root",
+        "file": "features/users/pages/messages-page.tsx",
+        "path": "/my/messages"
+      },
+      "features/users/pages/likes-page": {
+        "id": "features/users/pages/likes-page",
+        "parentId": "root",
+        "file": "features/users/pages/likes-page.tsx",
+        "path": "/my/likes"
+      },
+      "features/users/pages/usersProfile-page": {
+        "id": "features/users/pages/usersProfile-page",
+        "parentId": "root",
+        "file": "features/users/pages/usersProfile-page.tsx",
+        "path": "/users/:username"
+      },
+      "features/users/pages/welcome-page": {
+        "id": "features/users/pages/welcome-page",
+        "parentId": "root",
+        "file": "features/users/pages/welcome-page.tsx",
+        "path": "/users/:username/welcome"
+      }
+    },
+    "routeDiscovery": {
+      "mode": "lazy",
+      "manifestPath": "/__manifest"
+    },
+    "serverBuildFile": "index.js",
+    "serverModuleFormat": "esm",
+    "ssr": true
+  },
+  "viteConfig": {
+    "build": {
+      "assetsDir": "assets"
+    }
+  }
+}

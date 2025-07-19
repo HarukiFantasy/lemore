@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { checkAppreciationBadge } from "~/lib/utils";
+import { browserClient } from "~/supa-client";
 
 // Cache for appreciation badge results to avoid repeated database calls
 const appreciationBadgeCache = new Map<string, boolean>();
@@ -24,7 +25,7 @@ export function useAppreciationBadge(sellerId: string | undefined) {
     const fetchAppreciationBadge = async () => {
       setIsLoading(true);
       try {
-        const hasBadge = await checkAppreciationBadge(sellerId);
+        const hasBadge = await checkAppreciationBadge(browserClient, sellerId);
         appreciationBadgeCache.set(sellerId, hasBadge);
         setHasAppreciationBadge(hasBadge);
       } catch (error) {
