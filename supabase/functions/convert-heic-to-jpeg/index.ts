@@ -2,8 +2,20 @@ import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import ImageScript from "https://deno.land/x/imagescript@1.2.15/mod.ts";
 
+function corsHeaders() {
+  return {
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  };
+}
 
 serve(async (req: Request) => {
+  // OPTIONS 프리플라이트 요청 처리
+  if (req.method === "OPTIONS") {
+    return new Response("ok", { headers: corsHeaders() });
+  }
+
   const { record } = await req.json();
   const bucket = record.bucket_id;
   const filePath = record.name;
@@ -41,5 +53,8 @@ serve(async (req: Request) => {
 
   // 원본 삭제
   await supabase.storage.from(bucket).remove([filePath]);
-  return new Response("Converted and uploaded JPEG", { status: 200 });
+  return new Response("Converted and uploaded JPEG", {
+    status: 200,
+    headers: corsHeaders(),
+  });
 });
