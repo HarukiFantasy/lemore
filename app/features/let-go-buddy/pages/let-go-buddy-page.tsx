@@ -62,15 +62,25 @@ export default function LetGoBuddyPage({ loaderData }: Route.ComponentProps) {
   // Handle file upload
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files || []);
+    files.forEach((file, idx) => {
+      console.log(`파일 ${idx + 1} 이름:`, file.name, "타입:", file.type);
+    });
     if (files.length > 5) {
       alert("You can upload maximum 5 files");
       return;
     }
-    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+    const allowedTypes = [
+      'image/jpeg',
+      'image/png',
+      'image/webp',
+      'image/heic', // HEIC 추가
+      'image/heif', // HEIF 추가 (일부 기기용)
+      '',
+    ];
     const invalidFiles = files.filter(file => !allowedTypes.includes(file.type));
     if (invalidFiles.length > 0) {
       const invalidTypes = invalidFiles.map(file => file.type).join(", ");
-      alert(`Invalid file type(s): ${invalidTypes}. Only JPEG, PNG, and WebP images are allowed.`);
+      alert(`Invalid file type(s): ${invalidTypes}. Only JPEG, PNG, WebP, HEIC, and HEIF images are allowed.`);
       return;
     }
     const maxFileSize = 10 * 1024 * 1024; // 10MB
@@ -539,7 +549,12 @@ export default function LetGoBuddyPage({ loaderData }: Route.ComponentProps) {
             <span className="text-xs text-neutral-500 mt-2">{previewUrls.length}/5 images</span>
           )}
           <span className="text-xs text-gray-400 mt-1">
-            Supported formats: JPEG, PNG, WebP (max 10MB each)
+            Supported formats: JPEG, PNG, WebP, HEIC (max 10MB each)
+            <br />
+            <span className="text-[11px] text-gray-500">
+              * HEIC/HEIF images are supported for upload, but may not preview correctly in your browser.  
+              They will be automatically converted for compatibility after upload.
+            </span>
           </span>
         </CardContent>
       </Card>

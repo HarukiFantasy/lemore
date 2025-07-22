@@ -249,7 +249,7 @@ export default function MessagesPage({ loaderData }: { loaderData: LoaderData })
       <div className={`fixed inset-0 z-30 bg-black/30 md:hidden ${showSidebar ? '' : 'hidden'}`}>
         <div className="absolute left-0 top-0 bottom-0 w-4/5 max-w-xs bg-white shadow-lg h-full flex flex-col">
           <div className="flex items-center justify-between px-4 py-3 border-b">
-            <span className="font-semibold">대화 목록</span>
+            <span className="font-semibold">Conversation List</span>
             <button className="text-2xl" onClick={() => setShowSidebar(false)}>×</button>
           </div>
           <ScrollArea className="flex-1">

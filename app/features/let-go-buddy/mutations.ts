@@ -2,6 +2,7 @@ import { SupabaseClient } from '@supabase/supabase-js';
 import { Database } from '~/supa-client';
 import { Json } from '../../../database.types';
 
+
 const ALLOWED_SITUATIONS = ["Moving", "Minimalism", "Spring Cleaning", "Other"] as const;
 type DeclutterSituation = typeof ALLOWED_SITUATIONS[number];
 
@@ -12,6 +13,9 @@ export async function uploadLetGoBuddyImages(
 ): Promise<string[]> {
   const bucket = 'letgobuddy-product';
   const uploadedUrls: string[] = [];
+  // 인증 토큰 가져오기 (필요시)
+  const { data: sessionData } = await client.auth.getSession();
+  const accessToken = sessionData?.session?.access_token;
   for (const file of images) {
     const filePath = `${userId}/${Date.now()}_${file.name}`;
     const { error } = await client.storage.from(bucket).upload(filePath, file, {
@@ -21,9 +25,25 @@ export async function uploadLetGoBuddyImages(
     if (error) throw new Error(error.message);
     const { data } = client.storage.from(bucket).getPublicUrl(filePath);
     uploadedUrls.push(data.publicUrl);
+
+    // 업로드 후 Edge Function 직접 호출 (HEIC 변환)
+    await fetch('https://vyzdklycsuzzgmnuzvnn.functions.supabase.co/convert-heic-to-jpeg', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(accessToken ? { 'Authorization': `Bearer ${accessToken}` } : {})
+      },
+      body: JSON.stringify({
+        record: {
+          bucket_id: bucket,
+          name: filePath
+        }
+      })
+    });
   }
   return uploadedUrls;
 }
+
 
 // 세션 생성: let_go_buddy_sessions 테이블에 row 추가
 export async function createLetGoBuddySession(
