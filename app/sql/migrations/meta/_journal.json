@@ -85,6 +85,13 @@
       "when": 1752928853372,
       "tag": "0011_eager_swordsman",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1753273535358,
+      "tag": "0012_curly_sauron",
+      "breakpoints": true
     }
   ]
 }

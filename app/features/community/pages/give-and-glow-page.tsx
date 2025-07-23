@@ -85,7 +85,7 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
       .order("created_at", { ascending: false });
       
     if (productsError) {
-      console.error("Error fetching user products:", productsError);
+      throw new Error("Error fetching user products");
     } else {
       userProducts = products || [];
     }
@@ -98,7 +98,7 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
     .order("username", { ascending: true });
     
   if (usersError) {
-    console.error("Error fetching users:", usersError);
+    throw new Error("Error fetching users");
   }
   
   // 각 리뷰의 giver와 receiver에 대한 통계 수집
@@ -111,7 +111,6 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
         const giverStats = await getUserStats(client, { username: review.giver_username });
         userStatsMap.set(review.giver_username, giverStats);
       } catch (error) {
-        console.error(`Error fetching stats for giver ${review.giver_username}:`, error);
         userStatsMap.set(review.giver_username, {
           totalListings: 0,
           rating: 0,
@@ -126,7 +125,6 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
         const receiverStats = await getUserStats(client, { username: review.receiver_username });
         userStatsMap.set(review.receiver_username, receiverStats);
       } catch (error) {
-        console.error(`Error fetching stats for receiver ${review.receiver_username}:`, error);
         userStatsMap.set(review.receiver_username, {
           totalListings: 0,
           rating: 0,
@@ -151,16 +149,14 @@ export const action = async ({ request }: Route.ActionArgs) => {
   const { data: { user } } = await client.auth.getUser();
   const formData = await request.formData();
   
-  console.log("Form data received:", Object.fromEntries(formData));
-  
   const { success, data, error } = formSchema.safeParse(Object.fromEntries(formData));
   if (!success) {
-    console.log("Validation errors:", error.flatten().fieldErrors);
     return { fieldErrors: error.flatten().fieldErrors };
   }
   const { itemName, itemCategory, giverId, rating, review } = data;
-  
-  console.log("Validated data:", { itemName, itemCategory, giverId, rating, review });
+  // productId는 formData에서 직접 추출
+  const productIdRaw = formData.get('productId');
+  const productId = productIdRaw ? Number(productIdRaw) : null;
   
   try {
     await createGiveAndGlowReview(client, {
@@ -169,11 +165,10 @@ export const action = async ({ request }: Route.ActionArgs) => {
       giverId,
       rating,
       review,
+      productId,
     });
-    console.log("Review created successfully");
     return { success: true };
   } catch (error) {
-    console.error("Error creating review:", error);
     return { 
       error: "Failed to submit review. Please try again." 
     };
@@ -340,7 +335,6 @@ export default function GiveAndGlowPage({ loaderData }: Route.ComponentProps) {
   // Close modal when action is successful
   React.useEffect(() => {
     if (actionData && !('fieldErrors' in actionData) && !('error' in actionData)) {
-      console.log("Action successful, closing modal");
       setShowReviewForm(false);
       setNewReview({
         itemName: "",
@@ -359,8 +353,6 @@ export default function GiveAndGlowPage({ loaderData }: Route.ComponentProps) {
       setProductSearchTerm("");
       setShowProductDropdown(false);
       
-      // Reload the page to show the new review
-      window.location.reload();
     }
   }, [actionData]);
   
@@ -561,9 +553,8 @@ export default function GiveAndGlowPage({ loaderData }: Route.ComponentProps) {
           <DialogHeader>
             <DialogTitle>Write a Review for Free Item Received</DialogTitle>
           </DialogHeader>
-          
-          <Form method="post" className="space-y-4">
-            <ScrollArea className="max-h-[60vh] pr-4">
+          <ScrollArea className="max-h-[60vh]">
+            <Form method="post" className="space-y-4 pr-4">
               {/* Error/Success Display */}
               {actionData?.error && (
                 <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md">
@@ -802,42 +793,47 @@ export default function GiveAndGlowPage({ loaderData }: Route.ComponentProps) {
                   defaultValue={newReview.tags.join(", ")}
                 />
               </div>
-            </ScrollArea>
 
-            <DialogFooter className="flex gap-2 pt-4">
-              <Button 
-                type="submit"
-                className="flex-1 cursor-pointer"
-              >
-                Submit Review
-              </Button>
-              <Button 
-                type="button"
-                variant="outline" 
-                onClick={() => {
-                  setShowReviewForm(false);
-                  setNewReview({
-                    itemName: "",
-                    itemCategory: "Furniture",
-                    giverId: "",
-                    giverName: "",
-                    rating: 5,
-                    review: "",
-                    location: urlLocation as any,
-                    tags: []
-                  });
-                  setSearchTerm("");
-                  setSelectedGiver(null);
-                  setShowDropdown(false);
-                  setSelectedProduct(null);
-                  setProductSearchTerm("");
-                  setShowProductDropdown(false);
-                }}
-              >
-                Cancel
-              </Button>
-            </DialogFooter>
-          </Form>
+              {/* productId hidden input (선택된 상품이 있을 때만) */}
+              {selectedProduct && (
+                <input type="hidden" name="productId" value={selectedProduct.product_id} />
+              )}
+
+              <DialogFooter className="flex gap-2 pt-4">
+                <Button 
+                  type="submit"
+                  className="flex-1 cursor-pointer"
+                >
+                  Submit Review
+                </Button>
+                <Button 
+                  type="button"
+                  variant="outline" 
+                  onClick={() => {
+                    setShowReviewForm(false);
+                    setNewReview({
+                      itemName: "",
+                      itemCategory: "Furniture",
+                      giverId: "",
+                      giverName: "",
+                      rating: 5,
+                      review: "",
+                      location: urlLocation as any,
+                      tags: []
+                    });
+                    setSearchTerm("");
+                    setSelectedGiver(null);
+                    setShowDropdown(false);
+                    setSelectedProduct(null);
+                    setProductSearchTerm("");
+                    setShowProductDropdown(false);
+                  }}
+                >
+                  Cancel
+                </Button>
+              </DialogFooter>
+            </Form>
+          </ScrollArea>
         </DialogContent>
       </Dialog>
     </div>

@@ -1,0 +1,1 @@
+ALTER TABLE "give_and_glow_reviews" ADD COLUMN "review" text;

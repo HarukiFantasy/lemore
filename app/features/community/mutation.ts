@@ -26,21 +26,20 @@ export const createLocalTip = async (client: SupabaseClient<Database>, {
 
 
 export const createGiveAndGlowReview = async (client: SupabaseClient<Database>, {
-  itemName, itemCategory, giverId, rating, review}:{
+  itemName, itemCategory, giverId, rating, review, productId
+}:{
     itemName: string;
     itemCategory: string;
     giverId: string;
     rating: number;
     review: string;
+    productId?: number | null;
   }) => {
-    console.log("Creating review with data:", { itemName, itemCategory, giverId, rating, review });
     
     const {data: {user}} = await client.auth.getUser();
     if (!user) {
       throw new Error("User not authenticated");
     }
-    
-    console.log("Current user:", user.id);
     
     // Create the review directly without creating a product first
     const {data, error} = await client
@@ -49,7 +48,7 @@ export const createGiveAndGlowReview = async (client: SupabaseClient<Database>, 
         category: itemCategory as any,
         giver_id: giverId,
         receiver_id: user.id,
-        product_id: null, // No product_id for now
+        product_id: productId ?? null,
         location: "Bangkok", // Default location
         rating,
         review,
@@ -59,11 +58,9 @@ export const createGiveAndGlowReview = async (client: SupabaseClient<Database>, 
       .single();
       
     if (error) {
-      console.error("Database error:", error);
       throw error;
     }
     
-    console.log("Review created:", data);
     return data;
 };
 

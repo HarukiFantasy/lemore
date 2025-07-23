@@ -471,6 +471,7 @@ export const giveAndGlowReviews = pgTable("give_and_glow_reviews", {
   receiver_id: uuid().notNull().references(() => userProfiles.profile_id, {onDelete: "cascade"}),
   category: productCategories().notNull(),
   rating: integer("rating").notNull(),
+  review: text("review"),
   timestamp: text("timestamp").notNull(),
   location: locationList().notNull(),
   tags: jsonb("tags").notNull().default([]),
