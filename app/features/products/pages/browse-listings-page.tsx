@@ -67,7 +67,8 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
     products: filteredProducts, 
     userStats: Object.fromEntries(userStatsMap), 
     location,
-    userLikedProducts
+    userLikedProducts,
+    user
   };
 }
 
@@ -76,7 +77,7 @@ export default function BrowseListingsPage({ loaderData }: Route.ComponentProps)
   const [searchInput, setSearchInput] = useState(searchParams.get("q") || "");
   const [currentPage, setCurrentPage] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
-  const { products, userStats, location, userLikedProducts } = loaderData;
+  const { products, userStats, userLikedProducts, user } = loaderData;
   const [displayedProducts, setDisplayedProducts] = useState<any[]>(products || []);
   const [hasMore, setHasMore] = useState(true);
   const observerRef = useRef<IntersectionObserver | null>(null);
@@ -261,12 +262,14 @@ export default function BrowseListingsPage({ loaderData }: Route.ComponentProps)
                   price={product.price}
                   currency={product.currency || "THB"}
                   priceType={product.price_type || "fixed"}
-                  seller={product.seller_name}
+                  sellerId={product.seller_id}
+                  sellerName={product.seller_name}
                   is_sold={product.is_sold || false}
                   category={product.category_name || "electronics"}
                   likes={product.likes_count || 0}
                   sellerStats={userStats[product.seller_name]}
                   isLikedByUser={userLikedProducts?.includes(product.product_id) || false}
+                  currentUserId={user?.id}
                 />
               </BlurFade>
             ))

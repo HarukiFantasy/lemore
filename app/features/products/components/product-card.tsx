@@ -40,9 +40,11 @@ type ProductCardProps = {
   is_sold?: boolean;
   category?: string;
   likes?: number;
-  seller?: string;
+  sellerId?: string;
+  sellerName?: string;
   sellerStats?: any;
   isLikedByUser?: boolean; // 사용자가 이미 좋아요한 제품인지
+  currentUserId?: string; // 현재 로그인한 사용자 ID
   [key: string]: any;
 };
 
@@ -58,9 +60,11 @@ export function ProductCard({
   is_sold,
   category,
   likes = 0,
-  seller,
+  sellerId,
+  sellerName,
   sellerStats,
   isLikedByUser = false,
+  currentUserId,
   ...props
 }: ProductCardProps) {
   // Support both product object and individual props
@@ -74,7 +78,8 @@ export function ProductCard({
     is_sold,
     category,
     likes,
-    seller,
+    seller_id: sellerId,
+    seller_name: sellerName,
     sellerStats,
   };
   
@@ -86,6 +91,9 @@ export function ProductCard({
   // Optimistic likes count
   const [optimisticLikes, setOptimisticLikes] = useState(likes);
   const [isLiked, setIsLiked] = useState(isLikedByUser);
+
+  // 본인 상품 여부 확인
+  const isOwner = currentUserId && prod.seller_id && currentUserId === prod.seller_id;
 
   // Helper function to add location to URLs
   const addLocationToUrl = (url: string) => {
@@ -181,27 +189,30 @@ export function ProductCard({
               <span className="text-sm text-neutral-500 truncate">{category}</span>
             </div>
             <UserStatsHoverCard
-              profileId={seller}
-              userName={seller ?? ''}
+              profileId={prod.seller_id}
+              userName={prod.seller_name ?? ''}
               userStats={sellerStats}
               className="text-xs text-neutral-500 truncate"
             >
               <span onClick={(e) => e.stopPropagation()}>
-                {seller}
+                {prod.seller_name}
               </span>
             </UserStatsHoverCard>
             <div className="flex items-center justify-between mt-1">
               <span className="text-sm font-semibold text-purple-700">{formatPrice(price, currency)}</span>
               <div className="flex items-center gap-1 text-neutral-500 text-xs">
-                <button
-                  onClick={handleLikeClick}
-                  className={`flex items-center gap-1 transition-colors duration-200 hover:scale-110 ${
-                    isLiked ? 'text-red-500 hover:text-red-400' : 'text-neutral-500 hover:text-neutral-400'
-                  }`}
-                  disabled={fetcher.state !== 'idle'}                >
-                  <HeartIcon className={`w-4 h-4 ${isLiked ? 'fill-current' : ''}`} />
-                  <span>{optimisticLikes}</span>
-                </button>
+                {!isOwner && (
+                  <button
+                    onClick={handleLikeClick}
+                    className={`flex items-center gap-1 transition-colors duration-200 hover:scale-110 ${
+                      isLiked ? 'text-red-500 hover:text-red-400' : 'text-neutral-500 hover:text-neutral-400'
+                    }`}
+                    disabled={fetcher.state !== 'idle'}
+                  >
+                    <HeartIcon className={`w-4 h-4 ${isLiked ? 'fill-current' : ''}`} />
+                    <span>{optimisticLikes}</span>
+                  </button>
+                )}
               </div>
             </div>
           </div>

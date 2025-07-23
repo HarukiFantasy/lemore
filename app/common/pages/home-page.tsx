@@ -39,11 +39,11 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
   }
   
   // Get all products and filter by location
-  let todaysPicks = await getProductsListings(client, 20); // Get more to filter
+  let latestListings = await getProductsListings(client, 20); // Get more to filter
   if (location && location !== "All Locations" && location !== "Other Cities") {
-    todaysPicks = todaysPicks.filter(product => product.location === location);
+    latestListings = latestListings.filter(product => product.location === location);
   }
-  todaysPicks = todaysPicks.slice(0, 4); // Limit to 4 after filtering
+  latestListings = latestListings.slice(0, 4); // Limit to 4 after filtering
   
   // Get all community posts and filter by location
   let communityPosts = await getLocalTipPosts(client, 20); // Get more to filter
@@ -52,7 +52,7 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
   }
   communityPosts = communityPosts.slice(0, 10); // Limit to 10 after filtering
   
-  return { todaysPicks, location, communityPosts, userLikedProducts };
+  return { latestListings, communityPosts, userLikedProducts, user };
 };
 
 // Date 객체 또는 ISO 문자열을 시간 문자열로 변환하는 헬퍼 함수 (Luxon 사용)
@@ -63,11 +63,12 @@ function getTimeAgo(date: Date | string): string {
 
 export default function HomePage() {
   const [searchParams] = useSearchParams();
-  const { todaysPicks, location, communityPosts, userLikedProducts } = useLoaderData() as {
-    todaysPicks: any[];
+  const { latestListings, communityPosts, userLikedProducts, user } = useLoaderData() as {
+    latestListings: any[];
     location: string | null;
     communityPosts: any[];
     userLikedProducts: number[];
+    user: any;
   };
   const urlLocation = searchParams.get("location");
   const currentLocation = urlLocation || "Bangkok";
@@ -89,8 +90,8 @@ export default function HomePage() {
         Latest Listings {!urlLocation ? "" : `in ${currentLocation}`}
       </div>
       <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-4 items-start w-full max-w-none">
-        {todaysPicks.length > 0 ? (
-          todaysPicks.map((product) => (
+        {latestListings.length > 0 ? (
+          latestListings.map((product) => (
             <BlurFade key={product.product_id}>
               <ProductCard
                 key={product.product_id}
@@ -100,10 +101,12 @@ export default function HomePage() {
                 price={product.price}
                 currency={product.currency || "THB"}
                 priceType={product.price_type || "Fixed"}
-                seller={product.seller_name}
+                sellerId={product.seller_id}
+                sellerName={product.seller_name}
                 is_sold={product.is_sold || false}
                 likes={product.likes_count || 0}
                 isLikedByUser={userLikedProducts?.includes(product.product_id) || false}
+                currentUserId={user?.id}
               />
             </BlurFade>
           ))
@@ -123,7 +126,7 @@ export default function HomePage() {
                 timeAgo = getTimeAgo(new Date(post.created_at));
               }
             } catch (error) {
-              console.error('Error parsing created_at:', error);
+              throw new Error('Error parsing created_at');
             }
             
             const author = post.username || post.author || 'Anonymous';
@@ -136,7 +139,7 @@ export default function HomePage() {
                 stats = post.stats;
               }
             } catch (error) {
-              console.error('Error parsing stats:', error);
+              throw new Error('Error parsing stats');
             }
             
             return (

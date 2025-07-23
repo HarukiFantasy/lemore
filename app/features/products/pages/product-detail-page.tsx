@@ -206,7 +206,7 @@ export const loader = async ({ params, request }: Route.LoaderArgs) => {
                   size="lg"
                   type="submit"
                   className={isLiked ? "text-rose-500 border-primary" : ""}
-                  disabled={product.is_sold || false || fetcher.state !== 'idle'}
+                  disabled={isCurrentUserSeller || product.is_sold || fetcher.state !== 'idle'}
                 >
                   <HeartIcon 
                     className={`w-5 h-5 ${isLiked ? 'fill-rose-500 text-rose-500' : 'text-gray-600'}`} 
