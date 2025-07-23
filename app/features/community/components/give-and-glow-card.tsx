@@ -136,7 +136,7 @@ export function GiveAndGlowCard({
                       userStats={giverStats}
                       showAppreciationBadge={shouldShowAppreciationBadge}
                     >
-                      <span className="font-medium truncate">{giverName}</span>
+                      <span onClick={(e) => e.stopPropagation()} className="font-medium truncate">{giverName}</span>
                     </UserStatsHoverCard>
                   </div>
                   <div className="flex items-center gap-1 min-w-0">
@@ -147,7 +147,7 @@ export function GiveAndGlowCard({
                       userName={receiverName}
                       userStats={receiverStats}
                     >
-                      <span className="font-medium truncate">{receiverName}</span>
+                      <span onClick={(e) => e.stopPropagation()} className="font-medium truncate">{receiverName}</span>
                     </UserStatsHoverCard>
                   </div>
                 </div>

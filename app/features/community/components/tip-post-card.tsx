@@ -262,7 +262,7 @@ export function TipPostCard({
                   </AvatarFallback>
                 </Avatar>
                 <UserStatsHoverCard userName={author}>
-                  <span className="text-xs sm:text-sm font-medium truncate">{author}</span>
+                  <span onClick={(e) => e.stopPropagation()} className="text-xs sm:text-sm font-medium truncate">{author}</span>
                 </UserStatsHoverCard>
               </div>
               <div className="flex items-center gap-2 text-xs sm:text-sm">

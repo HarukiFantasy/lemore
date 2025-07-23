@@ -33,7 +33,7 @@ export function MessageHeader({ user, productInfo, onLeaveChatRoom }: MessageHea
           <Button variant="ghost" className="p-0 h-auto">
             <div className="flex flex-col items-start">
               <UserStatsHoverCard profileId={user.profile_id ? String(user.profile_id) : undefined} userName={user.username}>
-                <h2 className="text-base font-semibold text-gray-900 cursor-pointer">{user.username}</h2>
+                <h2 onClick={(e) => e.stopPropagation()} className="text-base font-semibold text-gray-900 cursor-pointer">{user.username}</h2>
               </UserStatsHoverCard>
               <p className="text-xs text-gray-500">
                 {user.isOnline ? 'Online' : 'Offline'}

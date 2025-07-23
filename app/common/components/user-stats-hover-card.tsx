@@ -3,6 +3,7 @@ import { Badge } from "./ui/badge";
 import { PackageIcon, MessageCircleReplyIcon } from "lucide-react";
 import { Button } from './ui/button';
 import { Link } from "react-router";
+import { useMobile } from "~/hooks/use-mobile";
 
 interface UserStats {
   totalListings: number;
@@ -27,6 +28,20 @@ export function UserStatsHoverCard({
   className = "",
   userStats
 }: UserStatsHoverCardProps) {
+  const isMobile = useMobile();
+
+  // 모바일에서는 클릭으로 프로필 페이지로 이동
+  if (isMobile) {
+    return (
+      <Link to={`/users/${userName}`}>
+        <span className={`inline-block cursor-pointer hover:text-neutral-700 transition-colors font-medium underline decoration-dotted underline-offset-2 hover:decoration-solid ${className}`}>
+          {children}
+        </span>
+      </Link>
+    );
+  }
+
+  // 데스크탑에서는 hover card 사용
   return (
     <HoverCard>
       <HoverCardTrigger asChild>

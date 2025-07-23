@@ -531,7 +531,7 @@ export default function LocalTipsPage({ loaderData }: Route.ComponentProps) {
                       <UserStatsHoverCard
                         userName={(post as any).username || 'Unknown User'}
                       >
-                        <span className="text-xs sm:text-sm font-medium truncate">{(post as any).username || 'Unknown User'}</span>
+                        <span onClick={(e) => e.stopPropagation()} className="text-xs sm:text-sm font-medium truncate">{(post as any).username || 'Unknown User'}</span>
                       </UserStatsHoverCard>
                     </div>
                     <div className="flex items-center gap-2 text-xs sm:text-sm">

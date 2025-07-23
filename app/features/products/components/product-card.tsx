@@ -186,7 +186,9 @@ export function ProductCard({
               userStats={sellerStats}
               className="text-xs text-neutral-500 truncate"
             >
-              {seller}
+              <span onClick={(e) => e.stopPropagation()}>
+                {seller}
+              </span>
             </UserStatsHoverCard>
             <div className="flex items-center justify-between mt-1">
               <span className="text-sm font-semibold text-purple-700">{formatPrice(price, currency)}</span>

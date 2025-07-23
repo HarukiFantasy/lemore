@@ -561,8 +561,9 @@ export default function GiveAndGlowPage({ loaderData }: Route.ComponentProps) {
           <DialogHeader>
             <DialogTitle>Write a Review for Free Item Received</DialogTitle>
           </DialogHeader>
-          <ScrollArea className="max-h-[60vh]">
-            <Form method="post" className="space-y-4 pr-4">
+          
+          <Form method="post" className="space-y-4">
+            <ScrollArea className="max-h-[60vh] pr-4">
               {/* Error/Success Display */}
               {actionData?.error && (
                 <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md">
@@ -801,42 +802,42 @@ export default function GiveAndGlowPage({ loaderData }: Route.ComponentProps) {
                   defaultValue={newReview.tags.join(", ")}
                 />
               </div>
+            </ScrollArea>
 
-              <DialogFooter className="flex gap-2 pt-4">
-                <Button 
-                  type="submit"
-                  className="flex-1 cursor-pointer"
-                >
-                  Submit Review
-                </Button>
-                <Button 
-                  type="button"
-                  variant="outline" 
-                  onClick={() => {
-                    setShowReviewForm(false);
-                    setNewReview({
-                      itemName: "",
-                      itemCategory: "Furniture",
-                      giverId: "",
-                      giverName: "",
-                      rating: 5,
-                      review: "",
-                      location: urlLocation as any,
-                      tags: []
-                    });
-                    setSearchTerm("");
-                    setSelectedGiver(null);
-                    setShowDropdown(false);
-                    setSelectedProduct(null);
-                    setProductSearchTerm("");
-                    setShowProductDropdown(false);
-                  }}
-                >
-                  Cancel
-                </Button>
-              </DialogFooter>
-            </Form>
-          </ScrollArea>
+            <DialogFooter className="flex gap-2 pt-4">
+              <Button 
+                type="submit"
+                className="flex-1 cursor-pointer"
+              >
+                Submit Review
+              </Button>
+              <Button 
+                type="button"
+                variant="outline" 
+                onClick={() => {
+                  setShowReviewForm(false);
+                  setNewReview({
+                    itemName: "",
+                    itemCategory: "Furniture",
+                    giverId: "",
+                    giverName: "",
+                    rating: 5,
+                    review: "",
+                    location: urlLocation as any,
+                    tags: []
+                  });
+                  setSearchTerm("");
+                  setSelectedGiver(null);
+                  setShowDropdown(false);
+                  setSelectedProduct(null);
+                  setProductSearchTerm("");
+                  setShowProductDropdown(false);
+                }}
+              >
+                Cancel
+              </Button>
+            </DialogFooter>
+          </Form>
         </DialogContent>
       </Dialog>
     </div>

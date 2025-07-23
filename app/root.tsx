@@ -17,6 +17,7 @@ import { getUserByProfileId } from "./features/users/queries";
 import { useAuthErrorHandler } from "./hooks/use-auth-error-handler";
 import * as Sentry from "@sentry/react-router";
 
+
 export const links: Route.LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
   {
