@@ -70,6 +70,9 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
   if (location && location !== "All Locations" && location !== "Other Cities") {
     filteredReviews = reviews.filter(review => review.product_location === location);
   }
+
+  // Ensure rating is always a number
+  filteredReviews = filteredReviews.map(r => ({ ...r, rating: Number((r as any).rating) }));
   
   // Get current user
   const { data: { user } } = await client.auth.getUser();
