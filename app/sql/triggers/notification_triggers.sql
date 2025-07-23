@@ -26,11 +26,7 @@ BEGIN
         NEW.message_id,
         jsonb_build_object(
             'title', 'Message',
-            'content', 
-                CASE 
-                    WHEN LENGTH(NEW.content) > 50 THEN LEFT(NEW.content, 50) || '...'
-                    ELSE NEW.content
-                END,
+            'content', sender_username || ' sent you a message',
             'message_preview', NEW.content,
             'sender_username', sender_username,
             'message_type', NEW.message_type,
@@ -74,7 +70,7 @@ BEGIN
         RETURN NEW;
     END IF;
     
-    -- 좋아요 알림 생성
+    -- 좋아요 알림 생성 (content에 liker_username과 product_title 포함)
     INSERT INTO public.user_notifications (
         type,
         sender_id,
@@ -88,7 +84,7 @@ BEGIN
         NEW.product_id,
         jsonb_build_object(
             'title', 'Product Liked',
-            'content', 'Someone liked your product',
+            'content', liker_username || ' liked your ' || product_title,
             'product_title', product_title,
             'liker_username', liker_username,
             'notification_key', 'product_liked'
@@ -133,7 +129,7 @@ BEGIN
         NEW.id,
         jsonb_build_object(
             'title', 'New Review',
-            'content', 
+            'content', giver_username || ' left a review: ' ||
                 CASE 
                     WHEN LENGTH(NEW.review) > 50 THEN LEFT(NEW.review, 50) || '...'
                     ELSE NEW.review
@@ -181,7 +177,7 @@ BEGIN
         RETURN NEW;
     END IF;
     
-    -- 로컬 팁 좋아요 알림 생성
+    -- 로컬 팁 좋아요 알림 생성 (content에 liker_username과 tip_title 포함)
     INSERT INTO public.user_notifications (
         type,
         sender_id,
@@ -193,7 +189,7 @@ BEGIN
         tip_author_id,
         jsonb_build_object(
             'title', 'Tip Liked',
-            'content', 'Someone liked your local tip',
+            'content', liker_username || ' liked your tip: ' || tip_title,
             'tip_title', tip_title,
             'liker_username', liker_username,
             'notification_key', 'tip_liked'
@@ -216,7 +212,13 @@ RETURNS TRIGGER
 LANGUAGE plpgsql
 SECURITY DEFINER
 AS $$
+DECLARE
+    username text;
 BEGIN
+    -- 새 사용자 username 가져오기
+    SELECT username INTO username
+    FROM public.user_profiles
+    WHERE profile_id = NEW.profile_id;
     -- 새 사용자에게 환영 알림 생성
     INSERT INTO public.user_notifications (
         type,
@@ -228,7 +230,7 @@ BEGIN
         NEW.profile_id,
         jsonb_build_object(
             'title', 'Welcome!',
-            'content', 'Welcome to Lemore! Explore our various features.',
+            'content', 'Welcome, ' || username || '!',
             'system_notification', true,
             'notification_key', 'welcome'
         )
@@ -242,4 +244,4 @@ $$;
 CREATE TRIGGER welcome_notification_trigger
 AFTER INSERT ON public.user_profiles
 FOR EACH ROW
-EXECUTE FUNCTION public.create_welcome_notification(); 
+EXECUTE FUNCTION public.create_welcome_notification();

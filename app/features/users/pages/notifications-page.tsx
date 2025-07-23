@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { X, Bell, MessageCircle, Heart, User, Settings, Check } from "lucide-react";
+import { X, Bell, MessageCircle, Heart, User, Check } from "lucide-react";
 import { Button } from "~/common/components/ui/button";
 import { Card, CardContent } from "~/common/components/ui/card";
 import { Badge } from "~/common/components/ui/badge";
@@ -8,10 +8,9 @@ import { Avatar, AvatarFallback, AvatarImage } from "~/common/components/ui/avat
 import { AnimatedList } from "../../../../components/magicui/animated-list";
 import { z } from "zod";
 import { makeSSRClient } from '~/supa-client';
-import type { LoaderFunction, ActionFunction } from 'react-router';
-import { useFetcher, useLoaderData } from 'react-router';
+import type { LoaderFunction } from 'react-router';
+import { useFetcher } from 'react-router';
 import { getNotifications, getLoggedInUserId } from '~/features/users/queries';
-import { seeNotification } from '~/features/users/mutations';
 import { DateTime } from 'luxon';
 
 // Notification schemas for data validation

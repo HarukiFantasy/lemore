@@ -347,38 +347,25 @@ export const getUserSalesStatsByProfileId = async (client: SupabaseClient<Databa
   return data;
 };
 
+
 export const getNotifications = async (
   client: SupabaseClient<Database>,
   { userId }: { userId: string }
 ) => {
-  
   // 최근 일주일 전 날짜 계산
   const oneWeekAgo = new Date();
   oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
-  
+
   const { data, error } = await client
-    .from('user_notifications')
-    .select(`
-      notification_id,
-      type,
-      sender_id,
-      receiver_id,
-      product_id,
-      message_id,
-      review_id,
-      is_read,
-      read_at,
-      data,
-      created_at
-    `)
+    .from('notification_view')
+    .select('*')
     .eq('receiver_id', userId)
     .gte('created_at', oneWeekAgo.toISOString()) // 최근 일주일치만
-    .order('created_at', { ascending: false }); // 최신순 정렬
-    
-  
+    .order('created_at', { ascending: false });
+
   if (error) throw error;
-  
-  // 매핑: DB 필드 → 프론트엔드 타입 (프론트엔드 네이밍 일관성 & 기존 코드와의 호환성위해 notificationSchema를 수정하지 않고 매핑처리)
+
+  // 기존 매핑 로직 유지, sender_name/receiver_name 포함
   const mappedNotifications = (data ?? []).map((n) => ({
     notification_id: n.notification_id,
     type: n.type,
@@ -392,13 +379,15 @@ export const getNotifications = async (
     metadata: n.data,
     // 기존 필드들도 유지
     sender_id: n.sender_id,
+    sender_name: n.sender_name,
+    receiver_id: n.receiver_id,
+    receiver_name: n.receiver_name,
     product_id: n.product_id,
     message_id: n.message_id,
     review_id: n.review_id,
     read_at: n.read_at,
   }));
-  
-  
+
   return mappedNotifications;
 };
 
@@ -408,8 +397,6 @@ export const getSafeUser = async (client: SupabaseClient<Database>) => {
     const { data, error } = await client.auth.getUser();
     
     if (error) {
-      console.warn('Authentication error in getSafeUser:', error.message);
-      
       // Handle specific refresh token errors
       if (error.message.includes('refresh_token_not_found') || 
           error.message.includes('Invalid Refresh Token') ||
@@ -417,13 +404,11 @@ export const getSafeUser = async (client: SupabaseClient<Database>) => {
         // Clear the invalid session
         await client.auth.signOut();
       }
-      
       return null;
     }
     
     return data.user;
   } catch (error: any) {
-    console.error('Unexpected error in getSafeUser:', error);
     
     // Handle token-related errors
     if (error?.message?.includes('refresh_token_not_found') || 
@@ -432,7 +417,7 @@ export const getSafeUser = async (client: SupabaseClient<Database>) => {
       try {
         await client.auth.signOut();
       } catch (signOutError) {
-        console.warn('Error during forced sign out:', signOutError);
+        throw new Error('Error during forced sign out');
       }
     }
     

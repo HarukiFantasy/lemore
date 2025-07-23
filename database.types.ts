@@ -2344,14 +2344,17 @@ export type Database = {
           giver_profile_id: string | null
           giver_username: string | null
           id: number | null
+          location: Database["public"]["Enums"]["location"] | null
           product_description: string | null
           product_id: number | null
           product_location: Database["public"]["Enums"]["location"] | null
           product_title: string | null
+          rating: number | null
           receiver_avatar_url: string | null
           receiver_id: string | null
           receiver_profile_id: string | null
           receiver_username: string | null
+          review: string | null
           tags: Json | null
           timestamp: string | null
           updated_at: string | null
@@ -2972,6 +2975,214 @@ export type Database = {
           {
             foreignKeyName: "local_tip_posts_author_user_profiles_profile_id_fk"
             columns: ["author"]
+            isOneToOne: false
+            referencedRelation: "users_view"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      notification_view: {
+        Row: {
+          created_at: string | null
+          data: Json | null
+          is_read: boolean | null
+          message_id: number | null
+          notification_id: number | null
+          product_id: number | null
+          read_at: string | null
+          receiver_id: string | null
+          receiver_name: string | null
+          review_id: number | null
+          sender_id: string | null
+          sender_name: string | null
+          type: Database["public"]["Enums"]["notification_type"] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_notifications_message_id_user_messages_message_id_fk"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "user_conversations_view"
+            referencedColumns: ["message_id"]
+          },
+          {
+            foreignKeyName: "user_notifications_message_id_user_messages_message_id_fk"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "user_messages"
+            referencedColumns: ["message_id"]
+          },
+          {
+            foreignKeyName: "user_notifications_message_id_user_messages_message_id_fk"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "user_messages_view"
+            referencedColumns: ["message_id"]
+          },
+          {
+            foreignKeyName: "user_notifications_product_id_products_product_id_fk"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "product_detail_view"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "user_notifications_product_id_products_product_id_fk"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "user_notifications_product_id_products_product_id_fk"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products_listings_view"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "user_notifications_product_id_products_product_id_fk"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "user_conversations_view"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "user_notifications_receiver_id_user_profiles_profile_id_fk"
+            columns: ["receiver_id"]
+            isOneToOne: false
+            referencedRelation: "give_and_glow_view"
+            referencedColumns: ["giver_profile_id"]
+          },
+          {
+            foreignKeyName: "user_notifications_receiver_id_user_profiles_profile_id_fk"
+            columns: ["receiver_id"]
+            isOneToOne: false
+            referencedRelation: "give_and_glow_view"
+            referencedColumns: ["receiver_profile_id"]
+          },
+          {
+            foreignKeyName: "user_notifications_receiver_id_user_profiles_profile_id_fk"
+            columns: ["receiver_id"]
+            isOneToOne: false
+            referencedRelation: "product_detail_view"
+            referencedColumns: ["seller_id"]
+          },
+          {
+            foreignKeyName: "user_notifications_receiver_id_user_profiles_profile_id_fk"
+            columns: ["receiver_id"]
+            isOneToOne: false
+            referencedRelation: "products_listings_view"
+            referencedColumns: ["seller_id"]
+          },
+          {
+            foreignKeyName: "user_notifications_receiver_id_user_profiles_profile_id_fk"
+            columns: ["receiver_id"]
+            isOneToOne: false
+            referencedRelation: "user_dashboard_view"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "user_notifications_receiver_id_user_profiles_profile_id_fk"
+            columns: ["receiver_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "user_notifications_receiver_id_user_profiles_profile_id_fk"
+            columns: ["receiver_id"]
+            isOneToOne: false
+            referencedRelation: "user_sales_stats_view"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "user_notifications_receiver_id_user_profiles_profile_id_fk"
+            columns: ["receiver_id"]
+            isOneToOne: false
+            referencedRelation: "users_view"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "user_notifications_receiver_id_user_profiles_profile_id_fk"
+            columns: ["receiver_id"]
+            isOneToOne: false
+            referencedRelation: "users_view"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "user_notifications_review_id_give_and_glow_reviews_id_fk"
+            columns: ["review_id"]
+            isOneToOne: false
+            referencedRelation: "give_and_glow_reviews"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_notifications_review_id_give_and_glow_reviews_id_fk"
+            columns: ["review_id"]
+            isOneToOne: false
+            referencedRelation: "give_and_glow_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_notifications_sender_id_user_profiles_profile_id_fk"
+            columns: ["sender_id"]
+            isOneToOne: false
+            referencedRelation: "give_and_glow_view"
+            referencedColumns: ["giver_profile_id"]
+          },
+          {
+            foreignKeyName: "user_notifications_sender_id_user_profiles_profile_id_fk"
+            columns: ["sender_id"]
+            isOneToOne: false
+            referencedRelation: "give_and_glow_view"
+            referencedColumns: ["receiver_profile_id"]
+          },
+          {
+            foreignKeyName: "user_notifications_sender_id_user_profiles_profile_id_fk"
+            columns: ["sender_id"]
+            isOneToOne: false
+            referencedRelation: "product_detail_view"
+            referencedColumns: ["seller_id"]
+          },
+          {
+            foreignKeyName: "user_notifications_sender_id_user_profiles_profile_id_fk"
+            columns: ["sender_id"]
+            isOneToOne: false
+            referencedRelation: "products_listings_view"
+            referencedColumns: ["seller_id"]
+          },
+          {
+            foreignKeyName: "user_notifications_sender_id_user_profiles_profile_id_fk"
+            columns: ["sender_id"]
+            isOneToOne: false
+            referencedRelation: "user_dashboard_view"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "user_notifications_sender_id_user_profiles_profile_id_fk"
+            columns: ["sender_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "user_notifications_sender_id_user_profiles_profile_id_fk"
+            columns: ["sender_id"]
+            isOneToOne: false
+            referencedRelation: "user_sales_stats_view"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "user_notifications_sender_id_user_profiles_profile_id_fk"
+            columns: ["sender_id"]
+            isOneToOne: false
+            referencedRelation: "users_view"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "user_notifications_sender_id_user_profiles_profile_id_fk"
+            columns: ["sender_id"]
             isOneToOne: false
             referencedRelation: "users_view"
             referencedColumns: ["user_id"]

@@ -113,7 +113,7 @@ export default function LoginPage({actionData}: Route.ComponentProps) {
             </div>
             
             {/* 3개 버튼을 한 줄에 균등하게 배치 */}
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
                             {/* <Button variant="outline" asChild>
                 <Link to="/auth/otp/start">
                   <svg className="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -130,8 +130,7 @@ export default function LoginPage({actionData}: Route.ComponentProps) {
                     <path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
                     <path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
                   </svg>
-                  <span className="hidden sm:inline">Google</span>
-                  <span className="sm:hidden">G</span>
+                  <span>Google</span>
                 </Link>
               </Button>
               
@@ -140,8 +139,7 @@ export default function LoginPage({actionData}: Route.ComponentProps) {
                   <svg className="mr-1 h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
                   </svg>
-                  <span className="hidden sm:inline">Facebook</span>
-                  <span className="sm:hidden">F</span>
+                  <span>Facebook</span>
                 </Link>
               </Button>
               
@@ -150,8 +148,7 @@ export default function LoginPage({actionData}: Route.ComponentProps) {
                   <svg className="mr-1 h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M12 3c5.799 0 10.5 3.664 10.5 8.185 0 4.52-4.701 8.184-10.5 8.184a13.5 13.5 0 0 1-1.727-.11l-4.408 2.883c-.501.265-.678.236-.472-.413l.892-3.678c-2.88-1.46-4.785-3.99-4.785-6.866C1.5 6.665 6.201 3 12 3z"/>
                   </svg>
-                  <span className="hidden sm:inline">Line</span>
-                  <span className="sm:hidden">L</span>
+                  <span>Line</span>
                 </Link>
               </Button>
             </div>
