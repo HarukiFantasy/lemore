@@ -43,34 +43,6 @@ const renderStars = (rating: number) => {
   );
 };
 
-// Mock seller statistics - 실제로는 API에서 가져올 데이터
-const getSellerStats = (sellerId: string): {
-  totalListings: number;
-  rating: number;
-  responseRate: string;
-} => {
-  // 실제 구현에서는 sellerId를 사용해서 API 호출
-  return {
-    totalListings: Math.floor(Math.random() * 50) + 5,
-    rating: Math.floor(Math.random() * 5) + 1,
-    responseRate: `${Math.floor(Math.random() * 100) + 1}%`,
-  };
-};
-
-// sellerId를 사용자 친화적인 이름으로 변환
-const getSellerName = (sellerId: string): string => {
-  // 실제 구현에서는 sellerId로 사용자 정보를 조회
-  const sellerNames = [
-    "Sarah M.", "John D.", "Maria L.", "Alex K.", "Emma W.",
-    "David R.", "Lisa T.", "Mike P.", "Anna S.", "Tom B.",
-    "Jenny H.", "Chris L.", "Rachel G.", "Mark J.", "Sophie N."
-  ];
-  
-  // sellerId에서 숫자를 추출하여 일관된 이름 생성
-  const num = parseInt(sellerId.replace(/\D/g, '')) || 0;
-  return sellerNames[num % sellerNames.length];
-};
-
 export function GiveAndGlowCard({
   id,
   itemName,

@@ -97,3 +97,33 @@ export const getLocalReviews = async (client: SupabaseClient<Database>) => {
   if (error) throw new Error(error.message);
   return data;
 }
+
+export async function getUserStats(client: any, username: string) {
+  const { data, error } = await client
+    .from('user_stats_view')
+    .select('*')
+    .eq('username', username)
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+/**
+ * Fetch user stats for Give and Glow by username or profileId from the view.
+ * @param client Supabase client
+ * @param params { username?: string, profileId?: string }
+ */
+export async function getUserStatsGiveAndGlow(client: any, params: { username?: string; profileId?: string }) {
+  if (!params.username && !params.profileId) {
+    throw new Error('Must provide username or profileId');
+  }
+  let query = client.from('give_and_glow_user_stats_view').select('*');
+  if (params.username) {
+    query = query.eq('username', params.username);
+  } else if (params.profileId) {
+    query = query.eq('profile_id', params.profileId);
+  }
+  const { data, error } = await query.single();
+  if (error || !data) throw error || new Error('User stats not found');
+  return data;
+}

@@ -12,7 +12,7 @@ import {
   LocalTipCategoryWithAll, 
   LocalTipCategory 
 } from "../constants";
-import { getLocalTipComments, getLocalTipPosts, getLocalTipReplies, getLocalTipPostLikes } from '../queries';
+import { getLocalTipComments, getLocalTipPosts, getLocalTipReplies, getLocalTipPostLikes, getUserStats } from '../queries';
 import { Reply } from '../components/reply';
 import { UserStatsHoverCard } from "../../../common/components/user-stats-hover-card";
 import type { Route } from "./+types/local-tips-page"
@@ -62,7 +62,27 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
   for (const post of tips) {
     repliesByPostId[post.id] = await getLocalTipReplies(client, post.id.toString());
   }
-  return { tips, comments, user, locations, repliesByPostId, userLikedPosts };
+
+  // 유저별 stats 미리 쿼리
+  const uniqueUsernames = Array.from(new Set(tips.map((post: any) => post.username).filter(Boolean)));
+  const userStatsMap: Record<string, any> = {};
+  for (const username of uniqueUsernames) {
+    try {
+      const stats = await getUserStats(client, username);
+      userStatsMap[username] = {
+        totalListings: stats.total_listings,
+        totalLikes: stats.total_likes,
+        totalSold: stats.total_sold,
+        sellerJoinedAt: stats.joined_at
+          ? new Date(stats.joined_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
+          : undefined,
+      };
+    } catch {
+      userStatsMap[username] = null;
+    }
+  }
+
+  return { tips, comments, user, locations, repliesByPostId, userLikedPosts, userStatsMap };
 }
 
 
@@ -128,7 +148,7 @@ export const action = async ({ request }: Route.ActionArgs) => {
 
 
 export default function LocalTipsPage({ loaderData }: Route.ComponentProps) {
-  const { tips, comments, user, locations, repliesByPostId, userLikedPosts } = loaderData;
+  const { tips, comments, user, locations, repliesByPostId, userLikedPosts, userStatsMap } = loaderData;
   const actionData = useActionData<typeof action>();
   const fetcher = useFetcher();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -530,6 +550,7 @@ export default function LocalTipsPage({ loaderData }: Route.ComponentProps) {
                       </Avatar>
                       <UserStatsHoverCard
                         userName={(post as any).username || 'Unknown User'}
+                        userStats={userStatsMap[(post as any).username]}
                       >
                         <span onClick={(e) => e.stopPropagation()} className="text-xs sm:text-sm font-medium truncate">{(post as any).username || 'Unknown User'}</span>
                       </UserStatsHoverCard>

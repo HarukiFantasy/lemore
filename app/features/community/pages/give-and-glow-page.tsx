@@ -12,7 +12,7 @@ import { GiveAndGlowCard } from '../components/give-and-glow-card';
 import { getGiveAndGlowReviews } from '../queries';
 import { PRODUCT_CATEGORIES } from '~/features/products/constants';
 import { makeSSRClient } from "~/supa-client";
-import { getUserStats, searchUsers } from '~/features/users/queries';
+import { getUserStatsGiveAndGlow } from '~/features/community/queries';
 import { createGiveAndGlowReview } from '../mutation';
 import { z } from "zod";
 
@@ -62,8 +62,8 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
   const { client, headers } = makeSSRClient(request);
   const url = new URL(request.url);
   const location = url.searchParams.get("location");
-  
   const reviews = await getGiveAndGlowReviews(client);
+  const { data: { user } } = await client.auth.getUser();
   
   // Location filtering
   let filteredReviews = reviews;
@@ -73,9 +73,6 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
 
   // Ensure rating is always a number
   filteredReviews = filteredReviews.map(r => ({ ...r, rating: Number((r as any).rating) }));
-  
-  // Get current user
-  const { data: { user } } = await client.auth.getUser();
   
   // Get current user's products if logged in
   let userProducts: any[] = [];
@@ -105,41 +102,30 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
   }
   
   // 각 리뷰의 giver와 receiver에 대한 통계 수집
-  const userStatsMap = new Map();
   
-  for (const review of filteredReviews) {
-    // giver 통계
-    if (review.giver_username && !userStatsMap.has(review.giver_username)) {
+    const uniqueProfileIds = Array.from(
+      new Set(filteredReviews.flatMap(r => [r.giver_profile_id, r.receiver_profile_id]).filter(Boolean))
+    );
+    const userStatsMap: Record<string, any> = {};
+    for (const profileId of uniqueProfileIds) {
       try {
-        const giverStats = await getUserStats(client, { username: review.giver_username });
-        userStatsMap.set(review.giver_username, giverStats);
-      } catch (error) {
-        userStatsMap.set(review.giver_username, {
-          totalListings: 0,
-          rating: 0,
-          responseRate: "0%"
-        });
+        const stats = await getUserStatsGiveAndGlow(client, { profileId });
+        userStatsMap[profileId] = {
+          totalListings: stats.total_listings,
+          totalLikes: stats.total_likes,
+          totalSold: stats.total_sold,
+          sellerJoinedAt: stats.joined_at
+            ? new Date(stats.joined_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
+            : undefined,
+        };
+      } catch {
+        userStatsMap[profileId] = null;
       }
     }
-    
-    // receiver 통계
-    if (review.receiver_username && !userStatsMap.has(review.receiver_username)) {
-      try {
-        const receiverStats = await getUserStats(client, { username: review.receiver_username });
-        userStatsMap.set(review.receiver_username, receiverStats);
-      } catch (error) {
-        userStatsMap.set(review.receiver_username, {
-          totalListings: 0,
-          rating: 0,
-          responseRate: "0%"
-        });
-      }
-    }
-  }
   
   return { 
     reviews: filteredReviews, 
-    userStats: Object.fromEntries(userStatsMap), 
+    userStatsMap, 
     users: users || [], 
     userProducts,
     user,
@@ -179,7 +165,14 @@ export const action = async ({ request }: Route.ActionArgs) => {
 }
 
 export default function GiveAndGlowPage({ loaderData }: Route.ComponentProps) {
-  const { reviews, userStats, users, userProducts, user, location } = loaderData;
+  const { reviews, userStatsMap, users, userProducts, user, location } = loaderData as {
+    reviews: any[];
+    userStatsMap: Record<string, any>;
+    users: any[];
+    userProducts: any[];
+    user: any;
+    location: string | null;
+  };
   const actionData = useActionData<typeof action>();
   const [searchParams, setSearchParams] = useSearchParams();
   const urlLocation = searchParams.get("location");
@@ -293,12 +286,12 @@ export default function GiveAndGlowPage({ loaderData }: Route.ComponentProps) {
   };
 
   // Filter users based on search term
-  const filteredUsers = users.filter((user) =>
+  const filteredUsers = users.filter((user: any) =>
     user.username?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   // Filter products based on search term
-  const filteredProducts = userProducts.filter((product) =>
+  const filteredProducts = userProducts.filter((product: any) =>
     product.title?.toLowerCase().includes(productSearchTerm.toLowerCase()) ||
     product.category_name?.toLowerCase().includes(productSearchTerm.toLowerCase())
   );
@@ -523,8 +516,8 @@ export default function GiveAndGlowPage({ loaderData }: Route.ComponentProps) {
             location={review.product_location || "Unknown Location"}
             tags={review.tags || []}
             appreciationBadge={review.rating > 4}
-            giverStats={userStats[review.giver_username]}
-            receiverStats={userStats[review.receiver_username]}
+            giverStats={userStatsMap[review.giver_profile_id]}
+            receiverStats={userStatsMap[review.receiver_profile_id]}
           />
         ))}
       </div>
@@ -588,10 +581,10 @@ export default function GiveAndGlowPage({ loaderData }: Route.ComponentProps) {
                   {/* Product Search Results Dropdown */}
                   {showProductDropdown && filteredProducts.length > 0 && (
                     <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-y-auto">
-                      {filteredProducts.map((product) => (
+                      {filteredProducts.map((product: any) => (
                         <button
                           key={product.product_id}
-                          type="button"
+                          type="button" 
                           onClick={() => handleProductSelect(product)}
                           className="w-full px-4 py-3 text-left hover:bg-gray-100 flex items-center gap-3 border-b last:border-b-0"
                         >
@@ -716,7 +709,7 @@ export default function GiveAndGlowPage({ loaderData }: Route.ComponentProps) {
                 {/* Search Results Dropdown */}
                 {showDropdown && !selectedProduct && filteredUsers.length > 0 && (
                   <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-y-auto">
-                    {filteredUsers.map((user) => (
+                    {filteredUsers.map((user: any) => (
                       <button
                         key={user.profile_id}
                         type="button"
