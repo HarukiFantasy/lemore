@@ -1,4 +1,4 @@
-import { Link, useSearchParams, useFetcher } from "react-router";
+import { Link, useSearchParams, useFetcher, useNavigate } from "react-router";
 import { z } from "zod";
 import { HeartIcon } from "lucide-react";
 import { ShineBorder } from "components/magicui/shine-border";
@@ -6,6 +6,7 @@ import { UserStatsHoverCard } from "~/common/components/user-stats-hover-card";
 import { PRODUCT_CATEGORIES } from "../constants";
 import { Badge } from "../../../common/components/ui/badge";
 import { useEffect, useState } from "react";
+import { useMobile } from "app/hooks/use-mobile";
 
 // 가격 포맷팅 함수
 const formatPrice = (price?: number, currency: string = "THB"): string => {
@@ -143,8 +144,20 @@ export function ProductCard({
     }
   }, [fetcher.state, fetcher.data, likes, isLikedByUser]);
 
-    return (
-    <Link to={addLocationToUrl(`/secondhand/product/${productId}`)}>
+  const navigate = useNavigate();
+  const isMobile = useMobile();
+
+  const handleCardClick = () => {
+    navigate(addLocationToUrl(`/secondhand/product/${productId}`));
+  };
+
+  const handleSellerClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    navigate(`/users/${prod.seller_name}`);
+  };
+
+  return (
+    <div onClick={handleCardClick} className="cursor-pointer">
       <div className="relative group p-1 
         transition-all duration-200 ease-out
         active:scale-95 
@@ -188,16 +201,29 @@ export function ProductCard({
               <span className="text-base font-semibold truncate">{title}</span>
               <span className="text-sm text-neutral-500 truncate">{category}</span>
             </div>
-            <UserStatsHoverCard
-              profileId={prod.seller_id}
-              userName={prod.seller_name ?? ''}
-              userStats={sellerStats}
-              className="text-xs text-neutral-500 truncate"
-            >
-              <span onClick={(e) => e.stopPropagation()}>
-                {prod.seller_name}
-              </span>
-            </UserStatsHoverCard>
+            <div>
+              {isMobile ? (
+                <button
+                  className="text-xs text-neutral-500 truncate font-medium underline decoration-dotted underline-offset-2 hover:decoration-solid"
+                  onClick={handleSellerClick}
+                  tabIndex={0}
+                  type="button"
+                >
+                  {prod.seller_name}
+                </button>
+              ) : (
+                <UserStatsHoverCard
+                  profileId={prod.seller_id}
+                  userName={prod.seller_name ?? ''}
+                  userStats={sellerStats}
+                  className="text-xs text-neutral-500 truncate"
+                >
+                  <span onClick={e => e.stopPropagation()}>
+                    {prod.seller_name}
+                  </span>
+                </UserStatsHoverCard>
+              )}
+            </div>
             <div className="flex items-center justify-between mt-1">
               <span className="text-sm font-semibold text-purple-700">{formatPrice(price, currency)}</span>
               <div className="flex items-center gap-1 text-neutral-500 text-xs">
@@ -218,6 +244,6 @@ export function ProductCard({
           </div>
         </div>
       </div>
-    </Link>
+    </div>
   );
 } 

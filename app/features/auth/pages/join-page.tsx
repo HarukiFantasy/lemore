@@ -2,7 +2,6 @@ import { Form, Link, redirect, useNavigation } from "react-router";
 import { Button } from "../../../common/components/ui/button";
 import { Input } from "../../../common/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../../common/components/ui/card";
-import { Alert, AlertDescription } from "../../../common/components/ui/alert";
 import { AnimatedGradientText } from "components/magicui/animated-gradient-text";
 import { Route } from "./+types/join-page";
 import { makeSSRClient } from "~/supa-client";
@@ -48,7 +47,7 @@ export const action = async ({ request }: Route.ActionArgs) => {
     };
   }
   const { client, headers } = makeSSRClient(request);
-  const { error: signUpError } = await client.auth.signUp({
+  const { data: { user }, error: signUpError } = await client.auth.signUp({
     email: data.email,
     password: data.password,
     options: {
@@ -59,6 +58,13 @@ export const action = async ({ request }: Route.ActionArgs) => {
     return {
       signUpError: signUpError.message,
     };
+  }
+  if (user) {
+    await fetch("/api/send-welcome-email", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: user.email, username: user.user_metadata?.username || "" })
+    });
   }
      // Send welcome email after successful signup
      try {

@@ -16,8 +16,9 @@ export const meta: Route.MetaFunction = () => {
   return [
     { title: "Home | Lemore" },
     { name: "description", content: "Welcome to Lemore" },
+    { name: "og:image", content: "/lemore-logo.png" },
   ];
-};
+};  
 
 export const loader = async ({ request }: Route.LoaderArgs) => {
 
