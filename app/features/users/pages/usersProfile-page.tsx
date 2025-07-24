@@ -3,7 +3,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "../../../common/components/
 import { Separator } from "../../../common/components/ui/separator";
 import type { Route } from "./+types/usersProfile-page";
 import { makeSSRClient } from "~/supa-client";
-import {  getUserByUsername } from "../queries";
+import {  getUserByUsername, getUserSalesStatsByProfileId } from "../queries";
 import { redirect } from 'react-router';
 import { getProductByUsername } from '~/features/products/queries';
 import { ProductCard } from '~/features/products/components/product-card';
@@ -51,11 +51,7 @@ export const loader = async ({request, params}: Route.LoaderArgs) => {
     ? reviews.reduce((sum, review) => sum + (review.rating || 0), 0) / reviews.length 
     : 0;
 
-  const userStats = {
-    total_listings: listings?.length || 0,
-    rating: Math.round(averageRating * 10) / 10,
-    response_rate: "95%", // 기본값
-  };
+  const userStats = await getUserSalesStatsByProfileId(client, targetUserProfile.profile_id);
 
   return { 
     targetUserProfile,
@@ -104,7 +100,7 @@ export const action = async ({ request, params }: Route.ActionArgs) => {
 export default function UsersProfilePage({ loaderData }: Route.ComponentProps) { 
   const targetUserProfile = (loaderData as any)?.targetUserProfile;
   const userProducts = (loaderData as any)?.userProducts || [];
-  
+  const userStats = (loaderData as any)?.userStats;
   if (!targetUserProfile) {
     return (
       <div className="container mx-auto px-0 py-8 md:px-8">
@@ -160,18 +156,18 @@ export default function UsersProfilePage({ loaderData }: Route.ComponentProps) {
             <CardContent>
               <div className="space-y-4">
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-blue-600">{targetUserProfile?.total_listings || 0}</div>
+                  <div className="text-2xl font-bold text-blue-600">{userStats?.total_listings || 0}</div>
                   <div className="text-sm text-gray-500">Total Listings</div>
                 </div>
                 <Separator />
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-green-600">{targetUserProfile?.total_likes || 0}</div>
+                  <div className="text-2xl font-bold text-green-600">{userStats?.total_likes || 0}</div>
                   <div className="text-sm text-gray-500">Total Likes</div>
                 </div>
                 <Separator />
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-orange-600">{targetUserProfile?.total_views || 0}</div>
-                  <div className="text-sm text-gray-500">Total Views</div>
+                  <div className="text-2xl font-bold text-orange-600">{userStats?.sold_items || 0}</div>
+                  <div className="text-sm text-gray-500">Total Sold</div>
                 </div>
               </div>
             </CardContent>

@@ -1,14 +1,15 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import type { Route } from './+types/browse-listings-page';
 import { ProductCard } from '../components/product-card';
-import { Form, useSearchParams, useSubmit, useNavigate, useLoaderData } from 'react-router';
+import { useSearchParams, useSubmit, useNavigate } from 'react-router';
 import { Input } from '~/common/components/ui/input';
 import { Button } from '~/common/components/ui/button';
 import { PRODUCT_CATEGORIES, CATEGORY_ICONS } from "../constants";
 import { BlurFade } from 'components/magicui/blur-fade';
-import { getProductsListings, getUserLikedProducts } from '../queries';
+import { getProductsWithSellerStats, getUserLikedProducts } from '../queries';
 import { makeSSRClient } from '~/supa-client';
 import { getUserStats } from '~/features/users/queries';
+import { Tabs, TabsList, TabsTrigger } from '~/common/components/ui/tabs';
 
 export const meta: Route.MetaFunction = () => {
   return [
@@ -23,7 +24,7 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
   const url = new URL(request.url);
   const location = url.searchParams.get("location");
   
-  const products = await getProductsListings(client);
+  const products = await getProductsWithSellerStats(client);
   
   // 사용자 인증 정보 가져오기
   const { data: { user } } = await client.auth.getUser();
@@ -41,31 +42,12 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
   // Location filtering
   let filteredProducts = products;
   if (location && location !== "All Locations" && location !== "Other Cities") {
-    filteredProducts = products.filter(product => product.location === location);
+    filteredProducts = products.filter((product: any) => product.location === location);
   }
   
-  // 각 제품의 판매자에 대한 통계 수집
-  const userStatsMap = new Map();
-  
-  for (const product of filteredProducts) {
-    if (product.seller_name && !userStatsMap.has(product.seller_name)) {
-      try {
-        const sellerStats = await getUserStats(client, { username: product.seller_name });
-        userStatsMap.set(product.seller_name, sellerStats);
-      } catch (error) {
-        console.error(`Error fetching stats for seller ${product.seller_name}:`, error);
-        userStatsMap.set(product.seller_name, {
-          totalListings: 0,
-          rating: 0,
-          responseRate: "0%"
-        });
-      }
-    }
-  }
   
   return { 
     products: filteredProducts, 
-    userStats: Object.fromEntries(userStatsMap), 
     location,
     userLikedProducts,
     user
@@ -77,9 +59,10 @@ export default function BrowseListingsPage({ loaderData }: Route.ComponentProps)
   const [searchInput, setSearchInput] = useState(searchParams.get("q") || "");
   const [currentPage, setCurrentPage] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
-  const { products, userStats, userLikedProducts, user } = loaderData;
+  const { products, userLikedProducts, user } = loaderData;
   const [displayedProducts, setDisplayedProducts] = useState<any[]>(products || []);
   const [hasMore, setHasMore] = useState(true);
+  const [tabValue, setTabValue] = useState<'all' | 'onSale' | 'sold'>('all');
   const observerRef = useRef<IntersectionObserver | null>(null);
   const loadingRef = useRef<HTMLDivElement>(null);
   const submit = useSubmit();
@@ -91,28 +74,34 @@ export default function BrowseListingsPage({ loaderData }: Route.ComponentProps)
   const urlLocation = searchParams.get("location");
   const currentLocation = urlLocation || "Bangkok";
 
-  // Filter products based on search query and category
+  // Filter products based on search query, category, 판매중 여부
   useEffect(() => {
     if (!products) return;
-    
     let filtered = products;
     
     // Apply search filter
     if (searchQuery) {
-      filtered = filtered.filter(product =>
+      filtered = filtered.filter((product: any) =>
         product.title?.toLowerCase().includes(searchQuery.toLowerCase())
       );
     }
     
     // Apply category filter
     if (categoryFilter) {
-      filtered = filtered.filter(product =>
+      filtered = filtered.filter((product: any) =>
         product.category_name?.toLowerCase().includes(categoryFilter.toLowerCase())
       );
     }
     
+    // Apply on sale filter
+    if (tabValue === 'onSale') {
+      filtered = filtered.filter((product: any) => product.is_sold === false);
+    } else if (tabValue === 'sold') {
+      filtered = filtered.filter((product: any) => product.is_sold === true);
+    }
+    
     setDisplayedProducts(filtered as any);
-  }, [searchQuery, categoryFilter, products]);
+  }, [searchQuery, categoryFilter, products, tabValue]);
 
   // 카테고리 클릭 핸들러
   const handleCategoryClick = (categoryName: string) => {
@@ -170,7 +159,6 @@ export default function BrowseListingsPage({ loaderData }: Route.ComponentProps)
           />
           <Button type="submit" variant="outline">Search</Button>
         </form>
-
         {/* 카테고리 */}
         <div className="flex justify-center mb-8">
           <div className="flex space-x-2 sm:space-x-3 md:space-x-4 lg:space-x-5 xl:space-x-6">
@@ -200,6 +188,23 @@ export default function BrowseListingsPage({ loaderData }: Route.ComponentProps)
                 </div>
               );
             })}
+          </div>
+        </div>
+        {/* 검색 결과 타이틀 */}
+        <h2 className="text-3xl font-bold mb-2">
+          All Listings{!urlLocation ? "" : ` in ${currentLocation}`}
+        </h2>
+        {/* Tabs + 결과수 */}
+        <div className="flex items-center gap-4 mb-6">
+          <Tabs value={tabValue} onValueChange={(val) => setTabValue(val as 'all' | 'onSale' | 'sold')}>
+            <TabsList>
+              <TabsTrigger value="all">All</TabsTrigger>
+              <TabsTrigger value="onSale">On Sale</TabsTrigger>
+              <TabsTrigger value="sold">Sold</TabsTrigger>
+            </TabsList>
+          </Tabs>
+          <div className="text-sm text-gray-600 ml-2">
+            Showing {displayedProducts.length} of {products?.length || 0} items
           </div>
         </div>
 
@@ -239,17 +244,7 @@ export default function BrowseListingsPage({ loaderData }: Route.ComponentProps)
         )}
 
         {/* 검색 결과 타이틀 */}
-        <h2 className="text-3xl font-bold mb-6">
-          {searchQuery ? `"${searchQuery}" Search Results` : categoryFilter ? `${categoryFilter} Category` : "All Listings"}
-          {!urlLocation ? "" : ` in ${currentLocation}`}
-        </h2>
-
         {/* 표시된 상품 수 정보 */}
-        <div className="mb-4 text-sm text-gray-600 mx-auto sm:max-w-[100vw] md:max-w-[100vw]">
-          Showing {displayedProducts.length} of {products?.length || 0} items
-          {!urlLocation ? "" : ` in ${currentLocation}`}
-        </div>
-
         {/* 상품 카드 그리드 */}
         <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-x-2 gap-y-10 items-start mx-auto sm:max-w-[100vw] md:max-w-[100vw]">
           {displayedProducts && displayedProducts.length > 0 ? (
@@ -257,17 +252,23 @@ export default function BrowseListingsPage({ loaderData }: Route.ComponentProps)
               <BlurFade key={product.product_id}>
                 <ProductCard
                   productId={product.product_id}
-                  image={product.primary_image || `/toy1.png`}
+                  image={product.primary_image || `/no_image.png`}
                   title={product.title || "No title"}
                   price={product.price}
                   currency={product.currency || "THB"}
                   priceType={product.price_type || "fixed"}
                   sellerId={product.seller_id}
                   sellerName={product.seller_name}
-                  is_sold={product.is_sold || false}
+                  is_sold={product.is_sold}
+                  showSoldBadge={true}
                   category={product.category_name || "electronics"}
                   likes={product.likes_count || 0}
-                  sellerStats={userStats[product.seller_name]}
+                  sellerStats={{
+                    totalListings: product.total_listings,
+                    totalLikes: product.total_likes,
+                    totalSold: product.total_sold,
+                    sellerJoinedAt: new Date(product.seller_joined_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
+                  }}
                   isLikedByUser={userLikedProducts?.includes(product.product_id) || false}
                   currentUserId={user?.id}
                 />

@@ -1,14 +1,15 @@
 import { HoverCard, HoverCardTrigger, HoverCardContent } from "./ui/hover-card";
 import { Badge } from "./ui/badge";
-import { PackageIcon, MessageCircleReplyIcon } from "lucide-react";
+import { PackageIcon, HeartIcon } from "lucide-react";
 import { Button } from './ui/button';
 import { Link } from "react-router";
 import { useMobile } from "~/hooks/use-mobile";
 
 interface UserStats {
   totalListings: number;
-  rating: number;
-  responseRate: string;
+  totalLikes: number;
+  totalSold: number;
+  sellerJoinedAt: string;
 }
 
 interface UserStatsHoverCardProps {
@@ -18,6 +19,7 @@ interface UserStatsHoverCardProps {
   showAppreciationBadge?: boolean;
   className?: string;
   userStats?: UserStats;
+  sellerJoinedAt?: string;
 }
 
 export function UserStatsHoverCard({
@@ -26,7 +28,8 @@ export function UserStatsHoverCard({
   children,
   showAppreciationBadge = false,
   className = "",
-  userStats
+  userStats,
+  sellerJoinedAt
 }: UserStatsHoverCardProps) {
   const isMobile = useMobile();
 
@@ -68,14 +71,18 @@ export function UserStatsHoverCard({
               <span>Listings: {userStats?.totalListings ?? 'N/A'}</span>
             </div>
             <div className="flex items-center gap-2 text-xs text-gray-600">
-              <MessageCircleReplyIcon className="w-3 h-3 text-red-500" />
-              <span>Response Rate: {userStats?.responseRate ?? 'N/A'}</span>
+              <HeartIcon className="w-3 h-3 text-red-500" />
+              <span>Likes: {userStats?.totalLikes ?? 'N/A'}</span>
+            </div>
+            <div className="flex items-center gap-2 text-xs text-gray-600">
+              <PackageIcon className="w-3 h-3 text-green-500" />
+              <span>Sold: {userStats?.totalSold ?? 'N/A'}</span>
             </div>
           </div>
           <div className="pt-1 border-t border-gray-100">
             <div className="text-xs text-neutral-600">
               <span className="font-medium">Member since:</span> 
-              <span className="ml-1">2023</span>
+              <span className="ml-1">{userStats?.sellerJoinedAt ?? 'N/A'}</span>
             </div>
           </div>
         </div>

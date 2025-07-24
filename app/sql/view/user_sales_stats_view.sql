@@ -33,6 +33,21 @@ SELECT
         ),
         0
     ) as avg_sale_price,
+    -- 유저가 올린 상품에서 받은 총 좋아요
+    COALESCE(
+        (
+            SELECT COUNT(*)
+            FROM product_likes pl
+            WHERE
+                pl.product_id IN (
+                    SELECT product_id
+                    FROM products
+                    WHERE
+                        seller_id = up.profile_id
+                )
+        ),
+        0
+    ) as total_likes,
     -- 이번 달 vs 지난 달 판매 비교
     COALESCE(
         SUM(

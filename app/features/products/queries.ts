@@ -63,3 +63,13 @@ export const getUserLikedProducts = async (client: SupabaseClient<Database>, use
   if (error) throw new Error(error.message);
   return data?.map(like => like.product_id) || [];
 };
+
+export async function getProductsWithSellerStats(client: any, limit = 20) {
+  const { data, error } = await client
+    .from("products_with_seller_stats_view")
+    .select("*")
+    .order("created_at", { ascending: false })
+    .limit(limit);
+  if (error) throw error;
+  return data;
+}

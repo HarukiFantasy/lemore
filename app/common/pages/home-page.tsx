@@ -7,9 +7,10 @@ import { TipPostCard } from "../../features/community/components/tip-post-card";
 import { useLoaderData } from "react-router";
 import { BlurFade } from 'components/magicui/blur-fade';
 import { makeSSRClient } from '~/supa-client';
-import { getProductsListings, getUserLikedProducts } from '../../features/products/queries';
+import { getProductsWithSellerStats, getUserLikedProducts } from '../../features/products/queries';
 import { getLocalTipPosts } from "~/features/community/queries";
 import { DateTime } from "luxon";
+import { getUserSalesStatsByProfileId } from "~/features/users/queries";
 
 
 export const meta: Route.MetaFunction = () => {
@@ -38,11 +39,17 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
       console.error('Error fetching user liked products:', error);
     }
   }
+
+  // userStats 가져오기
+  let userStats = null;
+  if (user) {
+    userStats = await getUserSalesStatsByProfileId(client, user.id);
+  }
   
   // Get all products and filter by location
-  let latestListings = await getProductsListings(client, 20); // Get more to filter
+  let latestListings = await getProductsWithSellerStats(client, 20); // 상품+판매자 stats 포함
   if (location && location !== "All Locations" && location !== "Other Cities") {
-    latestListings = latestListings.filter(product => product.location === location);
+    latestListings = latestListings.filter((product: any) => product.location === location);
   }
   latestListings = latestListings.slice(0, 4); // Limit to 4 after filtering
   
@@ -53,7 +60,7 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
   }
   communityPosts = communityPosts.slice(0, 10); // Limit to 10 after filtering
   
-  return { latestListings, communityPosts, userLikedProducts, user };
+  return { latestListings, communityPosts, userLikedProducts, user, userStats };
 };
 
 // Date 객체 또는 ISO 문자열을 시간 문자열로 변환하는 헬퍼 함수 (Luxon 사용)
@@ -64,12 +71,13 @@ function getTimeAgo(date: Date | string): string {
 
 export default function HomePage() {
   const [searchParams] = useSearchParams();
-  const { latestListings, communityPosts, userLikedProducts, user } = useLoaderData() as {
+  const { latestListings, communityPosts, userLikedProducts, user, userStats } = useLoaderData() as {
     latestListings: any[];
     location: string | null;
     communityPosts: any[];
     userLikedProducts: number[];
     user: any;
+    userStats: any;
   };
   const urlLocation = searchParams.get("location");
   const currentLocation = urlLocation || "Bangkok";
@@ -92,12 +100,12 @@ export default function HomePage() {
       </div>
       <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-4 items-start w-full max-w-none">
         {latestListings.length > 0 ? (
-          latestListings.map((product) => (
+          latestListings.map((product: any) => (
             <BlurFade key={product.product_id}>
               <ProductCard
                 key={product.product_id}
                 productId={product.product_id}
-                image={product.primary_image || `/toy1.png`}
+                image={product.primary_image || `/no_image.png`}
                 title={product.title}
                 price={product.price}
                 currency={product.currency || "THB"}
@@ -108,6 +116,12 @@ export default function HomePage() {
                 likes={product.likes_count || 0}
                 isLikedByUser={userLikedProducts?.includes(product.product_id) || false}
                 currentUserId={user?.id}
+                sellerStats={{
+                  totalListings: product.total_listings,
+                  totalLikes: product.total_likes,
+                  totalSold: product.total_sold,
+                  sellerJoinedAt: new Date(product.seller_joined_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
+                }}
               />
             </BlurFade>
           ))

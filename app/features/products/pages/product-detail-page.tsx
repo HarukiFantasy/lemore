@@ -115,7 +115,7 @@ export const loader = async ({ params, request }: Route.LoaderArgs) => {
           <div className="space-y-4 px-2 md:px-0">
             <div className="aspect-square bg-white rounded-lg overflow-hidden shadow-sm relative">
               <img 
-                src={product.primary_image || `/toy1.png`}
+                src={product.primary_image || `/no_image.png`}
                 alt={product.title || 'Product image'}
                 className="w-full h-full object-cover"
               />
@@ -142,7 +142,7 @@ export const loader = async ({ params, request }: Route.LoaderArgs) => {
                   }`}
                 >
                   <img 
-                    src={image.image_url || `/toy1.png`}
+                    src={image.image_url || `/no_image.png`}
                     alt={`${product.title || 'Product'} ${index + 1}`}
                     className="w-full h-full object-cover"
                   />
@@ -299,7 +299,7 @@ export const loader = async ({ params, request }: Route.LoaderArgs) => {
                         className="block w-20 h-20 md:w-35 md:h-35 rounded overflow-hidden border border-gray-200 hover:border-purple-400 transition flex-shrink-0"
                       >
                         <img
-                          src={p.primary_image || '/toy1.png'}
+                          src={p.primary_image || '/no_image.png'}
                           alt={p.title}
                           className="w-full h-full object-cover"
                         />
@@ -315,10 +315,6 @@ export const loader = async ({ params, request }: Route.LoaderArgs) => {
                   <div className="flex items-center gap-2">
                     <CalendarIcon className="w-4 h-4 text-blue-500" />
                     <span className="font-medium">Member since:</span> {product.seller_joined_at ? product.seller_joined_at.slice(0, 10) : 'N/A'}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <MessageCircleReplyIcon className="w-4 h-4 text-red-500" />
-                    <span className="font-medium">Response Rate:</span> {product.seller_response_rate || 'N/A'}
                   </div>
                   <div className="flex items-center gap-2">
                     <PackageIcon className="w-4 h-4 text-blue-500" />
