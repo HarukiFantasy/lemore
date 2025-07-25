@@ -51,7 +51,9 @@ export const loader = async ({request, params}: Route.LoaderArgs) => {
     ? reviews.reduce((sum, review) => sum + (review.rating || 0), 0) / reviews.length 
     : 0;
 
-  const userStats = await getUserSalesStatsByProfileId(client, targetUserProfile.profile_id);
+  const userStats = targetUserProfile.profile_id
+    ? await getUserSalesStatsByProfileId(client, targetUserProfile.profile_id)
+    : null;
 
   return { 
     targetUserProfile,

@@ -356,6 +356,7 @@ export const getNotifications = async (
   const oneWeekAgo = new Date();
   oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
 
+  // @ts-ignore: notification_view may not be in generated types but exists in DB
   const { data, error } = await client
     .from('notification_view')
     .select('*')
@@ -367,25 +368,25 @@ export const getNotifications = async (
 
   // 기존 매핑 로직 유지, sender_name/receiver_name 포함
   const mappedNotifications = (data ?? []).map((n) => ({
-    notification_id: n.notification_id,
-    type: n.type,
-    isRead: n.is_read,
-    timestamp: n.created_at,
+    notification_id: (n as any).notification_id ?? null,
+    type: (n as any).type ?? null,
+    isRead: (n as any).is_read ?? null,
+    timestamp: (n as any).created_at ?? null,
     // data 필드에서 추출하거나 기본값 사용
-    title: (n.data as any)?.title ?? '',
-    content: (n.data as any)?.content ?? '',
-    avatar: (n.data as any)?.avatar ?? '',
-    avatarFallback: (n.data as any)?.avatarFallback ?? '',
-    metadata: n.data,
+    title: (n as any).data?.title ?? '',
+    content: (n as any).data?.content ?? '',
+    avatar: (n as any).data?.avatar ?? '',
+    avatarFallback: (n as any).data?.avatarFallback ?? '',
+    metadata: (n as any).data ?? null,
     // 기존 필드들도 유지
-    sender_id: n.sender_id,
-    sender_name: n.sender_name,
-    receiver_id: n.receiver_id,
-    receiver_name: n.receiver_name,
-    product_id: n.product_id,
-    message_id: n.message_id,
-    review_id: n.review_id,
-    read_at: n.read_at,
+    sender_id: (n as any).sender_id ?? null,
+    sender_name: (n as any).sender_name ?? null,
+    receiver_id: (n as any).receiver_id ?? null,
+    receiver_name: (n as any).receiver_name ?? null,
+    product_id: (n as any).product_id ?? null,
+    message_id: (n as any).message_id ?? null,
+    review_id: (n as any).review_id ?? null,
+    read_at: (n as any).read_at ?? null,
   }));
 
   return mappedNotifications;

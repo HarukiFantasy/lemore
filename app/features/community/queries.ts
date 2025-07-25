@@ -87,13 +87,13 @@ export const getGiveAndGlowReviews = async (client: SupabaseClient<Database>) =>
 }
 
 export const getLocalBusinesses = async (client: SupabaseClient<Database>) => {
-  const { data, error } = await client.from("local_businesses_list_view").select(`*`);
+  const { data, error } = await client.from("local_businesses_list_view").select(`*`).order('updated_at', { ascending: false });
   if (error) throw new Error(error.message);
   return data;
 }
 
 export const getLocalReviews = async (client: SupabaseClient<Database>) => {
-  const { data, error } = await client.from("local_reviews_list_view").select(`*`);
+  const { data, error } = await client.from("local_reviews_list_view").select(`*`).order('created_at', { ascending: false });
   if (error) throw new Error(error.message);
   return data;
 }
