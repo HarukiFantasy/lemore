@@ -4,6 +4,7 @@ SELECT
     up.profile_id,
     up.username,
     up.email,
+    up.level,
     -- 판매 통계
     COUNT(p.product_id) as total_listings,
     COUNT(
@@ -150,4 +151,5 @@ FROM user_profiles up
 GROUP BY
     up.profile_id,
     up.username,
-    up.email;
+    up.email,
+    up.level;

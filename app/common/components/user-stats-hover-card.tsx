@@ -10,6 +10,7 @@ interface UserStats {
   totalLikes: number;
   totalSold: number;
   sellerJoinedAt: string;
+  level?: string; // 추가
 }
 
 interface UserStatsHoverCardProps {
@@ -56,6 +57,12 @@ export function UserStatsHoverCard({
         <div className="flex flex-col gap-2">
           <div className="flex items-center gap-2">
             <span className="font-semibold text-sm">{userName}</span>
+            {/* Level Badge 추가 */}
+            {userStats?.level && (
+              <Badge variant="secondary" className="text-xs bg-purple-100 text-purple-700 border border-purple-200">
+                {userStats.level}
+              </Badge>
+            )}
             <Link to={`/users/${userName}`}>
               <Button variant="secondary" className="text-xs h-5 px-2">
                 ViewProfile

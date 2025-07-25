@@ -28,10 +28,15 @@ export async function uploadLetGoBuddyImages(
 
 
 // 세션 생성: let_go_buddy_sessions 테이블에 row 추가
-export async function createLetGoBuddySession(
-  client: SupabaseClient<Database>,
-  { userId, situation }: { userId: string; situation: string }
-): Promise<{ session_id: number }> {
+export async function createLetGoBuddySession(client: any, { userId, situation }: { userId: string, situation: string }) {
+  // Check session count before creating
+  const { count } = await client
+    .from('let_go_buddy_sessions')
+    .select('*', { count: 'exact', head: true })
+    .eq('user_id', userId);
+  if (typeof count === 'number' && count >= 2) {
+    throw new Error('Free usage limit reached. Upgrade your trust level to use more!');
+  }
   if (!ALLOWED_SITUATIONS.includes(situation as DeclutterSituation)) {
     throw new Error(`Invalid situation: ${situation}`);
   }

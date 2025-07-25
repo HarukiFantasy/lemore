@@ -267,6 +267,7 @@ export default function BrowseListingsPage({ loaderData }: Route.ComponentProps)
                     totalListings: product.total_listings,
                     totalLikes: product.total_likes,
                     totalSold: product.total_sold,
+                    level: product.seller_level, // 수정: level로 전달
                     sellerJoinedAt: new Date(product.seller_joined_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
                   }}
                   isLikedByUser={userLikedProducts?.includes(product.product_id) || false}

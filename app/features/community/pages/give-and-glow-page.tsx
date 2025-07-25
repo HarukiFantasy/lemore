@@ -114,6 +114,7 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
           totalListings: stats.total_listings,
           totalLikes: stats.total_likes,
           totalSold: stats.total_sold,
+          level: stats.level, // level 정보 포함
           sellerJoinedAt: stats.joined_at
             ? new Date(stats.joined_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
             : undefined,
@@ -515,7 +516,6 @@ export default function GiveAndGlowPage({ loaderData }: Route.ComponentProps) {
             timestamp={review.created_at}
             location={review.product_location || "Unknown Location"}
             tags={review.tags || []}
-            appreciationBadge={review.rating > 4}
             giverStats={userStatsMap[review.giver_profile_id]}
             receiverStats={userStatsMap[review.receiver_profile_id]}
           />

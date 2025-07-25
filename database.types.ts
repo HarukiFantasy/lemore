@@ -1702,6 +1702,101 @@ export type Database = {
           },
         ]
       }
+      trust_scores: {
+        Row: {
+          completed_trades: number
+          created_at: string | null
+          score: number
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          completed_trades?: number
+          created_at?: string | null
+          score?: number
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          completed_trades?: number
+          created_at?: string | null
+          score?: number
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trust_scores_user_id_user_profiles_profile_id_fk"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "give_and_glow_user_stats_view"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "trust_scores_user_id_user_profiles_profile_id_fk"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "give_and_glow_view"
+            referencedColumns: ["giver_profile_id"]
+          },
+          {
+            foreignKeyName: "trust_scores_user_id_user_profiles_profile_id_fk"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "give_and_glow_view"
+            referencedColumns: ["receiver_profile_id"]
+          },
+          {
+            foreignKeyName: "trust_scores_user_id_user_profiles_profile_id_fk"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "product_detail_view"
+            referencedColumns: ["seller_id"]
+          },
+          {
+            foreignKeyName: "trust_scores_user_id_user_profiles_profile_id_fk"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "products_listings_view"
+            referencedColumns: ["seller_id"]
+          },
+          {
+            foreignKeyName: "trust_scores_user_id_user_profiles_profile_id_fk"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "user_dashboard_view"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "trust_scores_user_id_user_profiles_profile_id_fk"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "user_profiles"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "trust_scores_user_id_user_profiles_profile_id_fk"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "user_sales_stats_view"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "trust_scores_user_id_user_profiles_profile_id_fk"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "user_stats_view"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "trust_scores_user_id_user_profiles_profile_id_fk"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "users_view"
+            referencedColumns: ["profile_id"]
+          },
+        ]
+      }
       user_conversations: {
         Row: {
           conversation_id: number
@@ -1753,6 +1848,101 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "user_conversations_view"
             referencedColumns: ["product_id"]
+          },
+        ]
+      }
+      user_levels: {
+        Row: {
+          created_at: string | null
+          free_let_go_buddy_uses: number
+          level: Database["public"]["Enums"]["user_level"]
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          free_let_go_buddy_uses?: number
+          level?: Database["public"]["Enums"]["user_level"]
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          free_let_go_buddy_uses?: number
+          level?: Database["public"]["Enums"]["user_level"]
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_levels_user_id_user_profiles_profile_id_fk"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "give_and_glow_user_stats_view"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "user_levels_user_id_user_profiles_profile_id_fk"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "give_and_glow_view"
+            referencedColumns: ["giver_profile_id"]
+          },
+          {
+            foreignKeyName: "user_levels_user_id_user_profiles_profile_id_fk"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "give_and_glow_view"
+            referencedColumns: ["receiver_profile_id"]
+          },
+          {
+            foreignKeyName: "user_levels_user_id_user_profiles_profile_id_fk"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "product_detail_view"
+            referencedColumns: ["seller_id"]
+          },
+          {
+            foreignKeyName: "user_levels_user_id_user_profiles_profile_id_fk"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "products_listings_view"
+            referencedColumns: ["seller_id"]
+          },
+          {
+            foreignKeyName: "user_levels_user_id_user_profiles_profile_id_fk"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "user_dashboard_view"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "user_levels_user_id_user_profiles_profile_id_fk"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "user_profiles"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "user_levels_user_id_user_profiles_profile_id_fk"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "user_sales_stats_view"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "user_levels_user_id_user_profiles_profile_id_fk"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "user_stats_view"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "user_levels_user_id_user_profiles_profile_id_fk"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "users_view"
+            referencedColumns: ["profile_id"]
           },
         ]
       }
@@ -2200,6 +2390,7 @@ export type Database = {
           bio: string | null
           created_at: string
           email: string | null
+          level: Database["public"]["Enums"]["user_level"]
           location: Database["public"]["Enums"]["location"] | null
           phone: string | null
           profile_id: string
@@ -2214,6 +2405,7 @@ export type Database = {
           bio?: string | null
           created_at?: string
           email?: string | null
+          level?: Database["public"]["Enums"]["user_level"]
           location?: Database["public"]["Enums"]["location"] | null
           phone?: string | null
           profile_id: string
@@ -2228,6 +2420,7 @@ export type Database = {
           bio?: string | null
           created_at?: string
           email?: string | null
+          level?: Database["public"]["Enums"]["user_level"]
           location?: Database["public"]["Enums"]["location"] | null
           phone?: string | null
           profile_id?: string
@@ -2513,6 +2706,7 @@ export type Database = {
         Row: {
           avatar_url: string | null
           joined_at: string | null
+          level: Database["public"]["Enums"]["user_level"] | null
           profile_id: string | null
           total_give_and_glow_given: number | null
           total_give_and_glow_received: number | null
@@ -3572,6 +3766,7 @@ export type Database = {
           seller_avatar: string | null
           seller_id: string | null
           seller_joined_at: string | null
+          seller_level: Database["public"]["Enums"]["user_level"] | null
           seller_name: string | null
           stats: Json | null
           tags: Json | null
@@ -4165,6 +4360,7 @@ export type Database = {
           email: string | null
           last_month_sales: number | null
           last_sale_date: string | null
+          level: Database["public"]["Enums"]["user_level"] | null
           profile_id: string | null
           sales_change_percentage: number | null
           sales_last_7_days: number | null
@@ -4189,6 +4385,7 @@ export type Database = {
           avatar_url: string | null
           joined_at: string | null
           last_listing_created_at: string | null
+          level: Database["public"]["Enums"]["user_level"] | null
           profile_id: string | null
           total_likes: number | null
           total_listings: number | null
@@ -4212,6 +4409,7 @@ export type Database = {
           bio: string | null
           created_at: string | null
           email: string | null
+          level: Database["public"]["Enums"]["user_level"] | null
           location: Database["public"]["Enums"]["location"] | null
           profile_id: string | null
           rating: number | null
@@ -4344,6 +4542,7 @@ export type Database = {
         | "Repair"
         | "Repurpose"
         | "Discard"
+      user_level: "Explorer" | "Connector" | "Sharer" | "Glowmaker" | "Legend"
     }
     CompositeTypes: {
       http_header: {
@@ -4540,6 +4739,7 @@ export const Constants = {
         "Repurpose",
         "Discard",
       ],
+      user_level: ["Explorer", "Connector", "Sharer", "Glowmaker", "Legend"],
     },
   },
 } as const

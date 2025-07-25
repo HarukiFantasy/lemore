@@ -120,6 +120,7 @@ export default function HomePage() {
                   totalListings: product.total_listings,
                   totalLikes: product.total_likes,
                   totalSold: product.total_sold,
+                  level: product.seller_level, // level 정보 추가
                   sellerJoinedAt: new Date(product.seller_joined_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
                 }}
               />

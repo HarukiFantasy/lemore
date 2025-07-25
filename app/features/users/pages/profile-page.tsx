@@ -14,6 +14,7 @@ import { redirect, useNavigation, useActionData, Form, useRevalidator } from 're
 import { LOCATIONS, type Location } from "~/constants";
 import { CircleIcon, CheckCircleIcon, AlertCircleIcon, UploadIcon } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import { Badge } from "../../../common/components/ui/badge";
 
 export const loader = async ({request}: Route.LoaderArgs) => {
   const { client } = makeSSRClient(request);
@@ -186,6 +187,14 @@ export default function ProfilePage({ loaderData }: Route.ComponentProps) {
                 </Avatar>
               </div>
               <CardTitle>{userProfile?.username}</CardTitle>
+              {/* Level Badge */}
+              {userProfile?.level && (
+                <div className="flex justify-center mt-2">
+                  <Badge variant="secondary" className="text-xs bg-purple-100 text-purple-700 border border-purple-200">
+                    {userProfile.level}
+                  </Badge>
+                </div>
+              )}
               <CardDescription>Member since {userProfile?.created_at ? new Date(userProfile.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long' }) : 'Unknown'}</CardDescription>
             </CardHeader>
             <CardContent>

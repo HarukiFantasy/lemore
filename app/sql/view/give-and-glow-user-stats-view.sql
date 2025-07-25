@@ -5,6 +5,7 @@ SELECT
     up.username,
     up.avatar_url,
     up.created_at AS joined_at,
+    up.level, -- 추가: 유저 레벨
     -- 총 기브앤글로우 리뷰를 준 횟수
     COALESCE(giver_stats.total_given, 0) AS total_give_and_glow_given,
     -- 총 기브앤글로우 리뷰를 받은 횟수

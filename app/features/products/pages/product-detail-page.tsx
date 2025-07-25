@@ -10,6 +10,7 @@ import { Route } from './+types/product-detail-page';
 import {DateTime} from "luxon";
 import { makeSSRClient } from "~/supa-client";
 import { getUserSalesStatsByProfileId } from "~/features/users/queries";
+import { Badge } from "~/common/components/ui/badge";
 
 export const meta = () => {
   return [
@@ -277,6 +278,12 @@ export const loader = async ({ params, request }: Route.LoaderArgs) => {
               </Avatar>
               <div className="flex flex-col">
                 <span className="font-medium text-gray-900 text-sm">{product.seller_name}</span>
+                {/* Level Badge */}
+                {userStats?.level && (
+                  <Badge variant="secondary" className="text-xs bg-purple-100 text-purple-700 border border-purple-200 mt-1">
+                    {userStats.level}
+                  </Badge>
+                )}
                 {product.seller_bio && (
                   <span className="italic text-gray-500 text-sm mt-0.5">{product.seller_bio}</span>
                 )}

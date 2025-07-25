@@ -49,6 +49,17 @@ export const FILE_UPLOAD_LIMITS = {
   }
 } as const;
 
+// user_levels 테이블
+export const USER_LEVELS = [
+  "Explorer",   // 입문자, 가입 즉시
+  "Connector",  // 활동 시작
+  "Sharer",     // 기여/나눔
+  "Glowmaker",  // 신뢰/영향력
+  "Legend"      // 전설, 최고 등급
+] as const;
+
+export type UserLevel = typeof USER_LEVELS[number];
+
 // 타입 정의
 export type Location = typeof LOCATIONS[number];
 export type AllLocation = typeof ALL_LOCATIONS[number];

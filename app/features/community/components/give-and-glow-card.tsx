@@ -57,13 +57,10 @@ export function GiveAndGlowCard({
   timestamp,
   location,
   tags,
-  appreciationBadge = false,
   giverId,
   giverStats,
   receiverStats,
 }: GiveAndGlowCardProps) {
-  // Show appreciation badge if rating > 4 or if explicitly set to true
-  const shouldShowAppreciationBadge = appreciationBadge || rating > 4;
 
   return (
     <Card className="hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 transition-all duration-300 hover:scale-[1.02] hover:shadow-lg w-full">
@@ -106,7 +103,6 @@ export function GiveAndGlowCard({
                       profileId={giverId}
                       userName={giverName}
                       userStats={giverStats}
-                      showAppreciationBadge={shouldShowAppreciationBadge}
                     >
                       <span onClick={(e) => e.stopPropagation()} className="font-medium truncate">{giverName}</span>
                     </UserStatsHoverCard>

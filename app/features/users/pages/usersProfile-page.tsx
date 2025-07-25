@@ -8,6 +8,7 @@ import { redirect } from 'react-router';
 import { getProductByUsername } from '~/features/products/queries';
 import { ProductCard } from '~/features/products/components/product-card';
 import { type Location } from "~/constants";
+import { Badge } from "../../../common/components/ui/badge";
 
 
 export const loader = async ({request, params}: Route.LoaderArgs) => {
@@ -147,6 +148,14 @@ export default function UsersProfilePage({ loaderData }: Route.ComponentProps) {
                 </Avatar>
               </div>
               <CardTitle>{targetUserProfile?.username}</CardTitle>
+              {/* Level Badge */}
+              {targetUserProfile?.level && (
+                <div className="flex justify-center mt-2">
+                  <Badge variant="secondary" className="text-xs bg-purple-100 text-purple-700 border border-purple-200">
+                    {targetUserProfile.level}
+                  </Badge>
+                </div>
+              )}
               <CardDescription>
                 Member since {targetUserProfile?.created_at ? 
                   new Date(targetUserProfile.created_at).toLocaleDateString('en-US', { 

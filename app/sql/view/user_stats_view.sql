@@ -5,6 +5,7 @@ SELECT
     up.username,
     up.avatar_url,
     up.created_at AS joined_at,
+    up.level,
     COUNT(DISTINCT p.product_id) AS total_listings,
     COALESCE(SUM(pl.likes_count), 0) AS total_likes,
     COUNT(
@@ -26,4 +27,5 @@ GROUP BY
     up.profile_id,
     up.username,
     up.avatar_url,
-    up.created_at;
+    up.created_at,
+    up.level;

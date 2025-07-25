@@ -20,15 +20,26 @@ import { EMOTIONAL_QUESTIONS, DECLUTTER_SITUATIONS } from '../constants';
 import { uploadLetGoBuddyImages, createLetGoBuddySession } from '../mutations';
 import { makeSSRClient, browserClient } from "~/supa-client";
 import { Route } from './+types/let-go-buddy-page';
+import { useEffect } from "react";
 
 export const loader = async ({ request }: Route.LoaderArgs) => {
   const { client } = makeSSRClient(request);
   const { data: { user } } = await client.auth.getUser();
-  return { user };
+  let canUseLetGoBuddy = true;
+  if (user) {
+    const { count } = await client
+      .from('let_go_buddy_sessions')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', user.id);
+    if (typeof count === 'number' && count >= 2) {
+      canUseLetGoBuddy = false;
+    }
+  }
+  return { user, canUseLetGoBuddy };
 };
 
 export default function LetGoBuddyPage({ loaderData }: Route.ComponentProps) {
-  const { user } = loaderData || { user: null };
+  const { user, canUseLetGoBuddy } = loaderData || { user: null, canUseLetGoBuddy: true };
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const currentLocation = searchParams.get("location") || "Bangkok";
@@ -97,6 +108,10 @@ export default function LetGoBuddyPage({ loaderData }: Route.ComponentProps) {
 
   // 분석 요청 및 결과 반영
   const handleGenerateAnalysis = async () => {
+    if (!canUseLetGoBuddy) {
+      alert("You have used all your free Let Go Buddy sessions (2/2). Upgrade your trust level to use more!");
+      return;
+    }
     if (!selectedSituation) {
       alert("Please select your situation first");
       return;
@@ -579,6 +594,7 @@ export default function LetGoBuddyPage({ loaderData }: Route.ComponentProps) {
         {/* Generate AI Analysis Button */}
         <Button 
           onClick={() => {
+            if (!canUseLetGoBuddy) return;
             handleGenerateAnalysis();
             // Scroll to analyzing section immediately
             setTimeout(() => {
@@ -591,7 +607,7 @@ export default function LetGoBuddyPage({ loaderData }: Route.ComponentProps) {
               }
             }, 100);
           }}
-          disabled={!selectedSituation || uploadedFiles.length === 0 || isAnalyzing}
+          disabled={!canUseLetGoBuddy || !selectedSituation || uploadedFiles.length === 0 || isAnalyzing}
           className="w-full"
           size="lg"
         >
@@ -607,6 +623,11 @@ export default function LetGoBuddyPage({ loaderData }: Route.ComponentProps) {
             </>
           )}
         </Button>
+        {!canUseLetGoBuddy && (
+          <div className="text-sm mt-2 text-center bg-emerald-50 text-emerald-700 rounded-md px-4 py-2 border border-emerald-100">
+            😊 You’ve used all your free Let Go Buddy sessions (2/2). If you’d like to use more, please build trust in the community or contact us!
+          </div>
+        )}
       </div>
 
       {/* Step 3: Analyzing */}

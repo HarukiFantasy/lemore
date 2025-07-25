@@ -73,6 +73,7 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
         totalListings: stats.total_listings,
         totalLikes: stats.total_likes,
         totalSold: stats.total_sold,
+        level: stats.level, // level 정보 포함
         sellerJoinedAt: stats.joined_at
           ? new Date(stats.joined_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
           : undefined,

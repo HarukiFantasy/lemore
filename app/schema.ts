@@ -15,9 +15,11 @@ import {
   primaryKey,
   check,
   pgPolicy,
-  AnyPgColumn, // 추가
+  AnyPgColumn,
+  PgEnum, // 추가
 } from "drizzle-orm/pg-core";
 import { authenticatedRole, authUid, authUsers } from "drizzle-orm/supabase";
+import { USER_LEVELS } from "./constants";
 
 // ===== ENUMS =====
 
@@ -73,6 +75,8 @@ export const recommendationActions = pgEnum("recommendation_action", [
 export const environmentalImpactLevels = pgEnum("environmental_impact_level", [
   "Low", "Medium", "High", "Critical"
 ]);
+
+export const userLevelsList = pgEnum("user_level", USER_LEVELS);
 
 // ===== TABLES =====
 
@@ -265,6 +269,7 @@ export const userProfiles = pgTable("user_profiles", {
   avatar_url: text("avatar_url"),
   bio: text("bio"),
   location: locationList(),
+  level: userLevelsList().notNull().default("Explorer"),
   total_likes: integer().default(0),
   rating: decimal({ precision: 10, scale: 2 }).default("0.00"),
   appreciation_badge: boolean("appreciation_badge").default(false),
@@ -304,6 +309,26 @@ export const userProfiles = pgTable("user_profiles", {
     using: sql`${authUid} = ${table.profile_id}`
   })
 ]);
+
+
+// user_levels 테이블
+export const userLevels = pgTable("user_levels", {
+  user_id: uuid("user_id").primaryKey().references(() => userProfiles.profile_id, { onDelete: "cascade" }),
+  level: userLevelsList().notNull().default("Explorer"),
+  free_let_go_buddy_uses: integer("free_let_go_buddy_uses").notNull().default(2),
+  created_at: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  updated_at: timestamp("updated_at", { withTimezone: true }).defaultNow(),
+});
+
+// trust_scores 테이블
+export const trustScores = pgTable("trust_scores", {
+  user_id: uuid("user_id").primaryKey().references(() => userProfiles.profile_id, { onDelete: "cascade" }),
+  score: integer("score").notNull().default(0),
+  completed_trades: integer("completed_trades").notNull().default(0),
+  created_at: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  updated_at: timestamp("updated_at", { withTimezone: true }).defaultNow(),
+});
+
 
 // User reviews table
 export const userReviews = pgTable("user_reviews", {

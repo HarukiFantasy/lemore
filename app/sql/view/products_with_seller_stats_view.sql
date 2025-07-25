@@ -28,6 +28,7 @@ SELECT
     up.username AS seller_name,
     up.avatar_url AS seller_avatar,
     up.created_at AS seller_joined_at,
+    up.level AS seller_level,
     -- 판매자 stats
     us.total_listings,
     us.total_likes,
