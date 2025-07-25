@@ -30,7 +30,7 @@ export const getProductsListings = async (
 };
 
 export const getProductById = async (client: SupabaseClient<Database>, productId: number) => {
-  const { data, error } = await client.from("product_detail_view").select("*").eq("product_id", productId).single();
+  const { data, error } = await client.from("product_detail_view").select("*").eq("product_id", productId).maybeSingle();
   if (error) throw new Error(error.message);
   return data;
 };

@@ -9,7 +9,7 @@ export const checkUsernameExists = async (
     .from("user_profiles")
     .select("profile_id")
     .eq("username", username)
-    .single();
+    .maybeSingle();
   if (error) {
     return false;
   }

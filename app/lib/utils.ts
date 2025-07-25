@@ -266,7 +266,7 @@ export const checkAppreciationBadge = async (client: any, sellerId: string): Pro
       .from('user_profiles')
       .select('appreciation_badge')
       .eq('profile_id', sellerId)
-      .single();
+      .maybeSingle();
     
     if (profileError) {
       console.error("Error fetching user profile:", profileError);

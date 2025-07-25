@@ -103,7 +103,7 @@ export async function getUserStats(client: any, username: string) {
     .from('user_stats_view')
     .select('*')
     .eq('username', username)
-    .single();
+    .maybeSingle();
   if (error) throw error;
   return data;
 }
@@ -123,7 +123,7 @@ export async function getUserStatsGiveAndGlow(client: any, params: { username?: 
   } else if (params.profileId) {
     query = query.eq('profile_id', params.profileId);
   }
-  const { data, error } = await query.single();
+  const { data, error } = await query.maybeSingle();
   if (error || !data) throw error || new Error('User stats not found');
   return data;
 }
