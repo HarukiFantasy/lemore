@@ -26,7 +26,7 @@ export const getUserByUsername = async (client: SupabaseClient<Database>, { user
     .from("users_view")
     .select("*")
     .eq("username", username)
-    .single();
+    .maybeSingle();
     
   if (error) throw new Error(error.message);
   return data;
