@@ -355,7 +355,7 @@ export const getNotifications = async (
   // 최근 일주일 전 날짜 계산
   const oneWeekAgo = new Date();
   oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
-
+  
   // @ts-ignore: notification_view may not be in generated types but exists in DB
   const { data, error } = await client
     .from('notification_view')
@@ -363,9 +363,9 @@ export const getNotifications = async (
     .eq('receiver_id', userId)
     .gte('created_at', oneWeekAgo.toISOString()) // 최근 일주일치만
     .order('created_at', { ascending: false });
-
+  
   if (error) throw error;
-
+  
   // 기존 매핑 로직 유지, sender_name/receiver_name 포함
   const mappedNotifications = (data ?? []).map((n) => ({
     notification_id: (n as any).notification_id ?? null,
@@ -388,7 +388,7 @@ export const getNotifications = async (
     review_id: (n as any).review_id ?? null,
     read_at: (n as any).read_at ?? null,
   }));
-
+  
   return mappedNotifications;
 };
 

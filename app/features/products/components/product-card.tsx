@@ -156,7 +156,7 @@ export function ProductCard({
     navigate(`/users/${prod.seller_name}`);
   };
 
-  return (
+    return (
     <div onClick={handleCardClick} className="cursor-pointer">
       <div className="relative group p-1 
         transition-all duration-200 ease-out
@@ -212,32 +212,32 @@ export function ProductCard({
                   {prod.seller_name}
                 </button>
               ) : (
-                <UserStatsHoverCard
+            <UserStatsHoverCard
                   profileId={prod.seller_id}
                   userName={prod.seller_name ?? ''}
-                  userStats={sellerStats}
-                  className="text-xs text-neutral-500 truncate"
-                >
+              userStats={sellerStats}
+              className="text-xs text-neutral-500 truncate"
+            >
                   <span onClick={e => e.stopPropagation()}>
                     {prod.seller_name}
                   </span>
-                </UserStatsHoverCard>
+            </UserStatsHoverCard>
               )}
             </div>
             <div className="flex items-center justify-between mt-1">
               <span className="text-sm font-semibold text-purple-700">{formatPrice(price, currency)}</span>
               <div className="flex items-center gap-1 text-neutral-500 text-xs">
                 {!isOwner && (
-                  <button
-                    onClick={handleLikeClick}
-                    className={`flex items-center gap-1 transition-colors duration-200 hover:scale-110 ${
-                      isLiked ? 'text-red-500 hover:text-red-400' : 'text-neutral-500 hover:text-neutral-400'
-                    }`}
+                <button
+                  onClick={handleLikeClick}
+                  className={`flex items-center gap-1 transition-colors duration-200 hover:scale-110 ${
+                    isLiked ? 'text-red-500 hover:text-red-400' : 'text-neutral-500 hover:text-neutral-400'
+                  }`}
                     disabled={fetcher.state !== 'idle'}
                   >
-                    <HeartIcon className={`w-4 h-4 ${isLiked ? 'fill-current' : ''}`} />
-                    <span>{optimisticLikes}</span>
-                  </button>
+                  <HeartIcon className={`w-4 h-4 ${isLiked ? 'fill-current' : ''}`} />
+                  <span>{optimisticLikes}</span>
+                </button>
                 )}
               </div>
             </div>

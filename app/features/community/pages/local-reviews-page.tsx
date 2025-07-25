@@ -692,55 +692,55 @@ export default function LocalReviewsPage({ loaderData }: Route.ComponentProps) {
               </TabsList>
               <TabsContent value="existing">
                 {/* 기존 비즈니스 리스트/검색 UI */}
-                <div className="space-y-4">
-                  <div className="text-sm text-gray-600 mb-4">
+                  <div className="space-y-4">
+                    <div className="text-sm text-gray-600 mb-4">
                     Choose an existing business to write a review.
-                  </div>
-                  {/* Search Input */}
-                  <div className="mb-3">
-                    <Input
-                      placeholder="Search businesses by name, type, or location..."
-                      value={businessSearchQuery}
-                      onChange={(e) => setBusinessSearchQuery(e.target.value)}
-                      className="w-full border-slate-300 focus:border-slate-400"
-                    />
-                  </div>
-                  <div className="space-y-2 max-h-60 overflow-y-auto">
-                    {filteredBusinessesForSelection.length > 0 ? (
-                      filteredBusinessesForSelection.map((business) => {
-                        const hasReviewed = hasUserReviewedBusiness(business.id);
-                        return (
-                          <div
-                            key={business.id}
-                            className={`p-3 border rounded-lg transition-colors ${
-                              hasReviewed
-                                ? 'bg-green-50 border-green-200 cursor-not-allowed'
-                                : 'bg-white border-blue-200 cursor-pointer hover:bg-blue-100'
-                            }`}
-                            onClick={() => {
-                              if (!hasReviewed) {
-                                setSelectedBusiness(business);
-                                setReviewStep('write-review');
-                              }
-                            }}
-                          >
-                            <div className="flex items-center justify-between">
-                              <div className="flex-1">
+                    </div>
+                      {/* Search Input */}
+                      <div className="mb-3">
+                        <Input
+                          placeholder="Search businesses by name, type, or location..."
+                          value={businessSearchQuery}
+                          onChange={(e) => setBusinessSearchQuery(e.target.value)}
+                          className="w-full border-slate-300 focus:border-slate-400"
+                        />
+                      </div>
+                      <div className="space-y-2 max-h-60 overflow-y-auto">
+                        {filteredBusinessesForSelection.length > 0 ? (
+                          filteredBusinessesForSelection.map((business) => {
+                            const hasReviewed = hasUserReviewedBusiness(business.id);
+                            return (
+                            <div
+                              key={business.id}
+                              className={`p-3 border rounded-lg transition-colors ${
+                                hasReviewed 
+                                  ? 'bg-green-50 border-green-200 cursor-not-allowed' 
+                                  : 'bg-white border-blue-200 cursor-pointer hover:bg-blue-100'
+                              }`}
+                              onClick={() => {
+                                if (!hasReviewed) {
+                                  setSelectedBusiness(business);
+                                  setReviewStep('write-review');
+                                }
+                              }}
+                            >
+                              <div className="flex items-center justify-between">
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-2">
+                                    <h4 className="font-medium text-gray-900">{business.name}</h4>
+                                    {hasReviewed && (
+                                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                        Reviewed
+                                      </span>
+                                    )}
+                                  </div>
+                                  <p className="text-sm text-gray-600">{business.type} • {business.location}</p>
+                                </div>
                                 <div className="flex items-center gap-2">
-                                  <h4 className="font-medium text-gray-900">{business.name}</h4>
-                                  {hasReviewed && (
-                                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                      Reviewed
-                                    </span>
-                                  )}
-                                </div>
-                                <p className="text-sm text-gray-600">{business.type} • {business.location}</p>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <span className="text-sm text-gray-500">{business.price_range}</span>
-                                <div className="flex items-center">
-                                  {renderStars(business.average_rating ?? 0)}
-                                </div>
+                                  <span className="text-sm text-gray-500">{business.price_range}</span>
+                                  <div className="flex items-center">
+                                    {renderStars(business.average_rating ?? 0)}
+                                  </div>
                                 <Button
                                   size="sm"
                                   variant="outline"
@@ -753,19 +753,19 @@ export default function LocalReviewsPage({ loaderData }: Route.ComponentProps) {
                                 >
                                   Edit
                                 </Button>
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        );
-                      })
-                    ) : (
-                      <div className="p-4 text-center text-gray-500 bg-white border border-blue-200 rounded-lg">
-                        <p className="mb-2">No businesses found matching "{businessSearchQuery}"</p>
+                          );
+                        })
+                        ) : (
+                          <div className="p-4 text-center text-gray-500 bg-white border border-blue-200 rounded-lg">
+                            <p className="mb-2">No businesses found matching "{businessSearchQuery}"</p>
                         <p className="text-sm">Try adding a new business in the next tab.</p>
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </div>
-                </div>
+                    </div>
               </TabsContent>
               <TabsContent value="add">
                 {/* 새 비즈니스 입력 폼 */}
@@ -797,45 +797,45 @@ export default function LocalReviewsPage({ loaderData }: Route.ComponentProps) {
                         />
                       </div>
                     )}
-                  </div>
-                  <div className="space-y-4">
-                    {/* Business Name */}
-                    <div>
-                      <label className="block text-sm font-medium text-blue-800 mb-2">Business Name *</label>
-                      <Input
-                        placeholder="Enter business name..."
-                        value={newBusiness.name}
-                        onChange={(e) => setNewBusiness({ ...newBusiness, name: e.target.value })}
-                        className="border-slate-300 focus:border-slate-400 focus:ring-slate-400"
-                      />
-                    </div>
-                    {/* Business Type */}
-                    <div>
-                      <label className="block text-sm font-medium text-blue-800 mb-2">Business Type</label>
-                      <div className="flex flex-wrap gap-2">
-                        {[...(validBusinessTypes as unknown as string[])].filter(type => type !== "All").map(type => (
-                          <Button
-                            key={type}
-                            variant={newBusiness.type === type ? "default" : "outline"}
-                            size="sm"
-                            onClick={() => setNewBusiness({ ...newBusiness, type: type as z.infer<typeof BusinessTypeSchema> })}
-                            className={newBusiness.type === type ? "bg-slate-300  text-slate-800 hover:bg-slate-300" : "border-slate-300 text-slate-600 hover:bg-slate-50"}
-                          >
-                            {type}
-                          </Button>
-                        ))}
                       </div>
-                    </div>
-                    {/* Address */}
-                    <div>
-                      <label className="block text-sm font-medium text-blue-800 mb-2">Address *</label>
-                      <Input
-                        placeholder="Enter business address..."
-                        value={newBusiness.address}
-                        onChange={(e) => setNewBusiness({ ...newBusiness, address: e.target.value })}
-                        className="border-slate-300 focus:border-slate-400 focus:ring-slate-400"
-                      />
-                    </div>
+                      <div className="space-y-4">
+                        {/* Business Name */}
+                        <div>
+                          <label className="block text-sm font-medium text-blue-800 mb-2">Business Name *</label>
+                          <Input
+                            placeholder="Enter business name..."
+                            value={newBusiness.name}
+                            onChange={(e) => setNewBusiness({ ...newBusiness, name: e.target.value })}
+                            className="border-slate-300 focus:border-slate-400 focus:ring-slate-400"
+                          />
+                        </div>
+                        {/* Business Type */}
+                        <div>
+                          <label className="block text-sm font-medium text-blue-800 mb-2">Business Type</label>
+                          <div className="flex flex-wrap gap-2">
+                        {[...(validBusinessTypes as unknown as string[])].filter(type => type !== "All").map(type => (
+                              <Button
+                                key={type}
+                                variant={newBusiness.type === type ? "default" : "outline"}
+                                size="sm"
+                            onClick={() => setNewBusiness({ ...newBusiness, type: type as z.infer<typeof BusinessTypeSchema> })}
+                                className={newBusiness.type === type ? "bg-slate-300  text-slate-800 hover:bg-slate-300" : "border-slate-300 text-slate-600 hover:bg-slate-50"}
+                              >
+                                {type}
+                              </Button>
+                            ))}
+                          </div>
+                        </div>
+                        {/* Address */}
+                        <div>
+                          <label className="block text-sm font-medium text-blue-800 mb-2">Address *</label>
+                          <Input
+                            placeholder="Enter business address..."
+                            value={newBusiness.address}
+                            onChange={(e) => setNewBusiness({ ...newBusiness, address: e.target.value })}
+                            className="border-slate-300 focus:border-slate-400 focus:ring-slate-400"
+                          />
+                        </div>
                     {/* City Select */}
                     <div>
                       <label className="block text-sm font-medium text-blue-800 mb-2">City *</label>
@@ -853,23 +853,23 @@ export default function LocalReviewsPage({ loaderData }: Route.ComponentProps) {
                         </SelectContent>
                       </Select>
                     </div>
-                    {/* Price Range */}
-                    <div>
-                      <label className="block text-sm font-medium text-blue-800 mb-2">Price Range</label>
-                      <div className="flex gap-2">
-                        {validPriceRanges.filter(range => range !== "All").map((range) => (
-                          <Button
-                            key={range}
-                            variant={newBusiness.priceRange === range ? "default" : "outline"}
-                            size="sm"
-                            onClick={() => setNewBusiness({ ...newBusiness, priceRange: range })}
-                            className={newBusiness.priceRange === range ? "bg-slate-300  text-slate-800 hover:bg-slate-300" : "border-slate-300 text-slate-600 hover:bg-slate-50"}
-                          >
-                            {range}
-                          </Button>
-                        ))}
-                      </div>
-                    </div>
+                        {/* Price Range */}
+                        <div>
+                          <label className="block text-sm font-medium text-blue-800 mb-2">Price Range</label>
+                          <div className="flex gap-2">
+                            {validPriceRanges.filter(range => range !== "All").map((range) => (
+                              <Button
+                                key={range}
+                                variant={newBusiness.priceRange === range ? "default" : "outline"}
+                                size="sm"
+                                onClick={() => setNewBusiness({ ...newBusiness, priceRange: range })}
+                                className={newBusiness.priceRange === range ? "bg-slate-300  text-slate-800 hover:bg-slate-300" : "border-slate-300 text-slate-600 hover:bg-slate-50"}
+                              >
+                                {range}
+                              </Button>
+                            ))}
+                          </div>
+                        </div>
                     {/* Continue 버튼 */}
                     {isEditingBusiness ? (
                       <Button
@@ -893,128 +893,128 @@ export default function LocalReviewsPage({ loaderData }: Route.ComponentProps) {
                         {addError}
                       </div>
                     )}
+                    </div>
                   </div>
-                </div>
               </TabsContent>
             </Tabs>
           )}
           {/* 리뷰 작성 폼 */}
           {reviewStep === 'write-review' && selectedBusiness && (
-            <Form method="post" id="review-form" className="space-y-4">
-              <input type="hidden" name="businessId" value={selectedBusiness?.id} />
-              {/* Error/Success Display */}
-              {actionData?.error && (
-                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md">
-                  {actionData.error}
-                </div>
+                  <Form method="post" id="review-form" className="space-y-4">
+                    <input type="hidden" name="businessId" value={selectedBusiness?.id} />
+                    {/* Error/Success Display */}
+                    {actionData?.error && (
+                      <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md">
+                        {actionData.error}
+                      </div>
+                    )}
+                    {actionData && !('error' in actionData) && actionData.data && (
+                      <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-md">
+                        Review submitted successfully! The page will reload shortly.
+                      </div>
+                    )}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Rating</label>
+                      <div className="flex items-center gap-1">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <button
+                            key={star}
+                            type="button"
+                            onClick={() => setNewReview({ ...newReview, rating: star })}
+                            className="text-2xl hover:scale-110 transition-transform"
+                          >
+                            <svg
+                              className={`w-8 h-8 ${star <= newReview.rating ? "text-yellow-400" : "text-gray-300"}`}
+                              fill="currentColor"
+                              viewBox="0 0 20 20"
+                            >
+                              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                            </svg>
+                          </button>
+                        ))}
+                        <span className="ml-2 text-sm text-gray-600">{newReview.rating}/5</span>
+                      </div>
+                      <input type="hidden" name="rating" value={newReview.rating} />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Review</label>
+                      <textarea
+                        name="content"
+                        className="w-full min-h-[120px] p-3 border rounded-md resize-none focus:outline-none focus:ring-2 focus:ring-ring"
+                        placeholder="Share your experience..."
+                        value={newReview.review}
+                        onChange={(e) => setNewReview({ ...newReview, review: e.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Price Range</label>
+                      <div className="flex gap-2">
+                        {validPriceRanges.filter(range => range !== "All").map((range) => (
+                          <Button
+                            key={range}
+                            variant={newReview.priceRange === range ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => setNewReview({ ...newReview, priceRange: range })}
+                          >
+                            {range}
+                          </Button>
+                        ))}
+                      </div>
+                      <input type="hidden" name="tags" value={JSON.stringify([newReview.priceRange])} />
+                    </div>
+                  </Form>
               )}
-              {actionData && !('error' in actionData) && actionData.data && (
-                <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-md">
-                  Review submitted successfully! The page will reload shortly.
-                </div>
-              )}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Rating</label>
-                <div className="flex items-center gap-1">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <button
-                      key={star}
-                      type="button"
-                      onClick={() => setNewReview({ ...newReview, rating: star })}
-                      className="text-2xl hover:scale-110 transition-transform"
-                    >
-                      <svg
-                        className={`w-8 h-8 ${star <= newReview.rating ? "text-yellow-400" : "text-gray-300"}`}
-                        fill="currentColor"
-                        viewBox="0 0 20 20"
-                      >
-                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                      </svg>
-                    </button>
-                  ))}
-                  <span className="ml-2 text-sm text-gray-600">{newReview.rating}/5</span>
-                </div>
-                <input type="hidden" name="rating" value={newReview.rating} />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Review</label>
-                <textarea
-                  name="content"
-                  className="w-full min-h-[120px] p-3 border rounded-md resize-none focus:outline-none focus:ring-2 focus:ring-ring"
-                  placeholder="Share your experience..."
-                  value={newReview.review}
-                  onChange={(e) => setNewReview({ ...newReview, review: e.target.value })}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Price Range</label>
-                <div className="flex gap-2">
-                  {validPriceRanges.filter(range => range !== "All").map((range) => (
-                    <Button
-                      key={range}
-                      variant={newReview.priceRange === range ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => setNewReview({ ...newReview, priceRange: range })}
-                    >
-                      {range}
-                    </Button>
-                  ))}
-                </div>
-                <input type="hidden" name="tags" value={JSON.stringify([newReview.priceRange])} />
-              </div>
-            </Form>
-          )}
-          <DialogFooter className="flex gap-2 pt-4">
-            {reviewStep === 'write-review' && (
-              <Button
-                variant="outline"
+            <DialogFooter className="flex gap-2 pt-4">
+                {reviewStep === 'write-review' && (
+                  <Button 
+                    variant="outline"
                 onClick={() => {
                   setReviewStep('select-business');
                   setSelectedBusiness(null);
                 }}
-              >
-                Back
-              </Button>
-            )}
+                  >
+                    Back
+                  </Button>
+                )}
             {reviewStep === 'write-review' ? (
-              <Button
-                type="submit"
-                form="review-form"
-                className="flex-1"
-                disabled={!newReview.review.trim()}
-              >
-                Submit Review
-              </Button>
+                  <Button 
+                    type="submit"
+                    form="review-form"
+                    className="flex-1"
+                    disabled={!newReview.review.trim()}
+                  >
+                    Submit Review
+                  </Button>
             ) : (
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setShowReviewForm(false);
-                  setSelectedBusiness(null);
-                  setReviewStep('select-business');
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    setShowReviewForm(false);
+                    setSelectedBusiness(null);
+                    setReviewStep('select-business');
                   setBusinessTab('existing');
-                  setBusinessSearchQuery("");
-                  setNewReview({ rating: 5, review: "", priceRange: "$" as z.infer<typeof PriceRangeSchema>, tags: [] });
-                  setNewBusiness({
-                    name: "",
-                    type: "Restaurant" as z.infer<typeof BusinessTypeSchema>,
-                    location: urlLocation as z.infer<typeof LocationSchema>,
-                    priceRange: "$" as z.infer<typeof PriceRangeSchema>,
-                    tags: [],
-                    address: "",
-                    phone: "",
-                    website: "",
+                    setBusinessSearchQuery("");
+                    setNewReview({ rating: 5, review: "", priceRange: "$" as z.infer<typeof PriceRangeSchema>, tags: [] });
+                    setNewBusiness({
+                      name: "",
+                      type: "Restaurant" as z.infer<typeof BusinessTypeSchema>,
+                      location: urlLocation as z.infer<typeof LocationSchema>,
+                      priceRange: "$" as z.infer<typeof PriceRangeSchema>,
+                      tags: [],
+                      address: "",
+                      phone: "",
+                      website: "",
                     description: "",
                     city: ""
-                  });
-                }}
-              >
-                Cancel
-              </Button>
+                    });
+                  }}
+                >
+                  Cancel
+                </Button>
             )}
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
     </div>
   );
 } 
