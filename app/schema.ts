@@ -560,7 +560,7 @@ export const localBusinesses = pgTable("local_businesses", {
 
 // Local business reviews table
 export const localBusinessReviews = pgTable("local_business_reviews", {
-  business_id: bigint("business_id", {mode: "number"}).notNull().references(() => localBusinesses.id),
+  business_id: bigint("business_id", {mode: "number"}).notNull().references(() => localBusinesses.id, {onDelete: "cascade"}),
   rating: integer("rating").notNull(),
   author: uuid().notNull().references(() => userProfiles.profile_id),
   author_avatar: text("author_avatar"),

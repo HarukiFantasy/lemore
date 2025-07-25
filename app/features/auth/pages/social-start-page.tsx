@@ -35,8 +35,8 @@ export const loader = async ({ params, request }: Route.LoaderArgs) => {
   }
   
   // Google, Facebook는 Supabase OAuth 사용
-  // const redirectTo = `${origin}/auth/social/${provider}/complete`;
-  const redirectTo = `http://localhost:5173`;
+  const redirectTo = `${origin}/auth/social/${provider}/complete`;
+  // const redirectTo = `http://localhost:5173`;
   const { client, headers } = makeSSRClient(request);
   const { data: { url: authUrl } , error } = await client.auth.signInWithOAuth({
     provider,
