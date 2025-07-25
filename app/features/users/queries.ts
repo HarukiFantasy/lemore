@@ -15,7 +15,7 @@ export const getUserByProfileId = async (client: SupabaseClient<Database>, { pro
     .from("users_view")
     .select("*")
     .eq("profile_id", profileId)
-    .single();
+    .maybeSingle();
     
   if (error) throw new Error(error.message);
   return data;
@@ -39,7 +39,7 @@ export const getDashboard = async (client: SupabaseClient<Database>, { profileId
     .from("user_dashboard_view")
     .select("*")
     .eq("profile_id", profileId)
-    .single();
+    .maybeSingle();
     
   if (error) throw new Error(error.message);
   return data;
@@ -225,7 +225,7 @@ export const sendMessage = async (
       seen: false
     })
     .select()
-    .single();
+    .maybeSingle();
     
   if (error) throw new Error(error.message);
   return data;
@@ -242,10 +242,11 @@ export const createConversation = async (
       product_id: productId || null
     } as any)
     .select()
-    .single();
+    .maybeSingle();
     
   if (conversationError) throw new Error(conversationError.message);
   
+  if (!conversation) throw new Error('Failed to create conversation');
   // 참가자 추가
   const participants = participantIds.map(profileId => ({
     conversation_id: conversation.conversation_id,
@@ -342,7 +343,7 @@ export const getUserSalesStatsByProfileId = async (client: SupabaseClient<Databa
     .from("user_sales_stats_view")
     .select("*")
     .eq("profile_id", profileId)
-    .single();
+    .maybeSingle();
   if (error) throw new Error(error.message);
   return data;
 };
