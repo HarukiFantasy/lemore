@@ -48,4 +48,9 @@ export default [
   ]),
   route("/users/:username", "features/users/pages/usersProfile-page.tsx"),
   route("/api/send-welcome-email", "api/send-welcome-email.ts"),
+  
+  // Legal pages for Facebook OAuth
+  route("/privacy-policy", "common/pages/privacy-policy-page.tsx"),
+  route("/terms-of-service", "common/pages/terms-of-service-page.tsx"),
+  route("/data-deletion", "common/pages/data-deletion-page.tsx"),
 ] satisfies RouteConfig;
