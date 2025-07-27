@@ -110,19 +110,16 @@ export default function App({ loaderData }: Route.ComponentProps) {
   const navigation = useNavigation();
   const isLoading = navigation.state === "loading";
   const isLoggedIn = user !== null;
-  
-// 🔐 클라이언트용 supabase 생성
-const supabase = createBrowserClient(
-  import.meta.env.PUBLIC_SUPABASE_URL!,
-  import.meta.env.PUBLIC_SUPABASE_ANON_KEY!
-);
+
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data, error }) => {
-      console.log("📦 Session:", data?.session);
-      console.log("🙀 Error:", error);
-    });
-  }, []);
+    if (client && typeof client.auth === 'object' && client.auth !== null) {
+      client.auth.getSession().then(({ data, error }: { data: any, error: any }) => {
+        console.log("📦 Session:", data?.session);
+        console.log("🙀 Error:", error);
+      });
+    }
+  }, [client]);
 
   // Add global auth error handling
   useAuthErrorHandler();
