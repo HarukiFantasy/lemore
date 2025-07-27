@@ -16,6 +16,8 @@ import { cn } from './lib/utils';
 import { getUserByProfileId } from "./features/users/queries";
 import { useAuthErrorHandler } from "./hooks/use-auth-error-handler";
 import * as Sentry from "@sentry/react-router";
+import { useEffect } from 'react';
+import { createBrowserClient } from '@supabase/ssr';
 
 
 export const links: Route.LinksFunction = () => [
@@ -66,22 +68,22 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
       await client.auth.signOut();
       
       // Return user as null to force logout state
-      return { user: null, userProfile: null };
+      return { user: null, userProfile: null, client };
     }
     
     if (user) {
       try {
         const userProfile = await getUserByProfileId(client, { profileId: user?.id ?? null });
         console.log("✅ userProfile", userProfile);
-        return { user, userProfile };
+        return { user, userProfile, client };
       } catch (error) {
         // User profile not found, but user is authenticated
         console.warn('User profile not found:', error);
-        return { user, userProfile: null };
+        return { user, userProfile: null, client };
       }
     }
     
-    return { user: null, userProfile: null };
+    return { user: null, userProfile: null, client };
   } catch (error: any) {
     // Handle any other authentication-related errors
     console.error('Root loader authentication error:', error);
@@ -98,17 +100,30 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
     }
     
     // Return user as null to ensure clean state
-    return { user: null, userProfile: null };
+    return { user: null, userProfile: null, client };
   }
 }
 
 export default function App({ loaderData }: Route.ComponentProps) {
-  const { user } = loaderData;
+  const { user, client } = loaderData;
   const { pathname } = useLocation();
   const navigation = useNavigation();
   const isLoading = navigation.state === "loading";
   const isLoggedIn = user !== null;
   
+// 🔐 클라이언트용 supabase 생성
+const supabase = createBrowserClient(
+  import.meta.env.PUBLIC_SUPABASE_URL!,
+  import.meta.env.PUBLIC_SUPABASE_ANON_KEY!
+);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data, error }) => {
+      console.log("📦 Session:", data?.session);
+      console.log("🙀 Error:", error);
+    });
+  }, []);
+
   // Add global auth error handling
   useAuthErrorHandler();
   
