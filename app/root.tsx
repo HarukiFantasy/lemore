@@ -72,13 +72,15 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
     }
     
     if (user) {
+      console.log("🔍 User found in session:", user.id, user.email);
       try {
         const userProfile = await getUserByProfileId(client, { profileId: user?.id ?? null });
         console.log("✅ userProfile", userProfile);
         return { user, userProfile, client };
       } catch (error) {
         // User profile not found, but user is authenticated
-        console.warn('User profile not found:', error);
+        console.warn('❌ User profile not found:', error);
+        console.warn('❌ User ID:', user.id);
         return { user, userProfile: null, client };
       }
     }

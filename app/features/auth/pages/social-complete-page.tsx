@@ -157,6 +157,39 @@ export const loader = async ({ params, request }: Route.LoaderArgs) => {
   }
   
   console.log('✅ Facebook/Google OAuth - session exchanged successfully:', sessionData);
+  
+  // 사용자 프로필이 없으면 생성
+  if (sessionData.user) {
+    try {
+      const { data: existingProfile } = await client
+        .from('user_profiles')
+        .select('*')
+        .eq('profile_id', sessionData.user.id)
+        .maybeSingle();
+      
+      if (!existingProfile) {
+        console.log('🔧 Creating user profile for:', sessionData.user.email);
+        const { error: profileError } = await client
+          .from('user_profiles')
+          .insert({
+            profile_id: sessionData.user.id,
+            username: sessionData.user.email?.split('@')[0] || `user_${Date.now()}`,
+            email: sessionData.user.email,
+            full_name: sessionData.user.user_metadata?.full_name || sessionData.user.user_metadata?.name,
+            avatar_url: sessionData.user.user_metadata?.avatar_url,
+          });
+        
+        if (profileError) {
+          console.error('❌ Failed to create user profile:', profileError);
+        } else {
+          console.log('✅ User profile created successfully');
+        }
+      }
+    } catch (profileError) {
+      console.error('❌ Error checking/creating user profile:', profileError);
+    }
+  }
+  
   return redirect('/', { headers });
 };
 
