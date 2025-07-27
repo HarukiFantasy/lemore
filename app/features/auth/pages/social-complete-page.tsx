@@ -158,6 +158,15 @@ export const loader = async ({ params, request }: Route.LoaderArgs) => {
   
   console.log('✅ Facebook/Google OAuth - session exchanged successfully:', sessionData);
   
+  // 세션 확인
+  if (!sessionData.session) {
+    console.error('❌ No session after exchange');
+    throw new Error('No session after OAuth exchange');
+  }
+  
+  console.log('🔍 Session ID:', sessionData.session.access_token ? 'exists' : 'missing');
+  console.log('🔍 User ID:', sessionData.user?.id);
+  
   // 사용자 프로필이 없으면 생성
   if (sessionData.user) {
     try {

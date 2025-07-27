@@ -117,6 +117,10 @@ export default function App({ loaderData }: Route.ComponentProps) {
   useEffect(() => {
     browserClient.auth.getSession().then(({ data, error }: { data: any, error: any }) => {
       console.log("📦 Session:", data?.session);
+      console.log("📦 Session ID:", data?.session?.access_token ? "exists" : "missing");
+      console.log("📦 User ID:", data?.session?.user?.id);
+      console.log("📦 User Email:", data?.session?.user?.email);
+      console.log("📦 User Metadata:", data?.session?.user?.user_metadata);
       console.log("🙀 Error:", error);
     });
   }, []);
