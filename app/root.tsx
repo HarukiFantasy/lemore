@@ -111,6 +111,20 @@ export default function App({ loaderData }: Route.ComponentProps) {
   const isLoading = navigation.state === "loading";
   const isLoggedIn = user !== null;
 
+  const supabase = createBrowserClient(
+    import.meta.env.PUBLIC_SUPABASE_URL!,
+    import.meta.env.PUBLIC_SUPABASE_ANON_KEY!
+  );
+  
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data, error }: { data: any, error: any }) => {
+      console.log("📦 Session:", data?.session);
+      console.log("🙀 Error:", error);
+    });
+  }, [supabase]);
+
+  
+  
   // Add global auth error handling
   useAuthErrorHandler();
   
