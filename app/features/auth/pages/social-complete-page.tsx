@@ -123,7 +123,17 @@ export const loader = async ({ params, request }: Route.LoaderArgs) => {
       }
 
       // 5. 성공적으로 로그인되면 홈페이지로 리다이렉트
-      return redirect('/', { headers });
+      // 세션 헤더를 포함하여 리다이렉트
+      const { data: sessionData } = await client.auth.getSession();
+      console.log('🔍 Session after Line login:', sessionData);
+      
+      if (sessionData.session) {
+        console.log('✅ Session found, redirecting to home');
+        return redirect('/', { headers });
+      } else {
+        console.error('❌ No session after login');
+        return redirect('/auth/login?error=session_failed');
+      }
 
     } catch (error) {
       console.error('Line OAuth processing error:', error);
@@ -137,8 +147,16 @@ export const loader = async ({ params, request }: Route.LoaderArgs) => {
     return redirect('/auth/login');
   }
   const { client, headers } = makeSSRClient(request);
-  const { error } = await client.auth.exchangeCodeForSession(code);
-  if (error) { throw error; }
+  
+  console.log('🔍 Facebook/Google OAuth - exchanging code for session');
+  const { data: sessionData, error } = await client.auth.exchangeCodeForSession(code);
+  
+  if (error) { 
+    console.error('❌ Facebook/Google OAuth error:', error);
+    throw error; 
+  }
+  
+  console.log('✅ Facebook/Google OAuth - session exchanged successfully:', sessionData);
   return redirect('/', { headers });
 };
 
