@@ -60,7 +60,7 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
     
     // If there's an authentication error (like refresh token not found)
     if (authError) {
-      throw authError;
+      console.warn('Authentication error detected:', authError.message);
       
       // Clear the invalid session
       await client.auth.signOut();
@@ -75,14 +75,17 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
         console.log("✅ userProfile", userProfile);
         return { user, userProfile };
       } catch (error) {
-        throw error;
+        // User profile not found, but user is authenticated
+        console.warn('User profile not found:', error);
         return { user, userProfile: null };
       }
     }
     
     return { user: null, userProfile: null };
   } catch (error: any) {
-    throw error;
+    // Handle any other authentication-related errors
+    console.error('Root loader authentication error:', error);
+    
     // If it's a refresh token error or similar, clear the session
     if (error?.message?.includes('refresh_token_not_found') || 
         error?.message?.includes('Invalid Refresh Token') ||
@@ -90,7 +93,7 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
       try {
         await client.auth.signOut();
       } catch (signOutError) {
-        throw signOutError;
+        console.warn('Error during forced sign out:', signOutError);
       }
     }
     
