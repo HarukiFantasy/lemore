@@ -17,7 +17,7 @@ import { getUserByProfileId } from "./features/users/queries";
 import { useAuthErrorHandler } from "./hooks/use-auth-error-handler";
 import * as Sentry from "@sentry/react-router";
 import { useEffect } from 'react';
-import { createBrowserClient } from '@supabase/ssr';
+import { browserClient } from './supa-client';
 
 
 export const links: Route.LinksFunction = () => [
@@ -111,17 +111,13 @@ export default function App({ loaderData }: Route.ComponentProps) {
   const isLoading = navigation.state === "loading";
   const isLoggedIn = user !== null;
 
-  const supabase = createBrowserClient(
-    import.meta.env.PUBLIC_SUPABASE_URL!,
-    import.meta.env.PUBLIC_SUPABASE_ANON_KEY!
-  );
-  
+  // 세션 확인
   useEffect(() => {
-    supabase.auth.getSession().then(({ data, error }: { data: any, error: any }) => {
+    browserClient.auth.getSession().then(({ data, error }: { data: any, error: any }) => {
       console.log("📦 Session:", data?.session);
       console.log("🙀 Error:", error);
     });
-  }, [supabase]);
+  }, []);
 
   
   
