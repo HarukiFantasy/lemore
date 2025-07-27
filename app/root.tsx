@@ -74,6 +74,7 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
     if (user) {
       console.log("🔍 User found in session:", user.id, user.email);
       try {
+        console.log("🔍 Searching for user profile with ID:", user?.id);
         const userProfile = await getUserByProfileId(client, { profileId: user?.id ?? null });
         console.log("✅ userProfile", userProfile);
         return { user, userProfile, client };
@@ -81,6 +82,32 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
         // User profile not found, but user is authenticated
         console.warn('❌ User profile not found:', error);
         console.warn('❌ User ID:', user.id);
+        
+        // 사용자 프로필이 없으면 자동 생성
+        try {
+          console.log('🔧 Creating user profile for:', user.email);
+          const { error: profileError } = await client
+            .from('user_profiles')
+            .insert({
+              profile_id: user.id,
+              username: user.email?.split('@')[0] || `user_${Date.now()}`,
+              email: user.email,
+              full_name: user.user_metadata?.full_name || user.user_metadata?.name,
+              avatar_url: user.user_metadata?.avatar_url,
+            });
+          
+          if (profileError) {
+            console.error('❌ Failed to create user profile:', profileError);
+          } else {
+            console.log('✅ User profile created successfully');
+            // 생성된 프로필 다시 조회
+            const newUserProfile = await getUserByProfileId(client, { profileId: user.id });
+            return { user, userProfile: newUserProfile, client };
+          }
+        } catch (createError) {
+          console.error('❌ Error creating user profile:', createError);
+        }
+        
         return { user, userProfile: null, client };
       }
     }

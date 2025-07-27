@@ -11,11 +11,35 @@ export const getUser = async (client: SupabaseClient<Database>) => {
 export const getUserByProfileId = async (client: SupabaseClient<Database>, { profileId }: { profileId: string|null }) => {
   if (!profileId) throw new Error("Profile ID is required");
   
+  console.log("🔍 getUserByProfileId - searching for profile_id:", profileId);
+  
+  // 먼저 user_profiles 테이블에서 직접 조회
+  const { data: profileData, error: profileError } = await client
+    .from("user_profiles")
+    .select("*")
+    .eq("profile_id", profileId)
+    .maybeSingle();
+    
+  console.log("🔍 getUserByProfileId - profile query result:", { profileData, profileError });
+  
+  if (profileError) {
+    console.error("❌ Profile query error:", profileError);
+    throw new Error(profileError.message);
+  }
+  
+  if (!profileData) {
+    console.log("❌ No profile found for profile_id:", profileId);
+    throw new Error("Profile not found");
+  }
+  
+  // users_view에서 조회
   const { data, error } = await client
     .from("users_view")
     .select("*")
     .eq("profile_id", profileId)
     .maybeSingle();
+    
+  console.log("🔍 getUserByProfileId - users_view query result:", { data, error });
     
   if (error) throw new Error(error.message);
   return data;
