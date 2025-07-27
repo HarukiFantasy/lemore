@@ -111,16 +111,6 @@ export default function App({ loaderData }: Route.ComponentProps) {
   const isLoading = navigation.state === "loading";
   const isLoggedIn = user !== null;
 
-
-  useEffect(() => {
-    if (client && typeof client.auth === 'object' && client.auth !== null) {
-      client.auth.getSession().then(({ data, error }: { data: any, error: any }) => {
-        console.log("📦 Session:", data?.session);
-        console.log("🙀 Error:", error);
-      });
-    }
-  }, [client]);
-
   // Add global auth error handling
   useAuthErrorHandler();
   
