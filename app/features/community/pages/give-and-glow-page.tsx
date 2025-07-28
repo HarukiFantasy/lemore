@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~
 import type { Route } from './+types/give-and-glow-page';
 import { getCategoryColors } from "~/lib/utils";
 import { GiveAndGlowCard } from '../components/give-and-glow-card';
-import { getGiveAndGlowReviews } from '../queries';
+import { getGiveAndGlowReviews, getUserProductsForGiveAndGlow, getUserStatsMapForGiveAndGlow } from '../queries';
 import { PRODUCT_CATEGORIES } from '~/features/products/constants';
 import { makeSSRClient } from "~/supa-client";
 import { getUserStatsGiveAndGlow } from '~/features/community/queries';
@@ -77,23 +77,17 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
   // Get current user's products if logged in
   let userProducts: any[] = [];
   if (user) {
-    const { data: products, error: productsError } = await client
-      .from("products_listings_view")
-      .select("*")
-      .eq("seller_id", user.id)
-      .eq("is_sold", false) // Only show available products
-      .order("created_at", { ascending: false });
-      
-    if (productsError) {
-      throw new Error("Error fetching user products");
-    } else {
-      userProducts = products || [];
+    try {
+      userProducts = await getUserProductsForGiveAndGlow(client, user.id);
+    } catch (error) {
+      console.error("Error fetching user products:", error);
+      userProducts = [];
     }
   }
   
   // Get all users for the dropdown
   const { data: users, error: usersError } = await client
-    .from("users_view")
+    .from("user_profiles")
     .select("profile_id, username, avatar_url")
     .order("username", { ascending: true });
     
@@ -102,27 +96,7 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
   }
   
   // 각 리뷰의 giver와 receiver에 대한 통계 수집
-  
-    const uniqueProfileIds = Array.from(
-      new Set(filteredReviews.flatMap(r => [r.giver_profile_id, r.receiver_profile_id]).filter(Boolean))
-    );
-    const userStatsMap: Record<string, any> = {};
-    for (const profileId of uniqueProfileIds) {
-      try {
-        const stats = await getUserStatsGiveAndGlow(client, { profileId });
-        userStatsMap[profileId] = {
-          totalListings: stats.total_listings,
-          totalLikes: stats.total_likes,
-          totalSold: stats.total_sold,
-          level: stats.level, // level 정보 포함
-          sellerJoinedAt: stats.joined_at
-            ? new Date(stats.joined_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
-            : undefined,
-        };
-      } catch {
-        userStatsMap[profileId] = null;
-      }
-    }
+  const userStatsMap = await getUserStatsMapForGiveAndGlow(client, filteredReviews);
   
   return { 
     reviews: filteredReviews, 

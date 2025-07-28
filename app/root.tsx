@@ -90,9 +90,8 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
             .from('user_profiles')
             .insert({
               profile_id: user.id,
-              username: user.email?.split('@')[0] || `user_${Date.now()}`,
+              username: `${user.email?.split('@')[0] || 'user'}_${Date.now()}`,
               email: user.email,
-              full_name: user.user_metadata?.full_name || user.user_metadata?.name,
               avatar_url: user.user_metadata?.avatar_url,
             });
           
@@ -149,6 +148,16 @@ export default function App({ loaderData }: Route.ComponentProps) {
       console.log("📦 User Email:", data?.session?.user?.email);
       console.log("📦 User Metadata:", data?.session?.user?.user_metadata);
       console.log("🙀 Error:", error);
+      
+      // 추가: 사용자 프로필 정보 확인
+      if (data?.session?.user?.id) {
+        console.log("🔍 Checking user profile for ID:", data.session.user.id);
+        // 여기서 직접 프로필 조회 테스트
+        browserClient.from('user_profiles').select('*').eq('profile_id', data.session.user.id).maybeSingle()
+          .then(({ data: profile, error: profileError }) => {
+            console.log("🔍 Direct profile query result:", { profile, profileError });
+          });
+      }
     });
   }, []);
 

@@ -127,3 +127,58 @@ export async function getUserStatsGiveAndGlow(client: any, params: { username?: 
   if (error || !data) throw error || new Error('User stats not found');
   return data;
 }
+
+/**
+ * Get user's available products for Give and Glow page
+ * @param client Supabase client
+ * @param userId User's profile ID
+ */
+export const getUserProductsForGiveAndGlow = async (
+  client: SupabaseClient<Database>,
+  userId: string
+) => {
+  const { data, error } = await client
+    .from("products_listings_view")
+    .select("*")
+    .eq("seller_id", userId)
+    .eq("is_sold", false) // Only show available products
+    .order("created_at", { ascending: false });
+    
+  if (error) throw new Error("Error fetching user products");
+  return data || [];
+};
+
+/**
+ * Get user stats map for Give and Glow page
+ * @param client Supabase client
+ * @param reviews Array of reviews to extract profile IDs from
+ */
+export const getUserStatsMapForGiveAndGlow = async (
+  client: SupabaseClient<Database>,
+  reviews: any[]
+) => {
+  const uniqueProfileIds = Array.from(
+    new Set(reviews.flatMap(r => [r.giver_profile_id, r.receiver_profile_id]).filter(Boolean))
+  );
+  
+  const userStatsMap: Record<string, any> = {};
+  
+  for (const profileId of uniqueProfileIds) {
+    try {
+      const stats = await getUserStatsGiveAndGlow(client, { profileId });
+      userStatsMap[profileId] = {
+        totalListings: stats.total_listings,
+        totalLikes: stats.total_likes,
+        totalSold: stats.total_sold,
+        level: stats.level, // level 정보 포함
+        sellerJoinedAt: stats.joined_at
+          ? new Date(stats.joined_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
+          : undefined,
+      };
+    } catch {
+      userStatsMap[profileId] = null;
+    }
+  }
+  
+  return userStatsMap;
+};

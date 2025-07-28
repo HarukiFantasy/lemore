@@ -3,7 +3,7 @@ import { redirect } from 'react-router';
 import { Database } from '~/supa-client';
 
 export const getUser = async (client: SupabaseClient<Database>) => {
-  const { data, error } = await client.from("users_view").select("*");
+  const { data, error } = await client.from("user_profiles").select("*");
   if (error) throw new Error(error.message);
   return data;
 };
@@ -14,13 +14,17 @@ export const getUserByProfileId = async (client: SupabaseClient<Database>, { pro
   console.log("🔍 getUserByProfileId - searching for profile_id:", profileId);
   
   // 먼저 user_profiles 테이블에서 직접 조회
+  console.log("🔍 getUserByProfileId - searching in user_profiles table for profile_id:", profileId);
   const { data: profileData, error: profileError } = await client
     .from("user_profiles")
     .select("*")
     .eq("profile_id", profileId)
     .maybeSingle();
     
-  console.log("🔍 getUserByProfileId - profile query result:", { profileData, profileError });
+  console.log("🔍 getUserByProfileId - profile query result:", { 
+    profileData: profileData ? "found" : "not found", 
+    profileError: profileError?.message 
+  });
   
   if (profileError) {
     console.error("❌ Profile query error:", profileError);
@@ -32,14 +36,14 @@ export const getUserByProfileId = async (client: SupabaseClient<Database>, { pro
     throw new Error("Profile not found");
   }
   
-  // users_view에서 조회
+  // user_profiles에서 직접 조회 (users_view 대신)
   const { data, error } = await client
-    .from("users_view")
+    .from("user_profiles")
     .select("*")
     .eq("profile_id", profileId)
     .maybeSingle();
     
-  console.log("🔍 getUserByProfileId - users_view query result:", { data, error });
+  console.log("🔍 getUserByProfileId - user_profiles query result:", { data, error });
     
   if (error) throw new Error(error.message);
   return data;
@@ -47,7 +51,7 @@ export const getUserByProfileId = async (client: SupabaseClient<Database>, { pro
 
 export const getUserByUsername = async (client: SupabaseClient<Database>, { username }: { username: string }) => {
   const { data, error } = await client
-    .from("users_view")
+    .from("user_profiles")
     .select("*")
     .eq("username", username)
     .maybeSingle();
@@ -324,9 +328,9 @@ export const searchUsers = async (
   { searchTerm }: { searchTerm: string }
 ) => {
   const { data, error } = await client
-    .from("users_view")
-    .select("profile_id, username, display_name, avatar_url")
-    .or(`username.ilike.%${searchTerm}%,display_name.ilike.%${searchTerm}%`)
+    .from("user_profiles")
+    .select("profile_id, username, avatar_url")
+    .or(`username.ilike.%${searchTerm}%`)
     .limit(10);
     
   if (error) throw new Error(error.message);

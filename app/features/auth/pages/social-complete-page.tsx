@@ -149,6 +149,7 @@ export const loader = async ({ params, request }: Route.LoaderArgs) => {
   const { client, headers } = makeSSRClient(request);
   
   console.log('🔍 Facebook/Google OAuth - exchanging code for session');
+  console.log('🔍 Code received:', code ? 'yes' : 'no');
   const { data: sessionData, error } = await client.auth.exchangeCodeForSession(code);
   
   if (error) { 
@@ -178,15 +179,14 @@ export const loader = async ({ params, request }: Route.LoaderArgs) => {
       
       if (!existingProfile) {
         console.log('🔧 Creating user profile for:', sessionData.user.email);
-        const { error: profileError } = await client
-          .from('user_profiles')
-          .insert({
-            profile_id: sessionData.user.id,
-            username: sessionData.user.email?.split('@')[0] || `user_${Date.now()}`,
-            email: sessionData.user.email,
-            full_name: sessionData.user.user_metadata?.full_name || sessionData.user.user_metadata?.name,
-            avatar_url: sessionData.user.user_metadata?.avatar_url,
-          });
+                  const { error: profileError } = await client
+            .from('user_profiles')
+            .insert({
+              profile_id: sessionData.user.id,
+              username: `${sessionData.user.email?.split('@')[0] || 'user'}_${Date.now()}`,
+              email: sessionData.user.email,
+              avatar_url: sessionData.user.user_metadata?.avatar_url,
+            });
         
         if (profileError) {
           console.error('❌ Failed to create user profile:', profileError);
