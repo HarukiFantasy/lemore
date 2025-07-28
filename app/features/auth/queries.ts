@@ -5,13 +5,18 @@ export const checkUsernameExists = async (
   { username }: { username: string }
 ) => {
   const { client } = makeSSRClient(request);
-  const { error } = await client
+  const { data, error } = await client
     .from("user_profiles")
     .select("profile_id")
     .eq("username", username)
     .maybeSingle();
+
   if (error) {
+    // Log the error for debugging, but treat it as non-existent for safety
+    console.error("Error checking username:", error);
     return false;
   }
-  return true;
+  
+  // Return true only if data is not null (i.e., username exists)
+  return data !== null;
 };
