@@ -53,24 +53,27 @@ export function UserStatsHoverCard({
           {children}
         </span>
       </HoverCardTrigger>
-      <HoverCardContent className="w-64 min-w-64 max-w-64">
-        <div className="flex flex-col gap-2">
-          <div className="flex items-center gap-2">
-            <span className="font-semibold text-sm">{userName}</span>
-            {/* Level Badge 추가 */}
-            {userStats?.level && (
-              <Badge variant="secondary" className="text-xs bg-purple-100 text-purple-700 border border-purple-200">
-                {userStats.level}
-              </Badge>
-            )}
-            <Link to={`/users/${userName}`}>
-              <Button variant="secondary" className="text-xs h-5 px-2">
-                ViewProfile
-              </Button>
-            </Link>
-            {(showAppreciationBadge) && (
-              <Badge variant="outline" className="text-xs bg-green-100 text-green-700">Appreciation</Badge>
-            )}
+      <HoverCardContent className="w-80 p-4">
+        <div className="flex flex-col gap-4">
+          <div className="flex items-center justify-between">
+            <div className="flex-1 flex items-center gap-2 min-w-0">
+              <span className="font-semibold text-sm truncate">{userName}</span>
+              {userStats?.level && (
+                <Badge variant="secondary" className="text-xs bg-purple-100 text-purple-700 border border-purple-200 flex-shrink-0">
+                  {userStats.level}
+                </Badge>
+              )}
+            </div>
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <Link to={`/users/${userName}`}>
+                <Button variant="secondary" className="text-xs h-5 px-2">
+                  ViewProfile
+                </Button>
+              </Link>
+              {(showAppreciationBadge) && (
+                <Badge variant="outline" className="text-xs bg-green-100 text-green-700">Appreciation</Badge>
+              )}
+            </div>
           </div>
           <div className="grid grid-cols-3 gap-2">
             <div className="flex items-center gap-2 text-xs text-gray-600">
@@ -86,7 +89,7 @@ export function UserStatsHoverCard({
               <span>Sold: {userStats?.totalSold ?? 'N/A'}</span>
             </div>
           </div>
-          <div className="pt-1 border-t border-gray-100">
+          <div className="pt-2 border-t border-gray-100">
             <div className="text-xs text-neutral-600">
               <span className="font-medium">Member since:</span> 
               <span className="ml-1">{userStats?.sellerJoinedAt ?? 'N/A'}</span>

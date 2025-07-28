@@ -77,16 +77,7 @@ export const loader: LoaderFunction = async ({ request }) => {
   const { client } = makeSSRClient(request);
   const userId = await getLoggedInUserId(client);
   
-  // 현재 인증된 사용자 정보도 확인
-  const { data: { user } } = await client.auth.getUser();
-  
   const notifications = (await getNotifications(client, { userId })) ?? [];
-  
-  // 데이터베이스에서 직접 확인
-  const { data: allNotifications, error: dbError } = await client
-    .from('user_notifications')
-    .select('*')
-    .eq('receiver_id', userId);
   
   return { notifications };
 };
@@ -250,8 +241,6 @@ export function NotificationsPage({ isOpen, onClose }: NotificationsPageProps) {
                 <h2 className="text-xl font-semibold">Notifications</h2>
                 <p className="text-sm text-muted-foreground">
                   {unreadCount > 0 ? `${unreadCount} new notifications` : 'All notifications checked'}
-                  <br />
-                  <span className="text-xs text-muted-foreground">Recent 1 week</span>
                 </p>
                 </div>
               </div>
@@ -293,7 +282,7 @@ export function NotificationsPage({ isOpen, onClose }: NotificationsPageProps) {
                     No unread notifications
                   </h3>
                   <p className="text-sm text-muted-foreground">
-                    No unread notifications in the last week.
+                    You're all caught up!
                   </p>
                 </div>
               ) : (

@@ -1,7 +1,6 @@
 import { Link, useSearchParams, useFetcher, useNavigate } from "react-router";
 import { z } from "zod";
 import { HeartIcon } from "lucide-react";
-import { ShineBorder } from "components/magicui/shine-border";
 import { UserStatsHoverCard } from "~/common/components/user-stats-hover-card";
 import { PRODUCT_CATEGORIES } from "../constants";
 import { Badge } from "../../../common/components/ui/badge";
@@ -163,12 +162,6 @@ export function ProductCard({
         active:scale-95 
         md:hover:scale-100
       ">
-        <ShineBorder 
-          borderWidth={2} 
-          duration={8} 
-          shineColor={["#fef3c7", "#fed7aa", "#fdba74"]}
-          className="opacity-0 md:group-hover:opacity-100 transition-opacity duration-300 rounded-lg"
-        />
         <div className="bg-white rounded-lg shadow h-full flex flex-col pb-2 
           active:bg-gray-50 
           md:active:bg-white

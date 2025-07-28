@@ -381,16 +381,12 @@ export const getNotifications = async (
   client: SupabaseClient<Database>,
   { userId }: { userId: string }
 ) => {
-  // 최근 일주일 전 날짜 계산
-  const oneWeekAgo = new Date();
-  oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
-  
   // @ts-ignore: notification_view may not be in generated types but exists in DB
   const { data, error } = await client
     .from('notification_view')
     .select('*')
     .eq('receiver_id', userId)
-    .gte('created_at', oneWeekAgo.toISOString()) // 최근 일주일치만
+    .eq('is_read', false) // 안 읽은 알림만 가져오기
     .order('created_at', { ascending: false });
   
   if (error) throw error;
