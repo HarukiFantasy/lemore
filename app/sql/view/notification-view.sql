@@ -1,5 +1,6 @@
 -- user_notifications + sender/receiver username join view
-CREATE OR REPLACE VIEW notification_view AS
+CREATE OR REPLACE VIEW notification_view
+with (security_invoker = true) AS
 SELECT
     n.*,
     sender.username AS sender_name,

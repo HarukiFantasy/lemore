@@ -13,6 +13,7 @@ CREATE OR REPLACE FUNCTION public.create_message_notification()
 RETURNS TRIGGER
 LANGUAGE plpgsql
 SECURITY DEFINER
+SET search_path = public
 AS $$
 DECLARE
     sender_username text;
@@ -59,6 +60,7 @@ CREATE OR REPLACE FUNCTION public.create_like_notification()
 RETURNS TRIGGER
 LANGUAGE plpgsql
 SECURITY DEFINER
+SET search_path = public
 AS $$
 DECLARE
     product_seller_id uuid;
@@ -116,6 +118,7 @@ CREATE OR REPLACE FUNCTION public.create_review_notification()
 RETURNS TRIGGER
 LANGUAGE plpgsql
 SECURITY DEFINER
+SET search_path = public
 AS $$
 DECLARE
     giver_username text;
@@ -166,6 +169,7 @@ CREATE OR REPLACE FUNCTION public.create_local_tip_like_notification()
 RETURNS TRIGGER
 LANGUAGE plpgsql
 SECURITY DEFINER
+SET search_path = public
 AS $$
 DECLARE
     tip_author_id uuid;

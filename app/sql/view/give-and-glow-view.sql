@@ -1,7 +1,8 @@
 DROP VIEW IF EXISTS give_and_glow_view CASCADE;
 
 -- 4. Give and Glow View
-CREATE OR REPLACE VIEW give_and_glow_view AS
+CREATE OR REPLACE VIEW give_and_glow_view
+with (security_invoker = true) AS
 SELECT
     r.id,
     r.category,
