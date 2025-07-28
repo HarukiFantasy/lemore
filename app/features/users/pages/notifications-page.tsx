@@ -156,37 +156,22 @@ function NotificationCard({ notification, onMarkAsRead }: { notification: Notifi
 }
 
 export function NotificationsPage({ isOpen, onClose }: NotificationsPageProps) {
+  const fetcher = useFetcher<{ notifications: Notification[] }>();
   const [localNotifications, setLocalNotifications] = useState<Notification[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
 
-  // 사이드바가 열릴 때 데이터 로드
+  // Load data when the sidebar opens
   useEffect(() => {
-    if (isOpen) {
-      loadNotifications();
+    if (isOpen && fetcher.state === 'idle' && !fetcher.data) {
+      fetcher.load('/my/notifications');
     }
-  }, [isOpen]);
+  }, [isOpen, fetcher]);
 
-  const loadNotifications = async () => {
-    setIsLoading(true);
-    try {
-      // 현재 페이지의 loader 데이터를 사용
-      const response = await fetch('/my/notifications', {
-        method: 'GET',
-        headers: {
-          'Accept': 'application/json',
-        },
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        setLocalNotifications(data.notifications || []);
-      } else {
-      }
-    } catch (error) {
-    } finally {
-      setIsLoading(false);
+  // Sync loader data with local state
+  useEffect(() => {
+    if (fetcher.data?.notifications) {
+      setLocalNotifications(fetcher.data.notifications);
     }
-  };
+  }, [fetcher.data]);
 
   const unreadNotifications = localNotifications.filter((notification: Notification) => !notification.isRead);
   const unreadCount = unreadNotifications.length;
@@ -206,6 +191,8 @@ export function NotificationsPage({ isOpen, onClose }: NotificationsPageProps) {
       prev.map((notification: Notification) => ({ ...notification, isRead: true }))
     );
   };
+
+  const isLoading = fetcher.state === 'loading';
 
   return (
     <AnimatePresence>
