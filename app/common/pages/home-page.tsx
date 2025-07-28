@@ -60,8 +60,10 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
   }
   communityPosts = communityPosts.slice(0, 10); // Limit to 10 after filtering
   
+  console.log("Community Posts:", communityPosts);
   return { latestListings, communityPosts, userLikedProducts, user, userStats };
 };
+
 
 // Date 객체 또는 ISO 문자열을 시간 문자열로 변환하는 헬퍼 함수 (Luxon 사용)
 function getTimeAgo(date: Date | string): string {
