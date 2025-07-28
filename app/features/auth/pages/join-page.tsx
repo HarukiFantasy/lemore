@@ -29,67 +29,53 @@ const formSchema = z.object({
 });
 
 export const action = async ({ request }: Route.ActionArgs) => {
-  const formData = await request.formData();
-  const { success, data, error } = formSchema.safeParse(Object.fromEntries(formData));
-  if (!success) {
-    return { formErrors: error.flatten().fieldErrors };
-  }
-  const { username, email, password, confirmPassword } = data;
-  if (password !== confirmPassword) {
-    return { formErrors: { confirmPassword: ["Passwords do not match"] } };
-  }
-  const usernameExists = await checkUsernameExists(request, {
-    username: data.username,
-  });
-  if (usernameExists) {
-    return {
-      formErrors: { username: ["Username already exists"] },
-    };
-  }
-  const { client, headers } = makeSSRClient(request);
-  const { data: { user }, error: signUpError } = await client.auth.signUp({
-    email: data.email,
-    password: data.password,
-    options: {
-      data: { username: data.username },
-    },
-  });
-  if (signUpError) {
-    return {
-      signUpError: signUpError.message,
-    };
-  }
-  if (user) {
-    await fetch("/api/send-welcome-email", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email: user.email, username: user.user_metadata?.username || "" })
+  try {
+    const formData = await request.formData();
+    const { success, data, error } = formSchema.safeParse(
+      Object.fromEntries(formData)
+    );
+    if (!success) {
+      return { formErrors: error.flatten().fieldErrors };
+    }
+    const { username, email, password, confirmPassword } = data;
+    if (password !== confirmPassword) {
+      return { formErrors: { confirmPassword: ['Passwords do not match'] } };
+    }
+    const usernameExists = await checkUsernameExists(request, {
+      username: data.username,
     });
-  }
-     // Send welcome email after successful signup
-     try {
-      console.log('Sending welcome email to:', data.email);
-      const { data: emailData, error: emailError } = await resendClient.emails.send({
-        from: "Sena <sena@mail.lemore.life>",
-        to: data.email,
-        subject: "Welcome to Lemore",
-        react: <LemoreWelcomeEmail username={data.username} />,
-      });
-      
-      if (emailError) {
-        console.error('Email send error:', emailError);
-      } else {
-        console.log('Welcome email sent successfully');
-      }
-    } catch (emailError) {
-      console.error('Email send exception:', emailError);
-      // Don't fail the signup process if email fails
+    if (usernameExists) {
+      return {
+        formErrors: { username: ['Username already exists'] },
+      };
+    }
+    const { client, headers } = makeSSRClient(request);
+    const {
+      data: { user },
+      error: signUpError,
+    } = await client.auth.signUp({
+      email: data.email,
+      password: data.password,
+      options: {
+        data: { username: data.username },
+      },
+    });
+    if (signUpError) {
+      return {
+        signUpError: signUpError.message,
+      };
     }
 
-  return redirect("/", { headers });
+    return redirect('/', { headers });
+  } catch (error) {
+    console.error('Join action error:', error);
+    const message =
+      error instanceof Error ? error.message : 'An unexpected error occurred.';
+    return { signUpError: message };
+  }
 };
 
-export default function JoinPage({actionData}: Route.ComponentProps) {
+export default function JoinPage({ actionData }: Route.ComponentProps) {
   const navigation = useNavigation();
   const isSubmitting = navigation.state === "submitting" || navigation.state === "loading";
   return (
