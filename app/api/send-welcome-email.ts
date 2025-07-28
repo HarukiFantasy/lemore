@@ -24,7 +24,7 @@ export default async function handler(req: Request, res: Response) {
 
   try {
     const { data, error } = await resend.emails.send({
-      from: 'Lemore <noreply@lemore.life>',
+      from: 'Lemore <welcome@mail.lemore.life>',
       to: [email],
       subject: 'Welcome to Lemore!',
       react: WelcomeEmail({ username }),
