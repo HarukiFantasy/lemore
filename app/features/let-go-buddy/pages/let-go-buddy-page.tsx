@@ -430,7 +430,7 @@ export default function LetGoBuddyPage({ loaderData }: Route.ComponentProps) {
   } as any : null;
 
   return (
-    <div className="max-w-xl mx-auto py-12 px-1">
+    <div className="w-full md:w-4/5 mx-auto px-5 py-6 md:py-6 space-y-6">
       {/* Title & Subtitle */}
       <h1 className="text-4xl font-bold text-center mb-2">Let Go Buddy</h1>
       <p className="text-center text-lg mb-1">Declutter smarter, not harder.</p>

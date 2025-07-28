@@ -512,11 +512,11 @@ export default function LocalTipsPage({ loaderData }: Route.ComponentProps) {
           <Card key={post.id} className="hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 transition-all duration-300 hover:scale-[1.01] hover:shadow-md">
             <CardContent className="py-1">
               <div className="flex justify-between items-start mb-4">
-                <div className="flex-1">
+                <div className="flex-1 min-w-0">
                   <h3 className="text-lg font-semibold mb-2">{post.title}</h3>
                   <div className="mb-3">
                     <div
-                      className={`text-sm text-gray-700 ${
+                      className={`text-sm text-gray-700 break-words ${
                         !expandedPosts.has(post.id) && isContentLong(post.content) 
                           ? 'line-clamp-2' 
                           : ''
