@@ -53,7 +53,7 @@ export function UserStatsHoverCard({
           {children}
         </span>
       </HoverCardTrigger>
-      <HoverCardContent className="w-80 p-4">
+      <HoverCardContent className="w-80 p-4" onClick={(e) => e.stopPropagation()}>
         <div className="flex flex-col gap-4">
           <div className="flex items-center justify-between">
             <div className="flex-1 flex items-center gap-2 min-w-0">
