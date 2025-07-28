@@ -71,11 +71,17 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
       return { user: null, userProfile: null, hasNotifications: false, hasMessages: false, client };
     }
     
-    if (user) {
+    if (user && user.id) { // user.id의 존재 여부도 함께 확인
       console.log("🔍 User found in session:", user.id, user.email);
       try {
-        const [userProfile, hasNotifications, hasMessages] = await Promise.all([
-          getUserByProfileId(client, { profileId: user?.id ?? null }),
+        console.log("🔍 Searching for user profile with ID:", user.id);
+        const userProfile = await getUserByProfileId(client, { profileId: user.id });
+        
+        if (!userProfile) {
+          throw new Error("Profile not found, proceeding to create one.");
+        }
+
+        const [hasNotifications, hasMessages] = await Promise.all([
           getUnreadNotificationsStatus(client, user.id),
           getUnreadMessagesStatus(client, user.id),
         ]);
