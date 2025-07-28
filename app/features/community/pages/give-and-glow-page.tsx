@@ -345,7 +345,7 @@ export default function GiveAndGlowPage({ loaderData }: Route.ComponentProps) {
   };
 
   return (
-    <div className="w-full md:w-4/5 mx-auto px-2 py-6 md:p-6 space-y-6">
+    <div className="w-full md:w-4/5 mx-auto px-5 py-6 md:py-6 space-y-6">
       {/* Header */}
       <div className="text-center space-y-2">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">Give and Glow</h1>

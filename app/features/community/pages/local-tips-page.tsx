@@ -373,7 +373,7 @@ export default function LocalTipsPage({ loaderData }: Route.ComponentProps) {
   };
   
   return (
-    <div className="max-w-6xl mx-auto px-5 py-6 md:py-6">
+    <div className="w-full md:w-4/5 mx-auto px-5 py-6 md:py-6 space-y-6">
       
       {/* Header */}
       <div className="text-center mb-2">
