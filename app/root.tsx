@@ -13,7 +13,7 @@ import "./app.css";
 import { Navigation } from "./common/components/navigation";
 import { makeSSRClient } from './supa-client';
 import { cn } from './lib/utils';
-import { getUserByProfileId } from "./features/users/queries";
+import { getUserByProfileId, getUnreadNotificationsStatus, getUnreadMessagesStatus } from "./features/users/queries";
 import { useAuthErrorHandler } from "./hooks/use-auth-error-handler";
 import * as Sentry from "@sentry/react-router";
 import { useEffect } from 'react';
@@ -68,16 +68,25 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
       await client.auth.signOut();
       
       // Return user as null to force logout state
-      return { user: null, userProfile: null, client };
+      return { user: null, userProfile: null, hasNotifications: false, hasMessages: false, client };
     }
     
     if (user) {
       console.log("🔍 User found in session:", user.id, user.email);
       try {
-        console.log("🔍 Searching for user profile with ID:", user?.id);
-        const userProfile = await getUserByProfileId(client, { profileId: user?.id ?? null });
-        console.log("✅ userProfile", userProfile);
-        return { user, userProfile, client };
+        const [userProfile, hasNotifications, hasMessages] = await Promise.all([
+          getUserByProfileId(client, { profileId: user?.id ?? null }),
+          getUnreadNotificationsStatus(client, user.id),
+          getUnreadMessagesStatus(client, user.id),
+        ]);
+
+        console.log("✅ Fetched user data in parallel:", {
+          userProfile: !!userProfile,
+          hasNotifications,
+          hasMessages,
+        });
+
+        return { user, userProfile, hasNotifications, hasMessages, client };
       } catch (error) {
         // User profile not found, but user is authenticated
         console.warn('❌ User profile not found:', error);
@@ -101,17 +110,17 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
             console.log('✅ User profile created successfully');
             // 생성된 프로필 다시 조회
             const newUserProfile = await getUserByProfileId(client, { profileId: user.id });
-            return { user, userProfile: newUserProfile, client };
+            return { user, userProfile: newUserProfile, hasNotifications: false, hasMessages: false, client };
           }
         } catch (createError) {
           console.error('❌ Error creating user profile:', createError);
         }
         
-        return { user, userProfile: null, client };
+        return { user, userProfile: null, hasNotifications: false, hasMessages: false, client };
       }
     }
     
-    return { user: null, userProfile: null, client };
+    return { user: null, userProfile: null, hasNotifications: false, hasMessages: false, client };
   } catch (error: any) {
     // Handle any other authentication-related errors
     console.error('Root loader authentication error:', error);
@@ -128,12 +137,12 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
     }
     
     // Return user as null to ensure clean state
-    return { user: null, userProfile: null, client };
+    return { user: null, userProfile: null, hasNotifications: false, hasMessages: false, client };
   }
 }
 
 export default function App({ loaderData }: Route.ComponentProps) {
-  const { user, client } = loaderData;
+  const { user, client, hasNotifications, hasMessages } = loaderData;
   const { pathname } = useLocation();
   const navigation = useNavigation();
   const isLoading = navigation.state === "loading";
@@ -178,8 +187,8 @@ export default function App({ loaderData }: Route.ComponentProps) {
             isLoggedIn={isLoggedIn}
             username={loaderData.userProfile?.username || "User"}
             avatarUrl={loaderData.userProfile?.avatar_url || ""}
-            hasNotifications={true}
-            hasMessages={true}
+            hasNotifications={hasNotifications}
+            hasMessages={hasMessages}
           />
         )}
         <Outlet />

@@ -450,3 +450,37 @@ export const getSafeUser = async (client: SupabaseClient<Database>) => {
     return null;
   }
 };
+
+export const getUnreadNotificationsStatus = async (
+  client: SupabaseClient<Database>,
+  userId: string,
+) => {
+  const { count, error } = await client
+    .from('user_notifications')
+    .select('*', { count: 'exact', head: true })
+    .eq('receiver_id', userId)
+    .eq('is_read', false);
+
+  if (error) {
+    console.error("Error fetching unread notification status:", error);
+    return false;
+  }
+  return count !== null && count > 0;
+};
+
+export const getUnreadMessagesStatus = async (
+  client: SupabaseClient<Database>,
+  userId: string,
+) => {
+  const { count, error } = await client
+    .from('user_messages')
+    .select('*', { count: 'exact', head: true })
+    .eq('receiver_id', userId)
+    .eq('seen', false);
+
+  if (error) {
+    console.error("Error fetching unread message status:", error);
+    return false;
+  }
+  return count !== null && count > 0;
+};

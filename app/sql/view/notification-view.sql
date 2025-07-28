@@ -6,5 +6,5 @@ SELECT
     receiver.username AS receiver_name
 FROM
     user_notifications n
-    LEFT JOIN users_view sender ON n.sender_id = sender.profile_id
-    LEFT JOIN users_view receiver ON n.receiver_id = receiver.profile_id;
+    LEFT JOIN user_profiles sender ON n.sender_id = sender.profile_id
+    LEFT JOIN user_profiles receiver ON n.receiver_id = receiver.profile_id;
