@@ -68,6 +68,19 @@ export const loader = async ({ params, request }: Route.LoaderArgs) => {
   export default function ProductDetailPage({ loaderData }: Route.ComponentProps) {
   const { product, sellerProducts, userStats, isLiked: initialIsLiked } = loaderData;
   const navigate = useNavigate();
+
+  if (!product) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen text-center">
+        <h1 className="text-2xl font-bold">Product Not Found</h1>
+        <p className="text-gray-500 mt-2">Sorry, the product you are looking for does not exist.</p>
+        <Button onClick={() => navigate(-1)} className="mt-4">
+          Go Back
+        </Button>
+      </div>
+    );
+  }
+
   const [searchParams] = useSearchParams();
   const location = searchParams.get("location");
   const [selectedImage, setSelectedImage] = useState(0);
