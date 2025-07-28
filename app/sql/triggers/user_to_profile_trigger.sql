@@ -51,12 +51,10 @@ BEGIN
             INSERT INTO public.user_profiles (profile_id, username, email, avatar_url, created_at, updated_at)
             VALUES (
                 new.id,
+                -- Use email to create a unique username, fallback to a random string if email is null
                 COALESCE(
-                  CASE WHEN new.email IS NOT NULL THEN
-                    split_part(new.email, '@', 1) || '_' || substr(md5(random()::text), 1, 5)
-                  ELSE NULL END,
-                  new.raw_user_meta_data ->> 'user',
-                  'user_' || substr(md5(random()::text), 1, 6)
+                    split_part(new.email, '@', 1) || '_' || substr(new.id::text, 1, 4),
+                    'user_' || substr(new.id::text, 1, 8)
                 ),
                 new.email,
                 new.raw_user_meta_data ->> 'avatar_url',
@@ -69,21 +67,6 @@ BEGIN
 END;
 $$;
 
--- 트리거 생성
-DROP TRIGGER IF EXISTS user_to_profile_trigger ON auth.users;
-
 CREATE TRIGGER user_to_profile_trigger
 AFTER INSERT ON auth.users
 FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
-
--- auth.users 테이블에 연결된 트리거 목록 보기
-SELECT
-    event_object_table AS table_name,
-    trigger_name,
-    action_timing,
-    event_manipulation AS event,
-    action_statement
-FROM information_schema.triggers
-WHERE
-    event_object_table = 'users'
-    AND trigger_schema = 'auth';

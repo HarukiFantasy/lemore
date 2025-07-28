@@ -1,18 +1,20 @@
+DROP VIEW IF EXISTS give_and_glow_view CASCADE;
+
 -- 4. Give and Glow View
 CREATE OR REPLACE VIEW give_and_glow_view AS
 SELECT
-    give_and_glow_reviews.id,
-    give_and_glow_reviews.category,
-    give_and_glow_reviews.rating,
-    give_and_glow_reviews.review,
-    give_and_glow_reviews.timestamp,
-    give_and_glow_reviews.tags,
-    give_and_glow_reviews.created_at,
-    give_and_glow_reviews.updated_at,
-    give_and_glow_reviews.giver_id,
-    give_and_glow_reviews.receiver_id,
-    give_and_glow_reviews.product_id,
-    give_and_glow_reviews.location,
+    r.id,
+    r.category,
+    r.rating,
+    r.review,
+    r.timestamp,
+    r.tags,
+    r.created_at,
+    r.updated_at,
+    r.giver_id,
+    r.receiver_id,
+    r.product_id,
+    r.location,
     -- Giver profile data
     giver_profile.username as giver_username,
     giver_profile.avatar_url as giver_avatar_url,
@@ -22,11 +24,14 @@ SELECT
     receiver_profile.avatar_url as receiver_avatar_url,
     receiver_profile.profile_id as receiver_profile_id,
     -- Product data (LEFT JOIN to allow reviews without products)
-    COALESCE(products.title, 'Unknown Item') as product_title,
-    COALESCE(products.location, give_and_glow_reviews.location) as product_location,
-    COALESCE(products.description, 'Free item received') as product_description
+    COALESCE(p.title, 'Unknown Item') as product_title,
+    COALESCE(p.location, r.location) as product_location,
+    COALESCE(
+        p.description,
+        'Free item received'
+    ) as product_description
 FROM
-    give_and_glow_reviews
-    INNER JOIN user_profiles giver_profile ON give_and_glow_reviews.giver_id = giver_profile.profile_id
-    INNER JOIN user_profiles receiver_profile ON give_and_glow_reviews.receiver_id = receiver_profile.profile_id
-    LEFT JOIN products ON give_and_glow_reviews.product_id = products.product_id;
+    public.give_and_glow_reviews r
+    INNER JOIN public.user_profiles giver_profile ON r.giver_id = giver_profile.profile_id
+    INNER JOIN public.user_profiles receiver_profile ON r.receiver_id = receiver_profile.profile_id
+    LEFT JOIN public.products p ON r.product_id = p.product_id;

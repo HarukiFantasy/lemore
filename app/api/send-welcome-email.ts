@@ -1,13 +1,15 @@
 // api/send-welcome-email.ts
-
+import { Resend } from 'resend';
+import WelcomeEmail from '../../react-email-starter/emails/welcome-user';
 import type { Request, Response } from 'express';
+
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 export default async function handler(req: Request, res: Response) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  // Supabase webhook payload structure
   const { type, record } = req.body;
 
   if (type !== 'INSERT' || !record) {
@@ -20,10 +22,25 @@ export default async function handler(req: Request, res: Response) {
     return res.status(400).json({ error: 'Missing email or username in webhook record' });
   }
 
-  // TODO: Implement actual email sending logic here
-  // For example, using a library like Resend or Nodemailer
-  console.log(`Sending welcome email to: ${email} (username: ${username})`);
+  try {
+    const { data, error } = await resend.emails.send({
+      from: 'Lemore <noreply@lemore.life>',
+      to: [email],
+      subject: 'Welcome to Lemore!',
+      react: WelcomeEmail({ username }),
+    });
 
-  // Simulate success
-  return res.status(200).json({ success: true, message: `Welcome email queued for ${email}` });
+    if (error) {
+      console.error('Resend API error:', error);
+      return res.status(400).json({ error: error.message });
+    }
+
+    console.log('Welcome email sent successfully:', data);
+    return res.status(200).json({ success: true, message: `Welcome email sent to ${email}` });
+
+  } catch (error) {
+    console.error('Failed to send welcome email:', error);
+    const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+    return res.status(500).json({ error: errorMessage });
+  }
 } 

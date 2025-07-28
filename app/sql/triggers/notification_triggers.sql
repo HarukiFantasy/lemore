@@ -1,3 +1,13 @@
+DROP FUNCTION IF EXISTS public.create_message_notification () CASCADE;
+
+DROP FUNCTION IF EXISTS public.create_like_notification () CASCADE;
+
+DROP FUNCTION IF EXISTS public.create_review_notification () CASCADE;
+
+DROP FUNCTION IF EXISTS public.create_local_tip_like_notification () CASCADE;
+
+DROP FUNCTION IF EXISTS public.create_welcome_notification () CASCADE;
+
 -- 알림 생성 함수들
 CREATE OR REPLACE FUNCTION public.create_message_notification()
 RETURNS TRIGGER
@@ -205,43 +215,3 @@ CREATE TRIGGER local_tip_like_notification_trigger
 AFTER INSERT ON public.local_tip_post_likes
 FOR EACH ROW
 EXECUTE FUNCTION public.create_local_tip_like_notification();
-
--- 시스템 알림 생성 함수 (예: 새 사용자 환영 메시지)
-CREATE OR REPLACE FUNCTION public.create_welcome_notification()
-RETURNS TRIGGER
-LANGUAGE plpgsql
-SECURITY DEFINER
-AS $$
-DECLARE
-    username text;
-BEGIN
-    -- 새 사용자 username 가져오기
-    SELECT username INTO username
-    FROM public.user_profiles
-    WHERE profile_id = NEW.profile_id;
-    -- 새 사용자에게 환영 알림 생성
-    INSERT INTO public.user_notifications (
-        type,
-        sender_id,
-        receiver_id,
-        data
-    ) VALUES (
-        'Mention',       NEW.profile_id, -- 시스템 알림이므로 sender_id도 같은 사용자
-        NEW.profile_id,
-        jsonb_build_object(
-            'title', 'Welcome!',
-            'content', 'Welcome, ' || username || '!',
-            'system_notification', true,
-            'notification_key', 'welcome'
-        )
-    );
-    
-    RETURN NEW;
-END;
-$$;
-
--- 환영 알림 트리거
-CREATE TRIGGER welcome_notification_trigger
-AFTER INSERT ON public.user_profiles
-FOR EACH ROW
-EXECUTE FUNCTION public.create_welcome_notification();
