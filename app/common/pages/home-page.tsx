@@ -145,8 +145,6 @@ export default function HomePage() {
               throw new Error('Error parsing created_at');
             }
             
-            const author = post.username || post.author || 'Anonymous';
-            
             let stats = { likes: 0, comments: 0 };
             try {
               if (post.stats && typeof post.stats === 'string') {
@@ -164,8 +162,8 @@ export default function HomePage() {
                 id={post.id}
                 title={post.title}
                 content={post.content}
-                author={author}
-                avatar_url={post.avatar_url}
+                author={post.username || 'Anonymous'}
+                avatar_url={post.avatar_url || ''}
                 timeAgo={timeAgo}
                 location={post.location}
                 category={post.category}
