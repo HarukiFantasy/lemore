@@ -59,7 +59,7 @@ export function UserStatsHoverCard({
             <div className="flex-1 flex items-center gap-2 min-w-0">
               <span className="font-semibold text-sm truncate">{userName}</span>
               {userStats?.level && (
-                <Badge variant="secondary" className="text-xs bg-purple-100 text-purple-700 border border-purple-200 flex-shrink-0">
+                <Badge variant="secondary" className="h-5 text-xs bg-purple-100 text-purple-700 border border-purple-200 flex-shrink-0">
                   {userStats.level}
                 </Badge>
               )}
@@ -76,15 +76,15 @@ export function UserStatsHoverCard({
             </div>
           </div>
           <div className="grid grid-cols-3 gap-2">
-            <div className="flex items-center gap-2 text-xs text-gray-600">
+            <div className="flex items-center justify-center gap-1.5 text-xs text-gray-600">
               <PackageIcon className="w-3 h-3 text-blue-500" />
               <span>Listings: {userStats?.totalListings ?? 'N/A'}</span>
             </div>
-            <div className="flex items-center gap-2 text-xs text-gray-600">
+            <div className="flex items-center justify-center gap-1.5 text-xs text-gray-600">
               <HeartIcon className="w-3 h-3 text-red-500" />
               <span>Likes: {userStats?.totalLikes ?? 'N/A'}</span>
             </div>
-            <div className="flex items-center gap-2 text-xs text-gray-600">
+            <div className="flex items-center justify-center gap-1.5 text-xs text-gray-600">
               <PackageIcon className="w-3 h-3 text-green-500" />
               <span>Sold: {userStats?.totalSold ?? 'N/A'}</span>
             </div>
