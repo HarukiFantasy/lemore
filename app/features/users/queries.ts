@@ -9,43 +9,25 @@ export const getUser = async (client: SupabaseClient<Database>) => {
 };
 
 export const getUserByProfileId = async (client: SupabaseClient<Database>, { profileId }: { profileId: string|null }) => {
-  if (!profileId) throw new Error("Profile ID is required");
-  
-  console.log("🔍 getUserByProfileId - searching for profile_id:", profileId);
-  
-  // 먼저 user_profiles 테이블에서 직접 조회
-  console.log("🔍 getUserByProfileId - searching in user_profiles table for profile_id:", profileId);
-  const { data: profileData, error: profileError } = await client
-    .from("user_profiles")
-    .select("*")
-    .eq("profile_id", profileId)
-    .maybeSingle();
-    
-  console.log("🔍 getUserByProfileId - profile query result:", { 
-    profileData: profileData ? "found" : "not found", 
-    profileError: profileError?.message 
-  });
-  
-  if (profileError) {
-    console.error("❌ Profile query error:", profileError);
-    throw new Error(profileError.message);
+  if (!profileId) {
+    return null;
   }
-  
-  if (!profileData) {
-    console.log("❌ No profile found for profile_id:", profileId);
-    throw new Error("Profile not found");
-  }
-  
-  // user_profiles에서 직접 조회 (users_view 대신)
   const { data, error } = await client
     .from("user_profiles")
-    .select("*")
+    .select(
+      `
+      *,
+      users_view(active_user_id)
+      `
+    )
     .eq("profile_id", profileId)
     .maybeSingle();
-    
-  console.log("🔍 getUserByProfileId - user_profiles query result:", { data, error });
-    
-  if (error) throw new Error(error.message);
+
+  if (error) {
+    console.error(`Error fetching user profile by ID: ${profileId}`, error);
+    return null;
+  }
+
   return data;
 };
 

@@ -16,8 +16,6 @@ import { cn } from './lib/utils';
 import { getUserByProfileId, getUnreadNotificationsStatus, getUnreadMessagesStatus } from "./features/users/queries";
 import { useAuthErrorHandler } from "./hooks/use-auth-error-handler";
 import * as Sentry from "@sentry/react-router";
-import { useEffect } from 'react';
-import { browserClient } from './supa-client';
 
 
 export const links: Route.LinksFunction = () => [
@@ -72,9 +70,7 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
     }
     
     if (user && user.id) { // user.id의 존재 여부도 함께 확인
-      console.log("🔍 User found in session:", user.id, user.email);
       try {
-        console.log("🔍 Searching for user profile with ID:", user.id);
         const userProfile = await getUserByProfileId(client, { profileId: user.id });
         
         if (!userProfile) {
@@ -86,21 +82,13 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
           getUnreadMessagesStatus(client, user.id),
         ]);
 
-        console.log("✅ Fetched user data in parallel:", {
-          userProfile: !!userProfile,
-          hasNotifications,
-          hasMessages,
-        });
-
         return { user, userProfile, hasNotifications, hasMessages, client };
       } catch (error) {
         // User profile not found, but user is authenticated
-        console.warn('❌ User profile not found:', error);
-        console.warn('❌ User ID:', user.id);
+        console.warn(`User profile not found for ${user.id}, creating a new one.`);
         
         // 사용자 프로필이 없으면 자동 생성
         try {
-          console.log('🔧 Creating user profile for:', user.email);
           const { error: profileError } = await client
             .from('user_profiles')
             .insert({
@@ -113,7 +101,6 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
           if (profileError) {
             console.error('❌ Failed to create user profile:', profileError);
           } else {
-            console.log('✅ User profile created successfully');
             // 생성된 프로필 다시 조회
             const newUserProfile = await getUserByProfileId(client, { profileId: user.id });
             return { user, userProfile: newUserProfile, hasNotifications: false, hasMessages: false, client };
@@ -154,30 +141,6 @@ export default function App({ loaderData }: Route.ComponentProps) {
   const isLoading = navigation.state === "loading";
   const isLoggedIn = user !== null;
 
-  // 세션 확인
-  useEffect(() => {
-    browserClient.auth.getSession().then(({ data, error }: { data: any, error: any }) => {
-      console.log("📦 Session:", data?.session);
-      console.log("📦 Session ID:", data?.session?.access_token ? "exists" : "missing");
-      console.log("📦 User ID:", data?.session?.user?.id);
-      console.log("📦 User Email:", data?.session?.user?.email);
-      console.log("📦 User Metadata:", data?.session?.user?.user_metadata);
-      console.log("🙀 Error:", error);
-      
-      // 추가: 사용자 프로필 정보 확인
-      if (data?.session?.user?.id) {
-        console.log("🔍 Checking user profile for ID:", data.session.user.id);
-        // 여기서 직접 프로필 조회 테스트
-        browserClient.from('user_profiles').select('*').eq('profile_id', data.session.user.id).maybeSingle()
-          .then(({ data: profile, error: profileError }) => {
-            console.log("🔍 Direct profile query result:", { profile, profileError });
-          });
-      }
-    });
-  }, []);
-
-  
-  
   // Add global auth error handling
   useAuthErrorHandler();
   
