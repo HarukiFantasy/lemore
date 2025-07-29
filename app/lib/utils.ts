@@ -49,15 +49,16 @@ export function formatTimeAgo(dateString: string | Date | null): string {
   if (!dateString) return "";
 
   const dt = typeof dateString === 'string' 
-    ? DateTime.fromISO(dateString)
-    : DateTime.fromJSDate(dateString as Date);
+    ? DateTime.fromISO(dateString, { zone: 'utc' }) // Explicitly parse as UTC
+    : DateTime.fromJSDate(dateString as Date, { zone: 'utc' });
 
   if (!dt.isValid) {
     console.warn("Invalid date provided to formatTimeAgo:", dateString);
     return "a while ago";
   }
 
-  const relativeTime = dt.toRelative();
+  // Convert to local time before getting relative time
+  const relativeTime = dt.toLocal().toRelative();
 
   if (relativeTime === "in 0 seconds") {
     return "Just now";
