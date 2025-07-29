@@ -11,7 +11,7 @@ import {
   LOCAL_TIP_CATEGORIES_WITH_ALL, 
   LocalTipCategoryWithAll, 
 } from "../constants";
-import { getLocalTipComments, getLocalTipPosts, getLocalTipReplies, getLocalTipPostLikes, getUserStats } from '../queries';
+import { getLocalTipPosts, getLocalTipReplies, getLocalTipPostLikes, getUserStats } from '../queries';
 import { Reply } from '../components/reply';
 import { UserStatsHoverCard } from "../../../common/components/user-stats-hover-card";
 import type { Route } from "./+types/local-tips-page"
@@ -33,21 +33,10 @@ const formSchema = z.object({
   location: z.string().min(1),
 });
 
-interface Comment {
-  comment_id: number;
-  post_id: number;
-  author: string;
-  content: string;
-  likes: number;
-  created_at: string;
-}
-
-
 export const loader = async ({ request }: Route.LoaderArgs) => {
   const { client, headers } = makeSSRClient(request);
-  const [tips, comments, locations, { data: { user } }, userStatsMap] = await Promise.all([
+  const [tips, locations, { data: { user } }, userStatsMap] = await Promise.all([
     getLocalTipPosts(client),
-    getLocalTipComments(client),
     getlocations(client),
     client.auth.getUser(),
     (async () => {
@@ -90,7 +79,7 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
     repliesByPostId[post.id] = repliesResults[index];
   });
 
-  return { tips, comments, user, locations, repliesByPostId, userLikedPosts, userStatsMap };
+  return { tips, user, locations, repliesByPostId, userLikedPosts, userStatsMap };
 }
 
 
@@ -156,7 +145,7 @@ export const action = async ({ request }: Route.ActionArgs) => {
 
 
 export default function LocalTipsPage({ loaderData }: Route.ComponentProps) {
-  const { tips, comments, user, locations, repliesByPostId, userLikedPosts, userStatsMap } = loaderData;
+  const { tips, user, locations, repliesByPostId, userLikedPosts, userStatsMap } = loaderData;
   const actionData = useActionData<typeof action>();
   const fetcher = useFetcher();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -164,8 +153,6 @@ export default function LocalTipsPage({ loaderData }: Route.ComponentProps) {
   const currentLocation = urlLocation || "Bangkok";
   const searchQuery = searchParams.get("search") || "";
   const categoryFilter = searchParams.get("category") || "All";
-  
-
   
   // State for form inputs
   const [searchInput, setSearchInput] = useState(searchQuery);
@@ -218,15 +205,6 @@ export default function LocalTipsPage({ loaderData }: Route.ComponentProps) {
     }
   }, [actionData]);
   
-  // Group comments by post_id for easy lookup
-  const commentsByPostId = comments.reduce((acc, comment) => {
-    if (!acc[comment.post_id]) {
-      acc[comment.post_id] = [];
-    }
-    acc[comment.post_id].push(comment);
-    return acc;
-  }, {} as Record<number, Comment[]>);
-
   // Filter tips based on search and category
   const filteredTips = tips.filter((post) => {
     const matchesSearch = !searchQuery || 
@@ -620,34 +598,6 @@ export default function LocalTipsPage({ loaderData }: Route.ComponentProps) {
               {/* Comments Section */}
               {expandedPosts.has(post.id) && (
                 <div className="mt-4 pt-4 border-t">
-                  {/* 기존 comments 렌더링 유지 */}
-                  {commentsByPostId[post.id] ? (
-                    <div className="space-y-3">
-                      <h4 className="font-medium text-sm">Comments ({commentsByPostId[post.id].length})</h4>
-                      {commentsByPostId[post.id].map((comment: any ) => (
-                        <div key={comment.comment_id} className="bg-gray-50 rounded-lg p-3">
-                          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-2 mb-2">
-                            <span className="font-medium text-sm truncate">{comment.author.username}</span>
-                            <span className="text-xs text-muted-foreground self-start sm:self-auto">{formatTimeAgo(new Date(comment.created_at))}</span>
-                          </div>
-                          <div
-                            className="text-sm text-gray-700"
-                            dangerouslySetInnerHTML={{ __html: comment.content }}
-                          />
-                          <div className="flex items-center gap-2 mt-2">
-                            <button className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors">
-                              <HandThumbUpOutlineIcon className="h-3 w-3" />
-                              <span>{comment.likes}</span>
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-center py-4">
-                      <p className="text-sm text-muted-foreground">No comments yet</p>
-                    </div>
-                  )}
                   {/* 대댓글(Reply) 작성 폼 (최상위) */}
                   {user && (
                     <div className="my-2">
@@ -655,9 +605,9 @@ export default function LocalTipsPage({ loaderData }: Route.ComponentProps) {
                     </div>
                   )}
                   {/* 대댓글(Reply) 렌더링 */}
-                  {repliesByPostId[post.id] && repliesByPostId[post.id].length > 0 && (
+                  {repliesByPostId[post.id] && repliesByPostId[post.id].length > 0 ? (
                     <div className="mt-4 space-y-2">
-                      <h4 className="font-medium text-sm">Replies</h4>
+                      <h4 className="font-medium text-sm">Replies ({repliesByPostId[post.id].length})</h4>
                       {repliesByPostId[post.id].map((reply: any) => (
                         <Reply
                           key={reply.reply_id}
@@ -667,6 +617,10 @@ export default function LocalTipsPage({ loaderData }: Route.ComponentProps) {
                           onSubmitReply={handleSubmitReply}
                         />
                       ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-4">
+                      <p className="text-sm text-muted-foreground">No replies yet</p>
                     </div>
                   )}
                 </div>
