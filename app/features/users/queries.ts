@@ -14,12 +14,7 @@ export const getUserByProfileId = async (client: SupabaseClient<Database>, { pro
   }
   const { data, error } = await client
     .from("user_profiles")
-    .select(
-      `
-      *,
-      users_view(active_user_id)
-      `
-    )
+    .select(`*`)
     .eq("profile_id", profileId)
     .maybeSingle();
 
