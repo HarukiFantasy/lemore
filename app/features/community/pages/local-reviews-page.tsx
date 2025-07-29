@@ -365,25 +365,13 @@ export default function LocalReviewsPage({ loaderData }: Route.ComponentProps) {
 
   // Add New Business: handle Continue (with image upload)
   const handleAddBusinessContinue = async () => {
-    console.log('handleAddBusinessContinue started');
     setAddError(null);
     setAddUploading(true);
     try {
-      console.log('About to call addNewBusiness with:', { 
-        businessData: newBusiness, 
-        hasImage: !!newBusinessImage,
-        imageName: newBusinessImage?.name 
-      });
       const inserted = await addNewBusiness(browserClient, newBusiness, newBusinessImage || undefined);
-      console.log('addNewBusiness succeeded:', inserted);
       setSelectedBusiness(inserted);
       setReviewStep('write-review');
     } catch (error) {
-      console.error('addNewBusiness failed:', error);
-      console.error('Error details:', {
-        message: error instanceof Error ? error.message : 'Unknown error',
-        stack: error instanceof Error ? error.stack : undefined
-      });
       setAddError(error instanceof Error ? error.message : 'Failed to register business.');
     }
     setAddUploading(false);

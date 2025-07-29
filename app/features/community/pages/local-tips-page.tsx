@@ -1,16 +1,15 @@
 import { useState, useEffect } from "react";
-import { redirect, useSearchParams, Form, useActionData, useFetcher } from "react-router";
+import { useSearchParams, Form, useActionData, useFetcher } from "react-router";
 import { Button } from "../../../common/components/ui/button";
 import { Input } from "../../../common/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "../../../common/components/ui/card";
 import { Avatar, AvatarImage, AvatarFallback } from "../../../common/components/ui/avatar";
-import { HandThumbUpIcon as HandThumbUpOutlineIcon, ChatBubbleLeftEllipsisIcon, ChevronDownIcon, ChevronUpIcon, HandThumbUpIcon } from "@heroicons/react/24/outline";
+import { HandThumbUpIcon as HandThumbUpOutlineIcon, ChatBubbleLeftEllipsisIcon, ChevronDownIcon, ChevronUpIcon } from "@heroicons/react/24/outline";
 import { HandThumbUpIcon as HandThumbUpSolidIcon } from "@heroicons/react/24/solid";
 import { getCategoryColors, formatTimeAgo } from "~/lib/utils";
 import { 
   LOCAL_TIP_CATEGORIES_WITH_ALL, 
   LocalTipCategoryWithAll, 
-  LocalTipCategory 
 } from "../constants";
 import { getLocalTipComments, getLocalTipPosts, getLocalTipReplies, getLocalTipPostLikes, getUserStats } from '../queries';
 import { Reply } from '../components/reply';
@@ -46,10 +45,36 @@ interface Comment {
 
 export const loader = async ({ request }: Route.LoaderArgs) => {
   const { client, headers } = makeSSRClient(request);
-  const tips = await getLocalTipPosts(client);
-  const comments = await getLocalTipComments(client);
-  const locations = await getlocations(client);  // 입력폼에서 사용
-  const { data: { user } } = await client.auth.getUser();
+  const [tips, comments, locations, { data: { user } }, userStatsMap] = await Promise.all([
+    getLocalTipPosts(client),
+    getLocalTipComments(client),
+    getlocations(client),
+    client.auth.getUser(),
+    (async () => {
+      const tipsData = await getLocalTipPosts(client);
+      const uniqueUsernames = Array.from(new Set(tipsData.map((post: any) => post.username).filter(Boolean)));
+      const statsPromises = uniqueUsernames.map(username => 
+        getUserStats(client, username).then(stats => ({
+          username,
+          stats: {
+            totalListings: stats.total_listings,
+            totalLikes: stats.total_likes,
+            totalSold: stats.total_sold,
+            level: stats.level,
+            sellerJoinedAt: stats.joined_at 
+              ? new Date(stats.joined_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
+              : undefined,
+          }
+        })).catch(() => ({ username, stats: null }))
+      );
+      const userStatsResults = await Promise.all(statsPromises);
+      const userStatsMap: Record<string, any> = {};
+      userStatsResults.forEach(({ username, stats }) => {
+        userStatsMap[username] = stats;
+      });
+      return userStatsMap;
+    })(),
+  ]);
   
   // Get user's like status if logged in
   let userLikedPosts: number[] = [];
@@ -59,29 +84,11 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
   
   // 각 post별로 replies fetch
   const repliesByPostId: Record<number, any[]> = {};
-  for (const post of tips) {
-    repliesByPostId[post.id] = await getLocalTipReplies(client, post.id.toString());
-  }
-
-  // 유저별 stats 미리 쿼리
-  const uniqueUsernames = Array.from(new Set(tips.map((post: any) => post.username).filter(Boolean)));
-  const userStatsMap: Record<string, any> = {};
-  for (const username of uniqueUsernames) {
-    try {
-      const stats = await getUserStats(client, username);
-      userStatsMap[username] = {
-        totalListings: stats.total_listings,
-        totalLikes: stats.total_likes,
-        totalSold: stats.total_sold,
-        level: stats.level, // level 정보 포함
-        sellerJoinedAt: stats.joined_at
-          ? new Date(stats.joined_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
-          : undefined,
-      };
-    } catch {
-      userStatsMap[username] = null;
-    }
-  }
+  const repliesPromises = tips.map(post => getLocalTipReplies(client, post.id.toString()));
+  const repliesResults = await Promise.all(repliesPromises);
+  tips.forEach((post, index) => {
+    repliesByPostId[post.id] = repliesResults[index];
+  });
 
   return { tips, comments, user, locations, repliesByPostId, userLikedPosts, userStatsMap };
 }

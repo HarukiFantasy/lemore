@@ -12,7 +12,6 @@ import { GiveAndGlowCard } from '../components/give-and-glow-card';
 import { getGiveAndGlowReviews, getUserProductsForGiveAndGlow, getUserStatsMapForGiveAndGlow } from '../queries';
 import { PRODUCT_CATEGORIES } from '~/features/products/constants';
 import { makeSSRClient } from "~/supa-client";
-import { getUserStatsGiveAndGlow } from '~/features/community/queries';
 import { createGiveAndGlowReview } from '../mutation';
 import { z } from "zod";
 
