@@ -122,11 +122,10 @@ export function GiveAndGlowCard({
               </div>
             </div>
             
-            {/* Review Content */}
-            <p className="text-sm text-gray-700 mb-3 leading-relaxed">{review}</p>
-            
             {/* Separator */}
             <div className="border-t border-gray-200 pt-2">
+              {/* Review Content */}
+              <p className="text-sm text-gray-700 mb-3 leading-relaxed italic">{review}</p>
               {/* Category and Tags */}
               <div className="flex flex-wrap justify-end gap-1">
                 {/* Category Badge */}

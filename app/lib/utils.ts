@@ -45,21 +45,25 @@ export function validateSearchParams<T>(schema: z.ZodSchema<T>, searchParams: UR
   return validateUrlParams(schema, params);
 }
 
-export function formatTimeAgo(dateString: string | Date): string {
+export function formatTimeAgo(dateString: string | Date | null): string {
   if (!dateString) return "";
-  const date = typeof dateString === 'string' ? new Date(dateString) : dateString;
-  const dt = DateTime.fromJSDate(date).toUTC();
-  const now = DateTime.now().toUTC();
-  const diff = now.diff(dt, ['years', 'months', 'days', 'hours', 'minutes', 'seconds']);
 
-  if (diff.years > 0) return `${Math.floor(diff.years)} year${Math.floor(diff.years) > 1 ? 's' : ''} ago`;
-  if (diff.months > 0) return `${Math.floor(diff.months)} month${Math.floor(diff.months) > 1 ? 's' : ''} ago`;
-  if (diff.days > 0) return `${Math.floor(diff.days)} day${Math.floor(diff.days) > 1 ? 's' : ''} ago`;
-  if (diff.hours > 0) return `${Math.floor(diff.hours)} hour${Math.floor(diff.hours) > 1 ? 's' : ''} ago`;
-  if (diff.minutes > 0) return `${Math.floor(diff.minutes)} minute${Math.floor(diff.minutes) > 1 ? 's' : ''} ago`;
-  if (diff.seconds > 5) return `${Math.floor(diff.seconds)} seconds ago`;
+  const dt = typeof dateString === 'string' 
+    ? DateTime.fromISO(dateString)
+    : DateTime.fromJSDate(dateString as Date);
 
-  return "Just now";
+  if (!dt.isValid) {
+    console.warn("Invalid date provided to formatTimeAgo:", dateString);
+    return "a while ago";
+  }
+
+  const relativeTime = dt.toRelative();
+
+  if (relativeTime === "in 0 seconds") {
+    return "Just now";
+  }
+
+  return relativeTime || "Just now";
 }
 
 // 카테고리별 색상 매핑
