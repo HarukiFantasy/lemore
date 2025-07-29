@@ -167,28 +167,30 @@ export default function MessagesPage({ loaderData }: { loaderData: LoaderData })
         content: messageContent.trim()
       });
 
-      // Add the new message to the messages list
-      const newMessage = {
-        message_id: sentMessage.message_id,
-        conversation_id: sentMessage.conversation_id,
-        sender_id: sentMessage.sender_id,
-        receiver_id: sentMessage.receiver_id,
-        content: sentMessage.content,
-        message_type: sentMessage.message_type,
-        media_url: sentMessage.media_url,
-        seen: sentMessage.seen,
-        created_at: sentMessage.created_at,
-        sender_username: user?.username,
-        sender_avatar_url: user?.avatar_url,
-        receiver_username: selectedConv.sender_username === user?.username 
-          ? selectedConv.receiver_username 
-          : selectedConv.sender_username,
-        receiver_avatar_url: selectedConv.sender_username === user?.username 
-          ? selectedConv.receiver_avatar_url 
-          : selectedConv.sender_avatar_url,
-      };
+      if (sentMessage) {
+        // Add the new message to the messages list
+        const newMessage = {
+          message_id: sentMessage.message_id,
+          conversation_id: sentMessage.conversation_id,
+          sender_id: sentMessage.sender_id,
+          receiver_id: sentMessage.receiver_id,
+          content: sentMessage.content,
+          message_type: sentMessage.message_type,
+          media_url: sentMessage.media_url,
+          seen: sentMessage.seen,
+          created_at: sentMessage.created_at,
+          sender_username: user?.username,
+          sender_avatar_url: user?.avatar_url,
+          receiver_username: selectedConv.sender_username === user?.username 
+            ? selectedConv.receiver_username 
+            : selectedConv.sender_username,
+          receiver_avatar_url: selectedConv.sender_username === user?.username 
+            ? selectedConv.receiver_avatar_url 
+            : selectedConv.sender_avatar_url,
+        };
 
-      setMessages(prev => [...prev, newMessage]);
+        setMessages(prev => [...prev, newMessage]);
+      }
     } catch (error) {
       console.error('Failed to send message:', error);
       setError(`Failed to send message: ${error instanceof Error ? error.message : 'Unknown error'}`);

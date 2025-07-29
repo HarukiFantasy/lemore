@@ -271,33 +271,22 @@ export const getOrCreateConversation = async (
   client: SupabaseClient<Database>,
   { userId, otherUserId, productId }: { userId: string; otherUserId: string; productId?: number }
 ) => {
-  // 기존 대화가 있는지 확인
-  const { data: conversations, error: findError } = await client
-    .from("message_participants")
-    .select("conversation_id")
-    .eq("profile_id", userId);
-    
-  if (findError) throw new Error(findError.message);
-  
-  if (conversations.length > 0) {
-    // 사용자의 대화들 중에서 상대방도 참가한 대화 찾기
-    const conversationIds = conversations.map(c => c.conversation_id);
-    const { data: sharedConversations, error: sharedError } = await client
-      .from("message_participants")
-      .select("conversation_id")
-      .eq("profile_id", otherUserId)
-      .in("conversation_id", conversationIds);
-      
-    if (sharedError) throw new Error(sharedError.message);
-    
-    if (sharedConversations.length > 0) {
-      // 기존 대화 반환
-      return { conversation_id: sharedConversations[0].conversation_id };
-    }
+  const { data, error } = await client.rpc('get_or_create_conversation_with_participants', {
+    p_user_id: userId,
+    p_other_user_id: otherUserId,
+    p_product_id: productId
+  });
+
+  if (error) {
+    console.error('Error in getOrCreateConversation RPC:', error);
+    throw error;
   }
   
-  // 새 대화 생성
-  return await createConversation(client, { participantIds: [userId, otherUserId], productId });
+  if (!data) {
+    throw new Error('Failed to get or create conversation.');
+  }
+
+  return data;
 };
 
 export const searchUsers = async (
