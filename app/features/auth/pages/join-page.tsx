@@ -8,8 +8,6 @@ import { makeSSRClient } from "~/supa-client";
 import z from 'zod';
 import { checkUsernameExists } from '../queries';
 import { CircleIcon } from "lucide-react";   
-import { Resend } from "resend";
-import { LemoreWelcomeEmail } from 'react-email-starter/emails/welcome-user';
 
 
 export const meta: Route.MetaFunction = () => {
@@ -19,7 +17,6 @@ export const meta: Route.MetaFunction = () => {
   ];
 };
 
-const resendClient = new Resend(process.env.RESEND_API_KEY);
 
 const formSchema = z.object({
   username: z.string().min(2, "Username must be at least 2 characters"),
@@ -29,53 +26,49 @@ const formSchema = z.object({
 });
 
 export const action = async ({ request }: Route.ActionArgs) => {
-  try {
-    const formData = await request.formData();
-    const { success, data, error } = formSchema.safeParse(
-      Object.fromEntries(formData)
-    );
-    if (!success) {
-      return { formErrors: error.flatten().fieldErrors };
-    }
-    const { username, email, password, confirmPassword } = data;
-    if (password !== confirmPassword) {
-      return { formErrors: { confirmPassword: ['Passwords do not match'] } };
-    }
-    const usernameExists = await checkUsernameExists(request, {
-      username: data.username,
-    });
-    if (usernameExists) {
-      return {
-        formErrors: { username: ['Username already exists'] },
-      };
-    }
-    const { client, headers } = makeSSRClient(request);
-    const {
-      data: { user },
-      error: signUpError,
-    } = await client.auth.signUp({
-      email: data.email,
-      password: data.password,
-      options: {
-        data: { username: data.username },
+  const formData = await request.formData();
+  const { success, data, error } = formSchema.safeParse(Object.fromEntries(formData));
+  if (!success) {
+    return { formErrors: error.flatten().fieldErrors };
+  }
+  const { username, email, password, confirmPassword } = data;
+  if (password !== confirmPassword) {
+    return { formErrors: { confirmPassword: ["Passwords do not match"] } };
+  }
+  const usernameExists = await checkUsernameExists(request, {
+    username: data.username,
+  });
+  if (usernameExists) {
+    return {
+      formErrors: { username: ["Username already exists"] },
+    };
+  }
+  const { client, headers } = makeSSRClient(request);
+  const { data: { user }, error: signUpError } = await client.auth.signUp({
+    email: data.email,
+    password: data.password,
+    options: {
+      data: { username: data.username },
+    },
+  });
+  if (signUpError) {
+    return {
+      signUpError: signUpError.message,
+    };
+  }
+  // 쿠키 헤더 직접 설정
+  const setCookieHeader = headers.get("Set-Cookie");
+  if (setCookieHeader) {
+    return redirect("/", {
+      headers: {
+        "Set-Cookie": setCookieHeader,
       },
     });
-    if (signUpError) {
-      return {
-        signUpError: signUpError.message,
-      };
-    }
-
-    return redirect('/', { headers });
-  } catch (error) {
-    console.error('Join action error:', error);
-    const message =
-      error instanceof Error ? error.message : 'An unexpected error occurred.';
-    return { signUpError: message };
   }
+  return redirect("/", { headers });
 };
 
-export default function JoinPage({ actionData }: Route.ComponentProps) {
+export default function JoinPage({actionData}: Route.ComponentProps) {
   const navigation = useNavigation();
   const isSubmitting = navigation.state === "submitting" || navigation.state === "loading";
   return (
