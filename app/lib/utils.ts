@@ -1,6 +1,7 @@
 import { type ClassValue, clsx } from "clsx"
 import { twMerge } from "tailwind-merge"
 import { z } from "zod"
+import { DateTime } from "luxon";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -44,41 +45,21 @@ export function validateSearchParams<T>(schema: z.ZodSchema<T>, searchParams: UR
   return validateUrlParams(schema, params);
 }
 
-export function formatTimeAgo(date: Date): string {
-  const now = new Date();
-  const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
-  
-  if (diffInSeconds < 60) {
-    return "Just now";
-  }
-  
-  const diffInMinutes = Math.floor(diffInSeconds / 60);
-  if (diffInMinutes < 60) {
-    return `${diffInMinutes} minute${diffInMinutes > 1 ? 's' : ''} ago`;
-  }
-  
-  const diffInHours = Math.floor(diffInMinutes / 60);
-  if (diffInHours < 24) {
-    return `${diffInHours} hour${diffInHours > 1 ? 's' : ''} ago`;
-  }
-  
-  const diffInDays = Math.floor(diffInHours / 24);
-  if (diffInDays < 7) {
-    return `${diffInDays} day${diffInDays > 1 ? 's' : ''} ago`;
-  }
-  
-  const diffInWeeks = Math.floor(diffInDays / 7);
-  if (diffInWeeks < 4) {
-    return `${diffInWeeks} week${diffInWeeks > 1 ? 's' : ''} ago`;
-  }
-  
-  const diffInMonths = Math.floor(diffInDays / 30);
-  if (diffInMonths < 12) {
-    return `${diffInMonths} month${diffInMonths > 1 ? 's' : ''} ago`;
-  }
-  
-  const diffInYears = Math.floor(diffInDays / 365);
-  return `${diffInYears} year${diffInYears > 1 ? 's' : ''} ago`;
+export function formatTimeAgo(dateString: string | Date): string {
+  if (!dateString) return "";
+  const date = typeof dateString === 'string' ? new Date(dateString) : dateString;
+  const dt = DateTime.fromJSDate(date).toUTC();
+  const now = DateTime.now().toUTC();
+  const diff = now.diff(dt, ['years', 'months', 'days', 'hours', 'minutes', 'seconds']);
+
+  if (diff.years > 0) return `${Math.floor(diff.years)} year${Math.floor(diff.years) > 1 ? 's' : ''} ago`;
+  if (diff.months > 0) return `${Math.floor(diff.months)} month${Math.floor(diff.months) > 1 ? 's' : ''} ago`;
+  if (diff.days > 0) return `${Math.floor(diff.days)} day${Math.floor(diff.days) > 1 ? 's' : ''} ago`;
+  if (diff.hours > 0) return `${Math.floor(diff.hours)} hour${Math.floor(diff.hours) > 1 ? 's' : ''} ago`;
+  if (diff.minutes > 0) return `${Math.floor(diff.minutes)} minute${Math.floor(diff.minutes) > 1 ? 's' : ''} ago`;
+  if (diff.seconds > 5) return `${Math.floor(diff.seconds)} seconds ago`;
+
+  return "Just now";
 }
 
 // 카테고리별 색상 매핑
