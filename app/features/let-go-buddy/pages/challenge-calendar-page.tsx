@@ -1,12 +1,15 @@
-import { useState } from 'react';
-import { redirect } from "react-router";
+import { useState, useEffect } from 'react';
+import { redirect, useFetcher } from "react-router";
 import { Card, CardContent, CardHeader, CardTitle } from '~/common/components/ui/card';
 import { Button } from '~/common/components/ui/button';
 import { Checkbox } from '~/common/components/ui/checkbox';
 import { Progress } from '~/common/components/ui/progress';
 import { Textarea } from '~/common/components/ui/textarea';
 import { Calendar } from '~/common/components/ui/calendar';
+import { Input } from '~/common/components/ui/input';
 import { makeSSRClient } from '~/supa-client';
+import { getChallengeItems } from '../queries';
+import { createChallengeItem, updateChallengeItemCompletion, deleteChallengeItem } from '../mutations';
 
 export async function loader({ request }: { request: Request }) {
   const { client } = makeSSRClient(request);
@@ -26,46 +29,191 @@ export async function loader({ request }: { request: Request }) {
     canUseLetGoBuddy = false;
   }
   
-  return { user, canUseLetGoBuddy };
+  // Fetch challenge calendar items
+  const challengeItems = await getChallengeItems(client, { userId: user.id });
+  
+  return { user, canUseLetGoBuddy, challengeItems };
 }
 
-const MOCK_CHALLENGE_ITEMS = [
-  { id: 1, name: 'Old College Hoodie', date: '2025-07-28', completed: true, reflection: 'It was harder than I thought, but I feel lighter now.' },
-  { id: 2, name: 'Unused Yoga Mat', date: '2025-07-29', completed: false, reflection: '' },
-  { id: 3, name: 'That book I never read', date: '2025-07-30', completed: false, reflection: '' },
-  { id: 4, name: 'Random kitchen gadget', date: '2025-08-01', completed: false, reflection: '' },
-  { id: 5, name: 'Expired Spices', date: new Date().toISOString().split('T')[0], completed: false, reflection: '' },
-];
+export async function action({ request }: { request: Request }) {
+  const { client } = makeSSRClient(request);
+  const { data: { user } } = await client.auth.getUser();
+  
+  if (!user) {
+    return new Response(JSON.stringify({ error: "Authentication required" }), { 
+      status: 401,
+      headers: { "Content-Type": "application/json" }
+    });
+  }
 
-export default function ChallengeCalendarPage({ loaderData }: { loaderData: { user: any; canUseLetGoBuddy: boolean } }) {
-  const { user, canUseLetGoBuddy } = loaderData;
-  const [challengeItems, setChallengeItems] = useState(MOCK_CHALLENGE_ITEMS);
+  const formData = await request.formData();
+  const intent = formData.get('intent') as string;
+
+  try {
+    switch (intent) {
+      case 'create': {
+        const name = formData.get('name') as string;
+        const scheduledDate = formData.get('scheduledDate') as string;
+        
+        if (!name || !scheduledDate) {
+          return new Response(JSON.stringify({ error: "Name and scheduled date are required" }), { 
+            status: 400,
+            headers: { "Content-Type": "application/json" }
+          });
+        }
+
+        const item = await createChallengeItem(client, {
+          userId: user.id,
+          name,
+          scheduledDate
+        });
+
+        return new Response(JSON.stringify({ success: true, item }), {
+          headers: { "Content-Type": "application/json" }
+        });
+      }
+
+      case 'update': {
+        const itemId = parseInt(formData.get('itemId') as string);
+        const completed = formData.get('completed') === 'true';
+        const reflection = formData.get('reflection') as string;
+
+        const item = await updateChallengeItemCompletion(client, {
+          itemId,
+          completed,
+          reflection: reflection || undefined,
+          userId: user.id
+        });
+
+        return new Response(JSON.stringify({ success: true, item }), {
+          headers: { "Content-Type": "application/json" }
+        });
+      }
+
+      case 'delete': {
+        const itemId = parseInt(formData.get('itemId') as string);
+
+        await deleteChallengeItem(client, {
+          itemId,
+          userId: user.id
+        });
+
+        return new Response(JSON.stringify({ success: true }), {
+          headers: { "Content-Type": "application/json" }
+        });
+      }
+
+      default:
+        return new Response(JSON.stringify({ error: "Invalid intent" }), { 
+          status: 400,
+          headers: { "Content-Type": "application/json" }
+        });
+    }
+  } catch (error) {
+    console.error('Challenge calendar action error:', error);
+    return new Response(JSON.stringify({ 
+      error: error instanceof Error ? error.message : "Unknown error occurred" 
+    }), { 
+      status: 500,
+      headers: { "Content-Type": "application/json" }
+    });
+  }
+}
+
+export default function ChallengeCalendarPage({ loaderData }: { loaderData: { user: any; canUseLetGoBuddy: boolean; challengeItems: any[] } }) {
+  const { user, canUseLetGoBuddy, challengeItems: initialChallengeItems } = loaderData;
+  const [challengeItems, setChallengeItems] = useState(initialChallengeItems);
+  const [newItemName, setNewItemName] = useState('');
+  const [newItemDate, setNewItemDate] = useState('');
+  const fetcher = useFetcher();
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [showAllTasks, setShowAllTasks] = useState(false);
 
-  const handleCompletion = (id: number) => {
+  // Handle fetcher completion to refresh data
+  useEffect(() => {
+    if (fetcher.data && fetcher.state === 'idle') {
+      if (fetcher.data.success && fetcher.data.item) {
+        // Update the local state when creating a new item
+        if (typeof fetcher.data.item === 'object' && 'item_id' in fetcher.data.item) {
+          setChallengeItems(prev => [...prev, fetcher.data.item]);
+        }
+      }
+    }
+  }, [fetcher.data, fetcher.state]);
+
+  const handleCompletion = (itemId: number) => {
+    const item = challengeItems.find(item => item.item_id === itemId);
+    if (!item) return;
+    
+    const formData = new FormData();
+    formData.append('intent', 'update');
+    formData.append('itemId', itemId.toString());
+    formData.append('completed', (!item.completed).toString());
+    formData.append('reflection', item.reflection || '');
+    
+    fetcher.submit(formData, { method: 'POST' });
+    
+    // Optimistically update UI
     setChallengeItems(items =>
-      items.map(item => (item.id === id ? { ...item, completed: !item.completed } : item))
+      items.map(item => (item.item_id === itemId ? { ...item, completed: !item.completed } : item))
     );
   };
 
-  const handleReflection = (id: number, text: string) => {
-     setChallengeItems(items =>
-      items.map(item => (item.id === id ? { ...item, reflection: text } : item))
+  const handleReflection = (itemId: number, text: string) => {
+    const item = challengeItems.find(item => item.item_id === itemId);
+    if (!item) return;
+    
+    const formData = new FormData();
+    formData.append('intent', 'update');
+    formData.append('itemId', itemId.toString());
+    formData.append('completed', item.completed.toString());
+    formData.append('reflection', text);
+    
+    fetcher.submit(formData, { method: 'POST' });
+    
+    // Optimistically update UI
+    setChallengeItems(items =>
+      items.map(item => (item.item_id === itemId ? { ...item, reflection: text } : item))
     );
-  }
+  };
+
+  const handleAddItem = () => {
+    if (!newItemName || !newItemDate) return;
+    
+    const formData = new FormData();
+    formData.append('intent', 'create');
+    formData.append('name', newItemName);
+    formData.append('scheduledDate', newItemDate);
+    
+    fetcher.submit(formData, { method: 'POST' });
+    
+    // Reset form
+    setNewItemName('');
+    setNewItemDate('');
+  };
+
+  const handleDeleteItem = (itemId: number) => {
+    const formData = new FormData();
+    formData.append('intent', 'delete');
+    formData.append('itemId', itemId.toString());
+    
+    fetcher.submit(formData, { method: 'POST' });
+    
+    // Optimistically update UI
+    setChallengeItems(items => items.filter(item => item.item_id !== itemId));
+  };
 
   const completedCount = challengeItems.filter(item => item.completed).length;
   const progressPercentage = (completedCount / challengeItems.length) * 100;
   
   const challengeDays = challengeItems.map(item => {
-    const date = new Date(item.date);
+    const date = new Date(item.scheduled_date);
     return new Date(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate());
   });
   
   const selectedDayItem = selectedDate 
     ? challengeItems.find(item => {
-        const itemDate = new Date(item.date);
+        const itemDate = new Date(item.scheduled_date);
         const itemUTCDate = new Date(Date.UTC(itemDate.getUTCFullYear(), itemDate.getUTCMonth(), itemDate.getUTCDate()));
         return itemUTCDate.toDateString() === selectedDate.toDateString();
       })
@@ -122,21 +270,34 @@ export default function ChallengeCalendarPage({ loaderData }: { loaderData: { us
               </div>
               <div className="space-y-4 max-h-[400px] overflow-y-auto pr-4">
                 {challengeItems.map(item => (
-                  <Card key={item.id} className={item.completed ? 'bg-muted/50' : ''}>
+                  <Card key={item.item_id} className={item.completed ? 'bg-muted/50' : ''}>
                     <CardContent className="p-3">
                       <div className="flex items-center justify-between">
                         <div>
                           <h3 className="font-semibold text-sm">{item.name}</h3>
-                          <p className="text-xs text-muted-foreground">{new Date(item.date).toLocaleDateString()}</p>
+                          <p className="text-xs text-muted-foreground">{new Date(item.scheduled_date).toLocaleDateString()}</p>
                         </div>
                         <div className="flex items-center gap-2">
                           <span className="text-xs">Done</span>
                           <Checkbox
                             checked={item.completed}
-                            onCheckedChange={() => handleCompletion(item.id)}
+                            onCheckedChange={() => handleCompletion(item.item_id)}
                           />
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDeleteItem(item.item_id)}
+                            className="text-red-500 hover:text-red-700 h-6 w-6 p-0"
+                          >
+                            ×
+                          </Button>
                         </div>
                       </div>
+                      {item.completed && item.reflection && (
+                        <div className="mt-2 pt-2 border-t">
+                          <p className="text-xs text-muted-foreground italic">{item.reflection}</p>
+                        </div>
+                      )}
                     </CardContent>
                   </Card>
                 ))}
@@ -165,7 +326,7 @@ export default function ChallengeCalendarPage({ loaderData }: { loaderData: { us
                         <span>Done</span>
                         <Checkbox
                           checked={selectedDayItem.completed}
-                          onCheckedChange={() => handleCompletion(selectedDayItem.id)}
+                          onCheckedChange={() => handleCompletion(selectedDayItem.item_id)}
                         />
                       </div>
                     </div>
@@ -176,7 +337,7 @@ export default function ChallengeCalendarPage({ loaderData }: { loaderData: { us
                         <Textarea
                           placeholder="e.g., Liberating, nostalgic, difficult..."
                           value={selectedDayItem.reflection}
-                          onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => handleReflection(selectedDayItem.id, e.target.value)}
+                          onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => handleReflection(selectedDayItem.item_id, e.target.value)}
                         />
                       </div>
                     )}
@@ -200,6 +361,36 @@ export default function ChallengeCalendarPage({ loaderData }: { loaderData: { us
           )}
         </div>
       </div>
+
+      {/* Add New Item Form */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Add New Challenge Item</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div>
+            <Input
+              placeholder="Item name (e.g., Old College Hoodie)"
+              value={newItemName}
+              onChange={(e) => setNewItemName(e.target.value)}
+            />
+          </div>
+          <div>
+            <Input
+              type="date"
+              value={newItemDate}
+              onChange={(e) => setNewItemDate(e.target.value)}
+            />
+          </div>
+          <Button 
+            onClick={handleAddItem}
+            disabled={!newItemName || !newItemDate || fetcher.state === 'submitting'}
+            className="w-full"
+          >
+            {fetcher.state === 'submitting' ? 'Adding...' : 'Add Challenge Item'}
+          </Button>
+        </CardContent>
+      </Card>
     </div>
   );
 }
