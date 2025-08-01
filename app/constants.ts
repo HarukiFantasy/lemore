@@ -51,6 +51,47 @@ export const ALL_LOCATIONS = [
 // 국가 목록
 export const COUNTRIES = Object.keys(COUNTRY_CONFIG) as (keyof typeof COUNTRY_CONFIG)[];
 
+// Popular cities (shown at top)
+export const POPULAR_CITIES = [
+  { name: "Bangkok", country: "Thailand", display: "Bangkok", korean: "" },
+  { name: "Seoul", country: "Korea", display: "Seoul", korean: "서울" },
+  { name: "ChiangMai", country: "Thailand", display: "Chiang Mai", korean: "" },
+  { name: "Busan", country: "Korea", display: "Busan", korean: "부산" }
+] as const;
+
+// Other cities by country (excluding popular ones)
+export const THAILAND_OTHER_CITIES = [
+  "Phuket",
+  "HuaHin",
+  "Pattaya", 
+  "Krabi",
+  "Koh Samui",
+  "Other Thai Cities"
+] as const;
+
+export const KOREA_OTHER_CITIES = [
+  { name: "Incheon", korean: "인천" },
+  { name: "Daegu", korean: "대구" },
+  { name: "Daejeon", korean: "대전" },
+  { name: "Gwangju", korean: "광주" },
+  { name: "Ulsan", korean: "울산" },
+  { name: "Other Korean Cities", korean: "" }
+] as const;
+
+// Helper function to get Korean city name
+export const getKoreanCityName = (cityName: string): string => {
+  const koreanCity = KOREA_OTHER_CITIES.find(city => city.name === cityName);
+  const popularCity = POPULAR_CITIES.find(city => city.name === cityName);
+  
+  if (koreanCity && koreanCity.korean) {
+    return `${cityName} (${koreanCity.korean})`;
+  }
+  if (popularCity && popularCity.korean) {
+    return `${cityName} (${popularCity.korean})`;
+  }
+  return cityName;
+};
+
 // 통화 정보
 export const CURRENCIES = ["THB", "KRW", "USD", "EUR"] as const;
 

@@ -5,7 +5,7 @@ import { Button } from './ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from './ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { BarChart3Icon, BellIcon, LogOutIcon, MenuIcon, MessageCircleIcon, SettingsIcon, UserIcon, MapPin, ChevronDown, HeartIcon } from 'lucide-react';
-import { COUNTRY_CONFIG, COUNTRIES, getCountryByLocation } from '~/constants';
+import { POPULAR_CITIES, THAILAND_OTHER_CITIES, KOREA_OTHER_CITIES, getCountryByLocation } from '~/constants';
 import { NotificationsPage } from '../../features/users/pages/notifications-page';
 
 const menus = [
@@ -45,7 +45,7 @@ export function Navigation({
   avatarUrl: string;
 }) {
   const [searchParams, setSearchParams] = useSearchParams();
-  const [location, setLocation] = useState(searchParams.get("location") || "Bangkok");
+  const [location, setLocation] = useState(searchParams.get("location") || "All Cities");
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
 
   const updateLocation = (newLocation: string) => {
@@ -70,7 +70,7 @@ export function Navigation({
   }, [searchParams, location]);
 
   return (
-    <nav className="flex items-center justify-between px-4 sm:px-5 h-14 sm:h-16 bg-primary fixed top-0 left-0 right-0 z-50">
+    <nav className="flex items-center justify-between px-4 sm:px-5 h-12 sm:h-14 bg-primary fixed top-0 left-0 right-0 z-50">
       {/* 왼쪽 메뉴 */}
       <div className="flex items-center gap-2 sm:gap-4 min-w-0">
         {/* 모바일 메뉴 */}
@@ -175,24 +175,72 @@ export function Navigation({
               <ChevronDown className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-56">
-            <DropdownMenuItem onClick={() => updateLocation("All Cities")}>
-              <span className="font-medium">🌐 All Cities</span>
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            {COUNTRIES.map((country) => (
-              <div key={country}>
-                <DropdownMenuLabel className="text-xs font-semibold text-neutral-600 px-2 py-1">
-                  {country === "Thailand" ? "🇹🇭 Thailand" : "🇰🇷 Korea"}
-                </DropdownMenuLabel>
-                {COUNTRY_CONFIG[country].cities.map((city) => (
-                  <DropdownMenuItem key={city} onClick={() => updateLocation(city)} className="pl-6">
-                    {city}
+          <DropdownMenuContent align="end" className="w-80 p-0">
+            {/* All Cities Option */}
+            <div className="p-3 border-b">
+              <DropdownMenuItem onClick={() => updateLocation("All Cities")} className="justify-start">
+                <span className="font-medium">🌐 All Cities</span>
+              </DropdownMenuItem>
+            </div>
+
+            {/* Popular Cities - 2 columns */}
+            <div className="p-3 border-b">
+              <DropdownMenuLabel className="text-xs font-semibold text-neutral-600 px-0 pb-2">
+                🌟 POPULAR
+              </DropdownMenuLabel>
+              <div className="grid grid-cols-2 gap-2">
+                {POPULAR_CITIES.map((city) => (
+                  <DropdownMenuItem 
+                    key={city.name} 
+                    onClick={() => updateLocation(city.name)} 
+                    className="justify-start text-xs"
+                  >
+                    📍 {city.display} {city.korean && `(${city.korean})`}
                   </DropdownMenuItem>
                 ))}
-                {country !== COUNTRIES[COUNTRIES.length - 1] && <DropdownMenuSeparator />}
               </div>
-            ))}
+            </div>
+
+            {/* All Cities - 2 columns by country */}
+            <div className="p-3">
+              <div className="grid grid-cols-2 gap-4">
+                {/* Thailand Column */}
+                <div>
+                  <DropdownMenuLabel className="text-xs font-semibold text-neutral-600 px-0 pb-2">
+                    🇹🇭 THAILAND
+                  </DropdownMenuLabel>
+                  <div className="space-y-1">
+                    {THAILAND_OTHER_CITIES.map((city) => (
+                      <DropdownMenuItem 
+                        key={city} 
+                        onClick={() => updateLocation(city)} 
+                        className="justify-start text-xs"
+                      >
+                        📍 {city === "HuaHin" ? "Hua Hin" : city}
+                      </DropdownMenuItem>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Korea Column */}
+                <div>
+                  <DropdownMenuLabel className="text-xs font-semibold text-neutral-600 px-0 pb-2">
+                    🇰🇷 KOREA
+                  </DropdownMenuLabel>
+                  <div className="space-y-1">
+                    {KOREA_OTHER_CITIES.map((city) => (
+                      <DropdownMenuItem 
+                        key={city.name} 
+                        onClick={() => updateLocation(city.name)} 
+                        className="justify-start text-xs"
+                      >
+                        📍 {city.korean ? `${city.name} (${city.korean})` : city.name}
+                      </DropdownMenuItem>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
           </DropdownMenuContent>
         </DropdownMenu>
 

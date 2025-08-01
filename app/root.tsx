@@ -11,6 +11,7 @@ import {
 import type { Route } from "./+types/root";
 import "./app.css";
 import { Navigation } from "./common/components/navigation";
+import { Footer } from "./common/components/footer";
 import { makeSSRClient } from './supa-client';
 import { cn } from './lib/utils';
 import { getUserByProfileId, getUnreadNotificationsStatus, getUnreadMessagesStatus } from "./features/users/queries";
@@ -59,9 +60,7 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
     const { data: {user}, error: authError } = await client.auth.getUser();
     
     // If there's an authentication error (like refresh token not found)
-    if (authError) {
-      console.warn('Authentication error detected:', authError.message);
-      
+    if (authError) {  
       // Clear the invalid session
       await client.auth.signOut();
       
@@ -145,11 +144,12 @@ export default function App({ loaderData }: Route.ComponentProps) {
   useAuthErrorHandler();
   
   return (
+    <div className="min-h-screen flex flex-col">
       <div
-      className={cn({
-        "py-20": !pathname.includes("/auth/"),
-        "transition-opacity animate-pulse": isLoading,
-      })}
+        className={cn({
+          "pt-14": !pathname.includes("/auth/"),
+          "transition-opacity animate-pulse": isLoading,
+        })}
       > 
         {pathname.includes("/auth") ? null : (
           <Navigation
@@ -160,8 +160,12 @@ export default function App({ loaderData }: Route.ComponentProps) {
             hasMessages={hasMessages}
           />
         )}
-        <Outlet />
+        <main className="flex-1">
+          <Outlet />
+        </main>
       </div>
+      {pathname.includes("/auth") ? null : <Footer />}
+    </div>
   );
 }
 
