@@ -1,3 +1,5 @@
+DROP VIEW IF EXISTS user_dashboard_view CASCADE;
+
 -- 1. User Dashboard View
 CREATE OR REPLACE VIEW user_dashboard_view AS
 WITH
@@ -9,13 +11,7 @@ WITH
             up.avatar_url,
             up.bio,
             up.location,
-            up.total_likes,
-            up.total_views,
-            up.total_listings,
-            up.response_rate,
-            up.response_time,
             up.rating,
-            up.appreciation_badge,
             up.created_at,
             up.updated_at,
             -- 판매 통계
@@ -75,13 +71,7 @@ WITH
             up.avatar_url,
             up.bio,
             up.location,
-            up.total_likes,
-            up.total_views,
-            up.total_listings,
-            up.response_rate,
-            up.response_time,
             up.rating,
-            up.appreciation_badge,
             up.created_at,
             up.updated_at
     ),

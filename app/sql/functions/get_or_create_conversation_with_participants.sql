@@ -6,6 +6,7 @@ CREATE OR REPLACE FUNCTION public.get_or_create_conversation_with_participants(
 RETURNS json
 LANGUAGE plpgsql
 SECURITY DEFINER
+SET search_path = public
 AS $$
 DECLARE
     v_conversation_id bigint;

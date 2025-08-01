@@ -1,3 +1,5 @@
+DROP VIEW IF EXISTS user_sales_stats_view CASCADE;
+
 -- User Sales Statistics View
 CREATE OR REPLACE VIEW user_sales_stats_view AS
 SELECT

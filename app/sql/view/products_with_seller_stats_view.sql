@@ -1,3 +1,5 @@
+DROP VIEW IF EXISTS products_with_seller_stats_view CASCADE;
+
 -- Products with Seller Stats View
 CREATE OR REPLACE VIEW products_with_seller_stats_view AS
 SELECT

@@ -1,3 +1,5 @@
+DROP VIEW IF EXISTS environmental_impact_summary_view CASCADE;
+
 CREATE OR REPLACE VIEW environmental_impact_summary_view AS
 SELECT sessions.user_id, user_profiles.username, sessions.session_id, sessions.situation,
 

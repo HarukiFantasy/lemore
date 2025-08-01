@@ -1,3 +1,5 @@
+DROP VIEW IF EXISTS item_analyses_detailed_view CASCADE;
+
 -- 9. Item Analyses Detailed View
 CREATE OR REPLACE VIEW item_analyses_detailed_view AS
 SELECT

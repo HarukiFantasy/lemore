@@ -3,7 +3,7 @@ import { Link, redirect } from "react-router";
 import { Button } from "~/common/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "~/common/components/ui/card";
 import { ProductCard } from "~/features/products/components/product-card";
-import { HeartIcon, FilterIcon, ArrowUpDownIcon } from "lucide-react";
+import { HeartIcon, ArrowUpDownIcon } from "lucide-react";
 import { 
   Select, 
   SelectContent, 
@@ -13,21 +13,19 @@ import {
 } from "~/common/components/ui/select";
 import { makeSSRClient } from "~/supa-client";
 import { Route } from './+types/likes-page';
-import { getLikedProductsByUserId, getLikedLocalTipPostsByUserId } from '../queries';
+import { getLikedProductsByUserId } from '../queries';
 import { DateTime } from "luxon";
 
 interface LoaderData {
   likedProducts: any[];
-  likedLocalTipPosts: any[];
 }
 
 interface LikedItem {
   id: string;
-  type: "product" | "tip";
+  type: "product";
   title?: string;
   createdAt?: string;
   products?: any;
-  posts?: any;
   [key: string]: any;
 }
 
@@ -45,62 +43,38 @@ export const loader = async ({request}: Route.LoaderArgs) => {
     return redirect('/auth/login');
   }
   const likedProducts = await getLikedProductsByUserId(client, { profileId: user.id });
-  const likedLocalTipPosts = await getLikedLocalTipPostsByUserId(client, { profileId: user.id });
-  return { likedProducts, likedLocalTipPosts };
+  return { likedProducts };
 };
 
 export default function LikesPage({ loaderData }: { loaderData: LoaderData }) {
   const [sortBy, setSortBy] = useState("date");
-  const [filterBy, setFilterBy] = useState("all"); // all, products, tips
   const [likedProducts, setLikedProducts] = useState(loaderData.likedProducts);
-  const [likedLocalTipPosts, setLikedLocalTipPosts] = useState(loaderData.likedLocalTipPosts);
 
   // Handle unlike product
   const handleUnlikeProduct = (productId: string) => {
     setLikedProducts(prev => prev.filter(product => product.product_id !== productId));
   };
 
-  // Handle unlike tip post
-  const handleUnlikeTipPost = (postId: string) => {
-    setLikedLocalTipPosts(prev => prev.filter(post => post.post_id !== postId));
-  };
-
   // Get filtered items based on type
   const getFilteredItems = (): LikedItem[] => {
-    let items: LikedItem[] = [];
-    
-    if (filterBy === "all" || filterBy === "products") {
-      const productsWithType = likedProducts.map(product => ({
-        ...product,
-        type: "product",
-        id: product.product_id,
-        title: product.products?.title,
-        createdAt: product.created_at
-      }));
-      items = [...items, ...productsWithType];
-    }
-    
-    if (filterBy === "all" || filterBy === "tips") {
-      const tipsWithType = likedLocalTipPosts.map(tip => ({
-        ...tip,
-        type: "tip",
-        id: tip.post_id,
-        title: tip.posts?.title,
-        createdAt: tip.created_at
-      }));
-      items = [...items, ...tipsWithType];
-    }
+    const productsWithType = likedProducts.map(product => ({
+      ...product,
+      type: "product" as const,
+      id: product.product_id,
+      title: product.products?.title,
+      createdAt: product.created_at
+    }));
     
     // Sort items
-    return items.sort((a, b) => {
+    return productsWithType.sort((a, b) => {
       switch (sortBy) {
         case "price":
           const priceA = a.products?.price || 0;
           const priceB = b.products?.price || 0;
           return priceA - priceB;
         case "likes":
-          const likesA = a.products?.likes_count || (a.posts?.stats?.likes) || 0;
-          const likesB = b.products?.likes_count || (b.posts?.stats?.likes) || 0;
+          const likesA = a.products?.likes_count || 0;
+          const likesB = b.products?.likes_count || 0;
           return likesB - likesA;
         case "date":
         default:
@@ -110,13 +84,7 @@ export default function LikesPage({ loaderData }: { loaderData: LoaderData }) {
   };
 
   const filteredAndSortedItems = getFilteredItems();
-  const totalItems = likedProducts.length + likedLocalTipPosts.length;
-
-  const filterOptions = [
-    { value: "all", label: "All Items" },
-    { value: "products", label: "Products" },
-    { value: "tips", label: "Local Tips" }
-  ];
+  const totalItems = likedProducts.length;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -132,43 +100,22 @@ export default function LikesPage({ loaderData }: { loaderData: LoaderData }) {
           </p>
         </div>
 
-        {/* Filters and Sort */}
+        {/* Sort */}
         <Card className="mb-6">
           <CardContent className="p-4">
-            <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
-              <div className="flex items-center gap-4">
-                <div className="flex items-center gap-2">
-                  <FilterIcon className="w-4 h-4 text-gray-500" />
-                  <span className="text-sm font-medium text-gray-700">Filter:</span>
-                  <Select value={filterBy} onValueChange={setFilterBy}>
-                    <SelectTrigger className="w-32">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {filterOptions.map(option => (
-                        <SelectItem key={option.value} value={option.value}>
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              
-              <div className="flex items-center gap-2">
-                <ArrowUpDownIcon className="w-4 h-4 text-gray-500" />
-                <span className="text-sm font-medium text-gray-700">Sort by:</span>
-                <Select value={sortBy} onValueChange={setSortBy}>
-                  <SelectTrigger className="w-32">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="date">Date Added</SelectItem>
-                    <SelectItem value="price">Price</SelectItem>
-                    <SelectItem value="likes">Most Liked</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+            <div className="flex items-center gap-2 justify-end">
+              <ArrowUpDownIcon className="w-4 h-4 text-gray-500" />
+              <span className="text-sm font-medium text-gray-700">Sort by:</span>
+              <Select value={sortBy} onValueChange={setSortBy}>
+                <SelectTrigger className="w-32">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="date">Date Added</SelectItem>
+                  <SelectItem value="price">Price</SelectItem>
+                  <SelectItem value="likes">Most Liked</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </CardContent>
         </Card>
@@ -196,13 +143,7 @@ export default function LikesPage({ loaderData }: { loaderData: LoaderData }) {
                   variant="destructive"
                   size="sm"
                   className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-10"
-                  onClick={() => {
-                    if (item.type === "product") {
-                      handleUnlikeProduct(item.product_id);
-                    } else {
-                      handleUnlikeTipPost(item.post_id);
-                    }
-                  }}
+                  onClick={() => handleUnlikeProduct(item.product_id)}
                 >
                   Unlike
                 </Button>

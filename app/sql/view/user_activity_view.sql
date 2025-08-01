@@ -1,3 +1,5 @@
+DROP VIEW IF EXISTS user_activity_view CASCADE;
+
 -- User Activity View - 최근 활동 내역
 
 

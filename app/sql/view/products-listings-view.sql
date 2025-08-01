@@ -1,3 +1,5 @@
+DROP VIEW IF EXISTS products_listings_view CASCADE;
+
 -- 3. Products Listings View
 CREATE OR REPLACE VIEW products_listings_view AS
 SELECT
@@ -20,9 +22,6 @@ SELECT
     up.avatar_url AS seller_avatar,
     up.location AS seller_location,
     up.rating AS seller_rating,
-    up.response_rate AS seller_response_rate,
-    up.response_time AS seller_response_time,
-    up.appreciation_badge AS seller_appreciation_badge,
     -- Get primary image or first image
     COALESCE(
         (SELECT pi.image_url 

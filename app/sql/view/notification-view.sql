@@ -1,3 +1,5 @@
+DROP VIEW IF EXISTS notification_view CASCADE;
+
 -- user_notifications + sender/receiver username join view
 CREATE OR REPLACE VIEW notification_view
 with (security_invoker = true) AS

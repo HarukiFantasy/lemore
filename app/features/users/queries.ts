@@ -78,34 +78,6 @@ export const getLikedProductsByUserId = async (
   return data;
 };
 
-export const getLikedLocalTipPostsByUserId = async (
-  client: SupabaseClient<Database>,
-  { profileId }: { profileId: string | null }
-) => {
-  if (!profileId) throw new Error("Profile ID is required");
-
-  const { data, error } = await client
-    .from("local_tip_post_likes")
-    .select(`
-      post_id,
-      created_at,
-      posts:local_tips_list_view!post_id (
-        id,
-        title,
-        content,
-        category,
-        location,
-        stats,
-        created_at,
-        username,
-        avatar_url
-      )
-    `)
-    .eq("user_id", profileId);
-
-  if (error) throw new Error(error.message);
-  return data;
-};
 
 export const getLoggedInUserId = async (client: SupabaseClient<Database>) => {
   try {

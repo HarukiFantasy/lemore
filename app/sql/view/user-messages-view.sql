@@ -1,3 +1,4 @@
+DROP VIEW IF EXISTS user_messages_view CASCADE;
 
 CREATE OR REPLACE VIEW user_messages_view AS
 SELECT
@@ -21,12 +22,12 @@ SELECT
     -- 대화 정보
     c.created_at as conversation_created_at,
     -- 메시지 상태 정보
-    CASE 
+    CASE
         WHEN m.seen = true THEN 'read'
         ELSE 'unread'
     END as message_status,
     -- 메시지 타입별 정보
-    CASE 
+    CASE
         WHEN m.message_type = 'Text' THEN 'text'
         WHEN m.message_type = 'Image' THEN 'image'
         WHEN m.message_type = 'File' THEN 'file'
@@ -35,8 +36,9 @@ SELECT
         WHEN m.message_type = 'Location' THEN 'location'
         ELSE 'unknown'
     END as message_type_category
-FROM user_messages m
-LEFT JOIN user_profiles sender ON m.sender_id = sender.profile_id
-LEFT JOIN user_profiles receiver ON m.receiver_id = receiver.profile_id
-LEFT JOIN user_conversations c ON m.conversation_id = c.conversation_id
+FROM
+    user_messages m
+    LEFT JOIN user_profiles sender ON m.sender_id = sender.profile_id
+    LEFT JOIN user_profiles receiver ON m.receiver_id = receiver.profile_id
+    LEFT JOIN user_conversations c ON m.conversation_id = c.conversation_id
 ORDER BY m.conversation_id, m.created_at;

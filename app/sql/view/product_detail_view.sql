@@ -1,3 +1,5 @@
+DROP VIEW IF EXISTS product_detail_view CASCADE;
+
 -- 2. Product Detail View
 CREATE OR REPLACE VIEW product_detail_view AS
 SELECT
@@ -25,12 +27,6 @@ SELECT
     up.bio AS seller_bio,
     up.location AS seller_location,
     up.rating AS seller_rating,
-    up.response_rate AS seller_response_rate,
-    up.response_time AS seller_response_time,
-    up.appreciation_badge AS seller_appreciation_badge,
-    up.total_likes AS seller_total_likes,
-    up.total_views AS seller_total_views,
-    up.total_listings AS seller_total_listings,
     up.created_at AS seller_joined_at,
     -- Primary image
     COALESCE(
@@ -130,11 +126,4 @@ GROUP BY
     up.avatar_url,
     up.bio,
     up.location,
-    up.rating,
-    up.response_rate,
-    up.response_time,
-    up.appreciation_badge,
-    up.total_likes,
-    up.total_views,
-    up.total_listings,
     up.created_at;
