@@ -15,7 +15,18 @@ export async function loader({ request }: { request: Request }) {
     const url = new URL(request.url);
     return redirect(`/auth/login?redirectTo=${url.pathname}`);
   }
-  return null; // User is logged in
+  
+  // Check usage limits
+  let canUseLetGoBuddy = true;
+  const { count } = await client
+    .from('let_go_buddy_sessions')
+    .select('*', { count: 'exact', head: true })
+    .eq('user_id', user.id);
+  if (typeof count === 'number' && count >= 2) {
+    canUseLetGoBuddy = false;
+  }
+  
+  return { user, canUseLetGoBuddy };
 }
 
 const MOCK_CHALLENGE_ITEMS = [
@@ -26,7 +37,8 @@ const MOCK_CHALLENGE_ITEMS = [
   { id: 5, name: 'Expired Spices', date: new Date().toISOString().split('T')[0], completed: false, reflection: '' },
 ];
 
-export default function ChallengeCalendarPage() {
+export default function ChallengeCalendarPage({ loaderData }: { loaderData: { user: any; canUseLetGoBuddy: boolean } }) {
+  const { user, canUseLetGoBuddy } = loaderData;
   const [challengeItems, setChallengeItems] = useState(MOCK_CHALLENGE_ITEMS);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [showAllTasks, setShowAllTasks] = useState(false);
@@ -65,6 +77,18 @@ export default function ChallengeCalendarPage() {
         <h1 className="text-4xl font-bold">Declutter Challenge Calendar</h1>
         <p className="text-lg text-muted-foreground mt-2">One item at a time. You got this!</p>
       </div>
+
+      {!canUseLetGoBuddy && (
+        <Card className="border-amber-200 bg-amber-50">
+          <CardContent className="p-4 text-center">
+            <div className="text-amber-800 font-medium mb-2">Let Go Buddy Usage Limit Reached</div>
+            <div className="text-sm text-amber-700">
+              You've used your free Let Go Buddy sessions (2/2) as an Explorer level user. 
+              The Challenge Calendar is still available, but AI analysis requires more trust level.
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardHeader>

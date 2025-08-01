@@ -13,7 +13,6 @@ export default [
   ]),
   ...prefix("let-go-buddy", [
     index("features/let-go-buddy/pages/let-go-buddy-page.tsx"),
-    route("/v1", "features/let-go-buddy/pages/let-go-buddy-v1-page.tsx"),
     route("/analysis", "features/let-go-buddy/pages/let-go-buddy-analysis-page.tsx"),
     route("/challenge-calendar", "features/let-go-buddy/pages/challenge-calendar-page.tsx"),
   ]),

@@ -25,6 +25,16 @@ async function convertImageUrlToBase64(imageUrl: string): Promise<string> {
 }
 
 export const loader = async ({ request }: { request: Request }) => {
+  // Check authentication first
+  const { client } = makeSSRClient(request);
+  const { data: { user } } = await client.auth.getUser();
+  if (!user) {
+    return Response.json(
+      { error: "Authentication required" },
+      { status: 401 }
+    );
+  }
+
   const url = new URL(request.url);
   const sessionId = url.searchParams.get("sessionId");
   const imageUrls = url.searchParams.get("imageUrls");

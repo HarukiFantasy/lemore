@@ -17,12 +17,9 @@
       "features/products/pages/product-detail-page": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
       "features/products/pages/edit-product-page": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
       "features/products/pages/like-product-page": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
-      "features/community/pages/community-page": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
-      "features/community/pages/local-tips-page": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
-      "features/community/pages/local-reviews-page": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
-      "features/community/pages/give-and-glow-page": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
       "features/let-go-buddy/pages/let-go-buddy-page": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
       "features/let-go-buddy/pages/let-go-buddy-analysis-page": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
+      "features/let-go-buddy/pages/challenge-calendar-page": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
       "features/auth/pages/login-page": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
       "features/auth/pages/join-page": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
       "features/auth/pages/otp-start-page": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
@@ -38,7 +35,10 @@
       "features/users/pages/messages-page": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
       "features/users/pages/likes-page": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
       "features/users/pages/usersProfile-page": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
-      "features/users/pages/welcome-page": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0"
+      "api/send-welcome-email": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
+      "common/pages/privacy-policy-page": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
+      "common/pages/terms-of-service-page": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
+      "common/pages/data-deletion-page": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0"
     },
     "routes": {
       "root": {
@@ -111,43 +111,6 @@
           "runtime": "nodejs"
         }
       },
-      "features/community/pages/community-page": {
-        "id": "features/community/pages/community-page",
-        "parentId": "root",
-        "file": "app/features/community/pages/community-page.tsx",
-        "path": "community",
-        "index": true,
-        "config": {
-          "runtime": "nodejs"
-        }
-      },
-      "features/community/pages/local-tips-page": {
-        "id": "features/community/pages/local-tips-page",
-        "parentId": "root",
-        "file": "app/features/community/pages/local-tips-page.tsx",
-        "path": "community/local-tips",
-        "config": {
-          "runtime": "nodejs"
-        }
-      },
-      "features/community/pages/local-reviews-page": {
-        "id": "features/community/pages/local-reviews-page",
-        "parentId": "root",
-        "file": "app/features/community/pages/local-reviews-page.tsx",
-        "path": "community/local-reviews",
-        "config": {
-          "runtime": "nodejs"
-        }
-      },
-      "features/community/pages/give-and-glow-page": {
-        "id": "features/community/pages/give-and-glow-page",
-        "parentId": "root",
-        "file": "app/features/community/pages/give-and-glow-page.tsx",
-        "path": "community/give-and-glow",
-        "config": {
-          "runtime": "nodejs"
-        }
-      },
       "features/let-go-buddy/pages/let-go-buddy-page": {
         "id": "features/let-go-buddy/pages/let-go-buddy-page",
         "parentId": "root",
@@ -163,6 +126,15 @@
         "parentId": "root",
         "file": "app/features/let-go-buddy/pages/let-go-buddy-analysis-page.tsx",
         "path": "let-go-buddy/analysis",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "features/let-go-buddy/pages/challenge-calendar-page": {
+        "id": "features/let-go-buddy/pages/challenge-calendar-page",
+        "parentId": "root",
+        "file": "app/features/let-go-buddy/pages/challenge-calendar-page.tsx",
+        "path": "let-go-buddy/challenge-calendar",
         "config": {
           "runtime": "nodejs"
         }
@@ -308,11 +280,38 @@
           "runtime": "nodejs"
         }
       },
-      "features/users/pages/welcome-page": {
-        "id": "features/users/pages/welcome-page",
+      "api/send-welcome-email": {
+        "id": "api/send-welcome-email",
         "parentId": "root",
-        "file": "app/features/users/pages/welcome-page.tsx",
-        "path": "/users/:username/welcome",
+        "file": "app/api/send-welcome-email.ts",
+        "path": "/api/send-welcome-email",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "common/pages/privacy-policy-page": {
+        "id": "common/pages/privacy-policy-page",
+        "parentId": "root",
+        "file": "app/common/pages/privacy-policy-page.tsx",
+        "path": "/privacy-policy",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "common/pages/terms-of-service-page": {
+        "id": "common/pages/terms-of-service-page",
+        "parentId": "root",
+        "file": "app/common/pages/terms-of-service-page.tsx",
+        "path": "/terms-of-service",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
+      "common/pages/data-deletion-page": {
+        "id": "common/pages/data-deletion-page",
+        "parentId": "root",
+        "file": "app/common/pages/data-deletion-page.tsx",
+        "path": "/data-deletion",
         "config": {
           "runtime": "nodejs"
         }
@@ -379,31 +378,6 @@
         "file": "features/products/pages/like-product-page.tsx",
         "path": "secondhand/:productId/like"
       },
-      "features/community/pages/community-page": {
-        "id": "features/community/pages/community-page",
-        "parentId": "root",
-        "file": "features/community/pages/community-page.tsx",
-        "path": "community",
-        "index": true
-      },
-      "features/community/pages/local-tips-page": {
-        "id": "features/community/pages/local-tips-page",
-        "parentId": "root",
-        "file": "features/community/pages/local-tips-page.tsx",
-        "path": "community/local-tips"
-      },
-      "features/community/pages/local-reviews-page": {
-        "id": "features/community/pages/local-reviews-page",
-        "parentId": "root",
-        "file": "features/community/pages/local-reviews-page.tsx",
-        "path": "community/local-reviews"
-      },
-      "features/community/pages/give-and-glow-page": {
-        "id": "features/community/pages/give-and-glow-page",
-        "parentId": "root",
-        "file": "features/community/pages/give-and-glow-page.tsx",
-        "path": "community/give-and-glow"
-      },
       "features/let-go-buddy/pages/let-go-buddy-page": {
         "id": "features/let-go-buddy/pages/let-go-buddy-page",
         "parentId": "root",
@@ -416,6 +390,12 @@
         "parentId": "root",
         "file": "features/let-go-buddy/pages/let-go-buddy-analysis-page.tsx",
         "path": "let-go-buddy/analysis"
+      },
+      "features/let-go-buddy/pages/challenge-calendar-page": {
+        "id": "features/let-go-buddy/pages/challenge-calendar-page",
+        "parentId": "root",
+        "file": "features/let-go-buddy/pages/challenge-calendar-page.tsx",
+        "path": "let-go-buddy/challenge-calendar"
       },
       "features/auth/layouts/auth-layout": {
         "id": "features/auth/layouts/auth-layout",
@@ -512,11 +492,29 @@
         "file": "features/users/pages/usersProfile-page.tsx",
         "path": "/users/:username"
       },
-      "features/users/pages/welcome-page": {
-        "id": "features/users/pages/welcome-page",
+      "api/send-welcome-email": {
+        "id": "api/send-welcome-email",
         "parentId": "root",
-        "file": "features/users/pages/welcome-page.tsx",
-        "path": "/users/:username/welcome"
+        "file": "api/send-welcome-email.ts",
+        "path": "/api/send-welcome-email"
+      },
+      "common/pages/privacy-policy-page": {
+        "id": "common/pages/privacy-policy-page",
+        "parentId": "root",
+        "file": "common/pages/privacy-policy-page.tsx",
+        "path": "/privacy-policy"
+      },
+      "common/pages/terms-of-service-page": {
+        "id": "common/pages/terms-of-service-page",
+        "parentId": "root",
+        "file": "common/pages/terms-of-service-page.tsx",
+        "path": "/terms-of-service"
+      },
+      "common/pages/data-deletion-page": {
+        "id": "common/pages/data-deletion-page",
+        "parentId": "root",
+        "file": "common/pages/data-deletion-page.tsx",
+        "path": "/data-deletion"
       }
     },
     "routeDiscovery": {

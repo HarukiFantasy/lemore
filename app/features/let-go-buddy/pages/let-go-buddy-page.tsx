@@ -20,7 +20,18 @@ export async function loader({ request }: { request: Request }) {
     const url = new URL(request.url);
     return redirect(`/auth/login?redirectTo=${url.pathname}`);
   }
-  return null; // User is logged in
+  
+  // Check usage limits
+  let canUseLetGoBuddy = true;
+  const { count } = await client
+    .from('let_go_buddy_sessions')
+    .select('*', { count: 'exact', head: true })
+    .eq('user_id', user.id);
+  if (typeof count === 'number' && count >= 2) {
+    canUseLetGoBuddy = false;
+  }
+  
+  return { user, canUseLetGoBuddy };
 }
 
 const toBase64 = (file: File) => new Promise<string>((resolve, reject) => {
@@ -77,7 +88,8 @@ export async function action({ request }: { request: Request }) {
   }
 }
 
-export default function LetGoBuddyPage() {
+export default function LetGoBuddyPage({ loaderData }: { loaderData: { user: any; canUseLetGoBuddy: boolean } }) {
+  const { user, canUseLetGoBuddy } = loaderData;
   const navigate = useNavigate();
   const sessionFetcher = useFetcher();
   const emotionalFetcher = useFetcher();
@@ -181,9 +193,36 @@ export default function LetGoBuddyPage() {
       <Card>
         <CardHeader><CardTitle className="flex items-center gap-2"><CameraIcon className="w-6 h-6" />Step 1: Upload Your Item</CardTitle></CardHeader>
         <CardContent className="space-y-4">
-          <Input type="file" accept="image/*" onChange={handleFileUpload} className="hidden" id="file-upload" disabled={isCreatingSession} />
-          <Button onClick={() => document.getElementById('file-upload')?.click()} variant="outline" className="w-full" disabled={isCreatingSession}>
-            {isCreatingSession ? <><ArrowPathIcon className="w-4 h-4 mr-2 animate-spin" /> Checking...</> : "Upload Photo"}
+          {!canUseLetGoBuddy && (
+            <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg text-center">
+              <div className="text-amber-800 font-medium mb-2">Free Usage Limit Reached</div>
+              <div className="text-sm text-amber-700">
+                You've used your free Let Go Buddy sessions (2/2) as an Explorer level user. 
+                Build trust in the community to unlock more free sessions!
+              </div>
+            </div>
+          )}
+          <Input 
+            type="file" 
+            accept="image/*" 
+            onChange={handleFileUpload} 
+            className="hidden" 
+            id="file-upload" 
+            disabled={isCreatingSession || !canUseLetGoBuddy} 
+          />
+          <Button 
+            onClick={() => document.getElementById('file-upload')?.click()} 
+            variant="outline" 
+            className={`w-full ${!canUseLetGoBuddy ? 'opacity-50 cursor-not-allowed bg-gray-100 text-gray-400 border-gray-200' : ''}`}
+            disabled={isCreatingSession || !canUseLetGoBuddy}
+          >
+            {isCreatingSession ? (
+              <><ArrowPathIcon className="w-4 h-4 mr-2 animate-spin" /> Checking...</>
+            ) : !canUseLetGoBuddy ? (
+              <><CameraIcon className="w-4 h-4 mr-2 text-gray-400" />Upload Photo (Limit Reached)</>
+            ) : (
+              "Upload Photo"
+            )}
           </Button>
           {sessionError && <div className="p-3 bg-red-50 text-red-700 rounded-md text-sm flex items-center gap-2"><AlertTriangle className="w-5 h-5" />{sessionError}</div>}
           {previewUrl && step < 2 && !sessionError && <div className="text-center text-sm text-muted-foreground">Successfully uploaded. Proceeding to the next step...</div>}
@@ -211,9 +250,72 @@ export default function LetGoBuddyPage() {
         </Card>
       )}
 
-      {step >= 3 && ( <Card><CardHeader><CardTitle className="flex items-center gap-2"><SparklesIcon className="w-6 h-6" />Step 3: AI Insight</CardTitle></CardHeader><CardContent>{isEmotionalAnalyzing ? <div className="flex items-center justify-center gap-2"><ArrowPathIcon className="w-5 h-5 animate-spin" /><span>Analyzing...</span></div> : analysisResult ? <div><p className="font-semibold">{analysisResult.recommendation}</p><p className="text-sm text-muted-foreground mt-2">{analysisResult.explanation}</p><div className="flex gap-2 mt-4 flex-wrap">{analysisResult.emotionalTags.map((tag: string) => ( <span key={tag} className="px-2 py-1 bg-purple-100 text-purple-800 rounded-full text-sm">{tag}</span> ))}</div><Button variant="outline" onClick={() => setStep(4)} className="w-full mt-4">Continue</Button></div> : <Button variant="outline" onClick={handleGenerateAnalysis} className="w-full" disabled={isEmotionalAnalyzing}>Get AI Insight</Button>}</CardContent></Card> )}
+      {step >= 3 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <SparklesIcon className="w-6 h-6" />
+              Step 3: AI Insight
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {isEmotionalAnalyzing ? (
+              <div className="flex items-center justify-center gap-2">
+                <ArrowPathIcon className="w-5 h-5 animate-spin" />
+                <span>Analyzing...</span>
+              </div>
+            ) : analysisResult ? (
+              <div>
+                <p className="font-semibold">{analysisResult.recommendation}</p>
+                <p className="text-sm text-muted-foreground mt-2">{analysisResult.explanation}</p>
+                <div className="flex gap-2 mt-4 flex-wrap">
+                  {analysisResult.emotionalTags.map((tag: string) => (
+                    <span key={tag} className="px-2 py-1 bg-purple-100 text-purple-800 rounded-full text-sm">
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+                <Button variant="outline" onClick={() => setStep(4)} className="w-full mt-4">
+                  Continue
+                </Button>
+              </div>
+            ) : (
+              <Button 
+                variant="outline" 
+                onClick={handleGenerateAnalysis} 
+                className={`w-full ${!canUseLetGoBuddy ? 'opacity-50 cursor-not-allowed bg-gray-100 text-gray-400 border-gray-200' : ''}`}
+                disabled={isEmotionalAnalyzing || !canUseLetGoBuddy}
+              >
+                {!canUseLetGoBuddy ? 'AI Insight (Limit Reached)' : 'Get AI Insight'}
+              </Button>
+            )}
+          </CardContent>
+        </Card>
+      )}
       
-      {step === 4 && analysisResult && ( <Card><CardHeader><CardTitle>What's next?</CardTitle></CardHeader><CardContent className="flex flex-col gap-2"><Button onClick={handleStartSelling} variant="outline" disabled={isSellingAnalyzing}>Start Selling</Button><Button onClick={addToChallenge} variant="outline">Add to Challenge</Button><Button onClick={addToKeepBox} variant="outline">Keep it in my box</Button></CardContent></Card> )}
+      {step === 4 && analysisResult && (
+        <Card>
+          <CardHeader>
+            <CardTitle>What's next?</CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-2">
+            <Button 
+              onClick={handleStartSelling} 
+              variant="outline" 
+              disabled={isSellingAnalyzing || !canUseLetGoBuddy}
+              className={!canUseLetGoBuddy ? 'opacity-50 cursor-not-allowed bg-gray-100 text-gray-400 border-gray-200' : ''}
+            >
+              {!canUseLetGoBuddy ? 'Start Selling (Limit Reached)' : 'Start Selling'}
+            </Button>
+            <Button onClick={addToChallenge} variant="outline">
+              Add to Challenge
+            </Button>
+            <Button onClick={addToKeepBox} variant="outline">
+              Keep it in my box
+            </Button>
+          </CardContent>
+        </Card>
+      )}
 
       {showSellingPopup && aiListing && ( <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50 p-4"><div className="bg-white rounded-lg p-6 max-w-md w-full relative shadow-xl"><button className="absolute top-2 right-2 p-1" onClick={() => setShowSellingPopup(false)}><XMarkIcon className="w-5 h-5 text-gray-500" /></button><div className="mb-4 text-lg font-semibold flex items-center gap-2"><SparklesIcon className="w-6 h-6 text-purple-500" />AI Listing</div><div className="space-y-4"><div><h3 className="font-bold">{aiListing.title}</h3><p className="text-sm text-gray-600 mt-1">{aiListing.description}</p></div><div className="font-semibold text-green-600 bg-green-50 p-2 rounded-md text-center">{aiListing.price}</div></div><div className="flex gap-2 mt-4"><Button className="flex-1" onClick={handlePostToSecondhand}>Post</Button><Button className="flex-1" variant="ghost" onClick={handleStartSelling}>Regenerate</Button></div></div></div> )}
     </div>
