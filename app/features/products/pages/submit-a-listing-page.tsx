@@ -52,6 +52,15 @@ export const action = async ({ request }: Route.ActionArgs) => {
     }
   }
   
+  // Handle Let Go Buddy image URLs
+  const letGoBuddyImageUrls: string[] = [];
+  for (let i = 0; i < 5; i++) {
+    const imageUrl = formData.get(`letgobuddy-image-${i}`) as string;
+    if (imageUrl && typeof imageUrl === 'string') {
+      letGoBuddyImageUrls.push(imageUrl);
+    }
+  }
+  
   const { success, data, error } = formSchema.safeParse(Object.fromEntries(formData));
   if (!success) {
     return { fieldErrors: error.flatten().fieldErrors };
@@ -74,18 +83,29 @@ export const action = async ({ request }: Route.ActionArgs) => {
       location
     });
     
-    // Upload images if any
+    // Handle images - combine uploaded files and Let Go Buddy URLs
+    const allImageUrls: string[] = [];
+    
+    // Upload new image files if any
     if (imageFiles.length > 0) {
-      const imageUrls = await uploadProductImages(client, {
+      const uploadedUrls = await uploadProductImages(client, {
         productId: product.product_id,
         userId: user.id,
         images: imageFiles,
       });
-      
-      // Save image URLs to database
+      allImageUrls.push(...uploadedUrls);
+    }
+    
+    // Add Let Go Buddy image URLs
+    if (letGoBuddyImageUrls.length > 0) {
+      allImageUrls.push(...letGoBuddyImageUrls);
+    }
+    
+    // Save all image URLs to database
+    if (allImageUrls.length > 0) {
       await saveProductImages(client, {
         productId: product.product_id,
-        imageUrls: imageUrls,
+        imageUrls: allImageUrls,
       });
     }
     
@@ -108,6 +128,7 @@ export default function SubmitAListingPage({loaderData, actionData }: Route.Comp
   
   const [images, setImages] = useState<File[]>([]);
   const [previews, setPreviews] = useState<string[]>([]);
+  const [letGoBuddyImageUrls, setLetGoBuddyImageUrls] = useState<string[]>([]);
   const [title, setTitle] = useState("");
   const [price, setPrice] = useState("");
   const [currency, setCurrency] = useState("THB");
@@ -141,8 +162,17 @@ export default function SubmitAListingPage({loaderData, actionData }: Route.Comp
       setLocation(prefillData.location || "");
       // Handle images from Let Go Buddy
       if (prefillData.images && prefillData.images.length > 0) {
-        setImages(prefillData.images);
-        setPreviews(prefillData.images.map((file: File) => URL.createObjectURL(file)));
+        // Check if images are URLs (from Let Go Buddy) or File objects
+        const firstImage = prefillData.images[0];
+        if (typeof firstImage === 'string') {
+          // Images are URLs from letgobuddy-product bucket
+          setLetGoBuddyImageUrls(prefillData.images);
+          setPreviews(prefillData.images);
+        } else {
+          // Images are File objects (fallback for old behavior)
+          setImages(prefillData.images);
+          setPreviews(prefillData.images.map((file: File) => URL.createObjectURL(file)));
+        }
       }
     }
   }, [prefillData, fromLetGoBuddy]);
@@ -225,6 +255,16 @@ export default function SubmitAListingPage({loaderData, actionData }: Route.Comp
               input.files = dataTransfer.files;
             }
           }}
+        />
+      ))}
+      
+      {/* Hidden inputs for Let Go Buddy image URLs */}
+      {letGoBuddyImageUrls.map((url, index) => (
+        <input
+          key={`letgobuddy-${index}`}
+          name={`letgobuddy-image-${index}`}
+          type="hidden"
+          value={url}
         />
       ))}
       

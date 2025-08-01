@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~
 import { Progress } from "~/common/components/ui/progress";
 import { CameraIcon, ArrowPathIcon, SparklesIcon, HeartIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import { AlertTriangle } from "lucide-react";
-import { analyzeImageForSelling } from "../image-analysis.server";
+// import { analyzeImageForSelling } from "../image-analysis.server"; // Moved to action only
 import { createLetGoBuddySession } from "../mutations";
 import { makeSSRClient } from "~/supa-client";
 
@@ -74,7 +74,27 @@ export async function action({ request }: { request: Request }) {
       return new Response(content, { headers: { 'Content-Type': 'application/json' } });
     }
 
+    if (intent === 'uploadImage') {
+        const { uploadLetGoBuddyImages } = await import("../mutations");
+        const formData = await request.formData();
+        const imageFile = formData.get('image') as File;
+        
+        if (!imageFile || !(imageFile instanceof File)) {
+            return new Response(JSON.stringify({ error: "No image file provided" }), { status: 400 });
+        }
+        
+        const imageUrls = await uploadLetGoBuddyImages(client, { 
+            userId: user.id, 
+            images: [imageFile] 
+        });
+        
+        return new Response(JSON.stringify({ imageUrl: imageUrls[0] }), { 
+            headers: { 'Content-Type': 'application/json' } 
+        });
+    }
+
     if (intent === 'sellingAnalysis') {
+        const { analyzeImageForSelling } = await import("../image-analysis.server");
         const { imageBase64, itemName } = payload;
         const analysis = await analyzeImageForSelling(imageBase64, itemName);
         return new Response(JSON.stringify(analysis), { headers: { 'Content-Type': 'application/json' } });
@@ -94,6 +114,7 @@ export default function LetGoBuddyPage({ loaderData }: { loaderData: { user: any
   const sessionFetcher = useFetcher();
   const emotionalFetcher = useFetcher();
   const sellingFetcher = useFetcher();
+  const imageFetcher = useFetcher();
 
   const [step, setStep] = useState(1);
   const [sessionId, setSessionId] = useState<number | null>(null);
@@ -103,6 +124,7 @@ export default function LetGoBuddyPage({ loaderData }: { loaderData: { user: any
   const [itemCategory, setItemCategory] = useState("");
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [uploadedImageUrl, setUploadedImageUrl] = useState<string | null>(null);
   const [analysisResult, setAnalysisResult] = useState<any>(null);
   const [showSellingPopup, setShowSellingPopup] = useState(false);
   const [aiListing, setAiListing] = useState<any>(null);
@@ -145,15 +167,33 @@ export default function LetGoBuddyPage({ loaderData }: { loaderData: { user: any
       }
   }, [sellingFetcher.data, sellingFetcher.state]);
 
+  useEffect(() => {
+    if (imageFetcher.data && imageFetcher.state === 'idle') {
+      const result = imageFetcher.data as any;
+      if (result.imageUrl) {
+        setUploadedImageUrl(result.imageUrl);
+        setPreviewUrl(result.imageUrl);
+      }
+    }
+  }, [imageFetcher.data, imageFetcher.state]);
+
   const conversationQuestions = [ "What kind of feelings does this item give you?", "When was the last time you remember using it?", "Is there a reason you are hesitant to let it go?" ];
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
       setUploadedFile(file);
-      setPreviewUrl(URL.createObjectURL(file));
+      setPreviewUrl(URL.createObjectURL(file)); // Temporary preview
       setSessionError(null);
+      
+      // Create session and upload image simultaneously
       sessionFetcher.submit({ intent: 'createSession' }, { method: "post", encType: "application/json" });
+      
+      // Upload image to storage
+      const formData = new FormData();
+      formData.append('intent', 'uploadImage');
+      formData.append('image', file);
+      imageFetcher.submit(formData, { method: "post" });
     }
   };
 
@@ -178,7 +218,19 @@ export default function LetGoBuddyPage({ loaderData }: { loaderData: { user: any
 
   const handlePostToSecondhand = () => {
     if (aiListing) {
-      const listingData = { title: aiListing.title, description: aiListing.description, price: aiListing.price.replace('THB ', ''), currency: "THB", priceType: "Fixed", location: "Bangkok", images: uploadedFile ? [uploadedFile] : [], category: itemCategory || "Other", condition: "Used - Good", aiGenerated: true, fromLetGoBuddy: true };
+      const listingData = { 
+        title: aiListing.title, 
+        description: aiListing.description, 
+        price: aiListing.price.replace('THB ', ''), 
+        currency: "THB", 
+        priceType: "Fixed", 
+        location: "Bangkok", 
+        images: uploadedImageUrl ? [uploadedImageUrl] : [], // Use stored image URL instead of File
+        category: itemCategory || "Other", 
+        condition: "Used - Good", 
+        aiGenerated: true, 
+        fromLetGoBuddy: true 
+      };
       navigate('/secondhand/submit-a-listing', { state: { prefillData: listingData, fromLetGoBuddy: true } });
       setShowSellingPopup(false);
     }
