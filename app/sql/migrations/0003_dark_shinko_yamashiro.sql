@@ -1,1 +1,0 @@
-ALTER POLICY "local_tip_replies_insert_policy" ON "local_tip_replies" TO authenticated WITH CHECK (true);

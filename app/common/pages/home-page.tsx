@@ -3,14 +3,13 @@ import { Input } from "../components/ui/input";
 import type { Route } from "../../+types/root";
 import { Button } from '../components/ui/button';
 import { ProductCard } from "../../features/products/components/product-card";
-import { TipPostCard } from "../../features/community/components/tip-post-card";
 import { useLoaderData } from "react-router";
 import { BlurFade } from 'components/magicui/blur-fade';
 import { makeSSRClient } from '~/supa-client';
 import { getProductsWithSellerStats, getUserLikedProducts } from '../../features/products/queries';
-import { getLocalTipPosts } from "~/features/community/queries";
 import { DateTime } from "luxon";
 import { getUserSalesStatsByProfileId } from "~/features/users/queries";
+import { getCountryByLocation, COUNTRY_CONFIG } from "~/constants";
 
 
 export const meta: Route.MetaFunction = () => {
@@ -53,14 +52,7 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
   }
   latestListings = latestListings.slice(0, 4); // Limit to 4 after filtering
   
-  // Get all community posts and filter by location
-  let communityPosts = await getLocalTipPosts(client, 20); // Get more to filter
-  if (location && location !== "All Locations" && location !== "Other Cities") {
-    communityPosts = communityPosts.filter(post => post.location === location);
-  }
-  communityPosts = communityPosts.slice(0, 10); // Limit to 10 after filtering
-  
-  return { latestListings, communityPosts, userLikedProducts, user, userStats };
+  return { latestListings, userLikedProducts, user, userStats };
 };
 
 
@@ -72,16 +64,16 @@ function getTimeAgo(date: Date | string): string {
 
 export default function HomePage() {
   const [searchParams] = useSearchParams();
-  const { latestListings, communityPosts, userLikedProducts, user, userStats } = useLoaderData() as {
+  const { latestListings, userLikedProducts, user, userStats } = useLoaderData() as {
     latestListings: any[];
     location: string | null;
-    communityPosts: any[];
     userLikedProducts: number[];
     user: any;
     userStats: any;
   };
   const urlLocation = searchParams.get("location");
-  const currentLocation = urlLocation || "Bangkok";
+  const currentLocation = urlLocation || COUNTRY_CONFIG.Thailand.defaultCity;
+  const currentCountry = urlLocation ? getCountryByLocation(urlLocation as any) : "Thailand";
 
   return (
     
@@ -129,60 +121,6 @@ export default function HomePage() {
           ))
         ): "No products found"}
 
-      </div>
-      <div className="text-2xl font-bold mt-10 w-full lg:max-w-[70vw] mx-auto sm:max-w-[100vw] md:max-w-[100vw]">
-        Community {!urlLocation ? "" : `in ${currentLocation}`}
-      </div>
-      <div className="bg-white rounded-2xl shadow-sm border mt-2 overflow-hidden w-full lg:max-w-[70vw] mx-auto sm:max-w-[100vw] md:max-w-[100vw] grid grid-cols-1 md:grid-cols-2 gap-0">
-        {communityPosts.length > 0 ? (
-          communityPosts.map((post, index) => {
-            // Transform the data to match TipPostCard expectations
-            let timeAgo = 'Unknown time';
-            try {
-              if (post.created_at) {
-                timeAgo = getTimeAgo(new Date(post.created_at));
-              }
-            } catch (error) {
-              throw new Error('Error parsing created_at');
-            }
-            
-            let stats = { likes: 0, comments: 0 };
-            try {
-              if (post.stats && typeof post.stats === 'string') {
-                stats = JSON.parse(post.stats);
-              } else if (post.stats && typeof post.stats === 'object') {
-                stats = post.stats;
-              }
-            } catch (error) {
-              throw new Error('Error parsing stats');
-            }
-            
-            return (
-              <TipPostCard
-                key={post.id}
-                id={post.id}
-                title={post.title}
-                content={post.content}
-                author={post.username || 'Anonymous'}
-                avatar_url={post.avatar_url || ''}
-                timeAgo={timeAgo}
-                location={post.location}
-                category={post.category}
-                likes={stats.likes || 0}
-                comments={stats.comments || 0}
-                variant="compact"
-                gridIndex={index}
-                totalItems={communityPosts.length}
-                columnsDesktop={2}
-                columnsMobile={1}
-              />
-            );
-          })
-        ) : (
-          <div className="flex items-center justify-center py-8 text-gray-500">
-            No data founds
-          </div>
-        )}
       </div>
     </div>
   );

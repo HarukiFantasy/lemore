@@ -17,6 +17,7 @@ import {
 } from "@heroicons/react/24/outline";
 import { useNavigate, useSearchParams } from "react-router";
 import { EMOTIONAL_QUESTIONS, DECLUTTER_SITUATIONS } from '../constants';
+import { COUNTRY_CONFIG } from '~/constants';
 import { uploadLetGoBuddyImages, createLetGoBuddySession } from '../mutations';
 import { makeSSRClient, browserClient } from "~/supa-client";
 import { Route } from './+types/let-go-buddy-page';
@@ -42,7 +43,7 @@ export default function LetGoBuddyPage({ loaderData }: Route.ComponentProps) {
   const { user, canUseLetGoBuddy } = loaderData || { user: null, canUseLetGoBuddy: true };
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const currentLocation = searchParams.get("location") || "Bangkok";
+  const currentLocation = searchParams.get("location") || COUNTRY_CONFIG.Thailand.defaultCity;
   const [step, setStep] = useState(1);
   const [selectedSituation, setSelectedSituation] = useState<string | null>(null);
   const [showListing, setShowListing] = useState(false);

@@ -83,6 +83,7 @@ SELECT
     -- Price formatted for display
     CASE 
         WHEN p.currency = 'THB' THEN p.price::text || ' ฿'
+        WHEN p.currency = 'KRW' THEN '₩' || ROUND(p.price)::text
         WHEN p.currency = 'USD' THEN '$' || p.price::text
         WHEN p.currency = 'EUR' THEN '€' || p.price::text
         ELSE p.price::text || ' ' || p.currency

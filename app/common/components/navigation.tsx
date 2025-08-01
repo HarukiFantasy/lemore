@@ -5,7 +5,7 @@ import { Button } from './ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from './ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { BarChart3Icon, BellIcon, LogOutIcon, MenuIcon, MessageCircleIcon, SettingsIcon, UserIcon, MapPin, ChevronDown, HeartIcon } from 'lucide-react';
-import { LOCATIONS } from '~/constants';
+import { COUNTRY_CONFIG, COUNTRIES, getCountryByLocation } from '~/constants';
 import { NotificationsPage } from '../../features/users/pages/notifications-page';
 
 const menus = [
@@ -22,27 +22,6 @@ const menus = [
         name: 'Submit a Listing',
         description: 'Sell your stuff. Make some cash',
         to: '/secondhand/submit-a-listing',
-      },
-    ],
-  },
-  {
-    name: 'Community',
-    to: '/community',
-    items: [
-      {
-        name: 'Local Tips',
-        description: 'Share your local tips',
-        to: '/community/local-tips',
-      },
-      {
-        name: 'Local Reviews ',
-        description: 'Share your local reviews',
-        to: '/community/local-reviews',
-      },
-      {
-        name: 'Give & Glow',
-        description: 'One-line notes from your giving moments',
-        to: '/community/give-and-glow',
       },
     ],
   },
@@ -196,14 +175,23 @@ export function Navigation({
               <ChevronDown className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-48">
+          <DropdownMenuContent align="end" className="w-56">
             <DropdownMenuItem onClick={() => updateLocation("All Cities")}>
-              All Cities
+              <span className="font-medium">🌐 All Cities</span>
             </DropdownMenuItem>
-            {LOCATIONS.map((city) => (
-              <DropdownMenuItem key={city} onClick={() => updateLocation(city)}>
-                {city}
-              </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            {COUNTRIES.map((country) => (
+              <div key={country}>
+                <DropdownMenuLabel className="text-xs font-semibold text-neutral-600 px-2 py-1">
+                  {country === "Thailand" ? "🇹🇭 Thailand" : "🇰🇷 Korea"}
+                </DropdownMenuLabel>
+                {COUNTRY_CONFIG[country].cities.map((city) => (
+                  <DropdownMenuItem key={city} onClick={() => updateLocation(city)} className="pl-6">
+                    {city}
+                  </DropdownMenuItem>
+                ))}
+                {country !== COUNTRIES[COUNTRIES.length - 1] && <DropdownMenuSeparator />}
+              </div>
             ))}
           </DropdownMenuContent>
         </DropdownMenu>

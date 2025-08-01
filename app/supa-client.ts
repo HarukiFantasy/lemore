@@ -8,21 +8,7 @@ export type Database = MergeDeep<SupabaseDatabase, {
   }
   public: {
     Views: {
-      local_tips_list_view: {
-        Row: SetNonNullable<SupabaseDatabase["public"]["Views"]["local_tips_list_view"]["Row"]>
-      }
-      local_tip_comments_view: {
-        Row: SetNonNullable<SupabaseDatabase["public"]["Views"]["local_tip_comments_view"]["Row"]>
-      }
-      local_businesses_list_view: {
-        Row: SetNonNullable<SupabaseDatabase["public"]["Views"]["local_businesses_list_view"]["Row"]>
-      }
-      local_reviews_list_view: {
-        Row: SetNonNullable<SupabaseDatabase["public"]["Views"]["local_reviews_list_view"]["Row"]>
-      }
-      give_and_glow_view: { 
-        Row: SetNonNullable<SupabaseDatabase["public"]["Views"]["give_and_glow_view"]["Row"]> 
-      }
+      // Community views removed
       products_listings_view: {
         Row: SetNonNullable<SupabaseDatabase["public"]["Views"]["products_listings_view"]["Row"]>
       }

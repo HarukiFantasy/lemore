@@ -3,7 +3,6 @@ import { Link, redirect } from "react-router";
 import { Button } from "~/common/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "~/common/components/ui/card";
 import { ProductCard } from "~/features/products/components/product-card";
-import { TipPostCard } from "~/features/community/components/tip-post-card";
 import { HeartIcon, FilterIcon, ArrowUpDownIcon } from "lucide-react";
 import { 
   Select, 
@@ -191,22 +190,7 @@ export default function LikesPage({ loaderData }: { loaderData: LoaderData }) {
                     likes={item.products?.likes_count || 0}
                     isLikedByUser={true}
                   />
-                ) : (
-                  <TipPostCard
-                    id={item.posts?.id || 0}
-                    title={item.posts?.title || ''}
-                    content={item.posts?.content || ''}
-                    author={item.posts?.username || 'Anonymous'}
-                    avatar_url={item.posts?.avatar_url}
-                    timeAgo={DateTime.fromISO(item.posts?.created_at || '').toRelative() || 'Unknown time'}
-                    location={item.posts?.location}
-                    category={item.posts?.category}
-                    likes={item.posts?.stats?.likes || 0}
-                    comments={item.posts?.stats?.comments || 0}
-                    variant="compact"
-                    isLiked={true}
-                  />
-                )}
+                ) : null}
                 {/* Unlike Button */}
                 <Button
                   variant="destructive"

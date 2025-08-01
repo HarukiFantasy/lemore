@@ -9,25 +9,22 @@ import {
   jsonb,
   decimal,
   uuid,
+  index,
+  pgSchema,
   bigint,
   primaryKey,
-  pgPolicy,
   check,
+  pgPolicy,
+  AnyPgColumn,
+  PgEnum, // 추가
 } from "drizzle-orm/pg-core";
 import { authenticatedRole, authUid, authUsers } from "drizzle-orm/supabase";
 import { USER_LEVELS } from "./constants";
 
 // ===== ENUMS =====
 
-// Country enum
-export const countryList = pgEnum("country", [
-  "Thailand",
-  "Korea"
-]);
-
-// Location enum (expanded for Thailand + Korea)
+// Location enum
 export const locationList = pgEnum("location", [
-  // Thailand
   "Bangkok",
   "ChiangMai", 
   "Phuket",
@@ -35,21 +32,14 @@ export const locationList = pgEnum("location", [
   "Pattaya",
   "Krabi",
   "Koh Samui",
-  "Other Thai Cities",
-  // Korea
-  "Seoul",
-  "Busan",
-  "Incheon", 
-  "Daegu",
-  "Daejeon",
-  "Gwangju",
-  "Ulsan",
-  "Other Korean Cities"
+  "Other Cities"
 ]);
 
 // User related enums
 
-// Removed: localTipCategories enum (community features)
+export const localTipCategories = pgEnum("local_tip_categories", [
+  "Visa", "Bank", "Tax", "Health", "Education", "Transportation", "Other"
+]);
 
 export const notificationTypes = pgEnum("notification_type", [
   "Message", "Like", "Reply", "Mention"
@@ -94,7 +84,7 @@ export const userLevelsList = pgEnum("user_level", USER_LEVELS);
 export const categories = pgTable("categories", {
   category_id: bigint("category_id", {mode: "number"}).primaryKey().generatedAlwaysAsIdentity(),
   name: productCategories().notNull(),
-}, (_) => [
+}, (table) => [
   pgPolicy("categories_select_policy", {
     for: "select",
     to: "public",
@@ -106,14 +96,11 @@ export const categories = pgTable("categories", {
 export const locations = pgTable("locations", {
   location_id: bigint("location_id", {mode: "number"}).primaryKey().generatedAlwaysAsIdentity(),
   name: locationList().notNull(),
-  country: countryList().notNull(),
   display_name: text("display_name").notNull(),
-  currency: text("currency").notNull(), // "THB" or "KRW"
-  timezone: text("timezone").notNull(), // "Asia/Bangkok" or "Asia/Seoul"
   population: integer("population"),
   description: text("description"),
   is_active: boolean().notNull().default(true),
-}, (_) => [
+}, (table) => [
   pgPolicy("locations_select_policy", {
     for: "select",
     to: "public",
@@ -133,7 +120,6 @@ export const products = pgTable("products", {
   category_id: bigint("category_id", {mode: "number"}).references(() => categories.category_id, {onDelete: "set null"}),
   condition: productConditions().notNull(),
   location: locationList().notNull(),
-  country: countryList().notNull().default("Thailand"), // Default to Thailand for backward compatibility
   description: text("description").notNull(),
   tags: jsonb().notNull().default([]),
   is_sold: boolean().notNull().default(false),
@@ -247,7 +233,7 @@ export const productViews = pgTable("product_views", {
   product_id: bigint("product_id", {mode: "number"}).notNull(),
   user_id: uuid().references(() => userProfiles.profile_id), 
   viewed_at: timestamp("viewed_at").notNull().defaultNow(),
-}, (_) => [
+}, (table) => [
   pgPolicy("product_views_select_policy", {
     for: "select",
     to: "public",
@@ -380,7 +366,7 @@ export const userNotifications = pgTable("user_notifications", {
   receiver_id: uuid().notNull().references(() => userProfiles.profile_id, {onDelete: "cascade"}),
   product_id: bigint("product_id", {mode: "number"}).references(() => products.product_id, {onDelete: "cascade"}),
   message_id: bigint("message_id", {mode: "number"}).references(() => userMessages.message_id, {onDelete: "cascade"}),
-  // Removed: review_id reference (community features removed)  
+  review_id: bigint("review_id", {mode: "number"}).references(() => giveAndGlowReviews.id, {onDelete: "cascade"}),  
   
   is_read: boolean().notNull().default(false),
   read_at: timestamp("read_at"),
@@ -499,21 +485,282 @@ export const userMessages = pgTable("user_messages", {
   })
 ]);
 
-// Removed: giveAndGlowReviews table (community features removed)
+// Give & Glow reviews table
+export const giveAndGlowReviews = pgTable("give_and_glow_reviews", {
+  id: bigint("id", {mode: "number"}).primaryKey().generatedAlwaysAsIdentity(),
+  product_id: bigint("product_id", {mode: "number"}).references(() => products.product_id, {onDelete: "cascade"}),
+  giver_id: uuid().notNull().references(() => userProfiles.profile_id, {onDelete: "cascade"}),
+  receiver_id: uuid().notNull().references(() => userProfiles.profile_id, {onDelete: "cascade"}),
+  category: productCategories().notNull(),
+  rating: integer("rating").notNull(),
+  review: text("review"),
+  timestamp: text("timestamp").notNull(),
+  location: locationList().notNull(),
+  tags: jsonb("tags").notNull().default([]),
+  created_at: timestamp("created_at").notNull().defaultNow(),
+  updated_at: timestamp("updated_at").notNull().defaultNow(),
+}, (table) => [
+  pgPolicy("give_and_glow_reviews_select_policy", {
+    for: "select",
+    to: "public",
+    as: "permissive",
+    using: sql`true`
+  }),
+  pgPolicy("give_and_glow_reviews_insert_policy", {
+    for: "insert",
+    to: authenticatedRole,
+    as: "permissive",
+    withCheck: sql`${table.giver_id} = ${authUid}`
+  }),
+  pgPolicy("give_and_glow_reviews_delete_policy", {
+    for: "delete",
+    to: authenticatedRole,
+    as: "permissive",
+    using: sql`${table.giver_id} = ${authUid}`
+  }),
+  pgPolicy("give_and_glow_reviews_update_policy", {
+    for: "update",
+    to: authenticatedRole,
+    as: "permissive",
+    using: sql`${table.giver_id} = ${authUid}`,
+    withCheck: sql`${table.giver_id} = ${authUid}`
+  })
+]);
 
-// Removed: localBusinesses table (community features removed)
+// Local businesses table
+export const localBusinesses = pgTable("local_businesses", {
+  id: bigint("id", {mode: "number"}).primaryKey().generatedAlwaysAsIdentity(),
+  name: text("name").notNull(),
+  type: text("type"),
+  location: locationList().notNull(),
+  average_rating: decimal("average_rating", { precision: 3, scale: 2 }).default("0.00"),
+  total_reviews: integer("total_reviews").default(0),
+  price_range: text("price_range"),
+  tags: jsonb("tags").default([]),
+  image: text("image"),
+  address: text("address"),
+  website: text("website"),
+  description: text("description"),
+  created_at: timestamp("created_at").notNull().defaultNow(),
+  updated_at: timestamp("updated_at").notNull().defaultNow(),
+}, (table) => [
+  pgPolicy("local_businesses_select_policy", {
+    for: "select",
+    to: "public",
+    as: "permissive",
+    using: sql`true`
+  }),
+  pgPolicy("local_businesses_insert_policy", {
+    for: "insert",
+    to: authenticatedRole,
+    as: "permissive",
+    withCheck: sql`true`
+  })
+]);
 
-// Removed: localBusinessReviews table (community features removed)
+// Local business reviews table
+export const localBusinessReviews = pgTable("local_business_reviews", {
+  business_id: bigint("business_id", {mode: "number"}).notNull().references(() => localBusinesses.id, {onDelete: "cascade"}),
+  rating: integer("rating").notNull(),
+  author: uuid().notNull().references(() => userProfiles.profile_id),
+  author_avatar: text("author_avatar"),
+  tags: jsonb("tags").notNull().default([]),
+  content: text("content"),
+  created_at: timestamp("created_at").notNull().defaultNow(),
+}, (table) => [primaryKey({ columns: [table.business_id, table.author] }),
+  pgPolicy("local_business_reviews_select_policy", {
+    for: "select",
+    to: "public",
+    as: "permissive",
+    using: sql`true`
+  }),
+  pgPolicy("local_business_reviews_insert_policy", {
+    for: "insert",
+    to: authenticatedRole,
+    as: "permissive",
+    withCheck: sql`${table.author} = ${authUid}`
+  }),
+  pgPolicy("local_business_reviews_update_policy", {
+    for: "update",
+    to: authenticatedRole,
+    as: "permissive",
+    using: sql`${table.author} = ${authUid}`,
+    withCheck: sql`${table.author} = ${authUid}`
+  })
+]);
 
-// Removed: localTipPosts table (community features removed)
+// Local tip posts table
+export const localTipPosts = pgTable("local_tip_posts", {
+  id: bigint("id", {mode: "number"}).primaryKey().generatedAlwaysAsIdentity(),
+  title: text("title").notNull(),
+  content: text("content").notNull(),
+  category: localTipCategories().notNull(),
+  location: locationList().notNull(),
+  author: uuid().notNull().references(() => userProfiles.profile_id),
+  stats: jsonb("stats").default({likes: 0, comments: 0 }),
+  created_at: timestamp("created_at").notNull().defaultNow(),
+  updated_at: timestamp("updated_at").notNull().defaultNow(),
+}, (table) => [
+  pgPolicy("local_tip_posts_select_policy", {
+    for: "select",
+    to: "public",
+    as: "permissive",
+    using: sql`true`
+  }),
+  pgPolicy("local_tip_posts_insert_policy", {
+    for: "insert",
+    to: authenticatedRole,
+    as: "permissive",
+    withCheck: sql`${table.author} = ${authUid}`
+  }),
+  pgPolicy("local_tip_posts_update_policy", {
+    for: "update",
+    to: authenticatedRole,
+    as: "permissive",
+    using: sql`${table.author} = ${authUid}`,
+    withCheck: sql`${table.author} = ${authUid}`
+  }),
+  pgPolicy("local_tip_posts_delete_policy", {
+    for: "delete",
+    to: authenticatedRole,
+    as: "permissive",
+    using: sql`${table.author} = ${authUid}`
+  })
+]);
 
-// Removed: localTipComments table (community features removed)
+// Local tip comments table
+export const localTipComments = pgTable("local_tip_comments", {
+  comment_id: bigint("comment_id", {mode: "number"}).primaryKey().generatedAlwaysAsIdentity(),
+  post_id: bigint("post_id", {mode: "number"}).notNull().references(() => localTipPosts.id),
+  author: uuid().notNull().references(() => userProfiles.profile_id),
+  content: text("content").notNull(),
+  likes: integer("likes").notNull().default(0),
+  created_at: timestamp("created_at").notNull().defaultNow(),
+}, (table) => [
+  pgPolicy("local_tip_comments_select_policy", {
+    for: "select",
+    to: "public",
+    as: "permissive",
+    using: sql`true`
+  }),
+  pgPolicy("local_tip_comments_insert_policy", {
+    for: "insert",
+    to: authenticatedRole,
+    as: "permissive",
+    withCheck: sql`${table.author} = ${authUid}`
+  }),
+  pgPolicy("local_tip_comments_update_policy", {
+    for: "update",
+    to: authenticatedRole,
+    as: "permissive",
+    using: sql`${table.author} = ${authUid}`,
+    withCheck: sql`${table.author} = ${authUid}`
+  }),
+  pgPolicy("local_tip_comments_delete_policy", {
+    for: "delete",
+    to: authenticatedRole,
+    as: "permissive",
+    using: sql`${table.author} = ${authUid}`
+  })
+]);
 
-// Removed: localTipReplies table (community features removed)
+// Local tip replies table (for nested comments)
+export const localTipReplies = pgTable("local_tip_replies", {
+  reply_id: bigint("reply_id", { mode: "number" })
+    .primaryKey()
+    .generatedAlwaysAsIdentity(),
+  post_id: bigint("post_id", { mode: "number" })
+    .notNull()
+    .references(() => localTipPosts.id, { onDelete: "cascade" }),
+  parent_id: bigint("parent_id", { mode: "number" })
+    .references((): AnyPgColumn => localTipReplies.reply_id, { onDelete: "cascade" }),
+  profile_id: uuid("profile_id")
+    .notNull()
+    .references(() => userProfiles.profile_id, { onDelete: "cascade" }),
+  reply: text("reply").notNull(),
+  created_at: timestamp("created_at").notNull().defaultNow(),
+  updated_at: timestamp("updated_at").notNull().defaultNow(),
+}, (table) => [
+  pgPolicy("local_tip_replies_select_policy", {
+    for: "select",
+    to: "public",
+    as: "permissive",
+    using: sql`true`
+  }),
+  pgPolicy("local_tip_replies_insert_policy", {
+    for: "insert",
+    to: authenticatedRole,
+    as: "permissive",
+    withCheck: sql`true`
+  }),
+  pgPolicy("local_tip_replies_update_policy", {
+    for: "update",
+    to: authenticatedRole,
+    as: "permissive",
+    using: sql`${table.profile_id} = ${authUid}`,
+    withCheck: sql`${table.profile_id} = ${authUid}`
+  }),
+  pgPolicy("local_tip_replies_delete_policy", {
+    for: "delete",
+    to: authenticatedRole,
+    as: "permissive",
+    using: sql`${table.profile_id} = ${authUid}`
+  })
+]);
 
-// Removed: localTipPostLikes table (community features removed)
+// Local tip post likes table
+export const localTipPostLikes = pgTable("local_tip_post_likes", {
+  post_id: bigint("post_id", {mode: "number"}).notNull().references(() => localTipPosts.id, {onDelete: "cascade"}),
+  user_id: uuid().notNull().references(() => userProfiles.profile_id, {onDelete: "cascade"}),
+  created_at: timestamp("created_at").notNull().defaultNow(),
+}, (table) => [
+  primaryKey({ columns: [table.post_id, table.user_id] }),
+  pgPolicy("local_tip_post_likes_select_policy", {
+    for: "select",
+    to: "public",
+    as: "permissive",
+    using: sql`true`
+  }),
+  pgPolicy("local_tip_post_likes_insert_policy", {
+    for: "insert",
+    to: authenticatedRole,
+    as: "permissive",
+    withCheck: sql`${table.user_id} = ${authUid}`
+  }),
+  pgPolicy("local_tip_post_likes_delete_policy", {
+    for: "delete",
+    to: authenticatedRole,
+    as: "permissive",
+    using: sql`${table.user_id} = ${authUid}`
+  })
+]);
 
-// Removed: localTipCommentLikes table (community features removed)
+// Local tip comment likes table
+export const localTipCommentLikes = pgTable("local_tip_comment_likes", {
+  comment_id: bigint("comment_id", {mode: "number"}).notNull().references(() => localTipComments.comment_id, {onDelete: "cascade"}),
+  user_id: uuid().notNull().references(() => userProfiles.profile_id, {onDelete: "cascade"}),
+  created_at: timestamp("created_at").notNull().defaultNow(),
+}, (table) => [
+  primaryKey({ columns: [table.comment_id, table.user_id] }),
+  pgPolicy("local_tip_comment_likes_select_policy", {
+    for: "select",
+    to: "public",
+    as: "permissive",
+    using: sql`true`
+  }),
+  pgPolicy("local_tip_comment_likes_insert_policy", {
+    for: "insert",
+    to: authenticatedRole,
+    as: "permissive",
+    withCheck: sql`${table.user_id} = ${authUid}`
+  }),
+  pgPolicy("local_tip_comment_likes_delete_policy", {
+    for: "delete",
+    to: authenticatedRole,
+    as: "permissive",
+    using: sql`${table.user_id} = ${authUid}`
+  })
+]);
 
 // Let Go Buddy sessions table
 export const letGoBuddySessions = pgTable("let_go_buddy_sessions", {

@@ -1,1 +1,0 @@
-ALTER TABLE "local_business_reviews" DROP COLUMN "timestamp";

@@ -1,1 +1,0 @@
-ALTER TABLE "message_participants" ADD COLUMN "is_hidden" boolean DEFAULT false;

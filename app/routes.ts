@@ -11,12 +11,6 @@ export default [
     route("/:productId/like", "features/products/pages/like-product-page.tsx"),
     
   ]),
-  ...prefix("community", [
-    index("features/community/pages/community-page.tsx"),
-    route("/local-tips", "features/community/pages/local-tips-page.tsx"),
-    route("/local-reviews", "features/community/pages/local-reviews-page.tsx"),
-    route("/give-and-glow", "features/community/pages/give-and-glow-page.tsx"),
-  ]),
   ...prefix("let-go-buddy", [
     index("features/let-go-buddy/pages/let-go-buddy-page.tsx"),
     route("/analysis", "features/let-go-buddy/pages/let-go-buddy-analysis-page.tsx"),

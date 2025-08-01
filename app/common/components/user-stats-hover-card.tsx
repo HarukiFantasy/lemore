@@ -17,7 +17,6 @@ interface UserStatsHoverCardProps {
   profileId?: string;
   userName: string;
   children: React.ReactNode;
-  showAppreciationBadge?: boolean;
   className?: string;
   userStats?: UserStats;
   sellerJoinedAt?: string;
@@ -27,7 +26,6 @@ export function UserStatsHoverCard({
   profileId,
   userName,
   children,
-  showAppreciationBadge = false,
   className = "",
   userStats,
   sellerJoinedAt
@@ -70,9 +68,6 @@ export function UserStatsHoverCard({
                   ViewProfile
                 </Button>
               </Link>
-              {(showAppreciationBadge) && (
-                <Badge variant="outline" className="text-xs bg-green-100 text-green-700">Appreciation</Badge>
-              )}
             </div>
           </div>
           <div className="grid grid-cols-3 gap-2">

@@ -3,14 +3,15 @@ import { z } from "zod";
 import { HeartIcon } from "lucide-react";
 import { UserStatsHoverCard } from "~/common/components/user-stats-hover-card";
 import { PRODUCT_CATEGORIES } from "../constants";
+import { formatPrice as formatCurrencyPrice } from "~/lib/currency-utils";
 import { Badge } from "../../../common/components/ui/badge";
 import { useEffect, useState } from "react";
 import { useMobile } from "app/hooks/use-mobile";
 
-// 가격 포맷팅 함수
+// 가격 포맷팅 함수 (legacy)
 const formatPrice = (price?: number, currency: string = "THB"): string => {
   if (typeof price !== 'number' || isNaN(price)) return '';
-  return `${currency} ${price.toLocaleString()}`;
+  return formatCurrencyPrice(price, currency);
 };
 
 // Props 검증 스키마

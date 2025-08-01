@@ -1,2 +1,0 @@
-ALTER TABLE "user_conversations" ADD COLUMN "product_id" bigint;--> statement-breakpoint
-ALTER TABLE "user_conversations" ADD CONSTRAINT "user_conversations_product_id_products_product_id_fk" FOREIGN KEY ("product_id") REFERENCES "public"."products"("product_id") ON DELETE set null ON UPDATE no action;

@@ -1,32 +1,64 @@
 // 공통으로 사용되는 상수들
 
-// 위치 정보
+// 국가별 위치 설정
+export const COUNTRY_CONFIG = {
+  Thailand: {
+    name: "Thailand",
+    currency: "THB",
+    timezone: "Asia/Bangkok",
+    defaultCity: "Bangkok",
+    cities: [
+      "Bangkok",
+      "ChiangMai", 
+      "Phuket",
+      "HuaHin",
+      "Pattaya",
+      "Krabi",
+      "Koh Samui",
+      "Other Thai Cities"
+    ]
+  },
+  Korea: {
+    name: "Korea", 
+    currency: "KRW",
+    timezone: "Asia/Seoul",
+    defaultCity: "Seoul",
+    cities: [
+      "Seoul",
+      "Busan",
+      "Incheon", 
+      "Daegu",
+      "Daejeon",
+      "Gwangju",
+      "Ulsan",
+      "Other Korean Cities"
+    ]
+  }
+} as const;
+
+// 모든 위치 (Thailand + Korea)
 export const LOCATIONS = [
-  "Bangkok",
-  "ChiangMai", 
-  "Phuket",
-  "HuaHin",
-  "Pattaya",
-  "Krabi",
-  "Koh Samui",
-  "Other Cities"
+  ...COUNTRY_CONFIG.Thailand.cities,
+  ...COUNTRY_CONFIG.Korea.cities
 ] as const;
 
-// 모든 위치 (필터링용)
+// 필터링용 위치 (All 옵션 포함)
 export const ALL_LOCATIONS = [
   "All Locations",
-  "Bangkok",
-  "ChiangMai", 
-  "Phuket",
-  "HuaHin",
-  "Pattaya",
-  "Krabi",
-  "Koh Samui",
-  "Other Cities"
+  ...LOCATIONS
 ] as const;
 
-// 통화
-export const CURRENCIES = ["THB", "USD", "EUR"] as const;
+// 국가 목록
+export const COUNTRIES = Object.keys(COUNTRY_CONFIG) as (keyof typeof COUNTRY_CONFIG)[];
+
+// 통화 정보
+export const CURRENCIES = ["THB", "KRW", "USD", "EUR"] as const;
+
+// 국가별 통화 매핑
+export const COUNTRY_CURRENCY_MAP = {
+  Thailand: "THB",
+  Korea: "KRW"
+} as const;
 
 // 페이지네이션
 export const PAGINATION_LIMITS = {
@@ -61,6 +93,30 @@ export const USER_LEVELS = [
 export type UserLevel = typeof USER_LEVELS[number];
 
 // 타입 정의
+export type Country = keyof typeof COUNTRY_CONFIG;
 export type Location = typeof LOCATIONS[number];
 export type AllLocation = typeof ALL_LOCATIONS[number];
 export type Currency = typeof CURRENCIES[number];
+
+// 유틸리티 함수들
+export function getCountryByLocation(location: Location): Country {
+  for (const [country, config] of Object.entries(COUNTRY_CONFIG)) {
+    if ((config.cities as readonly string[]).includes(location)) {
+      return country as Country;
+    }
+  }
+  return "Thailand"; // 기본값
+}
+
+export function getCurrencyByLocation(location: Location): string {
+  const country = getCountryByLocation(location);
+  return COUNTRY_CONFIG[country].currency;
+}
+
+export function getDefaultLocationByCountry(country: Country): Location {
+  return COUNTRY_CONFIG[country].defaultCity as Location;
+}
+
+export function getCitiesByCountry(country: Country): readonly string[] {
+  return COUNTRY_CONFIG[country].cities;
+}

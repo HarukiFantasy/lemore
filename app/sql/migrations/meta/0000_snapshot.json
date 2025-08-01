@@ -1,5 +1,5 @@
 {
-  "id": "15746d12-1ee8-4f07-b9c0-23b03c60fead",
+  "id": "83765191-6fd1-4c05-b938-dc1e5fb125b2",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -37,148 +37,17 @@
       "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.give_and_glow_reviews": {
-      "name": "give_and_glow_reviews",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "bigint",
-          "primaryKey": true,
-          "notNull": true,
-          "identity": {
-            "type": "always",
-            "name": "give_and_glow_reviews_id_seq",
-            "schema": "public",
-            "increment": "1",
-            "startWith": "1",
-            "minValue": "1",
-            "maxValue": "9223372036854775807",
-            "cache": "1",
-            "cycle": false
-          }
-        },
-        "product_id": {
-          "name": "product_id",
-          "type": "bigint",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "giver_id": {
-          "name": "giver_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "receiver_id": {
-          "name": "receiver_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "category": {
-          "name": "category",
-          "type": "product_category",
-          "typeSchema": "public",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "rating": {
-          "name": "rating",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "review": {
-          "name": "review",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "timestamp": {
-          "name": "timestamp",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "location": {
-          "name": "location",
-          "type": "location",
-          "typeSchema": "public",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "tags": {
-          "name": "tags",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'[]'::jsonb"
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
+      "policies": {
+        "categories_select_policy": {
+          "name": "categories_select_policy",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "public"
+          ],
+          "using": "true"
         }
       },
-      "indexes": {},
-      "foreignKeys": {
-        "give_and_glow_reviews_product_id_products_product_id_fk": {
-          "name": "give_and_glow_reviews_product_id_products_product_id_fk",
-          "tableFrom": "give_and_glow_reviews",
-          "tableTo": "products",
-          "columnsFrom": [
-            "product_id"
-          ],
-          "columnsTo": [
-            "product_id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "give_and_glow_reviews_giver_id_user_profiles_profile_id_fk": {
-          "name": "give_and_glow_reviews_giver_id_user_profiles_profile_id_fk",
-          "tableFrom": "give_and_glow_reviews",
-          "tableTo": "user_profiles",
-          "columnsFrom": [
-            "giver_id"
-          ],
-          "columnsTo": [
-            "profile_id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "give_and_glow_reviews_receiver_id_user_profiles_profile_id_fk": {
-          "name": "give_and_glow_reviews_receiver_id_user_profiles_profile_id_fk",
-          "tableFrom": "give_and_glow_reviews",
-          "tableTo": "user_profiles",
-          "columnsFrom": [
-            "receiver_id"
-          ],
-          "columnsTo": [
-            "profile_id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
     },
@@ -225,6 +94,12 @@
           "typeSchema": "public",
           "primaryKey": false,
           "notNull": true
+        },
+        "recommendation_reason": {
+          "name": "recommendation_reason",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
         },
         "ai_suggestion": {
           "name": "ai_suggestion",
@@ -354,7 +229,45 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
-      "policies": {},
+      "policies": {
+        "item_analyses_select_policy": {
+          "name": "item_analyses_select_policy",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "authenticated"
+          ],
+          "using": "EXISTS (\n      SELECT 1 FROM let_go_buddy_sessions lgbs \n      WHERE lgbs.session_id = \"item_analyses\".\"session_id\" \n      AND lgbs.user_id = (select auth.uid())\n    )"
+        },
+        "item_analyses_insert_policy": {
+          "name": "item_analyses_insert_policy",
+          "as": "PERMISSIVE",
+          "for": "INSERT",
+          "to": [
+            "authenticated"
+          ],
+          "withCheck": "EXISTS (\n      SELECT 1 FROM let_go_buddy_sessions lgbs \n      WHERE lgbs.session_id = \"item_analyses\".\"session_id\" \n      AND lgbs.user_id = (select auth.uid())\n    )"
+        },
+        "item_analyses_update_policy": {
+          "name": "item_analyses_update_policy",
+          "as": "PERMISSIVE",
+          "for": "UPDATE",
+          "to": [
+            "authenticated"
+          ],
+          "using": "EXISTS (\n      SELECT 1 FROM let_go_buddy_sessions lgbs \n      WHERE lgbs.session_id = \"item_analyses\".\"session_id\" \n      AND lgbs.user_id = (select auth.uid())\n    )",
+          "withCheck": "EXISTS (\n      SELECT 1 FROM let_go_buddy_sessions lgbs \n      WHERE lgbs.session_id = \"item_analyses\".\"session_id\" \n      AND lgbs.user_id = (select auth.uid())\n    )"
+        },
+        "item_analyses_delete_policy": {
+          "name": "item_analyses_delete_policy",
+          "as": "PERMISSIVE",
+          "for": "DELETE",
+          "to": [
+            "authenticated"
+          ],
+          "using": "EXISTS (\n      SELECT 1 FROM let_go_buddy_sessions lgbs \n      WHERE lgbs.session_id = \"item_analyses\".\"session_id\" \n      AND lgbs.user_id = (select auth.uid())\n    )"
+        }
+      },
       "checkConstraints": {},
       "isRLSEnabled": false
     },
@@ -432,539 +345,45 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.local_business_reviews": {
-      "name": "local_business_reviews",
-      "schema": "",
-      "columns": {
-        "business_id": {
-          "name": "business_id",
-          "type": "bigint",
-          "primaryKey": false,
-          "notNull": true
+      "policies": {
+        "let_go_buddy_sessions_select_policy": {
+          "name": "let_go_buddy_sessions_select_policy",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "authenticated"
+          ],
+          "using": "\"let_go_buddy_sessions\".\"user_id\" = (select auth.uid())"
         },
-        "rating": {
-          "name": "rating",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
+        "let_go_buddy_sessions_insert_policy": {
+          "name": "let_go_buddy_sessions_insert_policy",
+          "as": "PERMISSIVE",
+          "for": "INSERT",
+          "to": [
+            "authenticated"
+          ],
+          "withCheck": "\"let_go_buddy_sessions\".\"user_id\" = (select auth.uid())"
         },
-        "author": {
-          "name": "author",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
+        "let_go_buddy_sessions_update_policy": {
+          "name": "let_go_buddy_sessions_update_policy",
+          "as": "PERMISSIVE",
+          "for": "UPDATE",
+          "to": [
+            "authenticated"
+          ],
+          "using": "\"let_go_buddy_sessions\".\"user_id\" = (select auth.uid())",
+          "withCheck": "\"let_go_buddy_sessions\".\"user_id\" = (select auth.uid())"
         },
-        "author_avatar": {
-          "name": "author_avatar",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "timestamp": {
-          "name": "timestamp",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "tags": {
-          "name": "tags",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'[]'::jsonb"
-        },
-        "content": {
-          "name": "content",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
+        "let_go_buddy_sessions_delete_policy": {
+          "name": "let_go_buddy_sessions_delete_policy",
+          "as": "PERMISSIVE",
+          "for": "DELETE",
+          "to": [
+            "authenticated"
+          ],
+          "using": "\"let_go_buddy_sessions\".\"user_id\" = (select auth.uid())"
         }
       },
-      "indexes": {},
-      "foreignKeys": {
-        "local_business_reviews_business_id_local_businesses_id_fk": {
-          "name": "local_business_reviews_business_id_local_businesses_id_fk",
-          "tableFrom": "local_business_reviews",
-          "tableTo": "local_businesses",
-          "columnsFrom": [
-            "business_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "local_business_reviews_author_user_profiles_profile_id_fk": {
-          "name": "local_business_reviews_author_user_profiles_profile_id_fk",
-          "tableFrom": "local_business_reviews",
-          "tableTo": "user_profiles",
-          "columnsFrom": [
-            "author"
-          ],
-          "columnsTo": [
-            "profile_id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {
-        "local_business_reviews_business_id_author_pk": {
-          "name": "local_business_reviews_business_id_author_pk",
-          "columns": [
-            "business_id",
-            "author"
-          ]
-        }
-      },
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.local_businesses": {
-      "name": "local_businesses",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "bigint",
-          "primaryKey": true,
-          "notNull": true,
-          "identity": {
-            "type": "always",
-            "name": "local_businesses_id_seq",
-            "schema": "public",
-            "increment": "1",
-            "startWith": "1",
-            "minValue": "1",
-            "maxValue": "9223372036854775807",
-            "cache": "1",
-            "cycle": false
-          }
-        },
-        "name": {
-          "name": "name",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "type": {
-          "name": "type",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "location": {
-          "name": "location",
-          "type": "location",
-          "typeSchema": "public",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "average_rating": {
-          "name": "average_rating",
-          "type": "numeric(3, 2)",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'0.00'"
-        },
-        "total_reviews": {
-          "name": "total_reviews",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "default": 0
-        },
-        "price_range": {
-          "name": "price_range",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "tags": {
-          "name": "tags",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'[]'::jsonb"
-        },
-        "image": {
-          "name": "image",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "address": {
-          "name": "address",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "website": {
-          "name": "website",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "description": {
-          "name": "description",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {},
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.local_tip_comment_likes": {
-      "name": "local_tip_comment_likes",
-      "schema": "",
-      "columns": {
-        "comment_id": {
-          "name": "comment_id",
-          "type": "bigint",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "user_id": {
-          "name": "user_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "local_tip_comment_likes_comment_id_local_tip_comments_comment_id_fk": {
-          "name": "local_tip_comment_likes_comment_id_local_tip_comments_comment_id_fk",
-          "tableFrom": "local_tip_comment_likes",
-          "tableTo": "local_tip_comments",
-          "columnsFrom": [
-            "comment_id"
-          ],
-          "columnsTo": [
-            "comment_id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "local_tip_comment_likes_user_id_user_profiles_profile_id_fk": {
-          "name": "local_tip_comment_likes_user_id_user_profiles_profile_id_fk",
-          "tableFrom": "local_tip_comment_likes",
-          "tableTo": "user_profiles",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "profile_id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {
-        "local_tip_comment_likes_comment_id_user_id_pk": {
-          "name": "local_tip_comment_likes_comment_id_user_id_pk",
-          "columns": [
-            "comment_id",
-            "user_id"
-          ]
-        }
-      },
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.local_tip_comments": {
-      "name": "local_tip_comments",
-      "schema": "",
-      "columns": {
-        "comment_id": {
-          "name": "comment_id",
-          "type": "bigint",
-          "primaryKey": true,
-          "notNull": true,
-          "identity": {
-            "type": "always",
-            "name": "local_tip_comments_comment_id_seq",
-            "schema": "public",
-            "increment": "1",
-            "startWith": "1",
-            "minValue": "1",
-            "maxValue": "9223372036854775807",
-            "cache": "1",
-            "cycle": false
-          }
-        },
-        "post_id": {
-          "name": "post_id",
-          "type": "bigint",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "author": {
-          "name": "author",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "content": {
-          "name": "content",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "likes": {
-          "name": "likes",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "default": 0
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "local_tip_comments_post_id_local_tip_posts_id_fk": {
-          "name": "local_tip_comments_post_id_local_tip_posts_id_fk",
-          "tableFrom": "local_tip_comments",
-          "tableTo": "local_tip_posts",
-          "columnsFrom": [
-            "post_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "local_tip_comments_author_user_profiles_profile_id_fk": {
-          "name": "local_tip_comments_author_user_profiles_profile_id_fk",
-          "tableFrom": "local_tip_comments",
-          "tableTo": "user_profiles",
-          "columnsFrom": [
-            "author"
-          ],
-          "columnsTo": [
-            "profile_id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.local_tip_post_likes": {
-      "name": "local_tip_post_likes",
-      "schema": "",
-      "columns": {
-        "post_id": {
-          "name": "post_id",
-          "type": "bigint",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "user_id": {
-          "name": "user_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "local_tip_post_likes_post_id_local_tip_posts_id_fk": {
-          "name": "local_tip_post_likes_post_id_local_tip_posts_id_fk",
-          "tableFrom": "local_tip_post_likes",
-          "tableTo": "local_tip_posts",
-          "columnsFrom": [
-            "post_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "local_tip_post_likes_user_id_user_profiles_profile_id_fk": {
-          "name": "local_tip_post_likes_user_id_user_profiles_profile_id_fk",
-          "tableFrom": "local_tip_post_likes",
-          "tableTo": "user_profiles",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "profile_id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {
-        "local_tip_post_likes_post_id_user_id_pk": {
-          "name": "local_tip_post_likes_post_id_user_id_pk",
-          "columns": [
-            "post_id",
-            "user_id"
-          ]
-        }
-      },
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.local_tip_posts": {
-      "name": "local_tip_posts",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "bigint",
-          "primaryKey": true,
-          "notNull": true,
-          "identity": {
-            "type": "always",
-            "name": "local_tip_posts_id_seq",
-            "schema": "public",
-            "increment": "1",
-            "startWith": "1",
-            "minValue": "1",
-            "maxValue": "9223372036854775807",
-            "cache": "1",
-            "cycle": false
-          }
-        },
-        "title": {
-          "name": "title",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "content": {
-          "name": "content",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "category": {
-          "name": "category",
-          "type": "local_tip_categories",
-          "typeSchema": "public",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "location": {
-          "name": "location",
-          "type": "location",
-          "typeSchema": "public",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "author": {
-          "name": "author",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "stats": {
-          "name": "stats",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": false,
-          "default": "'{\"likes\":0,\"comments\":0,\"reviews\":0}'::jsonb"
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "local_tip_posts_author_user_profiles_profile_id_fk": {
-          "name": "local_tip_posts_author_user_profiles_profile_id_fk",
-          "tableFrom": "local_tip_posts",
-          "tableTo": "user_profiles",
-          "columnsFrom": [
-            "author"
-          ],
-          "columnsTo": [
-            "profile_id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
     },
@@ -996,8 +415,27 @@
           "primaryKey": false,
           "notNull": true
         },
+        "country": {
+          "name": "country",
+          "type": "country",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
         "display_name": {
           "name": "display_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "currency": {
+          "name": "currency",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "timezone": {
+          "name": "timezone",
           "type": "text",
           "primaryKey": false,
           "notNull": true
@@ -1026,7 +464,17 @@
       "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
-      "policies": {},
+      "policies": {
+        "locations_select_policy": {
+          "name": "locations_select_policy",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "public"
+          ],
+          "using": "true"
+        }
+      },
       "checkConstraints": {},
       "isRLSEnabled": false
     },
@@ -1045,6 +493,13 @@
           "type": "uuid",
           "primaryKey": false,
           "notNull": true
+        },
+        "is_hidden": {
+          "name": "is_hidden",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false,
+          "default": false
         },
         "created_at": {
           "name": "created_at",
@@ -1093,7 +548,35 @@
         }
       },
       "uniqueConstraints": {},
-      "policies": {},
+      "policies": {
+        "message_participants_select_policy": {
+          "name": "message_participants_select_policy",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "authenticated"
+          ],
+          "using": "\"message_participants\".\"profile_id\" = (select auth.uid())"
+        },
+        "message_participants_insert_policy": {
+          "name": "message_participants_insert_policy",
+          "as": "PERMISSIVE",
+          "for": "INSERT",
+          "to": [
+            "authenticated"
+          ],
+          "withCheck": "\"message_participants\".\"profile_id\" = (select auth.uid())"
+        },
+        "message_participants_delete_policy": {
+          "name": "message_participants_delete_policy",
+          "as": "PERMISSIVE",
+          "for": "DELETE",
+          "to": [
+            "authenticated"
+          ],
+          "using": "\"message_participants\".\"profile_id\" = (select auth.uid())"
+        }
+      },
       "checkConstraints": {},
       "isRLSEnabled": false
     },
@@ -1140,7 +623,7 @@
           "columnsTo": [
             "product_id"
           ],
-          "onDelete": "no action",
+          "onDelete": "cascade",
           "onUpdate": "no action"
         }
       },
@@ -1154,7 +637,45 @@
         }
       },
       "uniqueConstraints": {},
-      "policies": {},
+      "policies": {
+        "product_images_select_policy": {
+          "name": "product_images_select_policy",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "public"
+          ],
+          "using": "true"
+        },
+        "product_images_insert_policy": {
+          "name": "product_images_insert_policy",
+          "as": "PERMISSIVE",
+          "for": "INSERT",
+          "to": [
+            "authenticated"
+          ],
+          "withCheck": "EXISTS (\n      SELECT 1 FROM products \n      WHERE products.product_id = \"product_images\".\"product_id\" \n      AND products.seller_id = (select auth.uid())\n    )"
+        },
+        "product_images_update_policy": {
+          "name": "product_images_update_policy",
+          "as": "PERMISSIVE",
+          "for": "UPDATE",
+          "to": [
+            "authenticated"
+          ],
+          "using": "EXISTS (\n      SELECT 1 FROM products \n      WHERE products.product_id = \"product_images\".\"product_id\" \n      AND products.seller_id = (select auth.uid())\n    )",
+          "withCheck": "EXISTS (\n      SELECT 1 FROM products \n      WHERE products.product_id = \"product_images\".\"product_id\" \n      AND products.seller_id = (select auth.uid())\n    )"
+        },
+        "product_images_delete_policy": {
+          "name": "product_images_delete_policy",
+          "as": "PERMISSIVE",
+          "for": "DELETE",
+          "to": [
+            "authenticated"
+          ],
+          "using": "EXISTS (\n      SELECT 1 FROM products \n      WHERE products.product_id = \"product_images\".\"product_id\" \n      AND products.seller_id = (select auth.uid())\n    )"
+        }
+      },
       "checkConstraints": {},
       "isRLSEnabled": false
     },
@@ -1221,7 +742,35 @@
         }
       },
       "uniqueConstraints": {},
-      "policies": {},
+      "policies": {
+        "product_likes_select_policy": {
+          "name": "product_likes_select_policy",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "public"
+          ],
+          "using": "true"
+        },
+        "product_likes_insert_policy": {
+          "name": "product_likes_insert_policy",
+          "as": "PERMISSIVE",
+          "for": "INSERT",
+          "to": [
+            "authenticated"
+          ],
+          "withCheck": "\"product_likes\".\"user_id\" = (select auth.uid())"
+        },
+        "product_likes_delete_policy": {
+          "name": "product_likes_delete_policy",
+          "as": "PERMISSIVE",
+          "for": "DELETE",
+          "to": [
+            "authenticated"
+          ],
+          "using": "\"product_likes\".\"user_id\" = (select auth.uid())"
+        }
+      },
       "checkConstraints": {},
       "isRLSEnabled": false
     },
@@ -1284,7 +833,35 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
-      "policies": {},
+      "policies": {
+        "product_views_select_policy": {
+          "name": "product_views_select_policy",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "public"
+          ],
+          "using": "true"
+        },
+        "product_views_insert_policy": {
+          "name": "product_views_insert_policy",
+          "as": "PERMISSIVE",
+          "for": "INSERT",
+          "to": [
+            "authenticated"
+          ],
+          "withCheck": "true"
+        },
+        "product_views_delete_policy": {
+          "name": "product_views_delete_policy",
+          "as": "PERMISSIVE",
+          "for": "DELETE",
+          "to": [
+            "authenticated"
+          ],
+          "using": "true"
+        }
+      },
       "checkConstraints": {},
       "isRLSEnabled": false
     },
@@ -1354,6 +931,14 @@
           "primaryKey": false,
           "notNull": true
         },
+        "country": {
+          "name": "country",
+          "type": "country",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'Thailand'"
+        },
         "description": {
           "name": "description",
           "type": "text",
@@ -1387,7 +972,7 @@
           "type": "jsonb",
           "primaryKey": false,
           "notNull": true,
-          "default": "'{\"views\":0,\"likes\":0}'::jsonb"
+          "default": "'{\"likes\":0}'::jsonb"
         },
         "created_at": {
           "name": "created_at",
@@ -1435,6 +1020,96 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
+      "policies": {
+        "products_select_policy": {
+          "name": "products_select_policy",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "public"
+          ],
+          "using": "true"
+        },
+        "products_insert_policy": {
+          "name": "products_insert_policy",
+          "as": "PERMISSIVE",
+          "for": "INSERT",
+          "to": [
+            "authenticated"
+          ],
+          "withCheck": "\"products\".\"seller_id\" = (select auth.uid())"
+        },
+        "products_update_policy": {
+          "name": "products_update_policy",
+          "as": "PERMISSIVE",
+          "for": "UPDATE",
+          "to": [
+            "authenticated"
+          ],
+          "using": "\"products\".\"seller_id\" = (select auth.uid())",
+          "withCheck": "\"products\".\"seller_id\" = (select auth.uid())"
+        }
+      },
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.trust_scores": {
+      "name": "trust_scores",
+      "schema": "",
+      "columns": {
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "score": {
+          "name": "score",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "completed_trades": {
+          "name": "completed_trades",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "trust_scores_user_id_user_profiles_profile_id_fk": {
+          "name": "trust_scores_user_id_user_profiles_profile_id_fk",
+          "tableFrom": "trust_scores",
+          "tableTo": "user_profiles",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "profile_id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
@@ -1460,6 +1135,12 @@
             "cycle": false
           }
         },
+        "product_id": {
+          "name": "product_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp",
@@ -1469,7 +1150,102 @@
         }
       },
       "indexes": {},
-      "foreignKeys": {},
+      "foreignKeys": {
+        "user_conversations_product_id_products_product_id_fk": {
+          "name": "user_conversations_product_id_products_product_id_fk",
+          "tableFrom": "user_conversations",
+          "tableTo": "products",
+          "columnsFrom": [
+            "product_id"
+          ],
+          "columnsTo": [
+            "product_id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {
+        "user_conversations_select_policy": {
+          "name": "user_conversations_select_policy",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "authenticated"
+          ],
+          "using": "EXISTS (\n      SELECT 1 FROM message_participants mp \n      WHERE mp.conversation_id = \"user_conversations\".\"conversation_id\" \n      AND mp.profile_id = (select auth.uid())\n    )"
+        },
+        "user_conversations_insert_policy": {
+          "name": "user_conversations_insert_policy",
+          "as": "PERMISSIVE",
+          "for": "INSERT",
+          "to": [
+            "authenticated"
+          ],
+          "withCheck": "true"
+        }
+      },
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.user_levels": {
+      "name": "user_levels",
+      "schema": "",
+      "columns": {
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "level": {
+          "name": "level",
+          "type": "user_level",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'Explorer'"
+        },
+        "free_let_go_buddy_uses": {
+          "name": "free_let_go_buddy_uses",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 2
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "user_levels_user_id_user_profiles_profile_id_fk": {
+          "name": "user_levels_user_id_user_profiles_profile_id_fk",
+          "tableFrom": "user_levels",
+          "tableTo": "user_profiles",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "profile_id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
@@ -1594,7 +1370,45 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
-      "policies": {},
+      "policies": {
+        "user_messages_select_policy": {
+          "name": "user_messages_select_policy",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "authenticated"
+          ],
+          "using": "\"user_messages\".\"sender_id\" = (select auth.uid()) OR \"user_messages\".\"receiver_id\" = (select auth.uid())"
+        },
+        "user_messages_insert_policy": {
+          "name": "user_messages_insert_policy",
+          "as": "PERMISSIVE",
+          "for": "INSERT",
+          "to": [
+            "authenticated"
+          ],
+          "withCheck": "\"user_messages\".\"sender_id\" = (select auth.uid())"
+        },
+        "user_messages_update_policy": {
+          "name": "user_messages_update_policy",
+          "as": "PERMISSIVE",
+          "for": "UPDATE",
+          "to": [
+            "authenticated"
+          ],
+          "using": "\"user_messages\".\"sender_id\" = (select auth.uid())",
+          "withCheck": "\"user_messages\".\"sender_id\" = (select auth.uid())"
+        },
+        "user_messages_delete_policy": {
+          "name": "user_messages_delete_policy",
+          "as": "PERMISSIVE",
+          "for": "DELETE",
+          "to": [
+            "authenticated"
+          ],
+          "using": "\"user_messages\".\"sender_id\" = (select auth.uid())"
+        }
+      },
       "checkConstraints": {},
       "isRLSEnabled": false
     },
@@ -1646,12 +1460,6 @@
         },
         "message_id": {
           "name": "message_id",
-          "type": "bigint",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "review_id": {
-          "name": "review_id",
           "type": "bigint",
           "primaryKey": false,
           "notNull": false
@@ -1737,24 +1545,40 @@
           ],
           "onDelete": "cascade",
           "onUpdate": "no action"
-        },
-        "user_notifications_review_id_give_and_glow_reviews_id_fk": {
-          "name": "user_notifications_review_id_give_and_glow_reviews_id_fk",
-          "tableFrom": "user_notifications",
-          "tableTo": "give_and_glow_reviews",
-          "columnsFrom": [
-            "review_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
-      "policies": {},
+      "policies": {
+        "user_notifications_select_policy": {
+          "name": "user_notifications_select_policy",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "authenticated"
+          ],
+          "using": "\"user_notifications\".\"receiver_id\" = (select auth.uid())"
+        },
+        "user_notifications_insert_policy": {
+          "name": "user_notifications_insert_policy",
+          "as": "PERMISSIVE",
+          "for": "INSERT",
+          "to": [
+            "authenticated"
+          ],
+          "withCheck": "\"user_notifications\".\"sender_id\" = (select auth.uid())"
+        },
+        "user_notifications_update_policy": {
+          "name": "user_notifications_update_policy",
+          "as": "PERMISSIVE",
+          "for": "UPDATE",
+          "to": [
+            "authenticated"
+          ],
+          "using": "\"user_notifications\".\"receiver_id\" = (select auth.uid())",
+          "withCheck": "\"user_notifications\".\"receiver_id\" = (select auth.uid())"
+        }
+      },
       "checkConstraints": {},
       "isRLSEnabled": false
     },
@@ -1805,40 +1629,20 @@
           "primaryKey": false,
           "notNull": false
         },
+        "level": {
+          "name": "level",
+          "type": "user_level",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'Explorer'"
+        },
         "total_likes": {
           "name": "total_likes",
           "type": "integer",
           "primaryKey": false,
           "notNull": false,
           "default": 0
-        },
-        "total_views": {
-          "name": "total_views",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "default": 0
-        },
-        "total_listings": {
-          "name": "total_listings",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "default": 0
-        },
-        "response_rate": {
-          "name": "response_rate",
-          "type": "numeric(10, 2)",
-          "primaryKey": false,
-          "notNull": false,
-          "default": "'0.00'"
-        },
-        "response_time": {
-          "name": "response_time",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "default": "'< 1 hour'"
         },
         "rating": {
           "name": "rating",
@@ -1910,7 +1714,45 @@
           ]
         }
       },
-      "policies": {},
+      "policies": {
+        "user_profiles_select_policy": {
+          "name": "user_profiles_select_policy",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "public"
+          ],
+          "using": "true"
+        },
+        "user_profiles_insert_policy": {
+          "name": "user_profiles_insert_policy",
+          "as": "PERMISSIVE",
+          "for": "INSERT",
+          "to": [
+            "authenticated"
+          ],
+          "withCheck": "(select auth.uid()) = \"user_profiles\".\"profile_id\""
+        },
+        "user_profiles_update_policy": {
+          "name": "user_profiles_update_policy",
+          "as": "PERMISSIVE",
+          "for": "UPDATE",
+          "to": [
+            "authenticated"
+          ],
+          "using": "(select auth.uid()) = \"user_profiles\".\"profile_id\"",
+          "withCheck": "(select auth.uid()) = \"user_profiles\".\"profile_id\""
+        },
+        "user_profiles_delete_policy": {
+          "name": "user_profiles_delete_policy",
+          "as": "PERMISSIVE",
+          "for": "DELETE",
+          "to": [
+            "authenticated"
+          ],
+          "using": "(select auth.uid()) = \"user_profiles\".\"profile_id\""
+        }
+      },
       "checkConstraints": {
         "rating_check": {
           "name": "rating_check",
@@ -1997,42 +1839,55 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "auth.users": {
-      "name": "users",
-      "schema": "auth",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "uuid",
-          "primaryKey": true,
-          "notNull": true
+      "policies": {
+        "user_reviews_select_policy": {
+          "name": "user_reviews_select_policy",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "public"
+          ],
+          "using": "true"
+        },
+        "user_reviews_insert_policy": {
+          "name": "user_reviews_insert_policy",
+          "as": "PERMISSIVE",
+          "for": "INSERT",
+          "to": [
+            "authenticated"
+          ],
+          "withCheck": "\"user_reviews\".\"reviewer_id\" = (select auth.uid())"
+        },
+        "user_reviews_delete_policy": {
+          "name": "user_reviews_delete_policy",
+          "as": "PERMISSIVE",
+          "for": "DELETE",
+          "to": [
+            "authenticated"
+          ],
+          "using": "\"user_reviews\".\"reviewer_id\" = (select auth.uid())"
         }
       },
-      "indexes": {},
-      "foreignKeys": {},
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
     }
   },
   "enums": {
+    "public.country": {
+      "name": "country",
+      "schema": "public",
+      "values": [
+        "Thailand",
+        "Korea"
+      ]
+    },
     "public.declutter_situation": {
       "name": "declutter_situation",
       "schema": "public",
       "values": [
         "Moving",
-        "Downsizing",
-        "Spring Cleaning",
-        "Digital Declutter",
         "Minimalism",
-        "Inheritance",
-        "Relationship Change",
+        "Spring Cleaning",
         "Other"
       ]
     },
@@ -2046,19 +1901,6 @@
         "Critical"
       ]
     },
-    "public.local_tip_categories": {
-      "name": "local_tip_categories",
-      "schema": "public",
-      "values": [
-        "Visa",
-        "Bank",
-        "Tax",
-        "Health",
-        "Education",
-        "Transportation",
-        "Other"
-      ]
-    },
     "public.location": {
       "name": "location",
       "schema": "public",
@@ -2070,7 +1912,15 @@
         "Pattaya",
         "Krabi",
         "Koh Samui",
-        "Other Cities"
+        "Other Thai Cities",
+        "Seoul",
+        "Busan",
+        "Incheon",
+        "Daegu",
+        "Daejeon",
+        "Gwangju",
+        "Ulsan",
+        "Other Korean Cities"
       ]
     },
     "public.message_type": {
@@ -2144,6 +1994,17 @@
         "Repair",
         "Repurpose",
         "Discard"
+      ]
+    },
+    "public.user_level": {
+      "name": "user_level",
+      "schema": "public",
+      "values": [
+        "Explorer",
+        "Connector",
+        "Sharer",
+        "Glowmaker",
+        "Legend"
       ]
     }
   },

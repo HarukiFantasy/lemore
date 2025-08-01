@@ -244,41 +244,4 @@ export function isAnonymousUser(userId: string | null): boolean {
 //   return request.headers.get("user-agent") || "unknown";
 // }
 
-// Check if user has appreciation badge based on give-and-glow reviews
-export const checkAppreciationBadge = async (client: any, sellerId: string): Promise<boolean> => {
-  try {
-    // First, check if the user already has the appreciation_badge set in their profile
-    const { data: userProfile, error: profileError } = await client
-      .from('user_profiles')
-      .select('appreciation_badge')
-      .eq('profile_id', sellerId)
-      .maybeSingle();
-    
-    if (profileError) {
-      console.error("Error fetching user profile:", profileError);
-      return false;
-    }
-    
-    if (userProfile?.appreciation_badge) {
-      return true;
-    }
-    
-    // If not found in profile or badge is false, check the give-and-glow reviews
-    const { data: highRatingReviews, error: reviewsError } = await client
-      .from('give_and_glow_reviews')
-      .select('*')
-      .eq('giver_id', sellerId)
-      .gt('rating', 4);
-    
-    if (reviewsError) {
-      console.error("Error fetching give-and-glow reviews:", reviewsError);
-      return false;
-    }
-    
-    // User gets appreciation badge if they have at least one review with rating > 4
-    return (highRatingReviews?.length ?? 0) > 0;
-  } catch (error) {
-    console.error("Error checking appreciation badge:", error);
-    return false;
-  }
-};
+// Removed: checkAppreciationBadge function (community features removed)
