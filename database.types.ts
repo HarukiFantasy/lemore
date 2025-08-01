@@ -29,6 +29,85 @@ export type Database = {
         }
         Relationships: []
       }
+      challenge_calendar_items: {
+        Row: {
+          completed: boolean
+          completed_at: string | null
+          created_at: string
+          item_id: number
+          name: string
+          reflection: string | null
+          scheduled_date: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          completed?: boolean
+          completed_at?: string | null
+          created_at?: string
+          item_id?: never
+          name: string
+          reflection?: string | null
+          scheduled_date: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          completed?: boolean
+          completed_at?: string | null
+          created_at?: string
+          item_id?: never
+          name?: string
+          reflection?: string | null
+          scheduled_date?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "challenge_calendar_items_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "product_detail_view"
+            referencedColumns: ["seller_id"]
+          },
+          {
+            foreignKeyName: "challenge_calendar_items_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "products_listings_view"
+            referencedColumns: ["seller_id"]
+          },
+          {
+            foreignKeyName: "challenge_calendar_items_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_dashboard_view"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "challenge_calendar_items_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "challenge_calendar_items_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_sales_stats_view"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "challenge_calendar_items_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_stats_view"
+            referencedColumns: ["profile_id"]
+          },
+        ]
+      }
       give_and_glow_reviews: {
         Row: {
           category: Database["public"]["Enums"]["product_category"]

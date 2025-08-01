@@ -13,6 +13,7 @@ import {
   primaryKey,
   pgPolicy,
   check,
+  index,
 } from "drizzle-orm/pg-core";
 import { authenticatedRole, authUid, authUsers } from "drizzle-orm/supabase";
 import { USER_LEVELS } from "./constants";
@@ -549,6 +550,49 @@ export const letGoBuddySessions = pgTable("let_go_buddy_sessions", {
     as: "permissive",
     using: sql`${table.user_id} = ${authUid}`
   })
+]);
+
+// Challenge calendar items table
+export const challengeCalendarItems = pgTable("challenge_calendar_items", {
+  item_id: bigint("item_id", {mode: "number"}).primaryKey().generatedAlwaysAsIdentity(),
+  user_id: uuid().notNull().references(() => userProfiles.profile_id, {onDelete: "cascade"}),
+  name: text("name").notNull(),
+  scheduled_date: timestamp("scheduled_date").notNull(),
+  completed: boolean().notNull().default(false),
+  completed_at: timestamp("completed_at"),
+  reflection: text("reflection"),
+  created_at: timestamp("created_at").notNull().defaultNow(),
+  updated_at: timestamp("updated_at").notNull().defaultNow(),
+}, (table) => [
+  pgPolicy("challenge_calendar_items_select_policy", {
+    for: "select",
+    to: authenticatedRole,
+    as: "permissive",
+    using: sql`${table.user_id} = ${authUid}`
+  }),
+  pgPolicy("challenge_calendar_items_insert_policy", {
+    for: "insert",
+    to: authenticatedRole,
+    as: "permissive",
+    withCheck: sql`${table.user_id} = ${authUid}`
+  }),
+  pgPolicy("challenge_calendar_items_update_policy", {
+    for: "update",
+    to: authenticatedRole,
+    as: "permissive",
+    using: sql`${table.user_id} = ${authUid}`,
+    withCheck: sql`${table.user_id} = ${authUid}`
+  }),
+  pgPolicy("challenge_calendar_items_delete_policy", {
+    for: "delete",
+    to: authenticatedRole,
+    as: "permissive",
+    using: sql`${table.user_id} = ${authUid}`
+  }),
+  // Index for efficient querying by user and date
+  index("challenge_calendar_items_user_date_idx").on(table.user_id, table.scheduled_date),
+  // Index for efficient querying by completion status
+  index("challenge_calendar_items_user_completed_idx").on(table.user_id, table.completed)
 ]);
 
 // Item analyses table

@@ -28,6 +28,18 @@ const menus = [
   {
     name: 'Let Go Buddy',
     to: '/let-go-buddy',
+    items: [
+      {
+        name: 'Let Go Buddy',
+        description: 'Your AI companion for decluttering with heart.',
+        to: '/let-go-buddy',
+      },
+      {
+        name: 'Challenge Calendar',
+        description: 'Your AI companion for decluttering with heart.',
+        to: '/let-go-buddy/challenge-calendar',
+      },
+    ],
   }
 ];
 
@@ -131,7 +143,7 @@ export function Navigation({
                         >
                           <NavigationMenuLink asChild>
                             <Link 
-                              className="p-3 space-y-1 block text-sm leading-none no-underline outline-none"
+                              className="p-3 space-y-1 block text-sm leading-none no-underline outline-none "
                               to={item.to}
                             >
                               <span className="text-sm font-medium leading-none">{item.name}</span>

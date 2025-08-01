@@ -13,7 +13,9 @@ export default [
   ]),
   ...prefix("let-go-buddy", [
     index("features/let-go-buddy/pages/let-go-buddy-page.tsx"),
+    route("/v1", "features/let-go-buddy/pages/let-go-buddy-v1-page.tsx"),
     route("/analysis", "features/let-go-buddy/pages/let-go-buddy-analysis-page.tsx"),
+    route("/challenge-calendar", "features/let-go-buddy/pages/challenge-calendar-page.tsx"),
   ]),
 
   ...prefix("/auth", [
@@ -42,6 +44,7 @@ export default [
   ]),
   route("/users/:username", "features/users/pages/usersProfile-page.tsx"),
   route("/api/send-welcome-email", "api/send-welcome-email.ts"),
+  
   
   // Legal pages for Facebook OAuth
   route("/privacy-policy", "common/pages/privacy-policy-page.tsx"),

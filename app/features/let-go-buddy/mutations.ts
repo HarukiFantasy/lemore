@@ -112,3 +112,71 @@ export async function triggerLetGoBuddyAIAnalysis({
 
   return await response.json();
 }
+
+// Challenge Calendar mutations
+export async function createChallengeItem(
+  client: SupabaseClient<Database>,
+  { userId, name, scheduledDate }: { userId: string; name: string; scheduledDate: string }
+) {
+  const { data, error } = await client
+    .from('challenge_calendar_items')
+    .insert([{
+      user_id: userId,
+      name,
+      scheduled_date: scheduledDate
+    }])
+    .select()
+    .single();
+  
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+export async function updateChallengeItemCompletion(
+  client: SupabaseClient<Database>,
+  { itemId, completed, reflection, userId }: { 
+    itemId: number; 
+    completed: boolean; 
+    reflection?: string;
+    userId: string;
+  }
+) {
+  const updateData: any = {
+    completed,
+    updated_at: new Date().toISOString()
+  };
+  
+  if (completed) {
+    updateData.completed_at = new Date().toISOString();
+  } else {
+    updateData.completed_at = null;
+  }
+  
+  if (reflection !== undefined) {
+    updateData.reflection = reflection;
+  }
+
+  const { data, error } = await client
+    .from('challenge_calendar_items')
+    .update(updateData)
+    .eq('item_id', itemId)
+    .eq('user_id', userId) // Ensure user can only update their own items
+    .select()
+    .single();
+  
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+export async function deleteChallengeItem(
+  client: SupabaseClient<Database>,
+  { itemId, userId }: { itemId: number; userId: string }
+) {
+  const { error } = await client
+    .from('challenge_calendar_items')
+    .delete()
+    .eq('item_id', itemId)
+    .eq('user_id', userId); // Ensure user can only delete their own items
+  
+  if (error) throw new Error(error.message);
+}
