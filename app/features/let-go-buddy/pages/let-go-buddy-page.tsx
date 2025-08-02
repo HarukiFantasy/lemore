@@ -1,13 +1,12 @@
 import { useState, useEffect } from "react";
 import { useFetcher, useNavigate, redirect } from "react-router";
-import OpenAI from "openai";
 import { Card, CardContent, CardHeader, CardTitle } from "~/common/components/ui/card";
 import { Button } from "~/common/components/ui/button";
 import { Input } from "~/common/components/ui/input";
 import { Textarea } from "~/common/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/common/components/ui/select";
 import { Progress } from "~/common/components/ui/progress";
-import { CameraIcon, ArrowPathIcon, SparklesIcon, HeartIcon, CheckCircleIcon, GiftIcon } from "@heroicons/react/24/outline";
+import { CameraIcon, ArrowPathIcon, SparklesIcon, HeartIcon, GiftIcon } from "@heroicons/react/24/outline";
 import { AlertTriangle } from "lucide-react";
 import { createLetGoBuddySession } from "../mutations";
 import { makeSSRClient } from "~/supa-client";
@@ -36,8 +35,6 @@ export async function loader({ request }: { request: Request }) {
 
 
 export async function action({ request }: { request: Request }) {
-  const payload = await request.json();
-  const { intent } = payload;
   const { client } = makeSSRClient(request);
   const { data: { user } } = await client.auth.getUser();
 
@@ -46,201 +43,55 @@ export async function action({ request }: { request: Request }) {
   }
   
   try {
+    const contentType = request.headers.get('content-type') || '';
+    
+    // Handle form data requests (image uploads)
+    if (contentType.includes('multipart/form-data')) {
+      const formData = await request.formData();
+      const intent = formData.get('intent') as string;
+      
+      if (intent === 'uploadImage') {
+          const { uploadLetGoBuddyImages } = await import("../mutations");
+          
+          // Handle multiple images
+          const imageFiles: File[] = [];
+          for (let i = 0; i < 5; i++) {
+            const imageFile = formData.get(`image${i === 0 ? '' : i}`) as File;
+            if (imageFile && imageFile instanceof File) {
+              imageFiles.push(imageFile);
+            }
+          }
+          
+          // Also check for single image
+          const singleImage = formData.get('image') as File;
+          if (singleImage && singleImage instanceof File && imageFiles.length === 0) {
+            imageFiles.push(singleImage);
+          }
+          
+          if (imageFiles.length === 0) {
+              return new Response(JSON.stringify({ error: "No image files provided" }), { status: 400 });
+          }
+          
+          const imageUrls = await uploadLetGoBuddyImages(client, { 
+              userId: user.id, 
+              images: imageFiles 
+          });
+          
+          return new Response(JSON.stringify({ imageUrls }), { 
+              headers: { 'Content-Type': 'application/json' } 
+          });
+      }
+    }
+    
+    // Handle JSON requests
+    const payload = await request.json();
+    const { intent } = payload;
+    
     if (intent === 'createSession') {
         const session = await createLetGoBuddySession(client, { userId: user.id, situation: payload.situation || "Other" });
         return new Response(JSON.stringify(session), { headers: { 'Content-Type': 'application/json' } });
     }
 
-    if (intent === 'uploadImage') {
-        const { uploadLetGoBuddyImages } = await import("../mutations");
-        const formData = await request.formData();
-        const imageFile = formData.get('image') as File;
-        
-        if (!imageFile || !(imageFile instanceof File)) {
-            return new Response(JSON.stringify({ error: "No image file provided" }), { status: 400 });
-        }
-        
-        const imageUrls = await uploadLetGoBuddyImages(client, { 
-            userId: user.id, 
-            images: [imageFile] 
-        });
-        
-        return new Response(JSON.stringify({ imageUrl: imageUrls[0] }), { 
-            headers: { 'Content-Type': 'application/json' } 
-        });
-    }
-
-    if (intent === 'comprehensiveAnalysis') {
-        const { insertItemAnalysis } = await import("../mutations");
-        const { 
-          imageUrls, 
-          itemName, 
-          itemCategory,
-          situation, 
-          sessionId, 
-          emotionalAnswers, 
-          itemDetails,
-          userLocation 
-        } = payload;
-        
-        // Convert stored image URLs to base64 for OpenAI analysis
-        const convertImageUrlToBase64 = async (imageUrl: string): Promise<string> => {
-          try {
-            const response = await fetch(imageUrl);
-            if (!response.ok) {
-              throw new Error(`Failed to fetch image: ${response.statusText}`);
-            }
-            const buffer = await response.arrayBuffer();
-            const base64 = Buffer.from(buffer).toString('base64');
-            const mimeType = response.headers.get('content-type') || 'image/jpeg';
-            return `data:${mimeType};base64,${base64}`;
-          } catch (error: unknown) {
-            console.error('Error converting image to base64:', error);
-            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-            throw new Error(`Failed to convert image to base64: ${errorMessage}`);
-          }
-        };
-        
-        const base64Images = await Promise.all(
-          imageUrls.map((url: string) => convertImageUrlToBase64(url))
-        );
-
-        const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-        
-        // Single comprehensive analysis prompt
-        const completion = await openai.chat.completions.create({
-          model: "gpt-4o",
-          messages: [
-            {
-              role: "system",
-              content: `You are an AI decluttering assistant. Analyze the uploaded images and user context to provide:
-1. Emotional assessment based on user responses  
-2. Complete item analysis for decision-making
-3. Ready-to-use listing data if selling is recommended
-
-USER CONTEXT:
-- Decluttering situation: ${situation}
-- Item name: ${itemName}
-- Item category: ${itemCategory}
-- User location: ${userLocation}
-- Emotional responses: ${JSON.stringify(emotionalAnswers)}
-- Item details: ${JSON.stringify(itemDetails)}
-
-ANALYZE AND PROVIDE:
-1. Identify the item from images
-2. Assess condition, value, and market potential
-3. Consider emotional attachment factors
-4. Calculate environmental impact
-5. Generate listing-ready data
-
-RESPOND WITH THIS EXACT JSON STRUCTURE:
-{
-  "emotional_assessment": {
-    "attachment_level": "Very Low|Low|Moderate|High|Very High",
-    "emotional_score": number (1-10),
-    "emotional_tags": ["tag1", "tag2", "tag3"],
-    "emotional_recommendation": "string explanation"
-  },
-  "item_analysis": {
-    "item_name": "string (identified from image)",
-    "item_category": "Electronics|Clothing|Books|Home|Sports|Beauty|Toys|Automotive|Health|Other",
-    "item_condition": "New|Like New|Excellent|Good|Fair|Poor", 
-    "condition_notes": "string (specific condition details)",
-    "estimated_age": "string",
-    "brand": "string (if identifiable)",
-    "original_price": number (optional),
-    "current_value": number
-  },
-  "environmental_impact": {
-    "impact_level": "Low|Medium|High|Critical",
-    "co2_impact": number (kg CO2 saved),
-    "landfill_impact": "string description",
-    "is_recyclable": boolean,
-    "sustainability_score": number (1-10)
-  },
-  "recommendation": {
-    "action": "Keep|Sell|Donate|Recycle|Repair|Repurpose|Discard",
-    "confidence": number (1-10),
-    "reason": "string (detailed explanation)",
-    "ai_suggestion": "string (personalized advice)"
-  },
-  "listing_data": {
-    "title": "string (compelling marketplace title)",
-    "description": "string (detailed selling description)", 
-    "price": "string (recommended price amount)",
-    "currency": "THB",
-    "price_type": "Fixed|Negotiable|Free",
-    "condition": "New|Like New|Excellent|Good|Fair|Poor",
-    "category": "Electronics|Clothing|Books|Home|Sports|Beauty|Toys|Automotive|Health|Other",
-    "location": "${userLocation}",
-    "selling_points": ["point1", "point2", "point3"],
-    "keywords": ["keyword1", "keyword2", "keyword3"]
-  }
-}
-
-IMPORTANT: 
-- Base condition assessment on actual image analysis
-- Price should reflect Thai market conditions
-- Description should be compelling for Thai buyers
-- Consider local selling preferences
-- Include specific details visible in images`
-            },
-            {
-              role: "user",
-              content: [
-                {
-                  type: "text",
-                  text: `Please analyze these images and provide a comprehensive decluttering assessment. Consider all the user context provided above. Respond with valid JSON only.`
-                },
-                ...base64Images.map((base64Image: string) => ({
-                  type: "image_url" as const,
-                  image_url: {
-                    url: base64Image
-                  }
-                }))
-              ]
-            }
-          ],
-          response_format: { type: "json_object" },
-        });
-
-        const analysisText = completion.choices[0].message.content;
-        if (!analysisText) {
-          throw new Error("No analysis generated from OpenAI");
-        }
-        
-        let analysis;
-        try {
-          analysis = JSON.parse(analysisText);
-        } catch (error) {
-          throw new Error("Invalid analysis format");
-        }
-
-        // Save analysis to database with flattened structure for compatibility
-        await insertItemAnalysis(client, {
-          session_id: sessionId,
-          item_name: analysis.item_analysis.item_name,
-          item_category: analysis.item_analysis.item_category,
-          item_condition: analysis.item_analysis.item_condition,
-          recommendation: analysis.recommendation.action,
-          recommendation_reason: analysis.recommendation.reason,
-          ai_suggestion: analysis.recommendation.ai_suggestion,
-          emotional_score: analysis.emotional_assessment.emotional_score,
-          environmental_impact: analysis.environmental_impact.impact_level,
-          co2_impact: analysis.environmental_impact.co2_impact,
-          landfill_impact: analysis.environmental_impact.landfill_impact,
-          is_recyclable: analysis.environmental_impact.is_recyclable,
-          original_price: analysis.item_analysis.original_price,
-          current_value: analysis.item_analysis.current_value,
-          ai_listing_price: parseFloat(analysis.listing_data.price) || analysis.item_analysis.current_value,
-          ai_listing_title: analysis.listing_data.title,
-          ai_listing_description: analysis.listing_data.description,
-          ai_listing_location: analysis.listing_data.location,
-          images: imageUrls,
-        });
-        
-        return new Response(JSON.stringify(analysis), { headers: { 'Content-Type': 'application/json' } });
-    }
 
     return new Response(JSON.stringify({ error: 'Invalid intent' }), { status: 400 });
 
@@ -278,7 +129,7 @@ export default function LetGoBuddyPage({ loaderData }: { loaderData: { user: any
   });
   
   const isCreatingSession = sessionFetcher.state === 'submitting';
-  const isAnalyzing = analysisFetcher.state === 'submitting';
+  const isAnalyzing = analysisFetcher.state === 'loading';
 
   useEffect(() => {
     if (sessionFetcher.data && sessionFetcher.state === 'idle') {
@@ -293,6 +144,19 @@ export default function LetGoBuddyPage({ loaderData }: { loaderData: { user: any
     }
   }, [sessionFetcher.data, sessionFetcher.state]);
 
+  
+
+  useEffect(() => {
+    if (imageFetcher.data && imageFetcher.state === 'idle') {
+      const result = imageFetcher.data as any;
+      if (result.imageUrls) {
+        setUploadedImageUrls(result.imageUrls);
+      } else if (result.imageUrl) {
+        setUploadedImageUrls(prev => [...prev, result.imageUrl]);
+      }
+    }
+  }, [imageFetcher.data, imageFetcher.state]);
+
   useEffect(() => {
     if (analysisFetcher.data && analysisFetcher.state === 'idle') {
       const result = analysisFetcher.data as any;
@@ -304,16 +168,6 @@ export default function LetGoBuddyPage({ loaderData }: { loaderData: { user: any
       }
     }
   }, [analysisFetcher.data, analysisFetcher.state]);
-  
-
-  useEffect(() => {
-    if (imageFetcher.data && imageFetcher.state === 'idle') {
-      const result = imageFetcher.data as any;
-      if (result.imageUrl) {
-        setUploadedImageUrls(prev => [...prev, result.imageUrl]);
-      }
-    }
-  }, [imageFetcher.data, imageFetcher.state]);
 
   // Use EMOTIONAL_QUESTIONS from constants
   const conversationQuestions = EMOTIONAL_QUESTIONS;
@@ -350,13 +204,13 @@ export default function LetGoBuddyPage({ loaderData }: { loaderData: { user: any
       // Create session
       sessionFetcher.submit({ intent: 'createSession', situation: situation || 'Other' }, { method: "post", encType: "application/json" });
       
-      // Upload images to storage
-      files.forEach(file => {
-        const formData = new FormData();
-        formData.append('intent', 'uploadImage');
-        formData.append('image', file);
-        imageFetcher.submit(formData, { method: "post" });
+      // Upload all images at once
+      const formData = new FormData();
+      formData.append('intent', 'uploadImage');
+      files.forEach((file, index) => {
+        formData.append(`image${index === 0 ? '' : index}`, file);
       });
+      imageFetcher.submit(formData, { method: "post" });
       
       setStep(2);
     }
@@ -379,26 +233,35 @@ export default function LetGoBuddyPage({ loaderData }: { loaderData: { user: any
       return;
     }
 
-    const analysisData = {
-      intent: 'comprehensiveAnalysis',
-      sessionId,
-      imageUrls: uploadedImageUrls,
-      itemName,
-      itemCategory,
+    // Call analysis page loader function to get AI analysis
+    const analysisParams = new URLSearchParams({
+      sessionId: sessionId.toString(),
+      imageUrls: JSON.stringify(uploadedImageUrls),
       situation,
-      emotionalAnswers: {
+      itemName: itemName || "",
+      itemCategory: itemCategory || "",
+      emotionalAnswers: JSON.stringify({
         question1: emotionalAnswers[0] || "",
         question2: emotionalAnswers[1] || "",
         question3: emotionalAnswers[2] || ""
-      },
-      itemDetails,
+      }),
+      itemDetails: JSON.stringify(itemDetails),
       userLocation: "Bangkok"
-    };
+    });
 
-    analysisFetcher.submit(analysisData, { method: "post", encType: "application/json" });
+    // Fetch analysis from analysis page loader
+    analysisFetcher.load(`/let-go-buddy/analysis?${analysisParams.toString()}`);
   };
   
-  const handleStartSelling = async () => {
+
+  const handleRemoveImage = (index: number) => {
+    const newFiles = uploadedFiles.filter((_, i) => i !== index);
+    const newPreviews = previewUrls.filter((_, i) => i !== index);
+    setUploadedFiles(newFiles);
+    setPreviewUrls(newPreviews);
+  };
+
+  const handleStartSelling = () => {
     if (!analysisResult || !analysisResult.listing_data) return;
     
     const listingData = {
@@ -422,10 +285,8 @@ export default function LetGoBuddyPage({ loaderData }: { loaderData: { user: any
     });
   };
 
-  const addToChallenge = () => navigate('/let-go-buddy/challenge-calendar');
-  const addToKeepBox = () => alert("Added to your 'Keep Box'.");
   const handleFreeGiveaway = () => {
-    if (!analysisResult || !analysisResult.listing_data) return;
+    if (!analysisResult || !analysisResult.item_analysis) return;
     
     const giveawayData = {
       title: `FREE: ${analysisResult.item_analysis.item_name} - Giving away for free!`,
@@ -433,9 +294,9 @@ export default function LetGoBuddyPage({ loaderData }: { loaderData: { user: any
       price: "0",
       currency: "THB",
       priceType: "Free",
-      condition: analysisResult.listing_data.condition,
-      category: analysisResult.listing_data.category,
-      location: analysisResult.listing_data.location,
+      condition: analysisResult.listing_data?.condition || "Good",
+      category: analysisResult.listing_data?.category || "Other",
+      location: analysisResult.listing_data?.location || "Bangkok",
       images: uploadedImageUrls,
       fromLetGoBuddy: true,
       isGiveaway: true
@@ -450,12 +311,8 @@ export default function LetGoBuddyPage({ loaderData }: { loaderData: { user: any
     });
   };
 
-  const handleRemoveImage = (index: number) => {
-    const newFiles = uploadedFiles.filter((_, i) => i !== index);
-    const newPreviews = previewUrls.filter((_, i) => i !== index);
-    setUploadedFiles(newFiles);
-    setPreviewUrls(newPreviews);
-  };
+  const addToChallenge = () => navigate('/let-go-buddy/challenge-calendar');
+  const addToKeepBox = () => alert("Added to your 'Keep Box'.");
 
 
   return (
@@ -642,22 +499,100 @@ export default function LetGoBuddyPage({ loaderData }: { loaderData: { user: any
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              <p className="text-sm text-muted-foreground">Ready to get AI-powered recommendations for your item?</p>
-              <Button 
-                onClick={handleGenerateAnalysis} 
-                className={`w-full ${!canUseLetGoBuddy ? 'opacity-50 cursor-not-allowed bg-gray-100 text-gray-400 border-gray-200' : ''}`}
-                disabled={!canUseLetGoBuddy || !situation || !uploadedImageUrls.length}
-                size="lg"
-              >
-                <SparklesIcon className="w-5 h-5 mr-2" />
-                {!canUseLetGoBuddy ? 'Generate Analysis (Limit Reached)' : 'Generate AI Analysis'}
-              </Button>
-              {!canUseLetGoBuddy && (
-                <div className="text-sm text-center bg-emerald-50 text-emerald-700 rounded-md px-4 py-2 border border-emerald-100">
-                  😊 You've used all your free Let Go Buddy sessions (2/2). Build trust in the community to unlock more!
+            {!analysisResult ? (
+              <div className="space-y-4">
+                <p className="text-sm text-muted-foreground">Ready to get AI-powered recommendations for your item?</p>
+                <Button 
+                  onClick={handleGenerateAnalysis} 
+                  className={`w-full ${!canUseLetGoBuddy ? 'opacity-50 cursor-not-allowed bg-gray-100 text-gray-400 border-gray-200' : ''}`}
+                  disabled={isAnalyzing || !canUseLetGoBuddy || !situation || !uploadedImageUrls.length}
+                  size="lg"
+                >
+                  {isAnalyzing ? (
+                    <><ArrowPathIcon className="w-5 h-5 mr-2 animate-spin" />Analyzing...</>
+                  ) : (
+                    <><SparklesIcon className="w-5 h-5 mr-2" />{!canUseLetGoBuddy ? 'Generate Analysis (Limit Reached)' : 'Generate AI Analysis'}</>
+                  )}
+                </Button>
+                {!canUseLetGoBuddy && (
+                  <div className="text-sm text-center bg-emerald-50 text-emerald-700 rounded-md px-4 py-2 border border-emerald-100">
+                    😊 You've used all your free Let Go Buddy sessions (2/2). Build trust in the community to unlock more!
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="p-4 bg-blue-50 rounded-lg border border-blue-100">
+                  <h4 className="font-semibold text-blue-800 mb-2">AI Recommendation: {analysisResult.recommendation?.action}</h4>
+                  <p className="text-sm text-blue-700">{analysisResult.recommendation?.reason}</p>
                 </div>
-              )}
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="p-3 bg-gray-50 rounded-lg">
+                    <div className="text-sm text-gray-600 mb-1">Item Analysis</div>
+                    <div className="font-medium">{analysisResult.item_analysis?.item_name}</div>
+                    <div className="text-sm text-gray-600">Condition: {analysisResult.item_analysis?.item_condition}</div>
+                    <div className="text-sm text-gray-600">Value: THB {analysisResult.item_analysis?.current_value}</div>
+                  </div>
+                  
+                  <div className="p-3 bg-green-50 rounded-lg">
+                    <div className="text-sm text-green-600 mb-1">Environmental Impact</div>
+                    <div className="font-medium text-green-700">{analysisResult.environmental_impact?.co2_impact} kg CO2 saved</div>
+                    <div className="text-sm text-green-600">Impact Level: {analysisResult.environmental_impact?.impact_level}</div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+      
+      {/* Step 5: Action Buttons */}
+      {step >= 5 && analysisResult && (
+        <Card>
+          <CardHeader>
+            <CardTitle>What would you like to do?</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {analysisResult.recommendation?.action === 'Sell' && (
+              <div className="p-4 bg-green-50 rounded-lg mb-4">
+                <h4 className="font-semibold text-green-800 mb-2">Ready-to-use Listing Data</h4>
+                <p className="text-sm text-green-700 mb-2"><strong>Title:</strong> {analysisResult.listing_data?.title}</p>
+                <p className="text-sm text-green-700 mb-2"><strong>Suggested Price:</strong> THB {analysisResult.listing_data?.price}</p>
+                <p className="text-sm text-green-700"><strong>Description:</strong> {analysisResult.listing_data?.description}</p>
+              </div>
+            )}
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <Button 
+                onClick={handleStartSelling}
+                variant="outline"
+                className="w-full"
+              >
+                Start Selling
+              </Button>
+              <Button 
+                onClick={handleFreeGiveaway}
+                variant="outline"
+                className="w-full flex items-center gap-2"
+              >
+                <GiftIcon className="w-4 h-4" />
+                Free Giveaway
+              </Button>
+              <Button 
+                onClick={addToKeepBox}
+                variant="outline"
+                className="w-full"
+              >
+                Keep with Love
+              </Button>
+              <Button 
+                onClick={addToChallenge}
+                variant="outline"
+                className="w-full"
+              >
+                Add to Challenge
+              </Button>
             </div>
           </CardContent>
         </Card>
