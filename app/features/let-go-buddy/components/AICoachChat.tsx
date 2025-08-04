@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Button } from "~/common/components/ui/button";
 import { Input } from "~/common/components/ui/input";
 import { Card, CardContent } from "~/common/components/ui/card";
+import { ScrollArea } from "~/common/components/ui/scroll-area";
 import { PaperAirplaneIcon, SparklesIcon } from "@heroicons/react/24/outline";
 
 interface ChatMessage {
@@ -133,10 +134,11 @@ export default function AICoachChat({ itemName, situation, onComplete }: AICoach
   };
 
   return (
-    <Card className="min-h-96 max-h-[600px] flex flex-col">
+    <Card className="h-[70vh] flex flex-col">
       <CardContent className="flex-1 flex flex-col p-4">
         {/* Chat Messages */}
-        <div className="flex-1 overflow-y-auto space-y-3 mb-4 pr-2">
+        <ScrollArea className="flex-1 mb-4">
+          <div className="space-y-3 pr-2">
           {messages.map((message) => (
             <div
               key={message.id}
@@ -175,8 +177,9 @@ export default function AICoachChat({ itemName, situation, onComplete }: AICoach
               </div>
             </div>
           )}
-          <div ref={messagesEndRef} />
-        </div>
+            <div ref={messagesEndRef} />
+          </div>
+        </ScrollArea>
 
         {/* Input Area */}
         <div className="flex gap-2 mt-auto">
