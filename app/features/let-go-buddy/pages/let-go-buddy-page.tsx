@@ -484,7 +484,7 @@ export default function LetGoBuddyPage({ loaderData }: { loaderData: { user: any
             <div className="space-y-2"><p className="text-sm text-muted-foreground text-center">Question {conversationStep + 1} of {conversationQuestions.length}</p><Progress value={((conversationStep + 1) / conversationQuestions.length) * 100} /></div>
             <p className="font-semibold pt-4 text-center">{conversationQuestions[conversationStep]}</p>
             <div className="flex flex-col gap-2"><Button variant="outline" onClick={() => handleAnswer("It brings me joy.")}>It brings me joy</Button><Button variant="outline" onClick={() => handleAnswer("I feel guilty for not using it.")}>I feel guilty for not using it</Button><Button variant="outline" onClick={() => handleAnswer("I'm not sure.")}>I'm not sure</Button></div>
-            <Textarea placeholder="Or share your thoughts here..." onBlur={(e) => handleAnswer(e.target.value)} />
+            <Textarea placeholder="Or share your thoughts here..." onBlur={(e) => e.target.value.trim() && handleAnswer(e.target.value)} />
           </CardContent>
         </Card>
       )}
@@ -502,6 +502,16 @@ export default function LetGoBuddyPage({ loaderData }: { loaderData: { user: any
             {!analysisResult ? (
               <div className="space-y-4">
                 <p className="text-sm text-muted-foreground">Ready to get AI-powered recommendations for your item?</p>
+                {/* Debug info */}
+                <div className="p-2 bg-gray-100 rounded text-xs">
+                  <div>Debug: Step {step}</div>
+                  <div>Session ID: {sessionId}</div>
+                  <div>Situation: {situation}</div>
+                  <div>Images: {uploadedImageUrls.length}</div>
+                  <div>Emotional Answers: {JSON.stringify(emotionalAnswers)}</div>
+                  <div>Answered Count: {emotionalAnswers.filter(answer => answer && answer.trim() !== '').length}/{conversationQuestions.length}</div>
+                  <div>Can Use: {canUseLetGoBuddy ? 'Yes' : 'No'}</div>
+                </div>
                 {emotionalAnswers.filter(answer => answer && answer.trim() !== '').length < conversationQuestions.length && (
                   <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-center">
                     <div className="text-amber-800 text-sm">
