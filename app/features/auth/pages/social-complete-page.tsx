@@ -142,9 +142,16 @@ export const loader = async ({ params, request }: Route.LoaderArgs) => {
   }
   
   // Google, Facebook는 Supabase OAuth 처리
+  console.log('🔍 Social complete URL:', url.toString());
+  console.log('🔍 Search params:', Object.fromEntries(url.searchParams.entries()));
+  
   const code = url.searchParams.get('code');
   if (!code) {
-    return redirect('/auth/login');
+    console.error('❌ No authorization code received');
+    return Response.json(
+      { error: "requested path is invalid" },
+      { status: 400 }
+    );
   }
   const { client, headers } = makeSSRClient(request);
   
@@ -154,7 +161,13 @@ export const loader = async ({ params, request }: Route.LoaderArgs) => {
   
   if (error) { 
     console.error('❌ Facebook/Google OAuth error:', error);
-    throw error; 
+    console.error('❌ Error details:', JSON.stringify(error, null, 2));
+    
+    // Return a more specific error instead of throwing
+    return Response.json(
+      { error: `OAuth exchange failed: ${error.message || 'Unknown error'}` },
+      { status: 400 }
+    );
   }
   
   console.log('✅ Facebook/Google OAuth - session exchanged successfully:', sessionData);
