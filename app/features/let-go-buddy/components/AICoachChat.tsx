@@ -206,12 +206,12 @@ export default function AICoachChat({ itemName, situation, onComplete }: AICoach
             onChange={(e) => setCurrentInput(e.target.value)}
             onKeyPress={handleKeyPress}
             placeholder="Share your thoughts..."
-            disabled={isLoading || conversationStage >= 5}
+            disabled={isLoading || conversationStage > 5}
             className="flex-1"
           />
           <Button
             onClick={handleSendMessage}
-            disabled={!currentInput.trim() || isLoading || conversationStage >= 5}
+            disabled={!currentInput.trim() || isLoading || conversationStage > 5}
             size="sm"
           >
             <PaperAirplaneIcon className="w-4 h-4" />
@@ -221,7 +221,7 @@ export default function AICoachChat({ itemName, situation, onComplete }: AICoach
         {/* Progress indicator */}
         <div className="mt-2 text-center">
           <span className="text-xs text-gray-500">
-            {conversationStage >= 5 ? 'Conversation complete' : `Question ${Math.min(conversationStage + 1, 5)} of 5`}
+            {conversationStage > 5 ? 'Conversation complete' : `Question ${Math.min(conversationStage + 1, 5)} of 5`}
           </span>
         </div>
       </CardContent>
