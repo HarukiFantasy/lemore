@@ -135,9 +135,9 @@ export default function AICoachChat({ itemName, situation, onComplete }: AICoach
 
   return (
     <Card className="h-[70vh] flex flex-col">
-      <CardContent className="flex-1 flex flex-col p-4">
+      <CardContent className="flex-1 flex flex-col p-4 overflow-hidden">
         {/* Chat Messages */}
-        <ScrollArea className="flex-1 mb-4">
+        <ScrollArea className="flex-1 mb-4 h-0">
           <div className="space-y-3 pr-2">
           {messages.map((message) => (
             <div
