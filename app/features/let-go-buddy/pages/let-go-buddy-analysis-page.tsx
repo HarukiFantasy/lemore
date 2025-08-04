@@ -93,16 +93,31 @@ export const loader = async ({ request }: { request: Request }) => {
   }
 
   try {
-    const parsedImageUrls = JSON.parse(decodeURIComponent(imageUrls));
-    const parsedChatConversation = chatConversation ? JSON.parse(decodeURIComponent(chatConversation)) : [];
+    console.log('Starting parameter parsing...');
+    let parsedImageUrls, parsedChatConversation;
     
-    // Ensure proper data format - convert timestamp strings back to proper format if needed
-    console.log('Parsed chat conversation:', parsedChatConversation);
+    try {
+      parsedImageUrls = JSON.parse(decodeURIComponent(imageUrls));
+      parsedChatConversation = chatConversation ? JSON.parse(decodeURIComponent(chatConversation)) : [];
+      console.log('Parameter parsing successful');
+      console.log('Parsed chat conversation:', parsedChatConversation);
+    } catch (parseError) {
+      console.error('Parameter parsing failed:', parseError);
+      throw new Error(`Parameter parsing failed: ${parseError instanceof Error ? parseError.message : 'Unknown parsing error'}`);
+    }
     
-    // 이미지들을 Base64로 변환
-    const base64Images = await Promise.all(
-      parsedImageUrls.map((url: string) => convertImageUrlToBase64(url))
-    );
+    console.log('Starting image conversion to base64...');
+    let base64Images;
+    try {
+      // 이미지들을 Base64로 변환
+      base64Images = await Promise.all(
+        parsedImageUrls.map((url: string) => convertImageUrlToBase64(url))
+      );
+      console.log('Image conversion successful');
+    } catch (imageError) {
+      console.error('Image conversion failed:', imageError);
+      throw new Error(`Image conversion failed: ${imageError instanceof Error ? imageError.message : 'Unknown image error'}`);
+    }
     
     // Create conversation context for AI
     const conversationContext = parsedChatConversation.length > 0 
@@ -112,8 +127,11 @@ ${parsedChatConversation.map((message: any) =>
 ).join('\n')}`
       : "";
     
-    // OpenAI Vision API를 사용해서 이미지 분석
-    const completion = await openai.chat.completions.create({
+    console.log('Starting OpenAI API call...');
+    let completion;
+    try {
+      // OpenAI Vision API를 사용해서 이미지 분석
+      completion = await openai.chat.completions.create({
       model: "gpt-4o",
       messages: [
         {
@@ -182,6 +200,12 @@ Based on the conversation above, provide a recommendation that aligns with their
       response_format: { type: "json_object" },
     });
 
+    console.log('OpenAI API call successful');
+    } catch (openaiError) {
+      console.error('OpenAI API call failed:', openaiError);
+      throw new Error(`OpenAI API failed: ${openaiError instanceof Error ? openaiError.message : 'Unknown OpenAI error'}`);
+    }
+
     const analysisText = completion.choices[0].message.content;
     if (!analysisText) {
       return Response.json(
@@ -236,37 +260,54 @@ Based on the conversation above, provide a recommendation that aligns with their
       }
     };
 
-    // 분석 결과를 데이터베이스에 저장
-    const { client } = makeSSRClient(request);
-    await insertItemAnalysis(client, {
-      session_id: parseInt(sessionId),
-      item_name: analysis.item_name,
-      item_category: analysis.item_category,
-      item_condition: analysis.item_condition,
-      recommendation: analysis.recommendation,
-      recommendation_reason: analysis.recommendation_reason,
-      emotional_attachment_keywords: analysis.emotional_attachment_keywords || [],
-      usage_pattern_keywords: analysis.usage_pattern_keywords || [],
-      decision_factor_keywords: analysis.decision_factor_keywords || [],
-      personality_insights: analysis.personality_insights || [],
-      decision_barriers: analysis.decision_barriers || [],
-      emotional_score: analysis.emotional_score,
-      ai_listing_title: analysis.ai_listing_title,
-      ai_listing_description: analysis.ai_listing_description,
-      ai_listing_location: analysis.ai_listing_location,
-      images: parsedImageUrls,
-    });
+    console.log('Starting database operations...');
+    try {
+      // 분석 결과를 데이터베이스에 저장
+      const { client } = makeSSRClient(request);
+      await insertItemAnalysis(client, {
+        session_id: parseInt(sessionId),
+        item_name: analysis.item_name,
+        item_category: analysis.item_category,
+        item_condition: analysis.item_condition,
+        recommendation: analysis.recommendation,
+        recommendation_reason: analysis.recommendation_reason,
+        emotional_attachment_keywords: analysis.emotional_attachment_keywords || [],
+        usage_pattern_keywords: analysis.usage_pattern_keywords || [],
+        decision_factor_keywords: analysis.decision_factor_keywords || [],
+        personality_insights: analysis.personality_insights || [],
+        decision_barriers: analysis.decision_barriers || [],
+        emotional_score: analysis.emotional_score,
+        ai_listing_title: analysis.ai_listing_title,
+        ai_listing_description: analysis.ai_listing_description,
+        ai_listing_location: analysis.ai_listing_location,
+        images: parsedImageUrls,
+      });
 
-    // Mark session as completed after successful analysis
-    await markSessionCompleted(client, parseInt(sessionId));
+      // Mark session as completed after successful analysis
+      await markSessionCompleted(client, parseInt(sessionId));
+      console.log('Database operations successful');
+    } catch (dbError) {
+      console.error('Database operations failed:', dbError);
+      throw new Error(`Database operation failed: ${dbError instanceof Error ? dbError.message : 'Unknown database error'}`);
+    }
 
     console.log('Analysis completed successfully');
     console.log('Returning transformed analysis:', transformedAnalysis);
     return Response.json(transformedAnalysis);
   } catch (error) {
     console.error("AI analysis error:", error);
+    console.error("Error details:", {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      error: error
+    });
+    
     return Response.json(
-      { error: "AI analysis failed" },
+      { 
+        error: "AI analysis failed", 
+        details: error instanceof Error ? error.message : 'Unknown error',
+        type: error?.constructor?.name || 'UnknownError'
+      },
       { status: 500 }
     );
   }
