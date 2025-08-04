@@ -133,13 +133,16 @@ export default function AICoachChat({ itemName, situation, onComplete }: AICoach
       setIsLoading(false);
 
       // Check if conversation is complete (after user has answered the final question)
-      if (conversationStage >= 5) {
-        // Complete after the final AI message
+      if (conversationStage >= 4 && aiResponse.includes('analyze everything we\'ve discussed')) {
+        // Complete after the final AI message (completion message)
         setTimeout(() => {
           onComplete([...messages, userMessage, aiMessage]);
         }, 2000);
       } else {
-        setConversationStage(prev => prev + 1);
+        setConversationStage(prev => {
+          console.log('Incrementing stage from', prev, 'to', prev + 1);
+          return prev + 1;
+        });
       }
     }, 1000 + Math.random() * 1000); // 1-2 second delay for natural feel
   };
@@ -207,6 +210,8 @@ export default function AICoachChat({ itemName, situation, onComplete }: AICoach
             onKeyPress={handleKeyPress}
             placeholder="Share your thoughts..."
             disabled={isLoading || conversationStage > 5}
+            // Debug: add data attribute to see current stage
+            data-conversation-stage={conversationStage}
             className="flex-1"
           />
           <Button
