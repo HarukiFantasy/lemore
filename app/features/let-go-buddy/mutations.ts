@@ -121,6 +121,28 @@ export async function markSessionCompleted(
     throw new Error('Authentication required to mark session completed');
   }
 
+  console.log('markSessionCompleted - User ID:', user.id);
+  console.log('markSessionCompleted - Session ID:', sessionId);
+
+  // First check if session exists and belongs to user
+  const { data: existingSession, error: selectError } = await client
+    .from('let_go_buddy_sessions')
+    .select('*')
+    .eq('session_id', sessionId)
+    .eq('user_id', user.id)
+    .single();
+
+  if (selectError) {
+    console.error('Session lookup failed:', selectError);
+    throw new Error(`Session lookup failed: ${selectError.message}`);
+  }
+
+  if (!existingSession) {
+    throw new Error(`Session ${sessionId} not found for user ${user.id}`);
+  }
+
+  console.log('Found session:', existingSession);
+
   const { data, error } = await client
     .from('let_go_buddy_sessions')
     .update({
