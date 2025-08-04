@@ -183,6 +183,51 @@ Please respond with a JSON object containing the analysis with the following str
       );
     }
 
+    // Transform the flat analysis structure to match the expected nested structure
+    const transformedAnalysis = {
+      emotional_assessment: {
+        attachment_level: "medium", // Default value
+        emotional_score: analysis.emotional_score || 5,
+        emotional_tags: [], // Default empty array
+        emotional_recommendation: analysis.recommendation_reason || ""
+      },
+      item_analysis: {
+        item_name: analysis.item_name,
+        item_category: analysis.item_category,
+        item_condition: analysis.item_condition,
+        condition_notes: analysis.condition_notes,
+        estimated_age: analysis.estimated_age,
+        brand: analysis.brand,
+        original_price: analysis.original_price,
+        current_value: analysis.current_value
+      },
+      environmental_impact: {
+        impact_level: analysis.environmental_impact,
+        co2_impact: analysis.co2_impact,
+        landfill_impact: analysis.landfill_impact,
+        is_recyclable: analysis.is_recyclable,
+        sustainability_score: 8 // Default value
+      },
+      recommendation: {
+        action: analysis.recommendation,
+        confidence: 85, // Default confidence
+        reason: analysis.recommendation_reason,
+        ai_suggestion: analysis.ai_suggestion
+      },
+      listing_data: {
+        title: analysis.ai_listing_title || `${analysis.item_name} for Sale`,
+        description: analysis.ai_listing_description || `Great condition ${analysis.item_name}`,
+        price: analysis.ai_listing_price?.toString() || analysis.current_value?.toString() || "0",
+        currency: "THB",
+        price_type: "Fixed",
+        condition: analysis.item_condition,
+        category: analysis.item_category,
+        location: analysis.ai_listing_location || "Bangkok",
+        selling_points: [], // Default empty array
+        keywords: [] // Default empty array
+      }
+    };
+
     // 분석 결과를 데이터베이스에 저장
     const { client } = makeSSRClient(request);
     await insertItemAnalysis(client, {
@@ -191,7 +236,7 @@ Please respond with a JSON object containing the analysis with the following str
       images: parsedImageUrls,
     });
 
-    return Response.json(analysis);
+    return Response.json(transformedAnalysis);
   } catch (error) {
     console.error("AI analysis error:", error);
     return Response.json(

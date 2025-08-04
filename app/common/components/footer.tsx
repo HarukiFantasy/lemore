@@ -56,8 +56,13 @@ export function Footer() {
                 </Link>
               </li>
               <li>
-                <Link to="/let-go-buddy/sessions" className="text-sm text-gray-600 hover:text-gray-900">
-                  My Sessions
+                <Link to="/let-go-buddy/analysis" className="text-sm text-gray-600 hover:text-gray-900">
+                  My Analysis
+                </Link>
+              </li>
+              <li>
+                <Link to="/let-go-buddy/challenge-calendar" className="text-sm text-gray-600 hover:text-gray-900">
+                  Challenge Calendar
                 </Link>
               </li>
             </ul>

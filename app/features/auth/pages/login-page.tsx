@@ -98,6 +98,17 @@ export default function LoginPage({actionData}: Route.ComponentProps) {
               <p className="text-red-500 text-sm italic">{actionData.loginError}</p>
             )}
           </Form>
+          <div className="mt-4 px-8 text-center text-xs text-muted-foreground">
+            By signing in, you agree to our{" "}
+            <Link to="/terms-of-service" className="underline hover:text-primary">
+              Terms of Service
+            </Link>{" "}
+            and{" "}
+            <Link to="/privacy-policy" className="underline hover:text-primary">
+              Privacy Policy
+            </Link>
+            .
+          </div>
           
           {/* Alternative Login Options */}
           <div className="mt-6 space-y-3">

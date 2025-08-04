@@ -149,6 +149,17 @@ export default function JoinPage({actionData}: Route.ComponentProps) {
               <p className="text-red-500 text-sm italic">{actionData.signUpError}</p>
             )} 
           </Form>
+          <div className="mt-4 px-8 text-center text-xs text-muted-foreground">
+            By creating an account, you agree to our{" "}
+            <Link to="/terms-of-service" className="underline hover:text-primary">
+              Terms of Service
+            </Link>{" "}
+            and{" "}
+            <Link to="/privacy-policy" className="underline hover:text-primary">
+              Privacy Policy
+            </Link>
+            .
+          </div>
           <div className="mt-4 text-center text-sm">
             <span className="text-muted-foreground">Already have an account? </span>
             <Link to="/auth/login" className="text-primary hover:underline">
