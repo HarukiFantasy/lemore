@@ -23,6 +23,7 @@ export default function AICoachChat({ itemName, situation, onComplete }: AICoach
   const [currentInput, setCurrentInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [conversationStage, setConversationStage] = useState(0);
+  const [isConversationComplete, setIsConversationComplete] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -118,17 +119,10 @@ export default function AICoachChat({ itemName, situation, onComplete }: AICoach
     setMessages(prev => [...prev, userMessage]);
     setCurrentInput('');
     setIsLoading(true);
-    
-    // Increment stage BEFORE Joy responds (after user responds)
-    const currentStage = conversationStage;
-    setConversationStage(prev => {
-      console.log('Incrementing stage from', prev, 'to', prev + 1);
-      return prev + 1;
-    });
 
     // Simulate AI thinking time
     setTimeout(() => {
-      const aiResponse = getNextAIMessage(userMessage.content, currentStage);
+      const aiResponse = getNextAIMessage(userMessage.content, conversationStage);
       const aiMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         type: 'ai',
@@ -139,12 +133,21 @@ export default function AICoachChat({ itemName, situation, onComplete }: AICoach
       setMessages(prev => [...prev, aiMessage]);
       setIsLoading(false);
 
-      // Check if conversation is complete (after user has answered the final question)
-      if (currentStage >= 4 && aiResponse.includes('analyze everything we\'ve discussed')) {
-        // Complete after the final AI message (completion message)
+      // Check if this is the completion message
+      const isCompletionMessage = aiResponse.includes('analyze everything we\'ve discussed');
+      
+      if (isCompletionMessage) {
+        // This is the completion message - mark conversation as complete
+        setIsConversationComplete(true);
         setTimeout(() => {
           onComplete([...messages, userMessage, aiMessage]);
         }, 2000);
+      } else {
+        // Normal question - increment stage for next question
+        setConversationStage(prev => {
+          console.log('Incrementing stage from', prev, 'to', prev + 1);
+          return prev + 1;
+        });
       }
     }, 1000 + Math.random() * 1000); // 1-2 second delay for natural feel
   };
@@ -211,14 +214,16 @@ export default function AICoachChat({ itemName, situation, onComplete }: AICoach
             onChange={(e) => setCurrentInput(e.target.value)}
             onKeyPress={handleKeyPress}
             placeholder="Share your thoughts..."
-            disabled={isLoading || conversationStage > 4}
+            disabled={isLoading || isConversationComplete}
             // Debug: add data attribute to see current stage
             data-conversation-stage={conversationStage}
+            data-is-loading={isLoading}
+            data-disable-check={conversationStage > 4}
             className="flex-1"
           />
           <Button
             onClick={handleSendMessage}
-            disabled={!currentInput.trim() || isLoading || conversationStage > 4}
+            disabled={!currentInput.trim() || isLoading || isConversationComplete}
             size="sm"
           >
             <PaperAirplaneIcon className="w-4 h-4" />
@@ -228,7 +233,7 @@ export default function AICoachChat({ itemName, situation, onComplete }: AICoach
         {/* Progress indicator */}
         <div className="mt-2 text-center">
           <span className="text-xs text-gray-500">
-            {conversationStage > 4 ? 'Conversation complete' : `Question ${conversationStage + 1} of 5`}
+            {isConversationComplete ? 'Conversation complete' : `Question ${conversationStage + 1} of 5`}
           </span>
         </div>
       </CardContent>
