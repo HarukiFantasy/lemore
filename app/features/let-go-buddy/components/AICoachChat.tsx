@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Button } from "~/common/components/ui/button";
 import { Input } from "~/common/components/ui/input";
 import { Card, CardContent } from "~/common/components/ui/card";
-import { SendIcon, SparklesIcon } from "@heroicons/react/24/outline";
+import { PaperAirplaneIcon, SparklesIcon } from "@heroicons/react/24/outline";
 
 interface ChatMessage {
   id: string;
@@ -193,7 +193,7 @@ export default function AICoachChat({ itemName, situation, onComplete }: AICoach
             disabled={!currentInput.trim() || isLoading || conversationStage >= 5}
             size="sm"
           >
-            <SendIcon className="w-4 h-4" />
+            <PaperAirplaneIcon className="w-4 h-4" />
           </Button>
         </div>
 
