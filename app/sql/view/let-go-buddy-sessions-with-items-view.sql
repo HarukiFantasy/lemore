@@ -6,7 +6,6 @@ SELECT
     -- Session data
     sessions.session_id,
     sessions.user_id,
-    sessions.situation,
     sessions.created_at as session_created_at,
     sessions.updated_at as session_updated_at,
     sessions.is_completed,
@@ -22,17 +21,13 @@ items.item_name,
 items.item_category,
 items.item_condition,
 items.recommendation,
-items.ai_suggestion,
+items.recommendation_reason,
+items.emotional_attachment_keywords,
+items.usage_pattern_keywords,
+items.decision_factor_keywords,
+items.personality_insights,
+items.decision_barriers,
 items.emotional_score,
-items.environmental_impact,
-items.co2_impact,
-items.landfill_impact,
-items.is_recyclable,
-items.original_price,
-items.current_value,
-items.ai_listing_price,
-items.maintenance_cost,
-items.space_value,
 items.ai_listing_title,
 items.ai_listing_description,
 items.ai_listing_location,
@@ -58,20 +53,6 @@ COUNT(*) FILTER (
     PARTITION BY
         sessions.session_id
 ) as completed_items_in_session,
-SUM(items.co2_impact) OVER (
-    PARTITION BY
-        sessions.session_id
-) as total_co2_impact,
-SUM(
-    COALESCE(
-        items.ai_listing_price,
-        items.current_value,
-        0
-    )
-) OVER (
-    PARTITION BY
-        sessions.session_id
-) as total_value_created,
 AVG(items.emotional_score) OVER (
     PARTITION BY
         sessions.session_id

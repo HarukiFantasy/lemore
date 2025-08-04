@@ -108,255 +108,71 @@ export type Database = {
           },
         ]
       }
-      give_and_glow_reviews: {
-        Row: {
-          category: Database["public"]["Enums"]["product_category"]
-          created_at: string
-          giver_id: string
-          id: number
-          product_id: number | null
-          rating: number
-          receiver_id: string
-          review: string | null
-          tags: Json
-          timestamp: string
-          updated_at: string
-        }
-        Insert: {
-          category: Database["public"]["Enums"]["product_category"]
-          created_at?: string
-          giver_id: string
-          id?: never
-          product_id?: number | null
-          rating: number
-          receiver_id: string
-          review?: string | null
-          tags?: Json
-          timestamp: string
-          updated_at?: string
-        }
-        Update: {
-          category?: Database["public"]["Enums"]["product_category"]
-          created_at?: string
-          giver_id?: string
-          id?: never
-          product_id?: number | null
-          rating?: number
-          receiver_id?: string
-          review?: string | null
-          tags?: Json
-          timestamp?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "give_and_glow_reviews_giver_id_user_profiles_profile_id_fk"
-            columns: ["giver_id"]
-            isOneToOne: false
-            referencedRelation: "product_detail_view"
-            referencedColumns: ["seller_id"]
-          },
-          {
-            foreignKeyName: "give_and_glow_reviews_giver_id_user_profiles_profile_id_fk"
-            columns: ["giver_id"]
-            isOneToOne: false
-            referencedRelation: "products_listings_view"
-            referencedColumns: ["seller_id"]
-          },
-          {
-            foreignKeyName: "give_and_glow_reviews_giver_id_user_profiles_profile_id_fk"
-            columns: ["giver_id"]
-            isOneToOne: false
-            referencedRelation: "user_dashboard_view"
-            referencedColumns: ["profile_id"]
-          },
-          {
-            foreignKeyName: "give_and_glow_reviews_giver_id_user_profiles_profile_id_fk"
-            columns: ["giver_id"]
-            isOneToOne: false
-            referencedRelation: "user_profiles"
-            referencedColumns: ["profile_id"]
-          },
-          {
-            foreignKeyName: "give_and_glow_reviews_giver_id_user_profiles_profile_id_fk"
-            columns: ["giver_id"]
-            isOneToOne: false
-            referencedRelation: "user_sales_stats_view"
-            referencedColumns: ["profile_id"]
-          },
-          {
-            foreignKeyName: "give_and_glow_reviews_giver_id_user_profiles_profile_id_fk"
-            columns: ["giver_id"]
-            isOneToOne: false
-            referencedRelation: "user_stats_view"
-            referencedColumns: ["profile_id"]
-          },
-          {
-            foreignKeyName: "give_and_glow_reviews_product_id_products_product_id_fk"
-            columns: ["product_id"]
-            isOneToOne: false
-            referencedRelation: "product_detail_view"
-            referencedColumns: ["product_id"]
-          },
-          {
-            foreignKeyName: "give_and_glow_reviews_product_id_products_product_id_fk"
-            columns: ["product_id"]
-            isOneToOne: false
-            referencedRelation: "products"
-            referencedColumns: ["product_id"]
-          },
-          {
-            foreignKeyName: "give_and_glow_reviews_product_id_products_product_id_fk"
-            columns: ["product_id"]
-            isOneToOne: false
-            referencedRelation: "products_listings_view"
-            referencedColumns: ["product_id"]
-          },
-          {
-            foreignKeyName: "give_and_glow_reviews_product_id_products_product_id_fk"
-            columns: ["product_id"]
-            isOneToOne: false
-            referencedRelation: "products_with_seller_stats_view"
-            referencedColumns: ["product_id"]
-          },
-          {
-            foreignKeyName: "give_and_glow_reviews_product_id_products_product_id_fk"
-            columns: ["product_id"]
-            isOneToOne: false
-            referencedRelation: "user_conversations_view"
-            referencedColumns: ["product_id"]
-          },
-          {
-            foreignKeyName: "give_and_glow_reviews_receiver_id_user_profiles_profile_id_fk"
-            columns: ["receiver_id"]
-            isOneToOne: false
-            referencedRelation: "product_detail_view"
-            referencedColumns: ["seller_id"]
-          },
-          {
-            foreignKeyName: "give_and_glow_reviews_receiver_id_user_profiles_profile_id_fk"
-            columns: ["receiver_id"]
-            isOneToOne: false
-            referencedRelation: "products_listings_view"
-            referencedColumns: ["seller_id"]
-          },
-          {
-            foreignKeyName: "give_and_glow_reviews_receiver_id_user_profiles_profile_id_fk"
-            columns: ["receiver_id"]
-            isOneToOne: false
-            referencedRelation: "user_dashboard_view"
-            referencedColumns: ["profile_id"]
-          },
-          {
-            foreignKeyName: "give_and_glow_reviews_receiver_id_user_profiles_profile_id_fk"
-            columns: ["receiver_id"]
-            isOneToOne: false
-            referencedRelation: "user_profiles"
-            referencedColumns: ["profile_id"]
-          },
-          {
-            foreignKeyName: "give_and_glow_reviews_receiver_id_user_profiles_profile_id_fk"
-            columns: ["receiver_id"]
-            isOneToOne: false
-            referencedRelation: "user_sales_stats_view"
-            referencedColumns: ["profile_id"]
-          },
-          {
-            foreignKeyName: "give_and_glow_reviews_receiver_id_user_profiles_profile_id_fk"
-            columns: ["receiver_id"]
-            isOneToOne: false
-            referencedRelation: "user_stats_view"
-            referencedColumns: ["profile_id"]
-          },
-        ]
-      }
       item_analyses: {
         Row: {
           ai_listing_description: string | null
           ai_listing_location: Database["public"]["Enums"]["location"] | null
-          ai_listing_price: number | null
           ai_listing_title: string | null
-          ai_suggestion: string
           analysis_id: string
-          co2_impact: number
           created_at: string
-          current_value: number | null
+          decision_barriers: Json
+          decision_factor_keywords: Json
+          emotional_attachment_keywords: Json
           emotional_score: number
-          environmental_impact: Database["public"]["Enums"]["environmental_impact_level"]
           images: Json
-          is_recyclable: boolean
           item_category: Database["public"]["Enums"]["product_category"]
           item_condition: Database["public"]["Enums"]["product_condition"]
           item_name: string
-          landfill_impact: string
-          maintenance_cost: number | null
-          original_price: number | null
+          personality_insights: Json
           recommendation: Database["public"]["Enums"]["recommendation_action"]
-          recommendation_reason: string | null
+          recommendation_reason: string
           session_id: number
-          space_value: number | null
           updated_at: string
+          usage_pattern_keywords: Json
         }
         Insert: {
           ai_listing_description?: string | null
           ai_listing_location?: Database["public"]["Enums"]["location"] | null
-          ai_listing_price?: number | null
           ai_listing_title?: string | null
-          ai_suggestion: string
           analysis_id?: string
-          co2_impact: number
           created_at?: string
-          current_value?: number | null
+          decision_barriers?: Json
+          decision_factor_keywords?: Json
+          emotional_attachment_keywords?: Json
           emotional_score: number
-          environmental_impact: Database["public"]["Enums"]["environmental_impact_level"]
           images?: Json
-          is_recyclable: boolean
           item_category: Database["public"]["Enums"]["product_category"]
           item_condition: Database["public"]["Enums"]["product_condition"]
           item_name: string
-          landfill_impact: string
-          maintenance_cost?: number | null
-          original_price?: number | null
+          personality_insights?: Json
           recommendation: Database["public"]["Enums"]["recommendation_action"]
-          recommendation_reason?: string | null
+          recommendation_reason?: string
           session_id: number
-          space_value?: number | null
           updated_at?: string
+          usage_pattern_keywords?: Json
         }
         Update: {
           ai_listing_description?: string | null
           ai_listing_location?: Database["public"]["Enums"]["location"] | null
-          ai_listing_price?: number | null
           ai_listing_title?: string | null
-          ai_suggestion?: string
           analysis_id?: string
-          co2_impact?: number
           created_at?: string
-          current_value?: number | null
+          decision_barriers?: Json
+          decision_factor_keywords?: Json
+          emotional_attachment_keywords?: Json
           emotional_score?: number
-          environmental_impact?: Database["public"]["Enums"]["environmental_impact_level"]
           images?: Json
-          is_recyclable?: boolean
           item_category?: Database["public"]["Enums"]["product_category"]
           item_condition?: Database["public"]["Enums"]["product_condition"]
           item_name?: string
-          landfill_impact?: string
-          maintenance_cost?: number | null
-          original_price?: number | null
+          personality_insights?: Json
           recommendation?: Database["public"]["Enums"]["recommendation_action"]
-          recommendation_reason?: string | null
+          recommendation_reason?: string
           session_id?: number
-          space_value?: number | null
           updated_at?: string
+          usage_pattern_keywords?: Json
         }
         Relationships: [
-          {
-            foreignKeyName: "item_analyses_session_id_let_go_buddy_sessions_session_id_fk"
-            columns: ["session_id"]
-            isOneToOne: false
-            referencedRelation: "environmental_impact_summary_view"
-            referencedColumns: ["session_id"]
-          },
           {
             foreignKeyName: "item_analyses_session_id_let_go_buddy_sessions_session_id_fk"
             columns: ["session_id"]
@@ -437,426 +253,6 @@ export type Database = {
           {
             foreignKeyName: "let_go_buddy_sessions_user_id_user_profiles_profile_id_fk"
             columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "user_stats_view"
-            referencedColumns: ["profile_id"]
-          },
-        ]
-      }
-      local_business_reviews: {
-        Row: {
-          author: string
-          author_avatar: string | null
-          business_id: number
-          content: string | null
-          created_at: string
-          rating: number
-          tags: Json
-        }
-        Insert: {
-          author: string
-          author_avatar?: string | null
-          business_id: number
-          content?: string | null
-          created_at?: string
-          rating: number
-          tags?: Json
-        }
-        Update: {
-          author?: string
-          author_avatar?: string | null
-          business_id?: number
-          content?: string | null
-          created_at?: string
-          rating?: number
-          tags?: Json
-        }
-        Relationships: [
-          {
-            foreignKeyName: "local_business_reviews_author_user_profiles_profile_id_fk"
-            columns: ["author"]
-            isOneToOne: false
-            referencedRelation: "product_detail_view"
-            referencedColumns: ["seller_id"]
-          },
-          {
-            foreignKeyName: "local_business_reviews_author_user_profiles_profile_id_fk"
-            columns: ["author"]
-            isOneToOne: false
-            referencedRelation: "products_listings_view"
-            referencedColumns: ["seller_id"]
-          },
-          {
-            foreignKeyName: "local_business_reviews_author_user_profiles_profile_id_fk"
-            columns: ["author"]
-            isOneToOne: false
-            referencedRelation: "user_dashboard_view"
-            referencedColumns: ["profile_id"]
-          },
-          {
-            foreignKeyName: "local_business_reviews_author_user_profiles_profile_id_fk"
-            columns: ["author"]
-            isOneToOne: false
-            referencedRelation: "user_profiles"
-            referencedColumns: ["profile_id"]
-          },
-          {
-            foreignKeyName: "local_business_reviews_author_user_profiles_profile_id_fk"
-            columns: ["author"]
-            isOneToOne: false
-            referencedRelation: "user_sales_stats_view"
-            referencedColumns: ["profile_id"]
-          },
-          {
-            foreignKeyName: "local_business_reviews_author_user_profiles_profile_id_fk"
-            columns: ["author"]
-            isOneToOne: false
-            referencedRelation: "user_stats_view"
-            referencedColumns: ["profile_id"]
-          },
-          {
-            foreignKeyName: "local_business_reviews_business_id_local_businesses_id_fk"
-            columns: ["business_id"]
-            isOneToOne: false
-            referencedRelation: "local_businesses"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      local_businesses: {
-        Row: {
-          address: string | null
-          average_rating: number | null
-          created_at: string
-          description: string | null
-          id: number
-          image: string | null
-          name: string
-          price_range: string | null
-          tags: Json | null
-          total_reviews: number | null
-          type: string | null
-          updated_at: string
-          website: string | null
-        }
-        Insert: {
-          address?: string | null
-          average_rating?: number | null
-          created_at?: string
-          description?: string | null
-          id?: never
-          image?: string | null
-          name: string
-          price_range?: string | null
-          tags?: Json | null
-          total_reviews?: number | null
-          type?: string | null
-          updated_at?: string
-          website?: string | null
-        }
-        Update: {
-          address?: string | null
-          average_rating?: number | null
-          created_at?: string
-          description?: string | null
-          id?: never
-          image?: string | null
-          name?: string
-          price_range?: string | null
-          tags?: Json | null
-          total_reviews?: number | null
-          type?: string | null
-          updated_at?: string
-          website?: string | null
-        }
-        Relationships: []
-      }
-      local_tip_comment_likes: {
-        Row: {
-          comment_id: number
-          created_at: string
-          user_id: string
-        }
-        Insert: {
-          comment_id: number
-          created_at?: string
-          user_id: string
-        }
-        Update: {
-          comment_id?: number
-          created_at?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "local_tip_comment_likes_user_id_user_profiles_profile_id_fk"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "product_detail_view"
-            referencedColumns: ["seller_id"]
-          },
-          {
-            foreignKeyName: "local_tip_comment_likes_user_id_user_profiles_profile_id_fk"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "products_listings_view"
-            referencedColumns: ["seller_id"]
-          },
-          {
-            foreignKeyName: "local_tip_comment_likes_user_id_user_profiles_profile_id_fk"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "user_dashboard_view"
-            referencedColumns: ["profile_id"]
-          },
-          {
-            foreignKeyName: "local_tip_comment_likes_user_id_user_profiles_profile_id_fk"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "user_profiles"
-            referencedColumns: ["profile_id"]
-          },
-          {
-            foreignKeyName: "local_tip_comment_likes_user_id_user_profiles_profile_id_fk"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "user_sales_stats_view"
-            referencedColumns: ["profile_id"]
-          },
-          {
-            foreignKeyName: "local_tip_comment_likes_user_id_user_profiles_profile_id_fk"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "user_stats_view"
-            referencedColumns: ["profile_id"]
-          },
-        ]
-      }
-      local_tip_post_likes: {
-        Row: {
-          created_at: string
-          post_id: number
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          post_id: number
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          post_id?: number
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "local_tip_post_likes_post_id_local_tip_posts_id_fk"
-            columns: ["post_id"]
-            isOneToOne: false
-            referencedRelation: "local_tip_posts"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "local_tip_post_likes_user_id_user_profiles_profile_id_fk"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "product_detail_view"
-            referencedColumns: ["seller_id"]
-          },
-          {
-            foreignKeyName: "local_tip_post_likes_user_id_user_profiles_profile_id_fk"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "products_listings_view"
-            referencedColumns: ["seller_id"]
-          },
-          {
-            foreignKeyName: "local_tip_post_likes_user_id_user_profiles_profile_id_fk"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "user_dashboard_view"
-            referencedColumns: ["profile_id"]
-          },
-          {
-            foreignKeyName: "local_tip_post_likes_user_id_user_profiles_profile_id_fk"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "user_profiles"
-            referencedColumns: ["profile_id"]
-          },
-          {
-            foreignKeyName: "local_tip_post_likes_user_id_user_profiles_profile_id_fk"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "user_sales_stats_view"
-            referencedColumns: ["profile_id"]
-          },
-          {
-            foreignKeyName: "local_tip_post_likes_user_id_user_profiles_profile_id_fk"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "user_stats_view"
-            referencedColumns: ["profile_id"]
-          },
-        ]
-      }
-      local_tip_posts: {
-        Row: {
-          author: string
-          category: Database["public"]["Enums"]["local_tip_categories"]
-          content: string
-          created_at: string
-          id: number
-          stats: Json | null
-          title: string
-          updated_at: string
-        }
-        Insert: {
-          author: string
-          category: Database["public"]["Enums"]["local_tip_categories"]
-          content: string
-          created_at?: string
-          id?: never
-          stats?: Json | null
-          title: string
-          updated_at?: string
-        }
-        Update: {
-          author?: string
-          category?: Database["public"]["Enums"]["local_tip_categories"]
-          content?: string
-          created_at?: string
-          id?: never
-          stats?: Json | null
-          title?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "local_tip_posts_author_user_profiles_profile_id_fk"
-            columns: ["author"]
-            isOneToOne: false
-            referencedRelation: "product_detail_view"
-            referencedColumns: ["seller_id"]
-          },
-          {
-            foreignKeyName: "local_tip_posts_author_user_profiles_profile_id_fk"
-            columns: ["author"]
-            isOneToOne: false
-            referencedRelation: "products_listings_view"
-            referencedColumns: ["seller_id"]
-          },
-          {
-            foreignKeyName: "local_tip_posts_author_user_profiles_profile_id_fk"
-            columns: ["author"]
-            isOneToOne: false
-            referencedRelation: "user_dashboard_view"
-            referencedColumns: ["profile_id"]
-          },
-          {
-            foreignKeyName: "local_tip_posts_author_user_profiles_profile_id_fk"
-            columns: ["author"]
-            isOneToOne: false
-            referencedRelation: "user_profiles"
-            referencedColumns: ["profile_id"]
-          },
-          {
-            foreignKeyName: "local_tip_posts_author_user_profiles_profile_id_fk"
-            columns: ["author"]
-            isOneToOne: false
-            referencedRelation: "user_sales_stats_view"
-            referencedColumns: ["profile_id"]
-          },
-          {
-            foreignKeyName: "local_tip_posts_author_user_profiles_profile_id_fk"
-            columns: ["author"]
-            isOneToOne: false
-            referencedRelation: "user_stats_view"
-            referencedColumns: ["profile_id"]
-          },
-        ]
-      }
-      local_tip_replies: {
-        Row: {
-          created_at: string
-          parent_id: number | null
-          post_id: number
-          profile_id: string
-          reply: string
-          reply_id: number
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          parent_id?: number | null
-          post_id: number
-          profile_id: string
-          reply: string
-          reply_id?: never
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          parent_id?: number | null
-          post_id?: number
-          profile_id?: string
-          reply?: string
-          reply_id?: never
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "local_tip_replies_parent_id_local_tip_replies_reply_id_fk"
-            columns: ["parent_id"]
-            isOneToOne: false
-            referencedRelation: "local_tip_replies"
-            referencedColumns: ["reply_id"]
-          },
-          {
-            foreignKeyName: "local_tip_replies_post_id_local_tip_posts_id_fk"
-            columns: ["post_id"]
-            isOneToOne: false
-            referencedRelation: "local_tip_posts"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "local_tip_replies_profile_id_user_profiles_profile_id_fk"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "product_detail_view"
-            referencedColumns: ["seller_id"]
-          },
-          {
-            foreignKeyName: "local_tip_replies_profile_id_user_profiles_profile_id_fk"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "products_listings_view"
-            referencedColumns: ["seller_id"]
-          },
-          {
-            foreignKeyName: "local_tip_replies_profile_id_user_profiles_profile_id_fk"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "user_dashboard_view"
-            referencedColumns: ["profile_id"]
-          },
-          {
-            foreignKeyName: "local_tip_replies_profile_id_user_profiles_profile_id_fk"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "user_profiles"
-            referencedColumns: ["profile_id"]
-          },
-          {
-            foreignKeyName: "local_tip_replies_profile_id_user_profiles_profile_id_fk"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "user_sales_stats_view"
-            referencedColumns: ["profile_id"]
-          },
-          {
-            foreignKeyName: "local_tip_replies_profile_id_user_profiles_profile_id_fk"
-            columns: ["profile_id"]
             isOneToOne: false
             referencedRelation: "user_stats_view"
             referencedColumns: ["profile_id"]
@@ -1757,13 +1153,6 @@ export type Database = {
             referencedColumns: ["profile_id"]
           },
           {
-            foreignKeyName: "user_notifications_review_id_give_and_glow_reviews_id_fk"
-            columns: ["review_id"]
-            isOneToOne: false
-            referencedRelation: "give_and_glow_reviews"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "user_notifications_sender_id_user_profiles_profile_id_fk"
             columns: ["sender_id"]
             isOneToOne: false
@@ -1966,126 +1355,42 @@ export type Database = {
       }
     }
     Views: {
-      environmental_impact_summary_view: {
-        Row: {
-          avg_co2_impact: number | null
-          critical_impact_items: number | null
-          high_impact_items: number | null
-          is_completed: boolean | null
-          items_to_donate: number | null
-          items_to_keep: number | null
-          items_to_recycle: number | null
-          items_to_sell: number | null
-          low_impact_items: number | null
-          medium_impact_items: number | null
-          recyclable_items: number | null
-          session_date: string | null
-          session_id: number | null
-          situation: Database["public"]["Enums"]["declutter_situation"] | null
-          total_co2_impact: number | null
-          total_items: number | null
-          total_original_value: number | null
-          total_value_created: number | null
-          user_id: string | null
-          username: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "let_go_buddy_sessions_user_id_user_profiles_profile_id_fk"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "product_detail_view"
-            referencedColumns: ["seller_id"]
-          },
-          {
-            foreignKeyName: "let_go_buddy_sessions_user_id_user_profiles_profile_id_fk"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "products_listings_view"
-            referencedColumns: ["seller_id"]
-          },
-          {
-            foreignKeyName: "let_go_buddy_sessions_user_id_user_profiles_profile_id_fk"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "user_dashboard_view"
-            referencedColumns: ["profile_id"]
-          },
-          {
-            foreignKeyName: "let_go_buddy_sessions_user_id_user_profiles_profile_id_fk"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "user_profiles"
-            referencedColumns: ["profile_id"]
-          },
-          {
-            foreignKeyName: "let_go_buddy_sessions_user_id_user_profiles_profile_id_fk"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "user_sales_stats_view"
-            referencedColumns: ["profile_id"]
-          },
-          {
-            foreignKeyName: "let_go_buddy_sessions_user_id_user_profiles_profile_id_fk"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "user_stats_view"
-            referencedColumns: ["profile_id"]
-          },
-        ]
-      }
       item_analyses_detailed_view: {
         Row: {
           ai_listing_description: string | null
           ai_listing_location: Database["public"]["Enums"]["location"] | null
-          ai_listing_price: number | null
           ai_listing_title: string | null
-          ai_suggestion: string | null
           analysis_id: string | null
           avatar_url: string | null
-          co2_impact: number | null
           created_at: string | null
-          current_value: number | null
-          effective_value: number | null
+          decision_barriers: Json | null
+          decision_factor_keywords: Json | null
+          emotional_attachment_keywords: Json | null
           emotional_attachment_level: string | null
           emotional_score: number | null
-          environmental_impact:
-            | Database["public"]["Enums"]["environmental_impact_level"]
-            | null
-          environmental_impact_display: string | null
           images: Json | null
           is_decision_made: boolean | null
-          is_recyclable: boolean | null
           item_category: Database["public"]["Enums"]["product_category"] | null
           item_condition:
             | Database["public"]["Enums"]["product_condition"]
             | null
           item_name: string | null
-          landfill_impact: string | null
-          maintenance_cost: number | null
-          original_price: number | null
+          personality_insights: Json | null
+          primary_emotional_pattern: string | null
           recommendation:
             | Database["public"]["Enums"]["recommendation_action"]
             | null
           recommendation_display: string | null
+          recommendation_reason: string | null
           session_completed: boolean | null
           session_created_at: string | null
           session_id: number | null
-          situation: Database["public"]["Enums"]["declutter_situation"] | null
-          space_value: number | null
           updated_at: string | null
+          usage_pattern_keywords: Json | null
           user_location: Database["public"]["Enums"]["location"] | null
           username: string | null
-          value_change_percentage: number | null
         }
         Relationships: [
-          {
-            foreignKeyName: "item_analyses_session_id_let_go_buddy_sessions_session_id_fk"
-            columns: ["session_id"]
-            isOneToOne: false
-            referencedRelation: "environmental_impact_summary_view"
-            referencedColumns: ["session_id"]
-          },
           {
             foreignKeyName: "item_analyses_session_id_let_go_buddy_sessions_session_id_fk"
             columns: ["session_id"]
@@ -2106,22 +1411,17 @@ export type Database = {
         Row: {
           ai_listing_description: string | null
           ai_listing_location: Database["public"]["Enums"]["location"] | null
-          ai_listing_price: number | null
           ai_listing_title: string | null
-          ai_suggestion: string | null
           analysis_id: string | null
           avatar_url: string | null
           avg_emotional_score: number | null
-          co2_impact: number | null
           completed_items_in_session: number | null
-          current_value: number | null
+          decision_barriers: Json | null
+          decision_factor_keywords: Json | null
+          emotional_attachment_keywords: Json | null
           emotional_score: number | null
-          environmental_impact:
-            | Database["public"]["Enums"]["environmental_impact_level"]
-            | null
           images: Json | null
           is_completed: boolean | null
-          is_recyclable: boolean | null
           item_category: Database["public"]["Enums"]["product_category"] | null
           item_condition:
             | Database["public"]["Enums"]["product_condition"]
@@ -2129,20 +1429,16 @@ export type Database = {
           item_created_at: string | null
           item_name: string | null
           item_updated_at: string | null
-          landfill_impact: string | null
-          maintenance_cost: number | null
-          original_price: number | null
+          personality_insights: Json | null
           recommendation:
             | Database["public"]["Enums"]["recommendation_action"]
             | null
+          recommendation_reason: string | null
           session_created_at: string | null
           session_id: number | null
           session_updated_at: string | null
-          situation: Database["public"]["Enums"]["declutter_situation"] | null
-          space_value: number | null
-          total_co2_impact: number | null
           total_items_in_session: number | null
-          total_value_created: number | null
+          usage_pattern_keywords: Json | null
           user_id: string | null
           user_location: Database["public"]["Enums"]["location"] | null
           username: string | null
@@ -2306,13 +1602,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "user_stats_view"
             referencedColumns: ["profile_id"]
-          },
-          {
-            foreignKeyName: "user_notifications_review_id_give_and_glow_reviews_id_fk"
-            columns: ["review_id"]
-            isOneToOne: false
-            referencedRelation: "give_and_glow_reviews"
-            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "user_notifications_sender_id_user_profiles_profile_id_fk"

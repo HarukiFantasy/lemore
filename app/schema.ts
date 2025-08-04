@@ -83,9 +83,6 @@ export const recommendationActions = pgEnum("recommendation_action", [
   "Keep", "Sell", "Donate", "Recycle", "Repair", "Repurpose", "Discard"
 ]);
 
-export const environmentalImpactLevels = pgEnum("environmental_impact_level", [
-  "Low", "Medium", "High", "Critical"
-]);
 
 export const userLevelsList = pgEnum("user_level", USER_LEVELS);
 
@@ -245,8 +242,8 @@ export const productLikes = pgTable("product_likes", {
 // Product views table
 export const productViews = pgTable("product_views", {
   view_id: bigint("view_id", {mode: "number"}).primaryKey().generatedAlwaysAsIdentity(),
-  product_id: bigint("product_id", {mode: "number"}).notNull(),
-  user_id: uuid().references(() => userProfiles.profile_id), 
+  product_id: bigint("product_id", {mode: "number"}).notNull().references(() => products.product_id, {onDelete: "cascade"}),
+  user_id: uuid().references(() => userProfiles.profile_id, {onDelete: "cascade"}), 
   viewed_at: timestamp("viewed_at").notNull().defaultNow(),
 }, (_) => [
   pgPolicy("product_views_select_policy", {
@@ -500,26 +497,10 @@ export const userMessages = pgTable("user_messages", {
   })
 ]);
 
-// Removed: giveAndGlowReviews table (community features removed)
-
-// Removed: localBusinesses table (community features removed)
-
-// Removed: localBusinessReviews table (community features removed)
-
-// Removed: localTipPosts table (community features removed)
-
-// Removed: localTipComments table (community features removed)
-
-// Removed: localTipReplies table (community features removed)
-
-// Removed: localTipPostLikes table (community features removed)
-
-// Removed: localTipCommentLikes table (community features removed)
-
 // Let Go Buddy sessions table
 export const letGoBuddySessions = pgTable("let_go_buddy_sessions", {
   session_id: bigint("session_id", {mode: "number"}).primaryKey().generatedAlwaysAsIdentity(),
-  user_id: uuid().notNull().references(() => userProfiles.profile_id),
+  user_id: uuid().notNull().references(() => userProfiles.profile_id, {onDelete: "cascade"}),
   created_at: timestamp().notNull().defaultNow(),
   updated_at: timestamp().notNull().defaultNow(),
   is_completed: boolean().notNull().default(false),
@@ -597,23 +578,19 @@ export const challengeCalendarItems = pgTable("challenge_calendar_items", {
 // Item analyses table
 export const itemAnalyses = pgTable("item_analyses", {
   analysis_id: uuid().primaryKey().defaultRandom(),
-  session_id: bigint("session_id", {mode: "number"}).notNull().references(() => letGoBuddySessions.session_id),
+  session_id: bigint("session_id", {mode: "number"}).notNull().references(() => letGoBuddySessions.session_id, {onDelete: "cascade"}),
   item_name: text().notNull(),
   item_category: productCategories().notNull(),
   item_condition: productConditions().notNull(),
   recommendation: recommendationActions().notNull(),
-  recommendation_reason: text(),
-  ai_suggestion: text().notNull(),
+  recommendation_reason: text().notNull(),
+  // Conversation insights from AI coaching chat
+  emotional_attachment_keywords: jsonb().notNull().default([]), // e.g. ["sentimental", "guilt", "conflicted"]
+  usage_pattern_keywords: jsonb().notNull().default([]), // e.g. ["rarely_used", "forgotten", "seasonal"]
+  decision_factor_keywords: jsonb().notNull().default([]), // e.g. ["space_concern", "cost_guilt", "practicality"]
+  personality_insights: jsonb().notNull().default([]), // e.g. ["thoughtful", "nostalgic", "practical"]
+  decision_barriers: jsonb().notNull().default([]), // e.g. ["guilt", "uncertainty", "waste_concern"]
   emotional_score: integer().notNull(),
-  environmental_impact: environmentalImpactLevels().notNull(),
-  co2_impact: decimal({ precision: 10, scale: 2 }).notNull(),
-  landfill_impact: text().notNull(),
-  is_recyclable: boolean().notNull(),
-  original_price: decimal({ precision: 10, scale: 2 }),
-  current_value: decimal({ precision: 10, scale: 2 }),
-  ai_listing_price: decimal({ precision: 10, scale: 2 }),
-  maintenance_cost: decimal({ precision: 10, scale: 2 }).default("0"),
-  space_value: decimal({ precision: 10, scale: 2 }).default("0"),
   ai_listing_title: text(),
   ai_listing_description: text(),
   ai_listing_location: locationList(),

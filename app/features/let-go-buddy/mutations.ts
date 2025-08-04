@@ -40,9 +40,10 @@ export async function createLetGoBuddySession(client: any, { userId, situation }
   if (!ALLOWED_SITUATIONS.includes(situation as DeclutterSituation)) {
     throw new Error(`Invalid situation: ${situation}`);
   }
+  // Note: situation is validated but not stored in DB (removed in migration 0002)
   const { data, error } = await client
     .from('let_go_buddy_sessions')
-    .insert([{ user_id: userId, situation: situation as DeclutterSituation }])
+    .insert([{ user_id: userId }])
     .select('session_id')
     .single();
   if (error) throw new Error(error.message);
@@ -58,18 +59,14 @@ export const insertItemAnalysis = async (
     item_category: Database["public"]["Enums"]["product_category"];
     item_condition: Database["public"]["Enums"]["product_condition"];
     recommendation: Database["public"]["Enums"]["recommendation_action"];
-    recommendation_reason?: string;
-    ai_suggestion: string;
+    recommendation_reason: string;
+    // Conversation insights from AI coaching
+    emotional_attachment_keywords: Json;
+    usage_pattern_keywords: Json;
+    decision_factor_keywords: Json;
+    personality_insights: Json;
+    decision_barriers: Json;
     emotional_score: number;
-    environmental_impact: Database["public"]["Enums"]["environmental_impact_level"];
-    co2_impact: number;
-    landfill_impact: string;
-    is_recyclable: boolean;
-    original_price?: number;
-    current_value?: number;
-    ai_listing_price?: number;
-    maintenance_cost?: number;
-    space_value?: number;
     ai_listing_title?: string;
     ai_listing_description?: string;
     ai_listing_location?: Database["public"]["Enums"]["location"];

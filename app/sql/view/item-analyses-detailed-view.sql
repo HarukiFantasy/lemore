@@ -10,17 +10,13 @@ SELECT
     items.item_category,
     items.item_condition,
     items.recommendation,
-    items.ai_suggestion,
+    items.recommendation_reason,
+    items.emotional_attachment_keywords,
+    items.usage_pattern_keywords,
+    items.decision_factor_keywords,
+    items.personality_insights,
+    items.decision_barriers,
     items.emotional_score,
-    items.environmental_impact,
-    items.co2_impact,
-    items.landfill_impact,
-    items.is_recyclable,
-    items.original_price,
-    items.current_value,
-    items.ai_listing_price,
-    items.maintenance_cost,
-    items.space_value,
     items.ai_listing_title,
     items.ai_listing_description,
     items.ai_listing_location,
@@ -29,7 +25,6 @@ SELECT
     items.updated_at,
 
 -- Session context
-sessions.situation,
 sessions.is_completed as session_completed,
 sessions.created_at as session_created_at,
 
@@ -59,36 +54,12 @@ CASE
     WHEN items.recommendation = 'Discard' THEN 'Discard Item'
     ELSE 'Unknown'
 END as recommendation_display,
+-- Conversation insights summary
 CASE
-    WHEN items.environmental_impact = 'Low' THEN 'Low Impact'
-    WHEN items.environmental_impact = 'Medium' THEN 'Medium Impact'
-    WHEN items.environmental_impact = 'High' THEN 'High Impact'
-    WHEN items.environmental_impact = 'Critical' THEN 'Critical Impact'
-    ELSE 'Unknown'
-END as environmental_impact_display,
-
--- Value calculations
-COALESCE(
-    items.ai_listing_price,
-    items.current_value,
-    0
-) as effective_value,
-CASE
-    WHEN items.original_price IS NOT NULL
-    AND items.original_price > 0 THEN ROUND(
-        (
-            (
-                COALESCE(
-                    items.ai_listing_price,
-                    items.current_value,
-                    0
-                ) - items.original_price
-            ) / items.original_price
-        ) * 100,
-        2
-    )
-    ELSE NULL
-END as value_change_percentage,
+    WHEN jsonb_array_length(items.emotional_attachment_keywords) > 0 
+    THEN items.emotional_attachment_keywords->>0
+    ELSE 'No emotional patterns identified'
+END as primary_emotional_pattern,
 
 -- Emotional assessment
 CASE

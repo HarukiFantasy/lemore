@@ -5,12 +5,12 @@ import { Button } from "~/common/components/ui/button";
 import { Input } from "~/common/components/ui/input";
 import { Textarea } from "~/common/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/common/components/ui/select";
-import { Progress } from "~/common/components/ui/progress";
-import { CameraIcon, ArrowPathIcon, SparklesIcon, HeartIcon, GiftIcon } from "@heroicons/react/24/outline";
+import { CameraIcon, ArrowPathIcon, SparklesIcon, GiftIcon } from "@heroicons/react/24/outline";
 import { AlertTriangle } from "lucide-react";
 import { createLetGoBuddySession } from "../mutations";
 import { makeSSRClient } from "~/supa-client";
-import { EMOTIONAL_QUESTIONS, DECLUTTER_SITUATIONS } from '../constants';
+import { DECLUTTER_SITUATIONS } from '../constants';
+import AICoachChat from '../components/AICoachChat';
 
 export async function loader({ request }: { request: Request }) {
   const { client } = makeSSRClient(request);
@@ -120,8 +120,8 @@ export default function LetGoBuddyPage({ loaderData }: { loaderData: { user: any
   const [analysisResult, setAnalysisResult] = useState<any>(null);
 
   const [situation, setSituation] = useState("");
-  const [conversationStep, setConversationStep] = useState(0);
-  const [emotionalAnswers, setEmotionalAnswers] = useState<string[]>([]);
+  const [chatConversation, setChatConversation] = useState<Array<{id: string, type: 'ai' | 'user', content: string, timestamp: Date}>>([]);
+  const [isChatComplete, setIsChatComplete] = useState(false);
   const [itemDetails, setItemDetails] = useState({
     usagePeriod: "",
     pros: "",
@@ -169,8 +169,6 @@ export default function LetGoBuddyPage({ loaderData }: { loaderData: { user: any
     }
   }, [analysisFetcher.data, analysisFetcher.state]);
 
-  // Use EMOTIONAL_QUESTIONS from constants
-  const conversationQuestions = EMOTIONAL_QUESTIONS;
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files || []);
@@ -216,15 +214,10 @@ export default function LetGoBuddyPage({ loaderData }: { loaderData: { user: any
     }
   };
 
-  const handleAnswer = (answer: string) => {
-    const newAnswers = [...emotionalAnswers];
-    newAnswers[conversationStep] = answer;
-    setEmotionalAnswers(newAnswers);
-    if (conversationStep < conversationQuestions.length - 1) {
-      setConversationStep(conversationStep + 1);
-    } else {
-      setStep(4);
-    }
+  const handleChatComplete = (conversationData: Array<{id: string, type: 'ai' | 'user', content: string, timestamp: Date}>) => {
+    setChatConversation(conversationData);
+    setIsChatComplete(true);
+    setStep(4);
   };
 
   const handleGenerateAnalysis = () => {
@@ -240,11 +233,7 @@ export default function LetGoBuddyPage({ loaderData }: { loaderData: { user: any
       situation,
       itemName: itemName || "",
       itemCategory: itemCategory || "",
-      emotionalAnswers: JSON.stringify({
-        question1: emotionalAnswers[0] || "",
-        question2: emotionalAnswers[1] || "",
-        question3: emotionalAnswers[2] || ""
-      }),
+      chatConversation: JSON.stringify(chatConversation),
       itemDetails: JSON.stringify(itemDetails),
       userLocation: "Bangkok"
     });
@@ -262,20 +251,28 @@ export default function LetGoBuddyPage({ loaderData }: { loaderData: { user: any
   };
 
   const handleStartSelling = () => {
-    if (!analysisResult || !analysisResult.listing_data) return;
+    if (!analysisResult || !analysisResult.listing_data) {
+      console.error('Missing analysis result or listing data:', analysisResult);
+      return;
+    }
+    
+    console.log('Analysis result:', analysisResult);
+    console.log('Listing data:', analysisResult.listing_data);
     
     const listingData = {
-      title: analysisResult.listing_data.title,
-      description: analysisResult.listing_data.description,
-      price: analysisResult.listing_data.price,
-      currency: analysisResult.listing_data.currency,
-      priceType: analysisResult.listing_data.price_type,
-      condition: analysisResult.listing_data.condition,
-      category: analysisResult.listing_data.category,
-      location: analysisResult.listing_data.location,
+      title: analysisResult.listing_data?.title || analysisResult.ai_listing_title || analysisResult.item_analysis?.item_name || "Item for Sale",
+      description: analysisResult.listing_data?.description || analysisResult.ai_listing_description || "Great condition item",
+      price: "0", // User will set their own price
+      currency: analysisResult.listing_data?.currency || "THB",
+      priceType: analysisResult.listing_data?.price_type || "Fixed",
+      condition: analysisResult.listing_data?.condition || analysisResult.item_analysis?.item_condition || "Good",
+      category: analysisResult.listing_data?.category || analysisResult.item_analysis?.item_category || "Other",
+      location: analysisResult.listing_data?.location || analysisResult.ai_listing_location || "Bangkok",
       images: uploadedImageUrls,
       fromLetGoBuddy: true
     };
+    
+    console.log('Prepared listing data:', listingData);
 
     navigate("/secondhand/submit-a-listing", {
       state: {
@@ -476,15 +473,44 @@ export default function LetGoBuddyPage({ loaderData }: { loaderData: { user: any
         </Card>
       )}
       
-      {/* Step 3: Emotion-Based Conversation */}
-      {step >= 3 && !sessionError && (
+      {/* Step 3: AI Coach Conversation */}
+      {step >= 3 && !sessionError && !isChatComplete && (
         <Card>
-          <CardHeader><CardTitle className="flex items-center gap-2"><HeartIcon className="w-6 h-6" />Step 3: Emotion-Based Conversation</CardTitle></CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2"><p className="text-sm text-muted-foreground text-center">Question {conversationStep + 1} of {conversationQuestions.length}</p><Progress value={((conversationStep + 1) / conversationQuestions.length) * 100} /></div>
-            <p className="font-semibold pt-4 text-center">{conversationQuestions[conversationStep]}</p>
-            <div className="flex flex-col gap-2"><Button variant="outline" onClick={() => handleAnswer("It brings me joy.")}>It brings me joy</Button><Button variant="outline" onClick={() => handleAnswer("I feel guilty for not using it.")}>I feel guilty for not using it</Button><Button variant="outline" onClick={() => handleAnswer("I'm not sure.")}>I'm not sure</Button></div>
-            <Textarea placeholder="Or share your thoughts here..." onBlur={(e) => e.target.value.trim() && handleAnswer(e.target.value)} />
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <SparklesIcon className="w-6 h-6" />
+              Step 3: Talk with Your AI Coach
+            </CardTitle>
+            <p className="text-sm text-muted-foreground mt-2">
+              Have a natural conversation with your AI coach to explore your feelings about this item
+            </p>
+          </CardHeader>
+          <CardContent>
+            <AICoachChat
+              itemName={itemName}
+              situation={situation}
+              onComplete={handleChatComplete}
+            />
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Show completed conversation summary */}
+      {step >= 3 && isChatComplete && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <SparklesIcon className="w-6 h-6" />
+              ✅ Conversation Complete
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="p-4 bg-green-50 rounded-lg border border-green-200">
+              <p className="text-sm text-green-800">
+                Great conversation! Your AI coach has gathered insights about your relationship with this item. 
+                Ready to get your personalized recommendation?
+              </p>
+            </div>
           </CardContent>
         </Card>
       )}
@@ -502,17 +528,17 @@ export default function LetGoBuddyPage({ loaderData }: { loaderData: { user: any
             {!analysisResult ? (
               <div className="space-y-4">
                 <p className="text-sm text-muted-foreground">Ready to get AI-powered recommendations for your item?</p>
-                {emotionalAnswers.filter(answer => answer && answer.trim() !== '').length < conversationQuestions.length && (
+                {!isChatComplete && (
                   <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-center">
                     <div className="text-amber-800 text-sm">
-                      Please complete all {conversationQuestions.length} emotional questions to proceed ({emotionalAnswers.filter(answer => answer && answer.trim() !== '').length}/{conversationQuestions.length} answered)
+                      Please complete the conversation with your AI Coach to proceed
                     </div>
                   </div>
                 )}
                 <Button 
                   onClick={handleGenerateAnalysis} 
                   className={`w-full ${!canUseLetGoBuddy ? 'opacity-50 cursor-not-allowed bg-gray-100 text-gray-400 border-gray-200' : ''}`}
-                  disabled={isAnalyzing || !canUseLetGoBuddy || !situation || !uploadedImageUrls.length || emotionalAnswers.filter(answer => answer && answer.trim() !== '').length < conversationQuestions.length}
+                  disabled={isAnalyzing || !canUseLetGoBuddy || !situation || !uploadedImageUrls.length || !isChatComplete}
                   size="lg"
                 >
                   {isAnalyzing ? (
@@ -539,15 +565,45 @@ export default function LetGoBuddyPage({ loaderData }: { loaderData: { user: any
                     <div className="text-sm text-gray-600 mb-1">Item Analysis</div>
                     <div className="font-medium">{analysisResult.item_analysis?.item_name}</div>
                     <div className="text-sm text-gray-600">Condition: {analysisResult.item_analysis?.item_condition}</div>
-                    <div className="text-sm text-gray-600">Value: THB {analysisResult.item_analysis?.current_value}</div>
                   </div>
                   
-                  <div className="p-3 bg-green-50 rounded-lg">
-                    <div className="text-sm text-green-600 mb-1">Environmental Impact</div>
-                    <div className="font-medium text-green-700">{analysisResult.environmental_impact?.co2_impact} kg CO2 saved</div>
-                    <div className="text-sm text-green-600">Impact Level: {analysisResult.environmental_impact?.impact_level}</div>
-                  </div>
                 </div>
+
+                {/* Conversation Insights Preview */}
+                {(analysisResult.emotional_attachment_keywords || analysisResult.decision_barriers) && (
+                  <div className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-100">
+                    <div className="text-sm font-medium text-blue-800 mb-2">💭 Your Decision Insights</div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                      {analysisResult.emotional_attachment_keywords?.length > 0 && (
+                        <div>
+                          <span className="text-blue-700 font-medium">Emotional:</span>
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {analysisResult.emotional_attachment_keywords.slice(0, 3).map((keyword: string, idx: number) => (
+                              <span key={idx} className="px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs">
+                                {keyword}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      {analysisResult.decision_barriers?.length > 0 && (
+                        <div>
+                          <span className="text-blue-700 font-medium">Challenges:</span>
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {analysisResult.decision_barriers.slice(0, 3).map((barrier: string, idx: number) => (
+                              <span key={idx} className="px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs">
+                                {barrier}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    <div className="mt-2 text-xs text-blue-600">
+                      💡 These insights will be saved to your personal decluttering journal
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </CardContent>
@@ -564,9 +620,8 @@ export default function LetGoBuddyPage({ loaderData }: { loaderData: { user: any
             {analysisResult.recommendation?.action === 'Sell' && (
               <div className="p-4 bg-green-50 rounded-lg mb-4">
                 <h4 className="font-semibold text-green-800 mb-2">Ready-to-use Listing Data</h4>
-                <p className="text-sm text-green-700 mb-2"><strong>Title:</strong> {analysisResult.listing_data?.title}</p>
-                <p className="text-sm text-green-700 mb-2"><strong>Suggested Price:</strong> THB {analysisResult.listing_data?.price}</p>
-                <p className="text-sm text-green-700"><strong>Description:</strong> {analysisResult.listing_data?.description}</p>
+                <p className="text-sm text-green-700 mb-2"><strong>Title:</strong> {analysisResult.listing_data?.title || analysisResult.ai_listing_title || analysisResult.item_analysis?.item_name || "Item for Sale"}</p>
+                <p className="text-sm text-green-700"><strong>Description:</strong> {analysisResult.listing_data?.description || analysisResult.ai_listing_description || "Great condition item"}</p>
               </div>
             )}
             

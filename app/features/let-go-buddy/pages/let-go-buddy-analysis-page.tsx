@@ -23,13 +23,6 @@ export interface LoaderData {
     original_price?: number;
     current_value: number;
   };
-  environmental_impact: {
-    impact_level: string;
-    co2_impact: number;
-    landfill_impact: string;
-    is_recyclable: boolean;
-    sustainability_score: number;
-  };
   recommendation: {
     action: string;
     confidence: number;
@@ -83,6 +76,7 @@ export const loader = async ({ request }: { request: Request }) => {
   const sessionId = url.searchParams.get("sessionId");
   const imageUrls = url.searchParams.get("imageUrls");
   const situation = url.searchParams.get("situation");
+  const chatConversation = url.searchParams.get("chatConversation");
 
   if (!sessionId || !imageUrls || !situation) {
     return Response.json(
@@ -93,11 +87,20 @@ export const loader = async ({ request }: { request: Request }) => {
 
   try {
     const parsedImageUrls = JSON.parse(decodeURIComponent(imageUrls));
+    const parsedChatConversation = chatConversation ? JSON.parse(decodeURIComponent(chatConversation)) : [];
     
     // 이미지들을 Base64로 변환
     const base64Images = await Promise.all(
       parsedImageUrls.map((url: string) => convertImageUrlToBase64(url))
     );
+    
+    // Create conversation context for AI
+    const conversationContext = parsedChatConversation.length > 0 
+      ? `\n\nUser Conversation with AI Coach:
+${parsedChatConversation.map((message: any) => 
+  `${message.type === 'ai' ? 'AI Coach' : 'User'}: ${message.content}`
+).join('\n')}`
+      : "";
     
     // OpenAI Vision API를 사용해서 이미지 분석
     const completion = await openai.chat.completions.create({
@@ -105,22 +108,25 @@ export const loader = async ({ request }: { request: Request }) => {
       messages: [
         {
           role: "system",
-          content: `You are an AI decluttering assistant. Analyze the uploaded images and provide detailed recommendations for each item.
+          content: `You are an AI decision-making assistant for decluttering. Your job is to help users make confident decisions about their items based on their personal situation and feelings.
+
+IMPORTANT: Focus on decision-making, NOT pricing. Do not estimate market values or suggest prices.
 
 Your task is to:
 1. Identify the item(s) in the images
-2. Assess their condition and value
-3. Provide recommendations based on the user's decluttering situation: ${situation}
-4. Calculate environmental impact and CO2 savings
-5. Suggest pricing if selling is recommended
+2. Assess their condition 
+3. **Extract key insights from the coaching conversation** 
+4. Analyze the user's decision patterns and emotional relationship with the item
+5. Provide personalized recommendations based on their situation: ${situation}
 
-Be thorough and consider:
-- Item condition and age
-- Current market value
-- Environmental impact of disposal vs reuse
-- Emotional attachment factors
-- Space value and maintenance costs
-- Local market conditions in Thailand
+**IMPORTANT: Pay special attention to extracting conversation insights:**
+- **Emotional patterns**: How do they feel about letting go? (guilt, attachment, conflict, etc.)
+- **Usage patterns**: How often they use items, why they keep things, when they last used it
+- **Decision style**: Are they practical, sentimental, thoughtful, impulsive?
+- **Barriers**: What makes decisions hard for them? (waste guilt, uncertainty, attachment)
+- **Motivations**: What drives their decluttering? (space, minimalism, moving, etc.)
+
+Analyze the conversation below to understand their personal decluttering psychology:${conversationContext}
 
 Please respond with a JSON object containing the analysis with the following structure:
 {
@@ -128,18 +134,16 @@ Please respond with a JSON object containing the analysis with the following str
   "item_category": "Electronics|Clothing|Books|Home|Sports|Beauty|Toys|Automotive|Health|Other",
   "item_condition": "New|Like New|Excellent|Good|Fair|Poor",
             "recommendation": "Keep|Sell|Donate|Recycle|Repair|Repurpose|Discard",
-          "recommendation_reason": "string (detailed explanation of why this recommendation was chosen)",
-          "ai_suggestion": "string",
+          "recommendation_reason": "string (detailed explanation of why this recommendation was chosen, including practical next steps)",
+  
+  // Conversation insights (extract 3-5 keywords maximum for each category based on the conversation):
+  "emotional_attachment_keywords": ["keyword1", "keyword2", "keyword3"], // user's emotional connection (e.g. ["sentimental", "guilt", "conflicted"])
+  "usage_pattern_keywords": ["keyword1", "keyword2", "keyword3"], // how they use/used the item (e.g. ["rarely_used", "forgotten", "seasonal"])
+  "decision_factor_keywords": ["keyword1", "keyword2", "keyword3"], // main decision considerations (e.g. ["space_concern", "cost_guilt", "practicality"])
+  "personality_insights": ["keyword1", "keyword2", "keyword3"], // user's decision-making style (e.g. ["thoughtful", "nostalgic", "practical"])
+  "decision_barriers": ["keyword1", "keyword2", "keyword3"], // what's preventing easy decision (e.g. ["guilt", "uncertainty", "waste_concern"])
+  
   "emotional_score": number (1-10),
-  "environmental_impact": "Low|Medium|High|Critical",
-  "co2_impact": number,
-  "landfill_impact": "string",
-  "is_recyclable": boolean,
-  "original_price": number (optional),
-  "current_value": number (optional),
-  "ai_listing_price": number (optional),
-  "maintenance_cost": number (optional),
-  "space_value": number (optional),
   "ai_listing_title": "string" (optional),
   "ai_listing_description": "string" (optional),
   "ai_listing_location": "Bangkok|ChiangMai|Phuket|HuaHin|Pattaya|Krabi|Koh Samui|Other Cities" (optional)
@@ -149,8 +153,12 @@ Please respond with a JSON object containing the analysis with the following str
           role: "user",
           content: [
             {
-              type: "text",
-              text: `Please analyze these images and provide a comprehensive decluttering recommendation. Consider the user's situation: ${situation}. Respond with valid JSON only.`
+              type: "text", 
+              text: `Please analyze these images and provide a personalized decluttering decision recommendation.
+
+User's Situation: ${situation}${conversationContext}
+
+Based on the conversation above, provide a recommendation that aligns with their emotional attachment, usage patterns, and decluttering goals expressed during the coaching session. Focus on helping them make a confident decision rather than market value. Respond with valid JSON only.`
             },
             ...base64Images.map((base64Image: string) => ({
               type: "image_url" as const,
@@ -197,27 +205,17 @@ Please respond with a JSON object containing the analysis with the following str
         item_condition: analysis.item_condition,
         condition_notes: analysis.condition_notes,
         estimated_age: analysis.estimated_age,
-        brand: analysis.brand,
-        original_price: analysis.original_price,
-        current_value: analysis.current_value
-      },
-      environmental_impact: {
-        impact_level: analysis.environmental_impact,
-        co2_impact: analysis.co2_impact,
-        landfill_impact: analysis.landfill_impact,
-        is_recyclable: analysis.is_recyclable,
-        sustainability_score: 8 // Default value
+        brand: analysis.brand
       },
       recommendation: {
         action: analysis.recommendation,
         confidence: 85, // Default confidence
-        reason: analysis.recommendation_reason,
-        ai_suggestion: analysis.ai_suggestion
+        reason: analysis.recommendation_reason
       },
       listing_data: {
         title: analysis.ai_listing_title || `${analysis.item_name} for Sale`,
         description: analysis.ai_listing_description || `Great condition ${analysis.item_name}`,
-        price: analysis.ai_listing_price?.toString() || analysis.current_value?.toString() || "0",
+        price: "0", // User will set their own price
         currency: "THB",
         price_type: "Fixed",
         condition: analysis.item_condition,
@@ -232,7 +230,20 @@ Please respond with a JSON object containing the analysis with the following str
     const { client } = makeSSRClient(request);
     await insertItemAnalysis(client, {
       session_id: parseInt(sessionId),
-      ...analysis,
+      item_name: analysis.item_name,
+      item_category: analysis.item_category,
+      item_condition: analysis.item_condition,
+      recommendation: analysis.recommendation,
+      recommendation_reason: analysis.recommendation_reason,
+      emotional_attachment_keywords: analysis.emotional_attachment_keywords || [],
+      usage_pattern_keywords: analysis.usage_pattern_keywords || [],
+      decision_factor_keywords: analysis.decision_factor_keywords || [],
+      personality_insights: analysis.personality_insights || [],
+      decision_barriers: analysis.decision_barriers || [],
+      emotional_score: analysis.emotional_score,
+      ai_listing_title: analysis.ai_listing_title,
+      ai_listing_description: analysis.ai_listing_description,
+      ai_listing_location: analysis.ai_listing_location,
       images: parsedImageUrls,
     });
 
@@ -245,6 +256,3 @@ Please respond with a JSON object containing the analysis with the following str
     );
   }
 };
-
-// This page is used only for analysis logic - no UI component needed
-// The UI is handled by let-go-buddy-page.tsx

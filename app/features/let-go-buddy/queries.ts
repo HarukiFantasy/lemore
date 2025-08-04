@@ -1,73 +1,143 @@
 import { SupabaseClient } from '@supabase/supabase-js';
 import { Database } from '~/supa-client';
 
-export const getEnvironmentalImpactSummary = async (client: SupabaseClient<Database>) => {
-  const { data, error } = await client.from("environmental_impact_summary_view").select(`*`);
-  if (error) throw new Error(error.message);
-  return data;
-}
-
-
-export const getItemAnalysesDetailed = async (client: SupabaseClient<Database>) => {
-  const { data, error } = await client.from("item_analyses_detailed_view").select(`*`);
-  if (error) throw new Error(error.message);
-  return data;
-}
-
-export const getLetGoBuddySessionsWithItems = async (client: SupabaseClient<Database>) => {
-  const { data, error } = await client.from("let_go_buddy_sessions_with_items_view").select(`*`);
-  if (error) throw new Error(error.message);
-  return data;
-}
-
-// Challenge Calendar queries
-export const getChallengeItems = async (
+// Get user's decluttering insights from all their Let Go Buddy sessions
+export async function getUserDeclutteringInsights(
   client: SupabaseClient<Database>,
-  { userId }: { userId: string }
-) => {
-  const { data, error } = await client
-    .from('challenge_calendar_items')
-    .select('*')
-    .eq('user_id', userId)
-    .order('scheduled_date', { ascending: true });
-  
-  if (error) throw new Error(error.message);
-  return data;
-}
+  userId: string
+) {
+  const { data: insights, error } = await client
+    .from('item_analyses')
+    .select(`
+      item_name,
+      item_category,
+      recommendation,
+      emotional_attachment_keywords,
+      usage_pattern_keywords,
+      decision_factor_keywords,
+      personality_insights,
+      decision_barriers,
+      emotional_score,
+      created_at,
+      let_go_buddy_sessions!inner(user_id)
+    `)
+    .eq('let_go_buddy_sessions.user_id', userId)
+    .order('created_at', { ascending: false });
 
-export const getChallengeItemsByDateRange = async (
-  client: SupabaseClient<Database>,
-  { userId, startDate, endDate }: { userId: string; startDate: string; endDate: string }
-) => {
-  const { data, error } = await client
-    .from('challenge_calendar_items')
-    .select('*')
-    .eq('user_id', userId)
-    .gte('scheduled_date', startDate)
-    .lte('scheduled_date', endDate)
-    .order('scheduled_date', { ascending: true });
-  
-  if (error) throw new Error(error.message);
-  return data;
-}
+  if (error) throw error;
 
-export const getChallengeItemProgress = async (
-  client: SupabaseClient<Database>,
-  { userId }: { userId: string }
-) => {
-  const { data, error } = await client
-    .from('challenge_calendar_items')
-    .select('completed')
-    .eq('user_id', userId);
-  
-  if (error) throw new Error(error.message);
-  
-  const total = data.length;
-  const completed = data.filter(item => item.completed).length;
+  // Process insights to find patterns
+  const processedInsights = processUserInsights(insights || []);
   
   return {
-    total,
-    completed,
-    percentage: total > 0 ? Math.round((completed / total) * 100) : 0
+    recentItems: insights?.slice(0, 5) || [],
+    patterns: processedInsights,
+    totalItems: insights?.length || 0
   };
+}
+
+// Process insights to identify user patterns
+function processUserInsights(insights: any[]) {
+  if (insights.length === 0) return null;
+
+  // Aggregate all keywords
+  const allEmotionalKeywords: string[] = [];
+  const allUsagePatterns: string[] = [];
+  const allDecisionFactors: string[] = [];
+  const allPersonalityTraits: string[] = [];
+  const allBarriers: string[] = [];
+  const recommendations: string[] = [];
+  let totalEmotionalScore = 0;
+
+  insights.forEach(item => {
+    if (item.emotional_attachment_keywords) {
+      allEmotionalKeywords.push(...item.emotional_attachment_keywords);
+    }
+    if (item.usage_pattern_keywords) {
+      allUsagePatterns.push(...item.usage_pattern_keywords);
+    }
+    if (item.decision_factor_keywords) {
+      allDecisionFactors.push(...item.decision_factor_keywords);
+    }
+    if (item.personality_insights) {
+      allPersonalityTraits.push(...item.personality_insights);
+    }
+    if (item.decision_barriers) {
+      allBarriers.push(...item.decision_barriers);
+    }
+    recommendations.push(item.recommendation);
+    totalEmotionalScore += item.emotional_score || 0;
+  });
+
+  // Count frequency of keywords
+  const getTopKeywords = (keywords: string[], limit: number = 5) => {
+    const counts = keywords.reduce((acc, keyword) => {
+      acc[keyword] = (acc[keyword] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+
+    return Object.entries(counts)
+      .sort(([,a], [,b]) => b - a)
+      .slice(0, limit)
+      .map(([keyword, count]) => ({ keyword, count }));
+  };
+
+  // Count recommendation patterns
+  const recommendationCounts = recommendations.reduce((acc, rec) => {
+    acc[rec] = (acc[rec] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+
+  return {
+    topEmotionalPatterns: getTopKeywords(allEmotionalKeywords, 3),
+    topUsagePatterns: getTopKeywords(allUsagePatterns, 3),
+    topDecisionFactors: getTopKeywords(allDecisionFactors, 3),
+    personalityTraits: getTopKeywords(allPersonalityTraits, 3),
+    commonBarriers: getTopKeywords(allBarriers, 3),
+    recommendationBreakdown: recommendationCounts,
+    averageEmotionalScore: Math.round(totalEmotionalScore / insights.length),
+    totalSessions: insights.length
+  };
+}
+
+// Get recent Let Go Buddy sessions with basic info
+export async function getRecentLetGoBuddySessions(
+  client: SupabaseClient<Database>,
+  userId: string,
+  limit: number = 10
+) {
+  const { data, error } = await client
+    .from('let_go_buddy_sessions')
+    .select(`
+      session_id,
+      created_at,
+      is_completed,
+      item_analyses(
+        item_name,
+        item_category,
+        recommendation,
+        emotional_score
+      )
+    `)
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false })
+    .limit(limit);
+
+  if (error) throw error;
+  return data || [];
+}
+
+// Get challenge calendar items for a user
+export async function getChallengeItems(
+  client: SupabaseClient<Database>,
+  { userId }: { userId: string }
+) {
+  const { data, error } = await client
+    .from('challenge_calendar_items')
+    .select('*')
+    .eq('user_id', userId)
+    .order('scheduled_date', { ascending: true });
+
+  if (error) throw error;
+  return data || [];
 }
