@@ -134,12 +134,18 @@ export default function AICoachChat({ itemName, situation, onComplete }: AICoach
       setIsLoading(false);
 
       // Check if this is the completion message
-      const isCompletionMessage = aiResponse.includes('analyze everything we\'ve discussed');
+      const isCompletionMessage = aiResponse.includes('analyze everything we\'ve discussed') || 
+                                  aiResponse.includes('Give me just a moment to process');
+      
+      console.log('AI Response:', aiResponse);
+      console.log('Is completion message:', isCompletionMessage);
       
       if (isCompletionMessage) {
         // This is the completion message - mark conversation as complete
+        console.log('Marking conversation as complete');
         setIsConversationComplete(true);
         setTimeout(() => {
+          console.log('Calling onComplete callback');
           onComplete([...messages, userMessage, aiMessage]);
         }, 2000);
       } else {
@@ -233,7 +239,7 @@ export default function AICoachChat({ itemName, situation, onComplete }: AICoach
         {/* Progress indicator */}
         <div className="mt-2 text-center">
           <span className="text-xs text-gray-500">
-            {isConversationComplete ? 'Conversation complete' : `Question ${conversationStage + 1} of 5`}
+            {isConversationComplete ? 'Conversation complete' : `Question ${Math.min(conversationStage + 1, 5)} of 5`}
           </span>
         </div>
       </CardContent>
