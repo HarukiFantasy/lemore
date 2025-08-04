@@ -502,10 +502,17 @@ export default function LetGoBuddyPage({ loaderData }: { loaderData: { user: any
             {!analysisResult ? (
               <div className="space-y-4">
                 <p className="text-sm text-muted-foreground">Ready to get AI-powered recommendations for your item?</p>
+                {emotionalAnswers.filter(answer => answer && answer.trim() !== '').length < conversationQuestions.length && (
+                  <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-center">
+                    <div className="text-amber-800 text-sm">
+                      Please complete all {conversationQuestions.length} emotional questions to proceed ({emotionalAnswers.filter(answer => answer && answer.trim() !== '').length}/{conversationQuestions.length} answered)
+                    </div>
+                  </div>
+                )}
                 <Button 
                   onClick={handleGenerateAnalysis} 
                   className={`w-full ${!canUseLetGoBuddy ? 'opacity-50 cursor-not-allowed bg-gray-100 text-gray-400 border-gray-200' : ''}`}
-                  disabled={isAnalyzing || !canUseLetGoBuddy || !situation || !uploadedImageUrls.length}
+                  disabled={isAnalyzing || !canUseLetGoBuddy || !situation || !uploadedImageUrls.length || emotionalAnswers.filter(answer => answer && answer.trim() !== '').length < conversationQuestions.length}
                   size="lg"
                 >
                   {isAnalyzing ? (
