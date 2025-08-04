@@ -46,40 +46,58 @@ export default function AICoachChat({ itemName, situation, onComplete }: AICoach
 
   const getNextAIMessage = (userMessage: string, stage: number): string => {
     const responses = [
-      // Stage 0: Initial feeling
+      // Stage 0: Initial feeling - Usage frequency
       [
-        "I understand that feeling. It's completely normal to feel uncertain about items that have been part of our lives. Let me ask you - when was the last time you remember actually using this item?",
-        "That's a very honest response. Many people struggle with these decisions. Can you tell me when you last remember using this item?",
-        "I hear you. These decisions can be tricky. To help you think through this, when did you last use this item?"
+        "I can really sense that feeling. It's totally natural to feel torn about items that have history with us. I'm curious - when was the last time you actually used this item?",
+        "That's such an honest response, and I appreciate you sharing that with me. These decisions definitely aren't easy! Can you think back to when you last remember using this item?",
+        "I hear you completely. These choices can feel overwhelming sometimes. Let me ask you this - when did you last find yourself reaching for this item?",
+        "Your feelings are completely valid here. So many of us have been in this exact spot! Tell me, when was the most recent time you remember actually using this?",
+        "I totally get where you're coming from. It's one of those decisions that just feels heavy, right? Help me understand - when did you last put this item to use?"
       ],
-      // Stage 1: Usage frequency  
+      // Stage 1: Usage frequency - Emotional attachment test
       [
-        "Thank you for sharing that. Now, I'd like you to imagine something - if this item disappeared tomorrow, what would your first reaction be?",
-        "That's helpful context. Here's something to consider: if you woke up tomorrow and this item was gone, how would you feel?",
-        "Got it. Let's try a thought experiment - if this item vanished overnight, what would go through your mind?"
+        "Thanks for being so thoughtful about that. Now, let's try a little mental exercise - if you woke up tomorrow and this item had mysteriously vanished, what do you think your first reaction would be?",
+        "That gives me some good insight! Here's an interesting way to think about it: imagine this item just disappeared overnight. How do you think you'd feel when you realized it was gone?",
+        "I appreciate you taking the time to think through that. Let's explore this together - if this item suddenly wasn't there anymore, what emotions would come up for you?",
+        "That's really helpful context, thank you! Now I'm wondering - picture waking up and this item is nowhere to be found. What would go through your mind in that moment?",
+        "Gotcha, that paints a clear picture for me. Here's something to consider - if this item magically disappeared while you were sleeping, how would you react when you noticed?"
       ],
-      // Stage 2: Emotional attachment
+      // Stage 2: Emotional attachment - Keeping motivation
       [
-        "That tells me a lot about your connection to this item. Now, what would you say is the main reason you're keeping it right now?",
-        "Interesting perspective. What's the primary reason this item is still in your space?",
-        "I appreciate your honesty. What's the biggest factor keeping you from letting this go?"
+        "That really shows me how you connect with your belongings. I'm curious now - what would you say is the main thing that's keeping this item in your life right now?",
+        "Fascinating! That tells me quite a bit about your relationship with this item. What do you think is the primary reason it's still taking up space in your home?",
+        "I love how thoughtful you are about this. So what's the biggest thing that's making it hard for you to part with this item?",
+        "That's such valuable insight, thank you for sharing! Help me understand - what's the core reason this item is still part of your daily environment?",
+        "Your perspective is really enlightening. I'm wondering - what's the main factor that's keeping you from saying goodbye to this item?"
       ],
-      // Stage 3: Keeping motivation
+      // Stage 3: Keeping motivation - Space impact
       [
-        "That makes sense. How does having this item in your space make you feel? Does it add to your environment or take away from it?",
-        "I understand. When you look around your space and see this item, what feeling does it give you?",
-        "Thank you for explaining. How does this item affect the way you feel about your living space?"
+        "That makes complete sense to me. Now, when you're in your space and you see this item sitting there, how does it make you feel? Does it bring you joy or does it feel like it's just... there?",
+        "I can definitely understand that reasoning. Tell me, when you're moving around your home and your eyes land on this item, what kind of energy does it give off for you?",
+        "That's a perfectly valid reason, honestly. I'm curious though - how does having this item in your space affect your overall mood about your home?",
+        "You know what? That makes total sense. Let me ask you this - when you're tidying up or just relaxing at home, does seeing this item make you feel good or kind of 'meh'?",
+        "I really appreciate how you're thinking through this. So when you're just living your daily life and this item is in your peripheral vision, what vibe does it give you?"
       ],
-      // Stage 4: Space impact
+      // Stage 4: Space impact - Final consideration
       [
-        "One final thought experiment: if someone you cared about could really benefit from having this item, how would you feel about giving it to them?",
-        "Last question to help clarify your feelings: imagine a friend or family member could get real value from this item - what would you want to do?",
-        "Here's my final question: if giving this item to someone who truly needed it would make their day, how would that sit with you?"
+        "This has been such a thoughtful conversation! One last thing to explore - imagine someone close to you could really use this item and would treasure it. How would you feel about passing it along to them?",
+        "You've been so reflective about all of this, I really admire that. Here's my final wondering - if a friend or family member would absolutely love having this item, what would your heart tell you to do?",
+        "I'm really impressed by how much consideration you've given this decision. Last question: if you knew that giving this item away would genuinely brighten someone else's day, how would that feel to you?",
+        "This conversation has been so insightful, thank you for being so open. One final thought - picture someone who would be thrilled to have this item. What comes up for you when you imagine gifting it to them?",
+        "You've shared so much wisdom here, I'm grateful for your honesty. Here's my last question - if this item could bring real happiness to another person, would that change how you feel about letting it go?"
       ]
     ];
 
     if (stage >= responses.length) {
-      return "Thank you for sharing so openly with me. I have a good understanding of your relationship with this item now. Let me analyze everything we've discussed and give you a personalized recommendation. This will just take a moment...";
+      const completionMessages = [
+        "Thank you for sharing so openly with me. I have a really good understanding of your relationship with this item now. Let me analyze everything we've discussed and give you a personalized recommendation. This will just take a moment...",
+        "Wow, this has been such a meaningful conversation! I feel like I really understand how you connect with your belongings. Give me just a moment to process everything you've shared and I'll have a thoughtful recommendation for you...",
+        "I'm so grateful for your honesty throughout this conversation. You've given me such valuable insights into how you feel about this item. Let me take a moment to analyze our discussion and create a personalized recommendation just for you...",
+        "This conversation has been incredibly insightful, thank you for being so thoughtful with your responses. I now have a clear picture of your situation. Let me put together a personalized recommendation based on everything we've explored together...",
+        "You've been so wonderful to talk through this with! I really appreciate how openly you've shared your feelings. Now let me take everything we've discussed and create a recommendation that feels right for your unique situation..."
+      ];
+      
+      return completionMessages[Math.floor(Math.random() * completionMessages.length)];
     }
 
     // Simple response selection based on message length/content
@@ -114,8 +132,8 @@ export default function AICoachChat({ itemName, situation, onComplete }: AICoach
       setMessages(prev => [...prev, aiMessage]);
       setIsLoading(false);
 
-      // Check if conversation is complete
-      if (conversationStage >= 4) {
+      // Check if conversation is complete (after user has answered the final question)
+      if (conversationStage >= 5) {
         // Complete after the final AI message
         setTimeout(() => {
           onComplete([...messages, userMessage, aiMessage]);

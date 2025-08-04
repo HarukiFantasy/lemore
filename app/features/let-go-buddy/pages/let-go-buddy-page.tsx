@@ -308,40 +308,48 @@ export default function LetGoBuddyPage({ loaderData }: { loaderData: { user: any
     });
   };
 
-  const addToChallenge = async () => {
+  const challengeFetcher = useFetcher();
+
+  const addToChallenge = () => {
     if (!analysisResult || !analysisResult.item_analysis) {
       alert("Please complete analysis first before adding to challenge");
       return;
     }
 
-    try {
-      // Create challenge item using form data
-      const formData = new FormData();
-      formData.append('intent', 'create');
-      formData.append('name', analysisResult.item_analysis.item_name || itemName || 'Declutter Item');
-      
-      // Set scheduled date to tomorrow
-      const tomorrow = new Date();
-      tomorrow.setDate(tomorrow.getDate() + 1);
-      formData.append('scheduledDate', tomorrow.toISOString().split('T')[0]);
+    // Create challenge item using React Router fetcher
+    const formData = new FormData();
+    formData.append('intent', 'create');
+    formData.append('name', analysisResult.item_analysis.item_name || itemName || 'Declutter Item');
+    
+    // Set scheduled date to tomorrow
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    formData.append('scheduledDate', tomorrow.toISOString().split('T')[0]);
 
-      // Submit to challenge calendar action
-      const response = await fetch('/let-go-buddy/challenge-calendar', {
-        method: 'POST',
-        body: formData
-      });
+    console.log('Submitting challenge item:', {
+      name: analysisResult.item_analysis.item_name || itemName || 'Declutter Item',
+      scheduledDate: tomorrow.toISOString().split('T')[0]
+    });
 
-      if (response.ok) {
-        // Navigate to challenge calendar page
+    // Submit using React Router fetcher
+    challengeFetcher.submit(formData, {
+      method: 'POST',
+      action: '/let-go-buddy/challenge-calendar'
+    });
+  };
+
+  // Handle challenge fetcher response
+  useEffect(() => {
+    if (challengeFetcher.data && challengeFetcher.state === 'idle') {
+      if (challengeFetcher.data.success) {
+        // Navigate to challenge calendar page on success
         navigate('/let-go-buddy/challenge-calendar');
       } else {
-        alert("Failed to add item to challenge calendar");
+        console.error('Challenge creation failed:', challengeFetcher.data);
+        alert(`Failed to add item to challenge calendar: ${challengeFetcher.data.error || 'Unknown error'}`);
       }
-    } catch (error) {
-      console.error('Error adding to challenge:', error);
-      alert("Error adding item to challenge calendar");
     }
-  };
+  }, [challengeFetcher.data, challengeFetcher.state, navigate]);
   const addToKeepBox = () => alert("Added to your 'Keep Box'.");
 
 
