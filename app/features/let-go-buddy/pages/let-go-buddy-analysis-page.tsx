@@ -264,7 +264,9 @@ Based on the conversation above, provide a recommendation that aligns with their
     try {
       // 분석 결과를 데이터베이스에 저장
       const { client } = makeSSRClient(request);
-      await insertItemAnalysis(client, {
+      
+      console.log('Preparing analysis data for database insertion...');
+      const analysisData = {
         session_id: parseInt(sessionId),
         item_name: analysis.item_name,
         item_category: analysis.item_category,
@@ -281,10 +283,35 @@ Based on the conversation above, provide a recommendation that aligns with their
         ai_listing_description: analysis.ai_listing_description,
         ai_listing_location: analysis.ai_listing_location,
         images: parsedImageUrls,
-      });
+      };
+      
+      console.log('Analysis data prepared:', analysisData);
+      
+      // Validate enum values before database insertion
+      console.log('Validating enum values...');
+      console.log('item_category:', analysis.item_category);
+      console.log('item_condition:', analysis.item_condition);
+      console.log('recommendation:', analysis.recommendation);
+      console.log('ai_listing_location:', analysis.ai_listing_location);
+      
+      try {
+        console.log('Calling insertItemAnalysis...');
+        await insertItemAnalysis(client, analysisData);
+        console.log('insertItemAnalysis successful');
+      } catch (insertError) {
+        console.error('insertItemAnalysis failed:', insertError);
+        throw new Error(`insertItemAnalysis failed: ${insertError instanceof Error ? insertError.message : 'Unknown insert error'}`);
+      }
 
-      // Mark session as completed after successful analysis
-      await markSessionCompleted(client, parseInt(sessionId));
+      try {
+        console.log('Calling markSessionCompleted...');
+        await markSessionCompleted(client, parseInt(sessionId));
+        console.log('markSessionCompleted successful');
+      } catch (markError) {
+        console.error('markSessionCompleted failed:', markError);
+        throw new Error(`markSessionCompleted failed: ${markError instanceof Error ? markError.message : 'Unknown mark error'}`);
+      }
+      
       console.log('Database operations successful');
     } catch (dbError) {
       console.error('Database operations failed:', dbError);
