@@ -308,7 +308,40 @@ export default function LetGoBuddyPage({ loaderData }: { loaderData: { user: any
     });
   };
 
-  const addToChallenge = () => navigate('/let-go-buddy/challenge-calendar');
+  const addToChallenge = async () => {
+    if (!analysisResult || !analysisResult.item_analysis) {
+      alert("Please complete analysis first before adding to challenge");
+      return;
+    }
+
+    try {
+      // Create challenge item using form data
+      const formData = new FormData();
+      formData.append('intent', 'create');
+      formData.append('name', analysisResult.item_analysis.item_name || itemName || 'Declutter Item');
+      
+      // Set scheduled date to tomorrow
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      formData.append('scheduledDate', tomorrow.toISOString().split('T')[0]);
+
+      // Submit to challenge calendar action
+      const response = await fetch('/let-go-buddy/challenge-calendar', {
+        method: 'POST',
+        body: formData
+      });
+
+      if (response.ok) {
+        // Navigate to challenge calendar page
+        navigate('/let-go-buddy/challenge-calendar');
+      } else {
+        alert("Failed to add item to challenge calendar");
+      }
+    } catch (error) {
+      console.error('Error adding to challenge:', error);
+      alert("Error adding item to challenge calendar");
+    }
+  };
   const addToKeepBox = () => alert("Added to your 'Keep Box'.");
 
 
