@@ -133,10 +133,10 @@ export default function AICoachChat({ itemName, situation, onComplete }: AICoach
       setMessages(prev => [...prev, aiMessage]);
       setIsLoading(false);
 
-      // Check if this is the completion message
-      const isCompletionMessage = aiResponse.includes('analyze everything we\'ve discussed') || 
-                                  aiResponse.includes('Give me just a moment to process');
+      // Check if this is the completion message (stage-based detection)
+      const isCompletionMessage = conversationStage >= 5; // After 5 questions (stages 0-4), we show completion
       
+      console.log('Conversation Stage:', conversationStage);
       console.log('AI Response:', aiResponse);
       console.log('Is completion message:', isCompletionMessage);
       
@@ -239,7 +239,7 @@ export default function AICoachChat({ itemName, situation, onComplete }: AICoach
         {/* Progress indicator */}
         <div className="mt-2 text-center">
           <span className="text-xs text-gray-500">
-            {isConversationComplete ? 'Conversation complete' : `Question ${Math.min(conversationStage + 1, 5)} of 5`}
+            {isConversationComplete ? 'Conversation complete' : `Question ${Math.min(conversationStage + 1, 6)} of 6`}
           </span>
         </div>
       </CardContent>
