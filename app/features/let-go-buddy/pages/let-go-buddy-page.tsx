@@ -158,11 +158,18 @@ export default function LetGoBuddyPage({ loaderData }: { loaderData: { user: any
   }, [imageFetcher.data, imageFetcher.state]);
 
   useEffect(() => {
+    console.log('Analysis fetcher state:', analysisFetcher.state);
+    console.log('Analysis fetcher data:', analysisFetcher.data);
+    
     if (analysisFetcher.data && analysisFetcher.state === 'idle') {
       const result = analysisFetcher.data as any;
+      console.log('Analysis result:', result);
+      
       if (result.error) {
+        console.error('Analysis error:', result.error);
         setSessionError(result.error);
       } else {
+        console.log('Setting analysis result and moving to step 5');
         setAnalysisResult(result);
         setStep(5);
       }
@@ -221,7 +228,14 @@ export default function LetGoBuddyPage({ loaderData }: { loaderData: { user: any
   };
 
   const handleGenerateAnalysis = () => {
+    console.log('Generate Analysis clicked');
+    console.log('Session ID:', sessionId);
+    console.log('Uploaded Image URLs:', uploadedImageUrls);
+    console.log('Situation:', situation);
+    console.log('Chat Conversation:', chatConversation);
+    
     if (!sessionId || !uploadedImageUrls.length || !situation) {
+      console.log('Missing requirements for analysis');
       alert("Please complete all steps before analysis");
       return;
     }
@@ -237,6 +251,8 @@ export default function LetGoBuddyPage({ loaderData }: { loaderData: { user: any
       itemDetails: JSON.stringify(itemDetails),
       userLocation: "Bangkok"
     });
+
+    console.log('Analysis URL:', `/let-go-buddy/analysis?${analysisParams.toString()}`);
 
     // Fetch analysis from analysis page loader
     analysisFetcher.load(`/let-go-buddy/analysis?${analysisParams.toString()}`);

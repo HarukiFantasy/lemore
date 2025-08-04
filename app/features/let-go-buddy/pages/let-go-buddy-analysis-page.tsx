@@ -62,10 +62,14 @@ async function convertImageUrlToBase64(imageUrl: string): Promise<string> {
 }
 
 export const loader = async ({ request }: { request: Request }) => {
+  console.log('Analysis loader called');
+  console.log('Request URL:', request.url);
+  
   // Check authentication first
   const { client } = makeSSRClient(request);
   const { data: { user } } = await client.auth.getUser();
   if (!user) {
+    console.log('Authentication failed');
     return Response.json(
       { error: "Authentication required" },
       { status: 401 }
@@ -78,7 +82,10 @@ export const loader = async ({ request }: { request: Request }) => {
   const situation = url.searchParams.get("situation");
   const chatConversation = url.searchParams.get("chatConversation");
 
+  console.log('Analysis params:', { sessionId, imageUrls, situation, chatConversation });
+
   if (!sessionId || !imageUrls || !situation) {
+    console.log('Missing required parameters');
     return Response.json(
       { error: "Missing required parameters" },
       { status: 400 }
@@ -88,6 +95,9 @@ export const loader = async ({ request }: { request: Request }) => {
   try {
     const parsedImageUrls = JSON.parse(decodeURIComponent(imageUrls));
     const parsedChatConversation = chatConversation ? JSON.parse(decodeURIComponent(chatConversation)) : [];
+    
+    // Ensure proper data format - convert timestamp strings back to proper format if needed
+    console.log('Parsed chat conversation:', parsedChatConversation);
     
     // 이미지들을 Base64로 변환
     const base64Images = await Promise.all(
@@ -250,6 +260,8 @@ Based on the conversation above, provide a recommendation that aligns with their
     // Mark session as completed after successful analysis
     await markSessionCompleted(client, parseInt(sessionId));
 
+    console.log('Analysis completed successfully');
+    console.log('Returning transformed analysis:', transformedAnalysis);
     return Response.json(transformedAnalysis);
   } catch (error) {
     console.error("AI analysis error:", error);
