@@ -96,9 +96,9 @@ export const loader = async ({ request }: { request: Request }) => {
     
     // Create conversation context for AI
     const conversationContext = parsedChatConversation.length > 0 
-      ? `\n\nUser Conversation with AI Coach:
+      ? `\n\nUser Conversation with Joy:
 ${parsedChatConversation.map((message: any) => 
-  `${message.type === 'ai' ? 'AI Coach' : 'User'}: ${message.content}`
+  `${message.type === 'ai' ? 'Joy' : 'User'}: ${message.content}`
 ).join('\n')}`
       : "";
     

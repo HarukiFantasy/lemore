@@ -37,7 +37,7 @@ export default function AICoachChat({ itemName, situation, onComplete }: AICoach
     const initialMessage: ChatMessage = {
       id: '1',
       type: 'ai',
-      content: `Hi! I can see you've uploaded a photo${itemName ? ` of your ${itemName}` : ''}. You mentioned you're in "${situation}" mode. I'm here to help you make a confident decision about what to do with this item. How are you feeling about it right now?`,
+      content: `Hi! I'm Joy, your declutter buddy! I can see you've uploaded a photo${itemName ? ` of your ${itemName}` : ''}. You mentioned you're in "${situation}" mode. I'm here to help you make a confident decision about what to do with this item. How are you feeling about it right now?`,
       timestamp: new Date()
     };
     setMessages([initialMessage]);
@@ -133,17 +133,17 @@ export default function AICoachChat({ itemName, situation, onComplete }: AICoach
   };
 
   return (
-    <Card className="h-96 flex flex-col">
+    <Card className="min-h-96 max-h-[600px] flex flex-col">
       <CardContent className="flex-1 flex flex-col p-4">
         {/* Chat Messages */}
-        <div className="flex-1 overflow-y-auto space-y-4 mb-4">
+        <div className="flex-1 overflow-y-auto space-y-3 mb-4 pr-2">
           {messages.map((message) => (
             <div
               key={message.id}
-              className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
+              className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'} mb-2`}
             >
               <div
-                className={`max-w-[80%] p-3 rounded-lg ${
+                className={`max-w-[75%] p-3 rounded-lg break-words ${
                   message.type === 'user'
                     ? 'bg-blue-500 text-white rounded-br-sm'
                     : 'bg-gray-100 text-gray-800 rounded-bl-sm'
@@ -152,20 +152,20 @@ export default function AICoachChat({ itemName, situation, onComplete }: AICoach
                 {message.type === 'ai' && (
                   <div className="flex items-center gap-2 mb-1">
                     <SparklesIcon className="w-4 h-4 text-blue-500" />
-                    <span className="text-xs font-medium text-gray-600">AI Coach</span>
+                    <span className="text-xs font-medium text-gray-600">Joy</span>
                   </div>
                 )}
-                <p className="text-sm">{message.content}</p>
+                <p className="text-sm leading-relaxed">{message.content}</p>
               </div>
             </div>
           ))}
           
           {isLoading && (
-            <div className="flex justify-start">
+            <div className="flex justify-start mb-2">
               <div className="bg-gray-100 p-3 rounded-lg rounded-bl-sm">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 mb-1">
                   <SparklesIcon className="w-4 h-4 text-blue-500" />
-                  <span className="text-xs font-medium text-gray-600">AI Coach</span>
+                  <span className="text-xs font-medium text-gray-600">Joy</span>
                 </div>
                 <div className="flex space-x-1 mt-2">
                   <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
@@ -179,7 +179,7 @@ export default function AICoachChat({ itemName, situation, onComplete }: AICoach
         </div>
 
         {/* Input Area */}
-        <div className="flex gap-2">
+        <div className="flex gap-2 mt-auto">
           <Input
             value={currentInput}
             onChange={(e) => setCurrentInput(e.target.value)}

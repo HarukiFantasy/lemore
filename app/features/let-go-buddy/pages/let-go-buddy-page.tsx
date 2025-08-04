@@ -473,16 +473,16 @@ export default function LetGoBuddyPage({ loaderData }: { loaderData: { user: any
         </Card>
       )}
       
-      {/* Step 3: AI Coach Conversation */}
+      {/* Step 3: Joy Conversation */}
       {step >= 3 && !sessionError && !isChatComplete && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <SparklesIcon className="w-6 h-6" />
-              Step 3: Talk with Your AI Coach
+              Step 3: Talk with Joy
             </CardTitle>
             <p className="text-sm text-muted-foreground mt-2">
-              Have a natural conversation with your AI coach to explore your feelings about this item
+              Have a natural conversation with your AI coach Joy to explore your feelings about this item
             </p>
           </CardHeader>
           <CardContent>
@@ -507,7 +507,7 @@ export default function LetGoBuddyPage({ loaderData }: { loaderData: { user: any
           <CardContent>
             <div className="p-4 bg-green-50 rounded-lg border border-green-200">
               <p className="text-sm text-green-800">
-                Great conversation! Your AI coach has gathered insights about your relationship with this item. 
+                Great conversation! Your AI coach Joy has gathered insights about your relationship with this item. 
                 Ready to get your personalized recommendation?
               </p>
             </div>
@@ -531,7 +531,7 @@ export default function LetGoBuddyPage({ loaderData }: { loaderData: { user: any
                 {!isChatComplete && (
                   <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-center">
                     <div className="text-amber-800 text-sm">
-                      Please complete the conversation with your AI Coach to proceed
+                      Please complete the conversation with Joy to proceed
                     </div>
                   </div>
                 )}
