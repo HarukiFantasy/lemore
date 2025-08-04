@@ -218,7 +218,7 @@ export default function AICoachChat({ itemName, situation, onComplete }: AICoach
             // Debug: add data attribute to see current stage
             data-conversation-stage={conversationStage}
             data-is-loading={isLoading}
-            data-disable-check={conversationStage > 4}
+            data-disable-check={isConversationComplete}
             className="flex-1"
           />
           <Button

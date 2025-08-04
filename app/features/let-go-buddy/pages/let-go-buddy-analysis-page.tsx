@@ -1,5 +1,5 @@
 import OpenAI from "openai";
-import { insertItemAnalysis } from "../mutations";
+import { insertItemAnalysis, markSessionCompleted } from "../mutations";
 import { makeSSRClient } from "~/supa-client";
 
 const openai = new OpenAI({
@@ -246,6 +246,9 @@ Based on the conversation above, provide a recommendation that aligns with their
       ai_listing_location: analysis.ai_listing_location,
       images: parsedImageUrls,
     });
+
+    // Mark session as completed after successful analysis
+    await markSessionCompleted(client, parseInt(sessionId));
 
     return Response.json(transformedAnalysis);
   } catch (error) {

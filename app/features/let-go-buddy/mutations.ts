@@ -110,6 +110,25 @@ export async function triggerLetGoBuddyAIAnalysis({
   return await response.json();
 }
 
+// Mark Let Go Buddy session as completed
+export async function markSessionCompleted(
+  client: SupabaseClient<Database>,
+  sessionId: number
+) {
+  const { data, error } = await client
+    .from('let_go_buddy_sessions')
+    .update({
+      is_completed: true,
+      updated_at: new Date().toISOString()
+    })
+    .eq('session_id', sessionId)
+    .select()
+    .single();
+  
+  if (error) throw new Error(error.message);
+  return data;
+}
+
 // Challenge Calendar mutations
 export async function createChallengeItem(
   client: SupabaseClient<Database>,
