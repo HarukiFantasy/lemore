@@ -520,7 +520,6 @@ export const userMessages = pgTable("user_messages", {
 export const letGoBuddySessions = pgTable("let_go_buddy_sessions", {
   session_id: bigint("session_id", {mode: "number"}).primaryKey().generatedAlwaysAsIdentity(),
   user_id: uuid().notNull().references(() => userProfiles.profile_id),
-  situation: declutterSituations().notNull(),
   created_at: timestamp().notNull().defaultNow(),
   updated_at: timestamp().notNull().defaultNow(),
   is_completed: boolean().notNull().default(false),

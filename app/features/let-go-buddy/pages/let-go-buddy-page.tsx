@@ -149,15 +149,10 @@ export default function LetGoBuddyPage({ loaderData }: { loaderData: { user: any
   useEffect(() => {
     if (imageFetcher.data && imageFetcher.state === 'idle') {
       const result = imageFetcher.data as any;
-      console.log('Image upload result:', result);
       if (result.imageUrls) {
-        console.log('Setting imageUrls:', result.imageUrls);
         setUploadedImageUrls(result.imageUrls);
       } else if (result.imageUrl) {
-        console.log('Adding single imageUrl:', result.imageUrl);
         setUploadedImageUrls(prev => [...prev, result.imageUrl]);
-      } else {
-        console.log('No imageUrls found in result');
       }
     }
   }, [imageFetcher.data, imageFetcher.state]);
@@ -215,7 +210,7 @@ export default function LetGoBuddyPage({ loaderData }: { loaderData: { user: any
       files.forEach((file, index) => {
         formData.append(`image${index === 0 ? '' : index}`, file);
       });
-      imageFetcher.submit(formData, { method: "post" });
+      imageFetcher.submit(formData, { method: "post", encType: "multipart/form-data" });
       
       setStep(2);
     }
@@ -507,19 +502,6 @@ export default function LetGoBuddyPage({ loaderData }: { loaderData: { user: any
             {!analysisResult ? (
               <div className="space-y-4">
                 <p className="text-sm text-muted-foreground">Ready to get AI-powered recommendations for your item?</p>
-                {/* Debug info */}
-                <div className="p-2 bg-gray-100 rounded text-xs">
-                  <div>Debug: Step {step}</div>
-                  <div>Session ID: {sessionId}</div>
-                  <div>Situation: {situation}</div>
-                  <div>Images: {uploadedImageUrls.length}</div>
-                  <div>Uploaded URLs: {JSON.stringify(uploadedImageUrls)}</div>
-                  <div>Image Fetcher State: {imageFetcher.state}</div>
-                  <div>Image Fetcher Data: {JSON.stringify(imageFetcher.data)}</div>
-                  <div>Emotional Answers: {JSON.stringify(emotionalAnswers)}</div>
-                  <div>Answered Count: {emotionalAnswers.filter(answer => answer && answer.trim() !== '').length}/{conversationQuestions.length}</div>
-                  <div>Can Use: {canUseLetGoBuddy ? 'Yes' : 'No'}</div>
-                </div>
                 {emotionalAnswers.filter(answer => answer && answer.trim() !== '').length < conversationQuestions.length && (
                   <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-center">
                     <div className="text-amber-800 text-sm">
