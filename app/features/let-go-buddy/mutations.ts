@@ -115,6 +115,12 @@ export async function markSessionCompleted(
   client: SupabaseClient<Database>,
   sessionId: number
 ) {
+  // Get current user to satisfy RLS policy
+  const { data: { user } } = await client.auth.getUser();
+  if (!user) {
+    throw new Error('Authentication required to mark session completed');
+  }
+
   const { data, error } = await client
     .from('let_go_buddy_sessions')
     .update({
@@ -122,6 +128,7 @@ export async function markSessionCompleted(
       updated_at: new Date().toISOString()
     })
     .eq('session_id', sessionId)
+    .eq('user_id', user.id) // Add user_id check to satisfy RLS policy
     .select()
     .single();
   
