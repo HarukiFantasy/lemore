@@ -148,7 +148,9 @@ export const loader = async ({ request }: { request: Request }) => {
           role: "system",
           content: `You are an AI decision-making assistant for decluttering. Your job is to help users make confident decisions about their items based on their personal situation and feelings.
 
-IMPORTANT: Focus on decision-making, NOT pricing. Do not estimate market values or suggest prices.
+IMPORTANT: 
+- Focus on decision-making, NOT pricing. Do not estimate market values or suggest prices.
+- CRITICAL: Use ONLY the exact enum values specified in the JSON schema. Do not use variations like "Gift", "Give Away", etc.
 
 Your task is to:
 1. Identify the item(s) in the images
@@ -171,7 +173,7 @@ Please respond with a JSON object containing the analysis with the following str
   "item_name": "string",
   "item_category": "Electronics|Clothing|Books|Home|Sports|Beauty|Toys|Automotive|Health|Other",
   "item_condition": "New|Like New|Excellent|Good|Fair|Poor",
-            "recommendation": "Keep|Sell|Donate|Recycle|Repair|Repurpose|Discard",
+            "recommendation": "Keep|Sell|Donate|Recycle|Repair|Repurpose|Discard", // MUST be exactly one of these values
           "recommendation_reason": "string (detailed explanation of why this recommendation was chosen, including practical next steps)",
   
   // Conversation insights (extract 3-5 keywords maximum for each category based on the conversation):
@@ -314,6 +316,61 @@ Based on the conversation above, provide a recommendation that aligns with their
       // 분석 결과를 데이터베이스에 저장
       const { client } = makeSSRClient(request);
       
+      // Validate and fix enum values before database insertion
+      console.log('Validating and fixing enum values...');
+      console.log('Original recommendation:', analysis.recommendation);
+      
+      // Map invalid recommendation values to valid enum values
+      const validRecommendations = ['Keep', 'Sell', 'Donate', 'Recycle', 'Repair', 'Repurpose', 'Discard'];
+      if (!validRecommendations.includes(analysis.recommendation)) {
+        console.log(`Invalid recommendation "${analysis.recommendation}", mapping to valid value`);
+        
+        // Map common invalid values to valid enum values
+        const recommendationMapping: Record<string, string> = {
+          'Gift': 'Donate',
+          'Give': 'Donate', 
+          'Give Away': 'Donate',
+          'Giveaway': 'Donate',
+          'Pass On': 'Donate',
+          'Throw Away': 'Discard',
+          'Trash': 'Discard',
+          'Dispose': 'Discard',
+          'Upcycle': 'Repurpose',
+          'Reuse': 'Repurpose',
+          'Fix': 'Repair'
+        };
+        
+        const mappedValue = recommendationMapping[analysis.recommendation];
+        if (mappedValue) {
+          console.log(`Mapping "${analysis.recommendation}" to "${mappedValue}"`);
+          analysis.recommendation = mappedValue;
+        } else {
+          console.log(`Unknown recommendation "${analysis.recommendation}", defaulting to "Donate"`);
+          analysis.recommendation = 'Donate';
+        }
+      }
+      
+      // Validate other enum fields
+      const validCategories = ['Electronics', 'Clothing', 'Books', 'Home', 'Sports', 'Beauty', 'Toys', 'Automotive', 'Health', 'Other'];
+      if (!validCategories.includes(analysis.item_category)) {
+        console.log(`Invalid item_category "${analysis.item_category}", defaulting to "Other"`);
+        analysis.item_category = 'Other';
+      }
+      
+      const validConditions = ['New', 'Like New', 'Excellent', 'Good', 'Fair', 'Poor'];
+      if (!validConditions.includes(analysis.item_condition)) {
+        console.log(`Invalid item_condition "${analysis.item_condition}", defaulting to "Good"`);
+        analysis.item_condition = 'Good';
+      }
+      
+      const validLocations = ['Bangkok', 'ChiangMai', 'Phuket', 'HuaHin', 'Pattaya', 'Krabi', 'Koh Samui', 'Other Thai Cities', 'Seoul', 'Busan', 'Incheon', 'Daegu', 'Daejeon', 'Gwangju', 'Ulsan', 'Other Korean Cities'];
+      if (analysis.ai_listing_location && !validLocations.includes(analysis.ai_listing_location)) {
+        console.log(`Invalid ai_listing_location "${analysis.ai_listing_location}", defaulting to "Bangkok"`);
+        analysis.ai_listing_location = 'Bangkok';
+      }
+      
+      console.log('Final recommendation:', analysis.recommendation);
+      
       console.log('Preparing analysis data for database insertion...');
       const analysisData = {
         session_id: parseInt(sessionId),
@@ -335,13 +392,6 @@ Based on the conversation above, provide a recommendation that aligns with their
       };
       
       console.log('Analysis data prepared:', analysisData);
-      
-      // Validate enum values before database insertion
-      console.log('Validating enum values...');
-      console.log('item_category:', analysis.item_category);
-      console.log('item_condition:', analysis.item_condition);
-      console.log('recommendation:', analysis.recommendation);
-      console.log('ai_listing_location:', analysis.ai_listing_location);
       
       try {
         console.log('Calling insertItemAnalysis...');
