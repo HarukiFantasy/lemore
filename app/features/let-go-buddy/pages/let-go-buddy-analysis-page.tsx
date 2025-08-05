@@ -218,11 +218,37 @@ Based on the conversation above, provide a recommendation that aligns with their
     let analysis;
     try {
       analysis = JSON.parse(analysisText);
+      console.log('Parsed AI analysis:', analysis);
     } catch (error) {
+      console.error('JSON parsing failed:', error);
+      console.error('Analysis text that failed to parse:', analysisText);
       return Response.json(
         { error: "Invalid analysis format" },
         { status: 400 }
       );
+    }
+
+    // Validate required fields
+    console.log('Validating required analysis fields...');
+    if (!analysis.item_name) {
+      console.error('Missing item_name in analysis');
+      return Response.json({ error: "Missing item_name in analysis" }, { status: 400 });
+    }
+    if (!analysis.item_category) {
+      console.error('Missing item_category in analysis');
+      return Response.json({ error: "Missing item_category in analysis" }, { status: 400 });
+    }
+    if (!analysis.item_condition) {
+      console.error('Missing item_condition in analysis');
+      return Response.json({ error: "Missing item_condition in analysis" }, { status: 400 });
+    }
+    if (!analysis.recommendation) {
+      console.error('Missing recommendation in analysis');
+      return Response.json({ error: "Missing recommendation in analysis" }, { status: 400 });
+    }
+    if (!analysis.recommendation_reason) {
+      console.error('Missing recommendation_reason in analysis');
+      return Response.json({ error: "Missing recommendation_reason in analysis" }, { status: 400 });
     }
 
     // Transform the flat analysis structure to match the expected nested structure
@@ -272,13 +298,13 @@ Based on the conversation above, provide a recommendation that aligns with their
         item_category: analysis.item_category,
         item_condition: analysis.item_condition,
         recommendation: analysis.recommendation,
-        recommendation_reason: analysis.recommendation_reason,
+        recommendation_reason: analysis.recommendation_reason || "No specific reason provided",
         emotional_attachment_keywords: analysis.emotional_attachment_keywords || [],
         usage_pattern_keywords: analysis.usage_pattern_keywords || [],
         decision_factor_keywords: analysis.decision_factor_keywords || [],
         personality_insights: analysis.personality_insights || [],
         decision_barriers: analysis.decision_barriers || [],
-        emotional_score: analysis.emotional_score,
+        emotional_score: analysis.emotional_score || 5,
         ai_listing_title: analysis.ai_listing_title,
         ai_listing_description: analysis.ai_listing_description,
         ai_listing_location: analysis.ai_listing_location,

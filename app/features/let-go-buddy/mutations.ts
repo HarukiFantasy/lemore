@@ -59,8 +59,8 @@ export const insertItemAnalysis = async (
     item_category: Database["public"]["Enums"]["product_category"];
     item_condition: Database["public"]["Enums"]["product_condition"];
     recommendation: Database["public"]["Enums"]["recommendation_action"];
-    recommendation_reason: string;
-    // Conversation insights from AI coaching
+    recommendation_reason: string; // This is now NOT NULL in the database
+    // Conversation insights from AI coaching (all required with defaults)
     emotional_attachment_keywords: Json;
     usage_pattern_keywords: Json;
     decision_factor_keywords: Json;
@@ -73,10 +73,23 @@ export const insertItemAnalysis = async (
     images: Json;
   }
 ) => {
-  const { error } = await client.from("item_analyses").insert([analysisData]);
+  console.log('insertItemAnalysis - Starting insertion with data:', analysisData);
+  
+  const { data, error } = await client.from("item_analyses").insert([analysisData]).select();
+  
   if (error) {
+    console.error('insertItemAnalysis - Supabase error:', error);
+    console.error('insertItemAnalysis - Error details:', {
+      message: error.message,
+      details: error.details,
+      hint: error.hint,
+      code: error.code
+    });
     throw error;
   }
+  
+  console.log('insertItemAnalysis - Success:', data);
+  return data;
 };
 
 // AI 분석 트리거: 서버리스 함수 호출

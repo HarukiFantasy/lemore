@@ -132,14 +132,23 @@ export default function LetGoBuddyPage({ loaderData }: { loaderData: { user: any
   const isAnalyzing = analysisFetcher.state === 'loading';
 
   useEffect(() => {
+    console.log('Session fetcher state:', sessionFetcher.state);
+    console.log('Session fetcher data:', sessionFetcher.data);
+    
     if (sessionFetcher.data && sessionFetcher.state === 'idle') {
         const result = sessionFetcher.data as any;
+        console.log('Session creation result:', result);
+        
         if (result.error) {
+            console.error('Session creation error:', result.error);
             setSessionError(result.error);
         } else if (result.session_id) {
+            console.log('Session created successfully with ID:', result.session_id);
             setSessionId(result.session_id);
             setSessionError(null);
             setStep(2);
+        } else {
+            console.error('Unexpected session response format:', result);
         }
     }
   }, [sessionFetcher.data, sessionFetcher.state]);
