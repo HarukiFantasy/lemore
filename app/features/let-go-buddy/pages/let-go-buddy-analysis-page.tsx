@@ -114,20 +114,30 @@ export const loader = async ({ request }: { request: Request }) => {
         parsedImageUrls.map((url: string) => convertImageUrlToBase64(url))
       );
       console.log('Image conversion successful');
+      console.log('Base64 images info:', base64Images.map((img, idx) => ({
+        index: idx,
+        size: Math.round(img.length / 1024),
+        prefix: img.substring(0, 50)
+      })));
     } catch (imageError) {
       console.error('Image conversion failed:', imageError);
       throw new Error(`Image conversion failed: ${imageError instanceof Error ? imageError.message : 'Unknown image error'}`);
     }
     
-    // Create conversation context for AI
+    console.log('Starting OpenAI API call...');
+    
+    // Validate OpenAI API key
+    if (!process.env.OPENAI_API_KEY) {
+      throw new Error('OPENAI_API_KEY is not configured');
+    }
+    
+    // Create a shorter conversation context to avoid token limits
     const conversationContext = parsedChatConversation.length > 0 
-      ? `\n\nUser Conversation with Joy:
-${parsedChatConversation.map((message: any) => 
-  `${message.type === 'ai' ? 'Joy' : 'User'}: ${message.content}`
-).join('\n')}`
+      ? `\n\nKey conversation insights: ${parsedChatConversation.slice(-3).map((message: any) => 
+          `${message.type === 'ai' ? 'Joy' : 'User'}: ${message.content.substring(0, 200)}`
+        ).join('\n')}`
       : "";
     
-    console.log('Starting OpenAI API call...');
     let completion;
     try {
       // OpenAI Vision API를 사용해서 이미지 분석
@@ -201,15 +211,28 @@ Based on the conversation above, provide a recommendation that aligns with their
     });
 
     console.log('OpenAI API call successful');
+    console.log('OpenAI completion response:', {
+      choices: completion.choices?.length || 0,
+      firstChoice: completion.choices?.[0] ? {
+        message: {
+          role: completion.choices[0].message?.role,
+          contentLength: completion.choices[0].message?.content?.length || 0,
+          hasContent: !!completion.choices[0].message?.content
+        },
+        finishReason: completion.choices[0].finish_reason
+      } : null
+    });
     } catch (openaiError) {
       console.error('OpenAI API call failed:', openaiError);
       throw new Error(`OpenAI API failed: ${openaiError instanceof Error ? openaiError.message : 'Unknown OpenAI error'}`);
     }
 
-    const analysisText = completion.choices[0].message.content;
+    const analysisText = completion.choices[0]?.message?.content;
     if (!analysisText) {
+      console.error('No analysis content received from OpenAI');
+      console.error('Full completion object:', JSON.stringify(completion, null, 2));
       return Response.json(
-        { error: "No analysis generated" },
+        { error: "No analysis generated", details: "OpenAI returned empty content" },
         { status: 400 }
       );
     }
