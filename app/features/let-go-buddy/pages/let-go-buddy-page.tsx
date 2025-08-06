@@ -7,9 +7,10 @@ import { Textarea } from "~/common/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/common/components/ui/select";
 import { CameraIcon, ArrowPathIcon, SparklesIcon, GiftIcon } from "@heroicons/react/24/outline";
 import { AlertTriangle } from "lucide-react";
-import { createLetGoBuddySession, uploadLetGoBuddyImages, markSessionCompleted } from "../mutations";
+import { createLetGoBuddySession } from "../mutations";
 import { makeSSRClient } from "~/supa-client";
 import { DECLUTTER_SITUATIONS } from '../constants';
+import { productCategories } from "~/schema";
 import AICoachChat from '../components/AICoachChat';
 
 export async function loader({ request }: { request: Request }) {
@@ -42,8 +43,30 @@ export async function action({ request }: { request: Request }) {
   }
   
   try {
+    const contentType = request.headers.get('content-type') || '';
+    let intent: string;
+    
+    // Handle JSON requests (for session completion)
+    if (contentType.includes('application/json')) {
+      const jsonData = await request.json();
+      intent = jsonData.intent;
+      
+      if (intent === 'markSessionComplete') {
+        const { markSessionCompleted } = await import("../mutations");
+        const sessionId = parseInt(jsonData.sessionId);
+        
+        if (!sessionId) {
+          return Response.json({ error: "Session ID is required" }, { status: 400 });
+        }
+        
+        await markSessionCompleted(client, sessionId);
+        return Response.json({ success: true });
+      }
+    }
+    
+    // Handle FormData requests (for file uploads and session creation)
     const formData = await request.formData();
-    const intent = formData.get('intent') as string;
+    intent = formData.get('intent') as string;
     
     switch (intent) {
       case 'createSession': {
@@ -72,18 +95,6 @@ export async function action({ request }: { request: Request }) {
         });
         
         return Response.json({ imageUrls });
-      }
-      
-      case 'markSessionComplete': {
-        const { markSessionCompleted } = await import("../mutations");
-        const sessionId = parseInt(formData.get('sessionId') as string);
-        
-        if (!sessionId) {
-          return Response.json({ error: "Session ID is required" }, { status: 400 });
-        }
-        
-        await markSessionCompleted(client, sessionId);
-        return Response.json({ success: true });
       }
       
       default:
@@ -447,16 +458,11 @@ export default function LetGoBuddyPage({ loaderData }: { loaderData: { user: any
                   <SelectValue placeholder="Select a category (optional)" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Electronics">Electronics</SelectItem>
-                  <SelectItem value="Clothing">Clothing</SelectItem>
-                  <SelectItem value="Books">Books</SelectItem>
-                  <SelectItem value="Home">Home & Furniture</SelectItem>
-                  <SelectItem value="Sports">Sports</SelectItem>
-                  <SelectItem value="Beauty">Beauty</SelectItem>
-                  <SelectItem value="Toys">Toys</SelectItem>
-                  <SelectItem value="Automotive">Automotive</SelectItem>
-                  <SelectItem value="Health">Health</SelectItem>
-                  <SelectItem value="Other">Other</SelectItem>
+                  {productCategories.enumValues.map((category) => (
+                    <SelectItem key={category} value={category}>
+                      {category === "Home" ? "Home & Furniture" : category}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
               
