@@ -65,6 +65,39 @@ export async function action({ request }: { request: Request }) {
   try {
     const contentType = request.headers.get('content-type') || '';
     
+    // Handle JSON requests first
+    if (contentType.includes('application/json')) {
+      const payload = await request.json();
+      const { intent } = payload;
+      
+      if (intent === 'markSessionComplete') {
+        const { sessionId } = payload;
+        
+        const { error } = await client
+          .from('let_go_buddy_sessions')
+          .update({
+            is_completed: true,
+            updated_at: new Date().toISOString()
+          })
+          .eq('session_id', parseInt(sessionId))
+          .eq('user_id', user.id);
+          
+        if (error) {
+          console.error('Failed to mark session complete:', error);
+          return new Response(JSON.stringify({ error: error.message }), { status: 500 });
+        }
+        
+        return new Response(JSON.stringify({ success: true }), { 
+          headers: { 'Content-Type': 'application/json' } 
+        });
+      }
+      
+      if (intent === 'createSession') {
+        const session = await createLetGoBuddySession(client, { userId: user.id, situation: payload.situation || "Other" });
+        return new Response(JSON.stringify(session), { headers: { 'Content-Type': 'application/json' } });
+      }
+    }
+    
     // Handle form data requests (image uploads)
     if (contentType.includes('multipart/form-data')) {
       const formData = await request.formData();
@@ -102,16 +135,6 @@ export async function action({ request }: { request: Request }) {
           });
       }
     }
-    
-    // Handle JSON requests
-    const payload = await request.json();
-    const { intent } = payload;
-    
-    if (intent === 'createSession') {
-        const session = await createLetGoBuddySession(client, { userId: user.id, situation: payload.situation || "Other" });
-        return new Response(JSON.stringify(session), { headers: { 'Content-Type': 'application/json' } });
-    }
-
 
     return new Response(JSON.stringify({ error: 'Invalid intent' }), { status: 400 });
 
@@ -127,6 +150,7 @@ export default function LetGoBuddyPage({ loaderData }: { loaderData: { user: any
   const sessionFetcher = useFetcher();
   const imageFetcher = useFetcher();
   const analysisFetcher = useFetcher();
+  const sessionCompleteFetcher = useFetcher();
 
   const [step, setStep] = useState(1);
   const [sessionId, setSessionId] = useState<number | null>(null);
@@ -201,9 +225,18 @@ export default function LetGoBuddyPage({ loaderData }: { loaderData: { user: any
         console.log('Setting analysis result and moving to step 5');
         setAnalysisResult(result);
         setStep(5);
+        
+        // Mark session as complete after successful analysis
+        if (sessionId) {
+          console.log('Marking session as complete:', sessionId);
+          sessionCompleteFetcher.submit(
+            { intent: 'markSessionComplete', sessionId },
+            { method: 'post', encType: 'application/json' }
+          );
+        }
       }
     }
-  }, [analysisFetcher.data, analysisFetcher.state]);
+  }, [analysisFetcher.data, analysisFetcher.state, sessionId]);
 
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {

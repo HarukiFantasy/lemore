@@ -1,5 +1,5 @@
 import OpenAI from "openai";
-import { insertItemAnalysis, markSessionCompleted } from "../mutations";
+import { insertItemAnalysis } from "../mutations";
 import { makeSSRClient } from "~/supa-client";
 
 const openai = new OpenAI({
@@ -401,31 +401,8 @@ Based on the conversation above, provide a recommendation that aligns with their
         throw new Error(`insertItemAnalysis failed: ${insertError instanceof Error ? insertError.message : 'Unknown insert error'}`);
       }
 
-      try {
-        console.log('Marking session as completed...');
-        console.log('Session ID:', sessionId);
-        console.log('User ID:', user.id);
-        
-        // Directly update the session to avoid RLS issues
-        const { error: updateError } = await client
-          .from('let_go_buddy_sessions')
-          .update({
-            is_completed: true,
-            updated_at: new Date().toISOString()
-          })
-          .eq('session_id', parseInt(sessionId))
-          .eq('user_id', user.id);
-          
-        if (updateError) {
-          console.error('Session update failed:', updateError);
-          throw new Error(`Session update failed: ${updateError.message}`);
-        }
-        
-        console.log('Session marked as completed successfully');
-      } catch (markError) {
-        console.error('markSessionCompleted failed:', markError);
-        throw new Error(`markSessionCompleted failed: ${markError instanceof Error ? markError.message : 'Unknown session completion error'}`);
-      }
+      // Note: Session completion will be handled on the client side to avoid RLS issues
+      console.log('Skipping session completion in loader - will be handled client-side');
       
       console.log('Database operations successful');
     } catch (dbError) {
