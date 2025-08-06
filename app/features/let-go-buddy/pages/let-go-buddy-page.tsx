@@ -20,17 +20,22 @@ export async function loader({ request }: { request: Request }) {
     return redirect(`/auth/login?redirectTo=${url.pathname}`);
   }
   
-  // Check usage limits
+  // Check usage limits - allow up to 2 sessions, block from 3rd
   let canUseLetGoBuddy = true;
+  let usageCount = 0;
   const { count } = await client
     .from('let_go_buddy_sessions')
     .select('*', { count: 'exact', head: true })
     .eq('user_id', user.id);
-  if (typeof count === 'number' && count >= 2) {
-    canUseLetGoBuddy = false;
+  if (typeof count === 'number') {
+    usageCount = count;
+    // Block when user has already used 2 sessions (count >= 2 means 3rd attempt)
+    if (count >= 2) {
+      canUseLetGoBuddy = false;
+    }
   }
   
-  return { user, canUseLetGoBuddy };
+  return { user, canUseLetGoBuddy, usageCount };
 }
 
 
@@ -101,8 +106,8 @@ export async function action({ request }: { request: Request }) {
   }
 }
 
-export default function LetGoBuddyPage({ loaderData }: { loaderData: { user: any; canUseLetGoBuddy: boolean } }) {
-  const { canUseLetGoBuddy } = loaderData;
+export default function LetGoBuddyPage({ loaderData }: { loaderData: { user: any; canUseLetGoBuddy: boolean; usageCount: number } }) {
+  const { canUseLetGoBuddy, usageCount } = loaderData;
   const navigate = useNavigate();
   const sessionFetcher = useFetcher();
   const imageFetcher = useFetcher();
@@ -333,48 +338,23 @@ export default function LetGoBuddyPage({ loaderData }: { loaderData: { user: any
     });
   };
 
-  const challengeFetcher = useFetcher();
-
   const addToChallenge = () => {
     if (!analysisResult || !analysisResult.item_analysis) {
       alert("Please complete analysis first before adding to challenge");
       return;
     }
 
-    // Create challenge item using React Router fetcher
-    const formData = new FormData();
-    formData.append('intent', 'create');
-    formData.append('name', analysisResult.item_analysis.item_name || itemName || 'Declutter Item');
-    
-    // Set scheduled date to tomorrow
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    formData.append('scheduledDate', tomorrow.toISOString().split('T')[0]);
-
-    console.log('Submitting challenge item:', {
-      name: analysisResult.item_analysis.item_name || itemName || 'Declutter Item',
-      scheduledDate: tomorrow.toISOString().split('T')[0]
-    });
-
-    // Submit using React Router fetcher
-    challengeFetcher.submit(formData, {
-      method: 'POST',
-      action: '/let-go-buddy/challenge-calendar'
+    // Navigate immediately for better UX, item will be created in the background
+    navigate('/let-go-buddy/challenge-calendar', {
+      state: {
+        pendingItem: {
+          name: analysisResult.item_analysis.item_name || itemName || 'Declutter Item',
+          scheduledDate: new Date(Date.now() + 86400000).toISOString().split('T')[0] // tomorrow
+        }
+      }
     });
   };
 
-  // Handle challenge fetcher response
-  useEffect(() => {
-    if (challengeFetcher.data && challengeFetcher.state === 'idle') {
-      if (challengeFetcher.data.success) {
-        // Navigate to challenge calendar page on success
-        navigate('/let-go-buddy/challenge-calendar');
-      } else {
-        console.error('Challenge creation failed:', challengeFetcher.data);
-        alert(`Failed to add item to challenge calendar: ${challengeFetcher.data.error || 'Unknown error'}`);
-      }
-    }
-  }, [challengeFetcher.data, challengeFetcher.state, navigate]);
   const addToKeepBox = () => alert("Added to your 'Keep Box'.");
 
 
@@ -383,18 +363,20 @@ export default function LetGoBuddyPage({ loaderData }: { loaderData: { user: any
 
       <div className="text-center"><h1 className="text-4xl font-bold">Let Go Buddy</h1><p className="text-lg text-muted-foreground mt-2">Your AI companion for decluttering with heart.</p></div>
 
+      {/* Usage Limit Message - Show at the top */}
+      {!canUseLetGoBuddy && (
+        <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg text-center">
+          <div className="text-amber-800 font-medium mb-2">Free Usage Limit Reached</div>
+          <div className="text-sm text-amber-700">
+            You've used your free Let Go Buddy sessions ({usageCount}/2) as an Explorer level user. 
+            Build trust in the community to unlock more free sessions!
+          </div>
+        </div>
+      )}
+
       <Card>
         <CardHeader><CardTitle className="flex items-center gap-2"><CameraIcon className="w-6 h-6" />Step 1: Upload Your Item</CardTitle></CardHeader>
         <CardContent className="space-y-4">
-          {!canUseLetGoBuddy && (
-            <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg text-center">
-              <div className="text-amber-800 font-medium mb-2">Free Usage Limit Reached</div>
-              <div className="text-sm text-amber-700">
-                You've used your free Let Go Buddy sessions (2/2) as an Explorer level user. 
-                Build trust in the community to unlock more free sessions!
-              </div>
-            </div>
-          )}
           <Input 
             type="file" 
             accept="image/*" 

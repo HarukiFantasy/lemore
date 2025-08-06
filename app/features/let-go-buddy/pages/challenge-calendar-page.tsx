@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { redirect, useFetcher } from "react-router";
+import { redirect, useFetcher, useLocation } from "react-router";
 import { Card, CardContent, CardHeader, CardTitle } from '~/common/components/ui/card';
 import { Button } from '~/common/components/ui/button';
 import { Checkbox } from '~/common/components/ui/checkbox';
@@ -85,6 +85,7 @@ export async function action({ request }: { request: Request }) {
           userId: user.id
         });
 
+
         return new Response(JSON.stringify({ success: true, item }), {
           headers: { "Content-Type": "application/json" }
         });
@@ -122,12 +123,20 @@ export async function action({ request }: { request: Request }) {
 
 export default function ChallengeCalendarPage({ loaderData }: { loaderData: { user: any; canUseLetGoBuddy: boolean; challengeItems: any[] } }) {
   const { user, canUseLetGoBuddy, challengeItems: initialChallengeItems } = loaderData;
+  const location = useLocation();
+  
+  // Handle pending item from Let Go Buddy page
+  const pendingItem = location.state?.pendingItem;
+  
   const [challengeItems, setChallengeItems] = useState(initialChallengeItems);
-  const [newItemName, setNewItemName] = useState('');
-  const [newItemDate, setNewItemDate] = useState('');
+  const [newItemName, setNewItemName] = useState(pendingItem?.name || '');
+  const [newItemDate, setNewItemDate] = useState(pendingItem?.scheduledDate || '');
   const fetcher = useFetcher();
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(
+    pendingItem?.scheduledDate ? new Date(pendingItem.scheduledDate) : new Date()
+  );
   const [showAllTasks, setShowAllTasks] = useState(false);
+  const [showDatePicker, setShowDatePicker] = useState(!!pendingItem); // Show date picker if there's a pending item
 
   // Handle fetcher completion to refresh data
   useEffect(() => {
@@ -363,9 +372,19 @@ export default function ChallengeCalendarPage({ loaderData }: { loaderData: { us
       </div>
 
       {/* Add New Item Form */}
-      <Card>
+      <Card className={pendingItem ? "border-blue-200 bg-blue-50" : ""}>
         <CardHeader>
-          <CardTitle>Add New Challenge Item</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            {pendingItem && (
+              <span className="text-blue-600">✨</span>
+            )}
+            {pendingItem ? "Schedule Your Item from Let Go Buddy" : "Add New Challenge Item"}
+          </CardTitle>
+          {pendingItem && (
+            <p className="text-sm text-blue-700">
+              Your item "{pendingItem.name}" is ready to be scheduled! Choose a date below.
+            </p>
+          )}
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
@@ -373,21 +392,30 @@ export default function ChallengeCalendarPage({ loaderData }: { loaderData: { us
               placeholder="Item name (e.g., Old College Hoodie)"
               value={newItemName}
               onChange={(e) => setNewItemName(e.target.value)}
+              className={pendingItem ? "bg-white" : ""}
             />
           </div>
           <div>
+            <label className="text-sm font-medium text-gray-700 block mb-2">
+              Scheduled Date
+            </label>
             <Input
               type="date"
               value={newItemDate}
-              onChange={(e) => setNewItemDate(e.target.value)}
+              onChange={(e) => {
+                setNewItemDate(e.target.value);
+                setSelectedDate(new Date(e.target.value));
+              }}
+              className={pendingItem ? "bg-white" : ""}
+              min={new Date().toISOString().split('T')[0]} // Cannot schedule in the past
             />
           </div>
           <Button 
             onClick={handleAddItem}
             disabled={!newItemName || !newItemDate || fetcher.state === 'submitting'}
-            className="w-full"
+            className={`w-full ${pendingItem ? 'bg-blue-600 hover:bg-blue-700' : ''}`}
           >
-            {fetcher.state === 'submitting' ? 'Adding...' : 'Add Challenge Item'}
+            {fetcher.state === 'submitting' ? 'Adding...' : pendingItem ? 'Schedule This Item' : 'Add Challenge Item'}
           </Button>
         </CardContent>
       </Card>

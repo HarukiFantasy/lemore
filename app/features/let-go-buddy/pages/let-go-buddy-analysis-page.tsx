@@ -407,9 +407,8 @@ Based on the conversation above, provide a recommendation that aligns with their
         await markSessionCompleted(client, parseInt(sessionId));
         console.log('markSessionCompleted successful');
       } catch (markError) {
-        console.error('markSessionCompleted failed (non-blocking):', markError);
-        console.log('Continuing with analysis despite session completion failure');
-        // Don't throw error - let analysis succeed even if session completion fails
+        console.error('markSessionCompleted failed:', markError);
+        throw new Error(`markSessionCompleted failed: ${markError instanceof Error ? markError.message : 'Unknown session completion error'}`);
       }
       
       console.log('Database operations successful');
