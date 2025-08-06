@@ -313,8 +313,7 @@ Based on the conversation above, provide a recommendation that aligns with their
 
     console.log('Starting database operations...');
     try {
-      // 분석 결과를 데이터베이스에 저장
-      const { client } = makeSSRClient(request);
+      // 분석 결과를 데이터베이스에 저장 - use the same client from above
       
       // Validate and fix enum values before database insertion
       console.log('Validating and fixing enum values...');
@@ -403,9 +402,26 @@ Based on the conversation above, provide a recommendation that aligns with their
       }
 
       try {
-        console.log('Calling markSessionCompleted...');
-        await markSessionCompleted(client, parseInt(sessionId));
-        console.log('markSessionCompleted successful');
+        console.log('Marking session as completed...');
+        console.log('Session ID:', sessionId);
+        console.log('User ID:', user.id);
+        
+        // Directly update the session to avoid RLS issues
+        const { error: updateError } = await client
+          .from('let_go_buddy_sessions')
+          .update({
+            is_completed: true,
+            updated_at: new Date().toISOString()
+          })
+          .eq('session_id', parseInt(sessionId))
+          .eq('user_id', user.id);
+          
+        if (updateError) {
+          console.error('Session update failed:', updateError);
+          throw new Error(`Session update failed: ${updateError.message}`);
+        }
+        
+        console.log('Session marked as completed successfully');
       } catch (markError) {
         console.error('markSessionCompleted failed:', markError);
         throw new Error(`markSessionCompleted failed: ${markError instanceof Error ? markError.message : 'Unknown session completion error'}`);
