@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useFetcher, useNavigate, redirect } from "react-router";
 import { Card, CardContent, CardHeader, CardTitle } from "~/common/components/ui/card";
 import { Button } from "~/common/components/ui/button";
@@ -7,7 +7,7 @@ import { Textarea } from "~/common/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/common/components/ui/select";
 import { CameraIcon, ArrowPathIcon, SparklesIcon, GiftIcon } from "@heroicons/react/24/outline";
 import { AlertTriangle } from "lucide-react";
-import { createLetGoBuddySession } from "../mutations";
+import { createLetGoBuddySession, uploadLetGoBuddyImages, markSessionCompleted } from "../mutations";
 import { makeSSRClient } from "~/supa-client";
 import { DECLUTTER_SITUATIONS } from '../constants';
 import AICoachChat from '../components/AICoachChat';
@@ -20,37 +20,16 @@ export async function loader({ request }: { request: Request }) {
     return redirect(`/auth/login?redirectTo=${url.pathname}`);
   }
   
-  // Check usage limits - only count COMPLETED sessions
-  let canUseLetGoBuddy = true;
-  let completedCount = 0;
-  let totalCount = 0;
-  
-  // Get count of completed sessions
-  const { count: completed } = await client
-    .from('let_go_buddy_sessions')
-    .select('*', { count: 'exact', head: true })
-    .eq('user_id', user.id)
-    .eq('is_completed', true);
-    
-  // Get total count for display
-  const { count: total } = await client
+  // Simple usage check - count ALL sessions (completed or not)
+  const { count } = await client
     .from('let_go_buddy_sessions')
     .select('*', { count: 'exact', head: true })
     .eq('user_id', user.id);
-    
-  if (typeof completed === 'number') {
-    completedCount = completed;
-    // Block when user has already completed 2 sessions
-    if (completed >= 2) {
-      canUseLetGoBuddy = false;
-    }
-  }
   
-  if (typeof total === 'number') {
-    totalCount = total;
-  }
+  const usageCount = count || 0;
+  const canUseLetGoBuddy = usageCount < 2; // Allow 0 and 1, block at 2+
   
-  return { user, canUseLetGoBuddy, usageCount: completedCount };
+  return { user, canUseLetGoBuddy, usageCount };
 }
 
 
@@ -59,89 +38,93 @@ export async function action({ request }: { request: Request }) {
   const { data: { user } } = await client.auth.getUser();
 
   if (!user) {
-      return new Response(JSON.stringify({ error: "You must be logged in to use this feature." }), { status: 401 });
+    return Response.json({ error: "Authentication required" }, { status: 401 });
   }
   
   try {
-    const contentType = request.headers.get('content-type') || '';
+    const formData = await request.formData();
+    const intent = formData.get('intent') as string;
     
-    // Handle JSON requests first
-    if (contentType.includes('application/json')) {
-      const payload = await request.json();
-      const { intent } = payload;
+    switch (intent) {
+      case 'createSession': {
+        const situation = formData.get('situation') as string || 'Other';
+        const session = await createLetGoBuddySession(client, { userId: user.id, situation });
+        return Response.json(session);
+      }
       
-      if (intent === 'markSessionComplete') {
-        const { sessionId } = payload;
+      case 'uploadImage': {
+        const { uploadLetGoBuddyImages } = await import("../mutations");
+        const imageFiles: File[] = [];
         
-        const { error } = await client
-          .from('let_go_buddy_sessions')
-          .update({
-            is_completed: true,
-            updated_at: new Date().toISOString()
-          })
-          .eq('session_id', parseInt(sessionId))
-          .eq('user_id', user.id);
-          
-        if (error) {
-          console.error('Failed to mark session complete:', error);
-          return new Response(JSON.stringify({ error: error.message }), { status: 500 });
+        for (const [key, value] of formData.entries()) {
+          if (key.startsWith('image') && value instanceof File) {
+            imageFiles.push(value);
+          }
         }
         
-        return new Response(JSON.stringify({ success: true }), { 
-          headers: { 'Content-Type': 'application/json' } 
+        if (imageFiles.length === 0) {
+          return Response.json({ error: "No image files provided" }, { status: 400 });
+        }
+        
+        const imageUrls = await uploadLetGoBuddyImages(client, { 
+          userId: user.id, 
+          images: imageFiles 
         });
+        
+        return Response.json({ imageUrls });
       }
       
-      if (intent === 'createSession') {
-        const session = await createLetGoBuddySession(client, { userId: user.id, situation: payload.situation || "Other" });
-        return new Response(JSON.stringify(session), { headers: { 'Content-Type': 'application/json' } });
+      case 'markSessionComplete': {
+        const { markSessionCompleted } = await import("../mutations");
+        const sessionId = parseInt(formData.get('sessionId') as string);
+        
+        if (!sessionId) {
+          return Response.json({ error: "Session ID is required" }, { status: 400 });
+        }
+        
+        await markSessionCompleted(client, sessionId);
+        return Response.json({ success: true });
       }
-    }
-    
-    // Handle form data requests (image uploads)
-    if (contentType.includes('multipart/form-data')) {
-      const formData = await request.formData();
-      const intent = formData.get('intent') as string;
       
-      if (intent === 'uploadImage') {
-          const { uploadLetGoBuddyImages } = await import("../mutations");
-          
-          // Handle multiple images
-          const imageFiles: File[] = [];
-          for (let i = 0; i < 5; i++) {
-            const imageFile = formData.get(`image${i === 0 ? '' : i}`) as File;
-            if (imageFile && imageFile instanceof File) {
-              imageFiles.push(imageFile);
-            }
-          }
-          
-          // Also check for single image
-          const singleImage = formData.get('image') as File;
-          if (singleImage && singleImage instanceof File && imageFiles.length === 0) {
-            imageFiles.push(singleImage);
-          }
-          
-          if (imageFiles.length === 0) {
-              return new Response(JSON.stringify({ error: "No image files provided" }), { status: 400 });
-          }
-          
-          const imageUrls = await uploadLetGoBuddyImages(client, { 
-              userId: user.id, 
-              images: imageFiles 
-          });
-          
-          return new Response(JSON.stringify({ imageUrls }), { 
-              headers: { 'Content-Type': 'application/json' } 
-          });
-      }
+      default:
+        return Response.json({ error: 'Invalid intent' }, { status: 400 });
     }
-
-    return new Response(JSON.stringify({ error: 'Invalid intent' }), { status: 400 });
-
   } catch (error: any) {
-    console.error('Error in action:', error.message);
-    return new Response(JSON.stringify({ error: error.message || 'AI analysis failed' }), { status: 500 });
+    console.error('Let Go Buddy action error:', error);
+    return Response.json({ 
+      error: error.message || 'Operation failed' 
+    }, { status: 500 });
   }
+}
+
+interface ChatMessage {
+  id: string;
+  type: 'ai' | 'user';
+  content: string;
+  timestamp: Date;
+}
+
+interface ItemDetails {
+  usagePeriod: string;
+  pros: string;
+  cons: string;
+}
+
+interface AppState {
+  step: number;
+  sessionId: number | null;
+  error: string | null;
+  isLoading: boolean;
+  itemName: string;
+  itemCategory: string;
+  situation: string;
+  uploadedFiles: File[];
+  previewUrls: string[];
+  uploadedImageUrls: string[];
+  chatConversation: ChatMessage[];
+  isChatComplete: boolean;
+  analysisResult: any;
+  itemDetails: ItemDetails;
 }
 
 export default function LetGoBuddyPage({ loaderData }: { loaderData: { user: any; canUseLetGoBuddy: boolean; usageCount: number } }) {
@@ -152,195 +135,164 @@ export default function LetGoBuddyPage({ loaderData }: { loaderData: { user: any
   const analysisFetcher = useFetcher();
   const sessionCompleteFetcher = useFetcher();
 
-  const [step, setStep] = useState(1);
-  const [sessionId, setSessionId] = useState<number | null>(null);
-  const [sessionError, setSessionError] = useState<string | null>(null);
-
-  const [itemName, setItemName] = useState("");
-  const [itemCategory, setItemCategory] = useState("");
-  const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
-  const [previewUrls, setPreviewUrls] = useState<string[]>([]);
-  const [uploadedImageUrls, setUploadedImageUrls] = useState<string[]>([]);
-  const [analysisResult, setAnalysisResult] = useState<any>(null);
-
-  const [situation, setSituation] = useState("");
-  const [chatConversation, setChatConversation] = useState<Array<{id: string, type: 'ai' | 'user', content: string, timestamp: Date}>>([]);
-  const [isChatComplete, setIsChatComplete] = useState(false);
-  const [itemDetails, setItemDetails] = useState({
-    usagePeriod: "",
-    pros: "",
-    cons: ""
-  });
-  
-  const isCreatingSession = sessionFetcher.state === 'submitting';
-  const isAnalyzing = analysisFetcher.state === 'loading';
-
-  useEffect(() => {
-    console.log('Session fetcher state:', sessionFetcher.state);
-    console.log('Session fetcher data:', sessionFetcher.data);
-    
-    if (sessionFetcher.data && sessionFetcher.state === 'idle') {
-        const result = sessionFetcher.data as any;
-        console.log('Session creation result:', result);
-        
-        if (result.error) {
-            console.error('Session creation error:', result.error);
-            setSessionError(result.error);
-        } else if (result.session_id) {
-            console.log('Session created successfully with ID:', result.session_id);
-            setSessionId(result.session_id);
-            setSessionError(null);
-            setStep(2);
-        } else {
-            console.error('Unexpected session response format:', result);
-        }
+  const [state, setState] = useState<AppState>({
+    step: 1,
+    sessionId: null,
+    error: null,
+    isLoading: false,
+    itemName: "",
+    itemCategory: "",
+    situation: "",
+    uploadedFiles: [],
+    previewUrls: [],
+    uploadedImageUrls: [],
+    chatConversation: [],
+    isChatComplete: false,
+    analysisResult: null,
+    itemDetails: {
+      usagePeriod: "",
+      pros: "",
+      cons: ""
     }
-  }, [sessionFetcher.data, sessionFetcher.state]);
+  });
 
-  
+  const updateState = useCallback((updates: Partial<AppState>) => {
+    setState(prev => ({ ...prev, ...updates }));
+  }, []);
 
+  // Handle session creation
+  useEffect(() => {
+    if (sessionFetcher.data && sessionFetcher.state === 'idle') {
+      const result = sessionFetcher.data as any;
+      if (result.error) {
+        updateState({ error: result.error, isLoading: false });
+      } else if (result.session_id) {
+        updateState({ sessionId: result.session_id, error: null, step: 2 });
+      }
+    }
+  }, [sessionFetcher.data, sessionFetcher.state, updateState]);
+
+  // Handle image upload
   useEffect(() => {
     if (imageFetcher.data && imageFetcher.state === 'idle') {
       const result = imageFetcher.data as any;
-      if (result.imageUrls) {
-        setUploadedImageUrls(result.imageUrls);
-      } else if (result.imageUrl) {
-        setUploadedImageUrls(prev => [...prev, result.imageUrl]);
+      if (result.error) {
+        updateState({ error: result.error, isLoading: false });
+      } else if (result.imageUrls) {
+        updateState({ uploadedImageUrls: result.imageUrls, isLoading: false });
       }
     }
-  }, [imageFetcher.data, imageFetcher.state]);
+  }, [imageFetcher.data, imageFetcher.state, updateState]);
 
+  // Handle analysis
   useEffect(() => {
-    console.log('Analysis fetcher state:', analysisFetcher.state);
-    console.log('Analysis fetcher data:', analysisFetcher.data);
-    
     if (analysisFetcher.data && analysisFetcher.state === 'idle') {
       const result = analysisFetcher.data as any;
-      console.log('Analysis result:', result);
-      
       if (result.error) {
-        console.error('Analysis error:', result.error);
-        setSessionError(result.error);
+        updateState({ error: result.error, isLoading: false });
       } else {
-        console.log('Setting analysis result and moving to step 5');
-        setAnalysisResult(result);
-        setStep(5);
-        
-        // Mark session as complete after successful analysis
-        if (sessionId) {
-          console.log('Marking session as complete:', sessionId);
+        updateState({ analysisResult: result, step: 5, isLoading: false });
+        // Mark session as complete
+        if (state.sessionId) {
           sessionCompleteFetcher.submit(
-            { intent: 'markSessionComplete', sessionId },
+            { intent: 'markSessionComplete', sessionId: state.sessionId },
             { method: 'post', encType: 'application/json' }
           );
         }
       }
     }
-  }, [analysisFetcher.data, analysisFetcher.state, sessionId]);
+  }, [analysisFetcher.data, analysisFetcher.state, state.sessionId, updateState, sessionCompleteFetcher]);
 
-
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files || []);
+    
+    // Validation
     if (files.length > 5) {
-      alert("You can upload maximum 5 files");
+      updateState({ error: "You can upload maximum 5 files" });
       return;
     }
 
     const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif'];
     const invalidFiles = files.filter(file => !allowedTypes.includes(file.type));
     if (invalidFiles.length > 0) {
-      const invalidTypes = invalidFiles.map(file => file.type).join(", ");
-      alert(`Invalid file type(s): ${invalidTypes}. Only JPEG, PNG, WebP, HEIC, and HEIF images are allowed.`);
+      updateState({ error: "Only JPEG, PNG, WebP, HEIC, and HEIF images are allowed" });
       return;
     }
 
     const maxFileSize = 10 * 1024 * 1024; // 10MB
     const oversizedFiles = files.filter(file => file.size > maxFileSize);
     if (oversizedFiles.length > 0) {
-      const maxSizeMB = maxFileSize / (1024 * 1024);
-      alert(`File(s) too large. Maximum file size is ${maxSizeMB}MB.`);
+      updateState({ error: "File(s) too large. Maximum file size is 10MB" });
       return;
     }
 
     if (files.length > 0) {
-      setUploadedFiles(files);
       const urls = files.map(file => URL.createObjectURL(file));
-      setPreviewUrls(urls);
-      setSessionError(null);
+      updateState({ 
+        uploadedFiles: files, 
+        previewUrls: urls, 
+        error: null, 
+        isLoading: true,
+        step: 2
+      });
       
-      // Create session
-      sessionFetcher.submit({ intent: 'createSession', situation: situation || 'Other' }, { method: "post", encType: "application/json" });
+      // Create session and upload images
+      sessionFetcher.submit({ intent: 'createSession', situation: state.situation || 'Other' }, { method: "post", encType: "application/json" });
       
-      // Upload all images at once
       const formData = new FormData();
       formData.append('intent', 'uploadImage');
       files.forEach((file, index) => {
         formData.append(`image${index === 0 ? '' : index}`, file);
       });
       imageFetcher.submit(formData, { method: "post", encType: "multipart/form-data" });
-      
-      setStep(2);
     }
-  };
+  }, [state.situation, updateState, sessionFetcher, imageFetcher]);
 
-  const handleChatComplete = (conversationData: Array<{id: string, type: 'ai' | 'user', content: string, timestamp: Date}>) => {
-    setChatConversation(conversationData);
-    setIsChatComplete(true);
-    setStep(4);
-  };
+  const handleChatComplete = useCallback((conversationData: ChatMessage[]) => {
+    updateState({ 
+      chatConversation: conversationData, 
+      isChatComplete: true, 
+      step: 4 
+    });
+  }, [updateState]);
 
-  const handleGenerateAnalysis = () => {
-    console.log('Generate Analysis clicked');
-    console.log('Session ID:', sessionId);
-    console.log('Uploaded Image URLs:', uploadedImageUrls);
-    console.log('Situation:', situation);
-    console.log('Chat Conversation:', chatConversation);
-    
-    if (!sessionId || !uploadedImageUrls.length || !situation) {
-      console.log('Missing requirements for analysis');
-      alert("Please complete all steps before analysis");
+  const handleGenerateAnalysis = useCallback(() => {
+    if (!state.sessionId || !state.uploadedImageUrls.length || !state.situation || !state.isChatComplete) {
+      updateState({ error: "Please complete all steps before analysis" });
       return;
     }
 
-    // Call analysis page loader function to get AI analysis
+    updateState({ isLoading: true, error: null });
+
     const analysisParams = new URLSearchParams({
-      sessionId: sessionId.toString(),
-      imageUrls: JSON.stringify(uploadedImageUrls),
-      situation,
-      itemName: itemName || "",
-      itemCategory: itemCategory || "",
-      chatConversation: JSON.stringify(chatConversation),
-      itemDetails: JSON.stringify(itemDetails),
+      sessionId: state.sessionId.toString(),
+      imageUrls: JSON.stringify(state.uploadedImageUrls),
+      situation: state.situation,
+      itemName: state.itemName || "",
+      itemCategory: state.itemCategory || "",
+      chatConversation: JSON.stringify(state.chatConversation),
+      itemDetails: JSON.stringify(state.itemDetails),
       userLocation: "Bangkok"
     });
 
-    console.log('Analysis URL:', `/let-go-buddy/analysis?${analysisParams.toString()}`);
-
-    // Fetch analysis from analysis page loader
     analysisFetcher.load(`/let-go-buddy/analysis?${analysisParams.toString()}`);
-  };
+  }, [state, updateState, analysisFetcher]);
   
 
-  const handleRemoveImage = (index: number) => {
-    const newFiles = uploadedFiles.filter((_, i) => i !== index);
-    const newPreviews = previewUrls.filter((_, i) => i !== index);
-    setUploadedFiles(newFiles);
-    setPreviewUrls(newPreviews);
-  };
+  const handleRemoveImage = useCallback((index: number) => {
+    const newFiles = state.uploadedFiles.filter((_, i) => i !== index);
+    const newPreviews = state.previewUrls.filter((_, i) => i !== index);
+    updateState({ uploadedFiles: newFiles, previewUrls: newPreviews });
+  }, [state.uploadedFiles, state.previewUrls, updateState]);
 
-  const handleStartSelling = () => {
-    if (!analysisResult || !analysisResult.listing_data) {
-      console.error('Missing analysis result or listing data:', analysisResult);
-      return;
-    }
+  const handleStartSelling = useCallback(() => {
+    if (!state.analysisResult) return;
     
-    console.log('Analysis result:', analysisResult);
-    console.log('Listing data:', analysisResult.listing_data);
-    
+    const { analysisResult, uploadedImageUrls } = state;
     const listingData = {
       title: analysisResult.listing_data?.title || analysisResult.ai_listing_title || analysisResult.item_analysis?.item_name || "Item for Sale",
       description: analysisResult.listing_data?.description || analysisResult.ai_listing_description || "Great condition item",
-      price: "0", // User will set their own price
+      price: "0",
       currency: analysisResult.listing_data?.currency || "THB",
       priceType: analysisResult.listing_data?.price_type || "Fixed",
       condition: analysisResult.listing_data?.condition || analysisResult.item_analysis?.item_condition || "Good",
@@ -349,8 +301,6 @@ export default function LetGoBuddyPage({ loaderData }: { loaderData: { user: any
       images: uploadedImageUrls,
       fromLetGoBuddy: true
     };
-    
-    console.log('Prepared listing data:', listingData);
 
     navigate("/secondhand/submit-a-listing", {
       state: {
@@ -358,11 +308,12 @@ export default function LetGoBuddyPage({ loaderData }: { loaderData: { user: any
         fromLetGoBuddy: true
       }
     });
-  };
+  }, [state.analysisResult, state.uploadedImageUrls, navigate]);
 
-  const handleFreeGiveaway = () => {
-    if (!analysisResult || !analysisResult.item_analysis) return;
+  const handleFreeGiveaway = useCallback(() => {
+    if (!state.analysisResult?.item_analysis) return;
     
+    const { analysisResult, uploadedImageUrls } = state;
     const giveawayData = {
       title: `FREE: ${analysisResult.item_analysis.item_name} - Giving away for free!`,
       description: `Free giveaway! This ${analysisResult.item_analysis.item_name} is in good condition and I'm giving it away for free. Perfect for someone who needs it.`,
@@ -384,26 +335,36 @@ export default function LetGoBuddyPage({ loaderData }: { loaderData: { user: any
         isGiveaway: true
       }
     });
-  };
+  }, [state.analysisResult, state.uploadedImageUrls, navigate]);
 
-  const addToChallenge = () => {
-    if (!analysisResult || !analysisResult.item_analysis) {
-      alert("Please complete analysis first before adding to challenge");
+  const addToChallenge = useCallback(() => {
+    if (!state.analysisResult?.item_analysis) {
+      updateState({ error: "Please complete analysis first before adding to challenge" });
       return;
     }
 
-    // Navigate immediately for better UX, item will be created in the background
+    const { analysisResult, itemName, uploadedImageUrls, sessionId } = state;
+    sessionStorage.setItem('letGoBuddyAnalysis', JSON.stringify({
+      analysisResult,
+      itemName,
+      uploadedImageUrls,
+      sessionId
+    }));
+
     navigate('/let-go-buddy/challenge-calendar', {
       state: {
         pendingItem: {
           name: analysisResult.item_analysis.item_name || itemName || 'Declutter Item',
-          scheduledDate: new Date(Date.now() + 86400000).toISOString().split('T')[0] // tomorrow
+          scheduledDate: new Date(Date.now() + 86400000).toISOString().split('T')[0]
         }
       }
     });
-  };
+  }, [state, updateState, navigate]);
 
-  const addToKeepBox = () => alert("Added to your 'Keep Box'.");
+  const addToKeepBox = useCallback(() => {
+    updateState({ error: null });
+    alert("Added to your 'Keep Box'.");
+  }, [updateState]);
 
 
   return (
@@ -428,32 +389,33 @@ export default function LetGoBuddyPage({ loaderData }: { loaderData: { user: any
           <Input 
             type="file" 
             accept="image/*" 
+            multiple
             onChange={handleFileUpload} 
             className="hidden" 
             id="file-upload" 
-            disabled={isCreatingSession || !canUseLetGoBuddy} 
+            disabled={state.isLoading || !canUseLetGoBuddy} 
           />
           <Button 
             onClick={() => document.getElementById('file-upload')?.click()} 
             variant="outline" 
             className={`w-full ${!canUseLetGoBuddy ? 'opacity-50 cursor-not-allowed bg-gray-100 text-gray-400 border-gray-200' : ''}`}
-            disabled={isCreatingSession || !canUseLetGoBuddy}
+            disabled={state.isLoading || !canUseLetGoBuddy}
           >
-            {isCreatingSession ? (
-              <><ArrowPathIcon className="w-4 h-4 mr-2 animate-spin" /> Checking...</>
+            {state.isLoading ? (
+              <><ArrowPathIcon className="w-4 h-4 mr-2 animate-spin" /> Processing...</>
             ) : !canUseLetGoBuddy ? (
               <><CameraIcon className="w-4 h-4 mr-2 text-gray-400" />Upload Photo (Limit Reached)</>
             ) : (
-              "Upload Photo"
+              "Upload Photos (up to 5)"
             )}
           </Button>
-          {sessionError && <div className="p-3 bg-red-50 text-red-700 rounded-md text-sm flex items-center gap-2"><AlertTriangle className="w-5 h-5" />{sessionError}</div>}
+          {state.error && <div className="p-3 bg-red-50 text-red-700 rounded-md text-sm flex items-center gap-2"><AlertTriangle className="w-5 h-5" />{state.error}</div>}
           
           {/* Preview images */}
           <div className="flex flex-wrap gap-2 justify-center mt-4">
-            {previewUrls.length > 0 ? (
-              previewUrls.map((url, idx) => (
-                <div key={`preview-${uploadedFiles[idx]?.name}-${uploadedFiles[idx]?.size}-${idx}`} className="relative group">
+            {state.previewUrls.length > 0 ? (
+              state.previewUrls.map((url, idx) => (
+                <div key={`preview-${state.uploadedFiles[idx]?.name}-${state.uploadedFiles[idx]?.size}-${idx}`} className="relative group">
                   <img src={url} alt={`Preview ${idx + 1}`} className="w-24 h-24 object-cover rounded" />
                   <button
                     type="button"
@@ -472,15 +434,15 @@ export default function LetGoBuddyPage({ loaderData }: { loaderData: { user: any
           </div>
           
           {/* Image count */}
-          {previewUrls.length > 0 && (
-            <span className="text-xs text-neutral-500 mt-2">{uploadedFiles.length}/5 images</span>
+          {state.previewUrls.length > 0 && (
+            <span className="text-xs text-neutral-500 mt-2">{state.uploadedFiles.length}/5 images</span>
           )}
           
           {/* Item Details */}
-          {previewUrls.length > 0 && step >= 2 && (
+          {state.previewUrls.length > 0 && state.step >= 2 && (
             <div className="mt-4 space-y-4">
-              <Input placeholder="Item Name (e.g., Old College Hoodie)" value={itemName} onChange={(e) => setItemName(e.target.value)} className="w-full" />
-              <Select onValueChange={setItemCategory} value={itemCategory}>
+              <Input placeholder="Item Name (e.g., Old College Hoodie)" value={state.itemName} onChange={(e) => updateState({ itemName: e.target.value })} className="w-full" />
+              <Select onValueChange={(value) => updateState({ itemCategory: value })} value={state.itemCategory}>
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Select a category (optional)" />
                 </SelectTrigger>
@@ -502,7 +464,7 @@ export default function LetGoBuddyPage({ loaderData }: { loaderData: { user: any
               <div className="space-y-4">
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-gray-700">How long have you used this item?</label>
-                  <Select value={itemDetails.usagePeriod} onValueChange={(value) => setItemDetails(prev => ({ ...prev, usagePeriod: value }))}>
+                  <Select value={state.itemDetails.usagePeriod} onValueChange={(value) => updateState({ itemDetails: { ...state.itemDetails, usagePeriod: value } })}>
                     <SelectTrigger className="w-full">
                       <SelectValue placeholder="Select usage period" />
                     </SelectTrigger>
@@ -520,8 +482,8 @@ export default function LetGoBuddyPage({ loaderData }: { loaderData: { user: any
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-gray-700">What do you like about this item? (pros)</label>
                   <Textarea 
-                    value={itemDetails.pros}
-                    onChange={(e) => setItemDetails(prev => ({ ...prev, pros: e.target.value }))}
+                    value={state.itemDetails.pros}
+                    onChange={(e) => updateState({ itemDetails: { ...state.itemDetails, pros: e.target.value } })}
                     placeholder="e.g., Still works perfectly, great quality, sentimental value..."
                     className="resize-none"
                     rows={2}
@@ -531,8 +493,8 @@ export default function LetGoBuddyPage({ loaderData }: { loaderData: { user: any
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-gray-700">What concerns you about this item? (cons)</label>
                   <Textarea 
-                    value={itemDetails.cons}
-                    onChange={(e) => setItemDetails(prev => ({ ...prev, cons: e.target.value }))}
+                    value={state.itemDetails.cons}
+                    onChange={(e) => updateState({ itemDetails: { ...state.itemDetails, cons: e.target.value } })}
                     placeholder="e.g., Takes up space, rarely used, minor scratches..."
                     className="resize-none"
                     rows={2}
@@ -545,7 +507,7 @@ export default function LetGoBuddyPage({ loaderData }: { loaderData: { user: any
       </Card>
       
       {/* Step 2: Situation Selection */}
-      {step >= 2 && !sessionError && (
+      {state.step >= 2 && !state.error && (
         <Card>
           <CardHeader><CardTitle className="flex items-center gap-2"><SparklesIcon className="w-6 h-6" />Step 2: Select Your Situation</CardTitle></CardHeader>
           <CardContent className="space-y-4">
@@ -554,12 +516,9 @@ export default function LetGoBuddyPage({ loaderData }: { loaderData: { user: any
               {DECLUTTER_SITUATIONS.map((s) => (
                 <Button
                   key={s.value}
-                  variant={situation === s.value ? "default" : "outline"}
+                  variant={state.situation === s.value ? "default" : "outline"}
                   size="sm"
-                  onClick={() => {
-                    setSituation(s.value);
-                    setStep(3);
-                  }}
+                  onClick={() => updateState({ situation: s.value, step: 3 })}
                 >
                   {s.label}
                 </Button>
@@ -570,7 +529,7 @@ export default function LetGoBuddyPage({ loaderData }: { loaderData: { user: any
       )}
       
       {/* Step 3: Joy Conversation */}
-      {step >= 3 && !sessionError && !isChatComplete && (
+      {state.step >= 3 && !state.error && !state.isChatComplete && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -583,8 +542,8 @@ export default function LetGoBuddyPage({ loaderData }: { loaderData: { user: any
           </CardHeader>
           <CardContent>
             <AICoachChat
-              itemName={itemName}
-              situation={situation}
+              itemName={state.itemName}
+              situation={state.situation}
               onComplete={handleChatComplete}
             />
           </CardContent>
@@ -592,7 +551,7 @@ export default function LetGoBuddyPage({ loaderData }: { loaderData: { user: any
       )}
 
       {/* Show completed conversation summary */}
-      {step >= 3 && isChatComplete && (
+      {state.step >= 3 && state.isChatComplete && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -612,7 +571,7 @@ export default function LetGoBuddyPage({ loaderData }: { loaderData: { user: any
       )}
 
       {/* Step 4: Generate Analysis */}
-      {step >= 4 && (
+      {state.step >= 4 && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -621,10 +580,10 @@ export default function LetGoBuddyPage({ loaderData }: { loaderData: { user: any
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {!analysisResult ? (
+            {!state.analysisResult ? (
               <div className="space-y-4">
                 <p className="text-sm text-muted-foreground">Ready to get AI-powered recommendations for your item?</p>
-                {!isChatComplete && (
+                {!state.isChatComplete && (
                   <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-center">
                     <div className="text-amber-800 text-sm">
                       Please complete the conversation with Joy to proceed
@@ -634,10 +593,10 @@ export default function LetGoBuddyPage({ loaderData }: { loaderData: { user: any
                 <Button 
                   onClick={handleGenerateAnalysis} 
                   className="w-full"
-                  disabled={isAnalyzing || !situation || !uploadedImageUrls.length || !isChatComplete}
+                  disabled={state.isLoading || !state.situation || !state.uploadedImageUrls.length || !state.isChatComplete}
                   size="lg"
                 >
-                  {isAnalyzing ? (
+                  {state.isLoading ? (
                     <><ArrowPathIcon className="w-5 h-5 mr-2 animate-spin" />Analyzing...</>
                   ) : (
                     <><SparklesIcon className="w-5 h-5 mr-2" />Generate AI Analysis</>
@@ -647,29 +606,28 @@ export default function LetGoBuddyPage({ loaderData }: { loaderData: { user: any
             ) : (
               <div className="space-y-4">
                 <div className="p-4 bg-blue-50 rounded-lg border border-blue-100">
-                  <h4 className="font-semibold text-blue-800 mb-2">AI Recommendation: {analysisResult.recommendation?.action}</h4>
-                  <p className="text-sm text-blue-700">{analysisResult.recommendation?.reason}</p>
+                  <h4 className="font-semibold text-blue-800 mb-2">AI Recommendation: {state.analysisResult.recommendation?.action}</h4>
+                  <p className="text-sm text-blue-700">{state.analysisResult.recommendation?.reason}</p>
                 </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="p-3 bg-gray-50 rounded-lg">
                     <div className="text-sm text-gray-600 mb-1">Item Analysis</div>
-                    <div className="font-medium">{analysisResult.item_analysis?.item_name}</div>
-                    <div className="text-sm text-gray-600">Condition: {analysisResult.item_analysis?.item_condition}</div>
+                    <div className="font-medium">{state.analysisResult.item_analysis?.item_name}</div>
+                    <div className="text-sm text-gray-600">Condition: {state.analysisResult.item_analysis?.item_condition}</div>
                   </div>
-                  
                 </div>
 
                 {/* Conversation Insights Preview */}
-                {(analysisResult.emotional_attachment_keywords || analysisResult.decision_barriers) && (
+                {(state.analysisResult.emotional_attachment_keywords || state.analysisResult.decision_barriers) && (
                   <div className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-100">
                     <div className="text-sm font-medium text-blue-800 mb-2">💭 Your Decision Insights</div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
-                      {analysisResult.emotional_attachment_keywords?.length > 0 && (
+                      {state.analysisResult.emotional_attachment_keywords?.length > 0 && (
                         <div>
                           <span className="text-blue-700 font-medium">Emotional:</span>
                           <div className="flex flex-wrap gap-1 mt-1">
-                            {analysisResult.emotional_attachment_keywords.slice(0, 3).map((keyword: string, idx: number) => (
+                            {state.analysisResult.emotional_attachment_keywords.slice(0, 3).map((keyword: string, idx: number) => (
                               <span key={idx} className="px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs">
                                 {keyword}
                               </span>
@@ -677,11 +635,11 @@ export default function LetGoBuddyPage({ loaderData }: { loaderData: { user: any
                           </div>
                         </div>
                       )}
-                      {analysisResult.decision_barriers?.length > 0 && (
+                      {state.analysisResult.decision_barriers?.length > 0 && (
                         <div>
                           <span className="text-blue-700 font-medium">Challenges:</span>
                           <div className="flex flex-wrap gap-1 mt-1">
-                            {analysisResult.decision_barriers.slice(0, 3).map((barrier: string, idx: number) => (
+                            {state.analysisResult.decision_barriers.slice(0, 3).map((barrier: string, idx: number) => (
                               <span key={idx} className="px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs">
                                 {barrier}
                               </span>
@@ -702,17 +660,17 @@ export default function LetGoBuddyPage({ loaderData }: { loaderData: { user: any
       )}
       
       {/* Step 5: Action Buttons */}
-      {step >= 5 && analysisResult && (
+      {state.step >= 5 && state.analysisResult && (
         <Card>
           <CardHeader>
             <CardTitle>What would you like to do?</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            {analysisResult.recommendation?.action === 'Sell' && (
+            {state.analysisResult.recommendation?.action === 'Sell' && (
               <div className="p-4 bg-green-50 rounded-lg mb-4">
                 <h4 className="font-semibold text-green-800 mb-2">Ready-to-use Listing Data</h4>
-                <p className="text-sm text-green-700 mb-2"><strong>Title:</strong> {analysisResult.listing_data?.title || analysisResult.ai_listing_title || analysisResult.item_analysis?.item_name || "Item for Sale"}</p>
-                <p className="text-sm text-green-700"><strong>Description:</strong> {analysisResult.listing_data?.description || analysisResult.ai_listing_description || "Great condition item"}</p>
+                <p className="text-sm text-green-700 mb-2"><strong>Title:</strong> {state.analysisResult.listing_data?.title || state.analysisResult.ai_listing_title || state.analysisResult.item_analysis?.item_name || "Item for Sale"}</p>
+                <p className="text-sm text-green-700"><strong>Description:</strong> {state.analysisResult.listing_data?.description || state.analysisResult.ai_listing_description || "Great condition item"}</p>
               </div>
             )}
             

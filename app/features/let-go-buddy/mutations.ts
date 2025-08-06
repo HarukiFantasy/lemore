@@ -93,80 +93,15 @@ export const insertItemAnalysis = async (
   return data;
 };
 
-// AI 분석 트리거: 서버리스 함수 호출
-export async function triggerLetGoBuddyAIAnalysis({
-  sessionId,
-  images,
-  userId,
-}: {
-  sessionId: number;
-  images: string[];
-  userId: string;
-}): Promise<{ success: boolean; analysis_id: number; message: string }> {
-  const response = await fetch('/functions/v1/letgo-ai-analysis', {
-    method: 'POST',
-    headers: { 
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${process.env.SUPABASE_ANON_KEY || ''}`
-    },
-    body: JSON.stringify({
-      session_id: sessionId,
-      images,
-      user_id: userId,
-    }),
-  });
-
-  if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(errorData.error || 'AI 분석 실패');
-  }
-
-  return await response.json();
-}
-
 // Mark Let Go Buddy session as completed
 export async function markSessionCompleted(
   client: SupabaseClient<Database>,
   sessionId: number
 ) {
-  // Get current user to satisfy RLS policy
-  const { data: { user } } = await client.auth.getUser();
-  if (!user) {
-    throw new Error('Authentication required to mark session completed');
-  }
-
-  console.log('markSessionCompleted - User ID:', user.id);
-  console.log('markSessionCompleted - Session ID:', sessionId);
-
-  // First check if session exists and belongs to user
-  const { data: existingSession, error: selectError } = await client
-    .from('let_go_buddy_sessions')
-    .select('*')
-    .eq('session_id', sessionId)
-    .eq('user_id', user.id)
-    .single();
-
-  if (selectError) {
-    console.error('Session lookup failed:', selectError);
-    throw new Error(`Session lookup failed: ${selectError.message}`);
-  }
-
-  if (!existingSession) {
-    throw new Error(`Session ${sessionId} not found for user ${user.id}`);
-  }
-
-  console.log('Found session:', existingSession);
-
   const { data, error } = await client
     .from('let_go_buddy_sessions')
-    .update({
-      is_completed: true,
-      updated_at: new Date().toISOString()
-    })
-    .eq('session_id', sessionId)
-    .eq('user_id', user.id) // Add user_id check to satisfy RLS policy
-    .select()
-    .single();
+    .update({ is_completed: true })
+    .eq('session_id', sessionId);
   
   if (error) throw new Error(error.message);
   return data;
