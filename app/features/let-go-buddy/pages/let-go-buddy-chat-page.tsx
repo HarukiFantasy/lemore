@@ -44,9 +44,17 @@ export async function loader({ request, params }: Route.LoaderArgs) {
     return redirect('/let-go-buddy');
   }
 
+  // Get search parameters
+  const url = new URL(request.url);
+  const mode = url.searchParams.get('mode') || 'setup';
+  const item = url.searchParams.get('item') || '';
+  const situation = url.searchParams.get('situation') || '';
+
   return {
     sessionId,
-    session
+    mode,
+    item,
+    situation
   };
 }
 
@@ -75,9 +83,8 @@ interface ChatMessage {
   timestamp: Date;
 }
 
-export default function LetGoBuddyChatPage({ loaderData, searchParams }: Route.ComponentProps) {
-  const { sessionId, session } = loaderData;
-  const mode = searchParams?.get('mode') || 'setup';
+export default function LetGoBuddyChatPage({ loaderData }: Route.ComponentProps) {
+  const { sessionId, mode, item: itemFromParams, situation: situationFromParams } = loaderData;
   
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -134,15 +141,12 @@ export default function LetGoBuddyChatPage({ loaderData, searchParams }: Route.C
     }, 1000);
   };
 
-  const handleChatComplete = (conversationData: ChatMessage[]) => {
+  const handleChatComplete = (_conversationData: ChatMessage[]) => {
     // Navigate to analysis page with conversation data
     window.location.href = `/let-go-buddy/analysis/${sessionId}`;
   };
 
   if (mode === 'chat') {
-    const itemFromParams = searchParams?.get('item') || '';
-    const situationFromParams = searchParams?.get('situation') || '';
-    
     return (
       <div className="container max-w-4xl mx-auto px-4 py-8">
         <div className="flex items-center gap-2 mb-6">

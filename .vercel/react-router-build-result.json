@@ -18,6 +18,7 @@
       "features/products/pages/edit-product-page": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
       "features/products/pages/like-product-page": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
       "features/let-go-buddy/pages/let-go-buddy-page": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
+      "features/let-go-buddy/pages/let-go-buddy-chat-page": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
       "features/let-go-buddy/pages/let-go-buddy-analysis-page": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
       "features/let-go-buddy/pages/challenge-calendar-page": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
       "features/auth/pages/login-page": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
@@ -121,11 +122,20 @@
           "runtime": "nodejs"
         }
       },
+      "features/let-go-buddy/pages/let-go-buddy-chat-page": {
+        "id": "features/let-go-buddy/pages/let-go-buddy-chat-page",
+        "parentId": "root",
+        "file": "app/features/let-go-buddy/pages/let-go-buddy-chat-page.tsx",
+        "path": "let-go-buddy/chat/:session_id",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
       "features/let-go-buddy/pages/let-go-buddy-analysis-page": {
         "id": "features/let-go-buddy/pages/let-go-buddy-analysis-page",
         "parentId": "root",
         "file": "app/features/let-go-buddy/pages/let-go-buddy-analysis-page.tsx",
-        "path": "let-go-buddy/analysis",
+        "path": "let-go-buddy/analysis/:session_id",
         "config": {
           "runtime": "nodejs"
         }
@@ -385,11 +395,17 @@
         "path": "let-go-buddy",
         "index": true
       },
+      "features/let-go-buddy/pages/let-go-buddy-chat-page": {
+        "id": "features/let-go-buddy/pages/let-go-buddy-chat-page",
+        "parentId": "root",
+        "file": "features/let-go-buddy/pages/let-go-buddy-chat-page.tsx",
+        "path": "let-go-buddy/chat/:session_id"
+      },
       "features/let-go-buddy/pages/let-go-buddy-analysis-page": {
         "id": "features/let-go-buddy/pages/let-go-buddy-analysis-page",
         "parentId": "root",
         "file": "features/let-go-buddy/pages/let-go-buddy-analysis-page.tsx",
-        "path": "let-go-buddy/analysis"
+        "path": "let-go-buddy/analysis/:session_id"
       },
       "features/let-go-buddy/pages/challenge-calendar-page": {
         "id": "features/let-go-buddy/pages/challenge-calendar-page",

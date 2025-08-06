@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { json, redirect, LoaderFunctionArgs, ActionFunctionArgs } from "@remix-run/node";
-import { useLoaderData, useActionData, Form, useNavigation } from "@remix-run/react";
+import { redirect } from "react-router";
+import type { Route } from "./+types/submit-a-listing-page";
 import { Input } from "~/common/components/ui/input";
 import { Button } from "~/common/components/ui/button";
 import { Textarea } from "~/common/components/ui/textarea";
@@ -8,21 +8,21 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~
 import { Badge } from "~/common/components/ui/badge";
 import { PRICE_TYPES, ALLOWED_IMAGE_TYPES, MAX_FILE_SIZE, PRODUCT_CONDITIONS } from "../constants";
 import { CURRENCIES } from '~/constants';
-import { createSupaClient } from "~/supa-client";
-import { getLoggedInUserId } from "~/features/users/queries";
+import { makeSSRClient } from "~/supa-client";
 import { getCategories, getlocations } from '../queries';
 import { createProduct, uploadProductImages, saveProductImages } from '../mutations';
-import { getLetGoSession } from "../../../let-go-buddy/mutations";
+import { getLetGoSession } from "~/features/let-go-buddy/mutations";
 import { z } from 'zod';
 import { CircleIcon } from 'lucide-react';
 
-export const loader = async ({ request }: LoaderFunctionArgs) => {
-    const { supabase, serverSession, headers } = createSupaClient(request);
-    if (!serverSession) return redirect("/login", { headers });
+export const loader = async ({ request }: Route.LoaderArgs) => {
+    const { client } = makeSSRClient(request);
+    const { data: { user } } = await client.auth.getUser();
+    if (!user) return redirect("/auth/login");
 
     const [categories, locations] = await Promise.all([
-        getCategories(supabase),
-        getlocations(supabase)
+        getCategories(client),
+        getlocations(client)
     ]);
 
     const url = new URL(request.url);
@@ -32,8 +32,8 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     let letGoBuddyData = null;
     if (sessionId) {
         try {
-            const session = await getLetGoSession(supabase, sessionId);
-            if (session.user_id === serverSession.user.id) {
+            const session = await getLetGoSession(client, sessionId);
+            if (session.user_id === user.id) {
                 letGoBuddyData = {
                     title: session.ai_listing_title || "",
                     description: session.ai_listing_description || "",
@@ -47,7 +47,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
         }
     }
 
-    return json({ categories, locations, letGoBuddyData }, { headers });
+    return { categories, locations, letGoBuddyData };
 };
 
 const formSchema = z.object({
@@ -61,10 +61,11 @@ const formSchema = z.object({
   location: z.string().min(1),
 });
 
-export const action = async ({ request }: ActionFunctionArgs) => {
-  const { supabase, serverSession } = createSupaClient(request);
+export const action = async ({ request }: Route.ActionArgs) => {
+  const { client } = makeSSRClient(request);
+  const { data: { user } } = await client.auth.getUser();
 
-  if (!serverSession) return redirect("/auth/login");
+  if (!user) return redirect("/auth/login");
   
   const formData = await request.formData();
   
@@ -80,19 +81,19 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
   const { success, data, error } = formSchema.safeParse(Object.fromEntries(formData));
   if (!success) {
-    return json({ fieldErrors: error.flatten().fieldErrors });
+    return { fieldErrors: error.flatten().fieldErrors };
   }
   const { title, price, currency, priceType, description, condition, category, location } = data;
   
   const finalPrice = priceType === "Free" ? "0" : (price || "0");
   
   try {
-    const product = await createProduct(supabase, { 
+    const product = await createProduct(client, { 
       title, 
       price: parseFloat(finalPrice), 
       currency,  
       priceType, 
-      userId: serverSession.user.id,
+      userId: user.id,
       description,
       condition,
       category,
@@ -102,16 +103,16 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const allImageUrls = [...letGoBuddyImageUrls];
     
     if (imageFiles.length > 0) {
-      const uploadedUrls = await uploadProductImages(supabase, {
+      const uploadedUrls = await uploadProductImages(client, {
         productId: product.product_id,
-        userId: serverSession.user.id,
+        userId: user.id,
         images: imageFiles,
       });
       allImageUrls.push(...uploadedUrls);
     }
     
     if (allImageUrls.length > 0) {
-      await saveProductImages(supabase, {
+      await saveProductImages(client, {
         productId: product.product_id,
         imageUrls: allImageUrls,
       });
@@ -120,14 +121,12 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     return redirect(`/secondhand/product/${product.product_id}`);
   } catch (err: any) {
     console.error("Error creating product:", err);
-    return json({ error: "Failed to create product. Please try again." });
+    return { error: "Failed to create product. Please try again." };
   }
 };
 
-export default function SubmitAListingPage() {
-  const { categories, locations, letGoBuddyData } = useLoaderData<typeof loader>();
-  const actionData = useActionData<typeof action>();
-  const navigation = useNavigation();
+export default function SubmitAListingPage({ loaderData, actionData }: Route.ComponentProps) {
+  const { categories, locations, letGoBuddyData } = loaderData;
   
   const [images, setImages] = useState<File[]>([]);
   const [previews, setPreviews] = useState<string[]>([]);
@@ -140,7 +139,7 @@ export default function SubmitAListingPage() {
   const [category, setCategory] = useState("");
   const [location, setLocation] = useState("");
 
-  const isSubmitting = navigation.state === 'submitting';
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
   useEffect(() => {
     if (letGoBuddyData) {
@@ -190,7 +189,7 @@ export default function SubmitAListingPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 md:bg-white md:py-8">
-      <Form method="post" encType="multipart/form-data" className="flex flex-col md:flex-row gap-4 md:gap-8 w-full md:max-w-4xl md:mx-auto">
+      <form method="post" encType="multipart/form-data" className="flex flex-col md:flex-row gap-4 md:gap-8 w-full md:max-w-4xl md:mx-auto" onSubmit={() => setIsSubmitting(true)}>
         {/* Pass let go buddy image urls to action */}
         {letGoBuddyUrlsInPreview.map((url, index) => (
             <input type="hidden" name="letGoBuddyImageUrls[]" value={url} key={index} />
@@ -263,7 +262,7 @@ export default function SubmitAListingPage() {
                  <SelectTrigger><SelectValue placeholder="Select Category" /></SelectTrigger>
                  <SelectContent>
                      {categories.map(c => <SelectItem key={c.category_id} value={c.name}>{c.name}</SelectItem>)}
-                 </Content>
+                 </SelectContent>
             </Select>
             
             <Select name="location" value={location} onValueChange={setLocation}>
@@ -278,7 +277,7 @@ export default function SubmitAListingPage() {
             </Button>
             {actionData?.error && <p className="text-red-500">{actionData.error}</p>}
         </div>
-      </Form>
+      </form>
     </div>
   );
 }
