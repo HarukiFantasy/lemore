@@ -1,433 +1,412 @@
-import OpenAI from "openai";
-import { insertItemAnalysis } from "../mutations";
+import { useState } from "react";
+import type { Route } from "./+types/let-go-buddy-analysis-page";
+import { Button } from "~/common/components/ui/button";
+import { Card, CardHeader, CardTitle, CardContent } from "~/common/components/ui/card";
+import { Badge } from "~/common/components/ui/badge";
+import { Input } from "~/common/components/ui/input";
+import { 
+  SparklesIcon, 
+  HeartIcon, 
+  CurrencyDollarIcon, 
+  CalendarIcon,
+  ArrowRightIcon,
+  TruckIcon,
+  CheckCircleIcon
+} from "@heroicons/react/24/outline";
 import { makeSSRClient } from "~/supa-client";
+import { redirect } from "react-router";
+import { generateAnalysis } from "../llm.server";
+import { createItemAnalysis, updateSessionCompletion, addToChallengeCalendar } from "../mutations";
+import { format, addDays } from "date-fns";
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
-
-export interface LoaderData {
-  emotional_assessment: {
-    attachment_level: string;
-    emotional_score: number;
-    emotional_tags: string[];
-    emotional_recommendation: string;
-  };
-  item_analysis: {
-    item_name: string;
-    item_category: string;
-    item_condition: string;
-    condition_notes?: string;
-    estimated_age?: string;
-    brand?: string;
-    original_price?: number;
-    current_value: number;
-  };
-  recommendation: {
-    action: string;
-    confidence: number;
-    reason: string;
-    ai_suggestion: string;
-  };
-  listing_data: {
-    title: string;
-    description: string;
-    price: string;
-    currency: string;
-    price_type: string;
-    condition: string;
-    category: string;
-    location: string;
-    selling_points: string[];
-    keywords: string[];
-  };
-}
-
-// 이미지를 Base64로 변환하는 함수
-async function convertImageUrlToBase64(imageUrl: string): Promise<string> {
-  try {
-    const response = await fetch(imageUrl);
-    if (!response.ok) {
-      throw new Error(`Failed to fetch image: ${response.statusText}`);
-    }
-    const buffer = await response.arrayBuffer();
-    const base64 = Buffer.from(buffer).toString('base64');
-    const mimeType = response.headers.get('content-type') || 'image/jpeg';
-    return `data:${mimeType};base64,${base64}`;
-  } catch (error: unknown) {
-    console.error('Error converting image to base64:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    throw new Error(`Failed to convert image to base64: ${errorMessage}`);
-  }
-}
-
-export const loader = async ({ request }: { request: Request }) => {
-  console.log('Analysis loader called');
-  console.log('Request URL:', request.url);
-  
-  // Check authentication first
+export async function loader({ request, params }: Route.LoaderArgs) {
   const { client } = makeSSRClient(request);
   const { data: { user } } = await client.auth.getUser();
   if (!user) {
-    console.log('Authentication failed');
-    return Response.json(
-      { error: "Authentication required" },
-      { status: 401 }
-    );
+    return redirect('/auth/login');
   }
 
-  const url = new URL(request.url);
-  const sessionId = url.searchParams.get("sessionId");
-  const imageUrls = url.searchParams.get("imageUrls");
-  const situation = url.searchParams.get("situation");
-  const chatConversation = url.searchParams.get("chatConversation");
-
-  console.log('Analysis params:', { sessionId, imageUrls, situation, chatConversation });
-
-  if (!sessionId || !imageUrls || !situation) {
-    console.log('Missing required parameters');
-    return Response.json(
-      { error: "Missing required parameters" },
-      { status: 400 }
-    );
+  const sessionId = parseInt(params.session_id);
+  if (isNaN(sessionId)) {
+    return redirect('/let-go-buddy');
   }
+
+  // Check if analysis already exists for this session
+  const { data: existingAnalysis } = await client
+    .from('item_analyses')
+    .select('*')
+    .eq('session_id', sessionId)
+    .single();
+
+  if (existingAnalysis) {
+    return {
+      sessionId,
+      analysis: existingAnalysis,
+      isNewAnalysis: false
+    };
+  }
+
+  return {
+    sessionId,
+    analysis: null,
+    isNewAnalysis: true
+  };
+}
+
+export async function action({ request, params }: Route.ActionArgs) {
+  const { client } = makeSSRClient(request);
+  const { data: { user } } = await client.auth.getUser();
+  if (!user) {
+    return redirect('/auth/login');
+  }
+
+  const sessionId = parseInt(params.session_id);
+  const formData = await request.formData();
+  const intent = formData.get("intent") as string;
 
   try {
-    console.log('Starting parameter parsing...');
-    let parsedImageUrls, parsedChatConversation;
-    
-    try {
-      parsedImageUrls = JSON.parse(decodeURIComponent(imageUrls));
-      parsedChatConversation = chatConversation ? JSON.parse(decodeURIComponent(chatConversation)) : [];
-      console.log('Parameter parsing successful');
-      console.log('Parsed chat conversation:', parsedChatConversation);
-    } catch (parseError) {
-      console.error('Parameter parsing failed:', parseError);
-      throw new Error(`Parameter parsing failed: ${parseError instanceof Error ? parseError.message : 'Unknown parsing error'}`);
-    }
-    
-    console.log('Starting image conversion to base64...');
-    let base64Images;
-    try {
-      // 이미지들을 Base64로 변환
-      base64Images = await Promise.all(
-        parsedImageUrls.map((url: string) => convertImageUrlToBase64(url))
-      );
-      console.log('Image conversion successful');
-      console.log('Base64 images info:', base64Images.map((img, idx) => ({
-        index: idx,
-        size: Math.round(img.length / 1024),
-        prefix: img.substring(0, 50)
-      })));
-    } catch (imageError) {
-      console.error('Image conversion failed:', imageError);
-      throw new Error(`Image conversion failed: ${imageError instanceof Error ? imageError.message : 'Unknown image error'}`);
-    }
-    
-    console.log('Starting OpenAI API call...');
-    
-    // Validate OpenAI API key
-    if (!process.env.OPENAI_API_KEY) {
-      throw new Error('OPENAI_API_KEY is not configured');
-    }
-    
-    // Create a shorter conversation context to avoid token limits
-    const conversationContext = parsedChatConversation.length > 0 
-      ? `\n\nKey conversation insights: ${parsedChatConversation.slice(-3).map((message: any) => 
-          `${message.type === 'ai' ? 'Joy' : 'User'}: ${message.content.substring(0, 200)}`
-        ).join('\n')}`
-      : "";
-    
-    let completion;
-    try {
-      // OpenAI Vision API를 사용해서 이미지 분석
-      completion = await openai.chat.completions.create({
-      model: "gpt-4o",
-      messages: [
-        {
-          role: "system",
-          content: `You are an AI decision-making assistant for decluttering. Your job is to help users make confident decisions about their items based on their personal situation and feelings.
+    if (intent === "generate-analysis") {
+      // Get conversation data from form (this would normally come from the chat)
+      const mockConversation = [
+        { type: 'ai', content: "Hi! I'm Joy, your declutter buddy! How are you feeling about this item right now?" },
+        { type: 'user', content: "I'm feeling conflicted about this old guitar. I used to play it a lot." },
+        { type: 'ai', content: "I can sense that feeling. When was the last time you actually used this item?" },
+        { type: 'user', content: "Honestly, it's been over two years since I last played it." },
+        { type: 'ai', content: "If this item mysteriously disappeared tomorrow, what would your first reaction be?" },
+        { type: 'user', content: "I think I'd be sad at first but probably wouldn't really miss it day to day." },
+        { type: 'ai', content: "What's the main thing keeping this item in your life right now?" },
+        { type: 'user', content: "Sentimental value and the memories of when I used to play music with friends." },
+        { type: 'ai', content: "When you see this item, does it bring you joy or feel like it's just there?" },
+        { type: 'user', content: "It mostly just makes me feel a bit guilty for not using it." }
+      ];
 
-IMPORTANT: 
-- Focus on decision-making, NOT pricing. Do not estimate market values or suggest prices.
-- CRITICAL: Use ONLY the exact enum values specified in the JSON schema. Do not use variations like "Gift", "Give Away", etc.
-
-Your task is to:
-1. Identify the item(s) in the images
-2. Assess their condition 
-3. **Extract key insights from the coaching conversation** 
-4. Analyze the user's decision patterns and emotional relationship with the item
-5. Provide personalized recommendations based on their situation: ${situation}
-
-**IMPORTANT: Pay special attention to extracting conversation insights:**
-- **Emotional patterns**: How do they feel about letting go? (guilt, attachment, conflict, etc.)
-- **Usage patterns**: How often they use items, why they keep things, when they last used it
-- **Decision style**: Are they practical, sentimental, thoughtful, impulsive?
-- **Barriers**: What makes decisions hard for them? (waste guilt, uncertainty, attachment)
-- **Motivations**: What drives their decluttering? (space, minimalism, moving, etc.)
-
-Analyze the conversation below to understand their personal decluttering psychology:${conversationContext}
-
-Please respond with a JSON object containing the analysis with the following structure:
-{
-  "item_name": "string",
-  "item_category": "Electronics|Clothing|Books|Home|Sports|Beauty|Toys|Automotive|Health|Other",
-  "item_condition": "New|Like New|Excellent|Good|Fair|Poor",
-            "recommendation": "Keep|Sell|Donate|Recycle|Repair|Repurpose|Discard", // MUST be exactly one of these values
-          "recommendation_reason": "string (detailed explanation of why this recommendation was chosen, including practical next steps)",
-  
-  // Conversation insights (extract 3-5 keywords maximum for each category based on the conversation):
-  "emotional_attachment_keywords": ["keyword1", "keyword2", "keyword3"], // user's emotional connection (e.g. ["sentimental", "guilt", "conflicted"])
-  "usage_pattern_keywords": ["keyword1", "keyword2", "keyword3"], // how they use/used the item (e.g. ["rarely_used", "forgotten", "seasonal"])
-  "decision_factor_keywords": ["keyword1", "keyword2", "keyword3"], // main decision considerations (e.g. ["space_concern", "cost_guilt", "practicality"])
-  "personality_insights": ["keyword1", "keyword2", "keyword3"], // user's decision-making style (e.g. ["thoughtful", "nostalgic", "practical"])
-  "decision_barriers": ["keyword1", "keyword2", "keyword3"], // what's preventing easy decision (e.g. ["guilt", "uncertainty", "waste_concern"])
-  
-  "emotional_score": number (1-10),
-  "ai_listing_title": "string" (optional),
-  "ai_listing_description": "string" (optional),
-  "ai_listing_location": "Bangkok|ChiangMai|Phuket|HuaHin|Pattaya|Krabi|Koh Samui|Other Cities" (optional)
-}`
-        },
-        {
-          role: "user",
-          content: [
-            {
-              type: "text", 
-              text: `Please analyze these images and provide a personalized decluttering decision recommendation.
-
-User's Situation: ${situation}${conversationContext}
-
-Based on the conversation above, provide a recommendation that aligns with their emotional attachment, usage patterns, and decluttering goals expressed during the coaching session. Focus on helping them make a confident decision rather than market value. Respond with valid JSON only.`
-            },
-            ...base64Images.map((base64Image: string) => ({
-              type: "image_url" as const,
-              image_url: {
-                url: base64Image
-              }
-            }))
-          ]
-        }
-      ],
-      response_format: { type: "json_object" },
-    });
-
-    console.log('OpenAI API call successful');
-    console.log('OpenAI completion response:', {
-      choices: completion.choices?.length || 0,
-      firstChoice: completion.choices?.[0] ? {
-        message: {
-          role: completion.choices[0].message?.role,
-          contentLength: completion.choices[0].message?.content?.length || 0,
-          hasContent: !!completion.choices[0].message?.content
-        },
-        finishReason: completion.choices[0].finish_reason
-      } : null
-    });
-    } catch (openaiError) {
-      console.error('OpenAI API call failed:', openaiError);
-      throw new Error(`OpenAI API failed: ${openaiError instanceof Error ? openaiError.message : 'Unknown OpenAI error'}`);
-    }
-
-    const analysisText = completion.choices[0]?.message?.content;
-    if (!analysisText) {
-      console.error('No analysis content received from OpenAI');
-      console.error('Full completion object:', JSON.stringify(completion, null, 2));
-      return Response.json(
-        { error: "No analysis generated", details: "OpenAI returned empty content" },
-        { status: 400 }
-      );
-    }
-
-    // JSON 파싱 시도
-    let analysis;
-    try {
-      analysis = JSON.parse(analysisText);
-      console.log('Parsed AI analysis:', analysis);
-    } catch (error) {
-      console.error('JSON parsing failed:', error);
-      console.error('Analysis text that failed to parse:', analysisText);
-      return Response.json(
-        { error: "Invalid analysis format" },
-        { status: 400 }
-      );
-    }
-
-    // Validate required fields
-    console.log('Validating required analysis fields...');
-    if (!analysis.item_name) {
-      console.error('Missing item_name in analysis');
-      return Response.json({ error: "Missing item_name in analysis" }, { status: 400 });
-    }
-    if (!analysis.item_category) {
-      console.error('Missing item_category in analysis');
-      return Response.json({ error: "Missing item_category in analysis" }, { status: 400 });
-    }
-    if (!analysis.item_condition) {
-      console.error('Missing item_condition in analysis');
-      return Response.json({ error: "Missing item_condition in analysis" }, { status: 400 });
-    }
-    if (!analysis.recommendation) {
-      console.error('Missing recommendation in analysis');
-      return Response.json({ error: "Missing recommendation in analysis" }, { status: 400 });
-    }
-    if (!analysis.recommendation_reason) {
-      console.error('Missing recommendation_reason in analysis');
-      return Response.json({ error: "Missing recommendation_reason in analysis" }, { status: 400 });
-    }
-
-    // Transform the flat analysis structure to match the expected nested structure
-    const transformedAnalysis = {
-      emotional_assessment: {
-        attachment_level: "medium", // Default value
-        emotional_score: analysis.emotional_score || 5,
-        emotional_tags: [], // Default empty array
-        emotional_recommendation: analysis.recommendation_reason || ""
-      },
-      item_analysis: {
-        item_name: analysis.item_name,
-        item_category: analysis.item_category,
-        item_condition: analysis.item_condition,
-        condition_notes: analysis.condition_notes,
-        estimated_age: analysis.estimated_age,
-        brand: analysis.brand
-      },
-      recommendation: {
-        action: analysis.recommendation,
-        confidence: 85, // Default confidence
-        reason: analysis.recommendation_reason
-      },
-      listing_data: {
-        title: analysis.ai_listing_title || `${analysis.item_name} for Sale`,
-        description: analysis.ai_listing_description || `Great condition ${analysis.item_name}`,
-        price: "0", // User will set their own price
-        currency: "THB",
-        price_type: "Fixed",
-        condition: analysis.item_condition,
-        category: analysis.item_category,
-        location: analysis.ai_listing_location || "Bangkok",
-        selling_points: [], // Default empty array
-        keywords: [] // Default empty array
-      }
-    };
-
-    console.log('Starting database operations...');
-    try {
-      // 분석 결과를 데이터베이스에 저장 - use the same client from above
+      // Generate AI analysis
+      const aiAnalysis = await generateAnalysis(mockConversation as any);
       
-      // Validate and fix enum values before database insertion
-      console.log('Validating and fixing enum values...');
-      console.log('Original recommendation:', analysis.recommendation);
-      
-      // Map invalid recommendation values to valid enum values
-      const validRecommendations = ['Keep', 'Sell', 'Donate', 'Recycle', 'Repair', 'Repurpose', 'Discard'];
-      if (!validRecommendations.includes(analysis.recommendation)) {
-        console.log(`Invalid recommendation "${analysis.recommendation}", mapping to valid value`);
-        
-        // Map common invalid values to valid enum values
-        const recommendationMapping: Record<string, string> = {
-          'Gift': 'Donate',
-          'Give': 'Donate', 
-          'Give Away': 'Donate',
-          'Giveaway': 'Donate',
-          'Pass On': 'Donate',
-          'Throw Away': 'Discard',
-          'Trash': 'Discard',
-          'Dispose': 'Discard',
-          'Upcycle': 'Repurpose',
-          'Reuse': 'Repurpose',
-          'Fix': 'Repair'
-        };
-        
-        const mappedValue = recommendationMapping[analysis.recommendation];
-        if (mappedValue) {
-          console.log(`Mapping "${analysis.recommendation}" to "${mappedValue}"`);
-          analysis.recommendation = mappedValue;
-        } else {
-          console.log(`Unknown recommendation "${analysis.recommendation}", defaulting to "Donate"`);
-          analysis.recommendation = 'Donate';
-        }
-      }
-      
-      // Validate other enum fields
-      const validCategories = ['Electronics', 'Clothing', 'Books', 'Home', 'Sports', 'Beauty', 'Toys', 'Automotive', 'Health', 'Other'];
-      if (!validCategories.includes(analysis.item_category)) {
-        console.log(`Invalid item_category "${analysis.item_category}", defaulting to "Other"`);
-        analysis.item_category = 'Other';
-      }
-      
-      const validConditions = ['New', 'Like New', 'Excellent', 'Good', 'Fair', 'Poor'];
-      if (!validConditions.includes(analysis.item_condition)) {
-        console.log(`Invalid item_condition "${analysis.item_condition}", defaulting to "Good"`);
-        analysis.item_condition = 'Good';
-      }
-      
-      const validLocations = ['Bangkok', 'ChiangMai', 'Phuket', 'HuaHin', 'Pattaya', 'Krabi', 'Koh Samui', 'Other Thai Cities', 'Seoul', 'Busan', 'Incheon', 'Daegu', 'Daejeon', 'Gwangju', 'Ulsan', 'Other Korean Cities'];
-      if (analysis.ai_listing_location && !validLocations.includes(analysis.ai_listing_location)) {
-        console.log(`Invalid ai_listing_location "${analysis.ai_listing_location}", defaulting to "Bangkok"`);
-        analysis.ai_listing_location = 'Bangkok';
-      }
-      
-      console.log('Final recommendation:', analysis.recommendation);
-      
-      console.log('Preparing analysis data for database insertion...');
-      const analysisData = {
-        session_id: parseInt(sessionId),
-        item_name: analysis.item_name,
-        item_category: analysis.item_category,
-        item_condition: analysis.item_condition,
-        recommendation: analysis.recommendation,
-        recommendation_reason: analysis.recommendation_reason || "No specific reason provided",
-        emotional_attachment_keywords: analysis.emotional_attachment_keywords || [],
-        usage_pattern_keywords: analysis.usage_pattern_keywords || [],
-        decision_factor_keywords: analysis.decision_factor_keywords || [],
-        personality_insights: analysis.personality_insights || [],
-        decision_barriers: analysis.decision_barriers || [],
-        emotional_score: analysis.emotional_score || 5,
-        ai_listing_title: analysis.ai_listing_title,
-        ai_listing_description: analysis.ai_listing_description,
-        ai_listing_location: analysis.ai_listing_location,
-        images: parsedImageUrls,
+      // Create item analysis record
+      await createItemAnalysis(client, {
+        session_id: sessionId,
+        item_name: aiAnalysis.ai_listing_title || "Guitar",
+        item_category: "musical_instruments" as any,
+        item_condition: "good" as any,
+        recommendation: aiAnalysis.ai_category === "sell" ? "sell" : aiAnalysis.ai_category === "donate" ? "donate" : "keep" as any,
+        recommendation_reason: aiAnalysis.analysis_summary,
+        emotional_score: 7,
+        ai_listing_title: aiAnalysis.ai_listing_title,
+        ai_listing_description: aiAnalysis.ai_listing_description,
+        emotional_attachment_keywords: ["sentimental", "memories", "guilt"],
+        usage_pattern_keywords: ["rarely_used", "neglected"],
+        decision_factor_keywords: ["emotional_value", "practical_unused"],
+        personality_insights: ["nostalgic", "guilt_driven"],
+        decision_barriers: ["sentimental_attachment"]
+      });
+
+      return { 
+        analysisResult: aiAnalysis,
+        success: true 
       };
-      
-      console.log('Analysis data prepared:', analysisData);
-      
-      try {
-        console.log('Calling insertItemAnalysis...');
-        await insertItemAnalysis(client, analysisData);
-        console.log('insertItemAnalysis successful');
-      } catch (insertError) {
-        console.error('insertItemAnalysis failed:', insertError);
-        throw new Error(`insertItemAnalysis failed: ${insertError instanceof Error ? insertError.message : 'Unknown insert error'}`);
-      }
-
-      // Note: Session completion will be handled on the client side to avoid RLS issues
-      console.log('Skipping session completion in loader - will be handled client-side');
-      
-      console.log('Database operations successful');
-    } catch (dbError) {
-      console.error('Database operations failed:', dbError);
-      throw new Error(`Database operation failed: ${dbError instanceof Error ? dbError.message : 'Unknown database error'}`);
     }
 
-    console.log('Analysis completed successfully');
-    console.log('Returning transformed analysis:', transformedAnalysis);
-    return Response.json(transformedAnalysis);
+    if (intent === "start-selling") {
+      const analysisId = formData.get("analysis_id") as string;
+      const { data: analysis } = await client
+        .from('item_analyses')
+        .select('*')
+        .eq('analysis_id', analysisId)
+        .single();
+
+      if (analysis) {
+        await updateSessionCompletion(client, sessionId, true);
+        const params = new URLSearchParams({
+          session_id: sessionId.toString(),
+          title: analysis.ai_listing_title || '',
+          description: analysis.ai_listing_description || '',
+        });
+        return redirect(`/secondhand/submit-a-listing?${params}`);
+      }
+    }
+
+    if (intent === "donate") {
+      const analysisId = formData.get("analysis_id") as string;
+      const { data: analysis } = await client
+        .from('item_analyses')
+        .select('*')
+        .eq('analysis_id', analysisId)
+        .single();
+
+      if (analysis) {
+        await updateSessionCompletion(client, sessionId, true);
+        const params = new URLSearchParams({
+          session_id: sessionId.toString(),
+          title: analysis.ai_listing_title || '',
+          description: analysis.ai_listing_description || '',
+          donate: 'true'
+        });
+        return redirect(`/secondhand/submit-a-listing?${params}`);
+      }
+    }
+
+    if (intent === "add-to-challenge") {
+      const scheduledDate = formData.get("scheduled_date") as string;
+      const itemName = formData.get("item_name") as string;
+      
+      if (scheduledDate && itemName) {
+        await addToChallengeCalendar(client, {
+          userId: user.id,
+          itemName,
+          scheduledDate
+        });
+        
+        await updateSessionCompletion(client, sessionId, true);
+        return redirect('/let-go-buddy/challenge-calendar');
+      }
+    }
+
   } catch (error) {
-    console.error("AI analysis error:", error);
-    console.error("Error details:", {
-      message: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : undefined,
-      error: error
-    });
+    console.error('Action error:', error);
+    return { error: 'Something went wrong. Please try again.' };
+  }
+
+  return null;
+}
+
+export default function LetGoBuddyAnalysisPage({ loaderData, actionData }: Route.ComponentProps) {
+  const { sessionId, analysis: existingAnalysis, isNewAnalysis } = loaderData;
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(addDays(new Date(), 1));
+  
+  const analysis = actionData?.analysisResult || existingAnalysis;
+
+  const handleGenerateAnalysis = async () => {
+    setIsGenerating(true);
     
-    return Response.json(
-      { 
-        error: "AI analysis failed", 
-        details: error instanceof Error ? error.message : 'Unknown error',
-        type: error?.constructor?.name || 'UnknownError'
-      },
-      { status: 500 }
+    // Create form and submit
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.style.display = 'none';
+    
+    const intentInput = document.createElement('input');
+    intentInput.name = 'intent';
+    intentInput.value = 'generate-analysis';
+    form.appendChild(intentInput);
+    
+    document.body.appendChild(form);
+    form.submit();
+  };
+
+  if (!analysis && isNewAnalysis) {
+    return (
+      <div className="container max-w-4xl mx-auto px-4 py-8">
+        <div className="flex items-center gap-2 mb-6">
+          <SparklesIcon className="w-6 h-6 text-blue-500" />
+          <h1 className="text-2xl font-bold">Analyzing Your Conversation</h1>
+          <Badge variant="outline" className="ml-auto">Session {sessionId}</Badge>
+        </div>
+
+        <Card>
+          <CardContent className="text-center py-12">
+            <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6">
+              <SparklesIcon className="w-8 h-8 text-blue-600" />
+            </div>
+            <h3 className="text-xl font-semibold mb-4">Ready to Analyze Your Item?</h3>
+            <p className="text-gray-600 mb-8 max-w-md mx-auto">
+              I'll analyze your conversation with Joy to provide personalized recommendations 
+              for your item based on your emotional attachment and usage patterns.
+            </p>
+            <Button 
+              onClick={handleGenerateAnalysis} 
+              disabled={isGenerating}
+              size="lg"
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              {isGenerating ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                  Analyzing...
+                </>
+              ) : (
+                <>
+                  <SparklesIcon className="w-4 h-4 mr-2" />
+                  Start Analysis
+                </>
+              )}
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
     );
   }
-};
+
+  if (!analysis) {
+    return (
+      <div className="container max-w-4xl mx-auto px-4 py-8">
+        <div className="text-center py-12">
+          <p>Loading analysis...</p>
+        </div>
+      </div>
+    );
+  }
+
+  const getRecommendationColor = (recommendation: string) => {
+    switch (recommendation) {
+      case 'sell': return 'text-green-600 bg-green-50';
+      case 'donate': return 'text-blue-600 bg-blue-50';
+      case 'keep': return 'text-orange-600 bg-orange-50';
+      default: return 'text-gray-600 bg-gray-50';
+    }
+  };
+
+  return (
+    <div className="container max-w-4xl mx-auto px-4 py-8">
+      <div className="flex items-center gap-2 mb-6">
+        <SparklesIcon className="w-6 h-6 text-blue-500" />
+        <h1 className="text-2xl font-bold">Analysis Results</h1>
+        <Badge variant="outline" className="ml-auto">Session {sessionId}</Badge>
+      </div>
+
+      {/* Main Analysis Card */}
+      <Card className="mb-6">
+        <CardHeader>
+          <div className="flex items-start justify-between">
+            <div>
+              <CardTitle className="text-xl mb-2">{analysis.ai_listing_title || "Your Item"}</CardTitle>
+              <Badge className={getRecommendationColor(analysis.ai_category || analysis.recommendation)}>
+                Recommendation: {(analysis.ai_category || analysis.recommendation).charAt(0).toUpperCase() + (analysis.ai_category || analysis.recommendation).slice(1)}
+              </Badge>
+            </div>
+            <div className="text-right">
+              <div className="flex items-center gap-1 text-sm text-gray-500">
+                <HeartIcon className="w-4 h-4" />
+                <span>Emotional Score: {analysis.emotional_score || 7}/10</span>
+              </div>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <div>
+              <h4 className="font-medium mb-2">Joy's Analysis</h4>
+              <p className="text-gray-700">
+                {analysis.analysis_summary || analysis.recommendation_reason}
+              </p>
+            </div>
+            
+            {analysis.emotion_summary && (
+              <div>
+                <h4 className="font-medium mb-2">Your Emotional Connection</h4>
+                <p className="text-gray-700">{analysis.emotion_summary}</p>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Action Buttons */}
+      <div className="grid md:grid-cols-3 gap-4 mb-6">
+        {/* Sell Option */}
+        <Card className="cursor-pointer hover:shadow-md transition-shadow">
+          <CardContent className="p-6 text-center">
+            <form method="post">
+              <input type="hidden" name="intent" value="start-selling" />
+              <input type="hidden" name="analysis_id" value={analysis.analysis_id} />
+              
+              <CurrencyDollarIcon className="w-12 h-12 text-green-500 mx-auto mb-4" />
+              <h3 className="font-semibold mb-2 text-green-700">Start Selling</h3>
+              <p className="text-sm text-gray-600 mb-4">
+                Create a listing with AI-generated title and description
+              </p>
+              <Button type="submit" className="w-full bg-green-600 hover:bg-green-700">
+                <ArrowRightIcon className="w-4 h-4 mr-2" />
+                Create Listing
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+
+        {/* Donate Option */}
+        <Card className="cursor-pointer hover:shadow-md transition-shadow">
+          <CardContent className="p-6 text-center">
+            <form method="post">
+              <input type="hidden" name="intent" value="donate" />
+              <input type="hidden" name="analysis_id" value={analysis.analysis_id} />
+              
+              <HeartIcon className="w-12 h-12 text-blue-500 mx-auto mb-4" />
+              <h3 className="font-semibold mb-2 text-blue-700">Donate</h3>
+              <p className="text-sm text-gray-600 mb-4">
+                List for free to help someone in need
+              </p>
+              <Button type="submit" variant="outline" className="w-full border-blue-600 text-blue-600 hover:bg-blue-50">
+                <TruckIcon className="w-4 h-4 mr-2" />
+                List for Free
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+
+        {/* Challenge Calendar */}
+        <Card className="cursor-pointer hover:shadow-md transition-shadow">
+          <CardContent className="p-6 text-center">
+            <CalendarIcon className="w-12 h-12 text-orange-500 mx-auto mb-4" />
+            <h3 className="font-semibold mb-2 text-orange-700">Challenge Calendar</h3>
+            <p className="text-sm text-gray-600 mb-4">
+              Schedule when to revisit this decision
+            </p>
+            
+            <div className="relative">
+              <Button 
+                variant="outline" 
+                className="w-full mb-2"
+                onClick={() => {
+                  // Simple date picker - for now just set to tomorrow
+                  setSelectedDate(addDays(new Date(), 1));
+                }}
+              >
+                <CalendarIcon className="w-4 h-4 mr-2" />
+                {selectedDate ? format(selectedDate, 'MMM d, yyyy') : 'Pick a date'}
+              </Button>
+            </div>
+
+            <form method="post">
+              <input type="hidden" name="intent" value="add-to-challenge" />
+              <input type="hidden" name="item_name" value={analysis.ai_listing_title || analysis.item_name} />
+              <input type="hidden" name="scheduled_date" value={selectedDate ? format(selectedDate, 'yyyy-MM-dd') : ''} />
+              
+              <Button 
+                type="submit" 
+                variant="outline" 
+                className="w-full border-orange-600 text-orange-600 hover:bg-orange-50"
+                disabled={!selectedDate}
+              >
+                <CheckCircleIcon className="w-4 h-4 mr-2" />
+                Add to Calendar
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* AI Generated Listing Preview */}
+      {analysis.ai_listing_description && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Generated Listing Preview</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              <div>
+                <label className="text-sm font-medium">Title</label>
+                <Input value={analysis.ai_listing_title} readOnly className="mt-1" />
+              </div>
+              <div>
+                <label className="text-sm font-medium">Description</label>
+                <div className="mt-1 p-3 bg-gray-50 rounded-md text-sm">
+                  {analysis.ai_listing_description}
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+}

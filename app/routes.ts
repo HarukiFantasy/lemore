@@ -13,8 +13,9 @@ export default [
   ]),
   ...prefix("let-go-buddy", [
     index("features/let-go-buddy/pages/let-go-buddy-page.tsx"),
-    route("/analysis", "features/let-go-buddy/pages/let-go-buddy-analysis-page.tsx"),
-    route("/challenge-calendar", "features/let-go-buddy/pages/challenge-calendar-page.tsx"),
+    route("chat/:session_id", "features/let-go-buddy/pages/let-go-buddy-chat-page.tsx"),
+    route("analysis/:session_id", "features/let-go-buddy/pages/let-go-buddy-analysis-page.tsx"),
+    route("challenge-calendar", "features/let-go-buddy/pages/challenge-calendar-page.tsx"),
   ]),
 
   ...prefix("/auth", [

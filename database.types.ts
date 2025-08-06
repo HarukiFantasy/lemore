@@ -106,6 +106,48 @@ export type Database = {
             referencedRelation: "user_stats_view"
             referencedColumns: ["profile_id"]
           },
+          {
+            foreignKeyName: "challenge_calendar_items_user_id_user_profiles_profile_id_fk"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "product_detail_view"
+            referencedColumns: ["seller_id"]
+          },
+          {
+            foreignKeyName: "challenge_calendar_items_user_id_user_profiles_profile_id_fk"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "products_listings_view"
+            referencedColumns: ["seller_id"]
+          },
+          {
+            foreignKeyName: "challenge_calendar_items_user_id_user_profiles_profile_id_fk"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_dashboard_view"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "challenge_calendar_items_user_id_user_profiles_profile_id_fk"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "challenge_calendar_items_user_id_user_profiles_profile_id_fk"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_sales_stats_view"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "challenge_calendar_items_user_id_user_profiles_profile_id_fk"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_stats_view"
+            referencedColumns: ["profile_id"]
+          },
         ]
       }
       item_analyses: {
@@ -194,7 +236,6 @@ export type Database = {
           created_at: string
           is_completed: boolean
           session_id: number
-          situation: Database["public"]["Enums"]["declutter_situation"]
           updated_at: string
           user_id: string
         }
@@ -202,7 +243,6 @@ export type Database = {
           created_at?: string
           is_completed?: boolean
           session_id?: never
-          situation: Database["public"]["Enums"]["declutter_situation"]
           updated_at?: string
           user_id: string
         }
@@ -210,7 +250,6 @@ export type Database = {
           created_at?: string
           is_completed?: boolean
           session_id?: never
-          situation?: Database["public"]["Enums"]["declutter_situation"]
           updated_at?: string
           user_id?: string
         }
@@ -539,6 +578,41 @@ export type Database = {
           viewed_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "product_views_product_id_products_product_id_fk"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "product_detail_view"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "product_views_product_id_products_product_id_fk"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "product_views_product_id_products_product_id_fk"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products_listings_view"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "product_views_product_id_products_product_id_fk"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products_with_seller_stats_view"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "product_views_product_id_products_product_id_fk"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "user_conversations_view"
+            referencedColumns: ["product_id"]
+          },
           {
             foreignKeyName: "product_views_user_id_user_profiles_profile_id_fk"
             columns: ["user_id"]

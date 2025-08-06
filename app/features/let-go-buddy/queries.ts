@@ -1,6 +1,25 @@
 import { SupabaseClient } from '@supabase/supabase-js';
 import { Database } from '~/supa-client';
 
+// Get user's total count of Let Go Buddy sessions
+export async function getLetGoSessionsCount(
+  client: SupabaseClient<Database>,
+  userId: string
+) {
+  const { count, error } = await client
+    .from('let_go_buddy_sessions')
+    .select('*', { count: 'exact', head: true })
+    .eq('user_id', userId);
+
+  if (error) {
+    console.error('Error fetching session count:', error);
+    return 0;
+  }
+
+  return count || 0;
+}
+
+
 // Get user's decluttering insights from all their Let Go Buddy sessions
 export async function getUserDeclutteringInsights(
   client: SupabaseClient<Database>,

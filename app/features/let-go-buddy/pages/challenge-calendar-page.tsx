@@ -1,424 +1,373 @@
-import { useState, useEffect } from 'react';
-import { redirect, useFetcher, useLocation } from "react-router";
-import { Card, CardContent, CardHeader, CardTitle } from '~/common/components/ui/card';
-import { Button } from '~/common/components/ui/button';
-import { Checkbox } from '~/common/components/ui/checkbox';
-import { Progress } from '~/common/components/ui/progress';
-import { Textarea } from '~/common/components/ui/textarea';
-import { Calendar } from '~/common/components/ui/calendar';
-import { Input } from '~/common/components/ui/input';
-import { makeSSRClient } from '~/supa-client';
-import { getChallengeItems } from '../queries';
-import { createChallengeItem, updateChallengeItemCompletion, deleteChallengeItem } from '../mutations';
+import { useState } from "react";
+import type { Route } from "./+types/challenge-calendar-page";
+import { Button } from "~/common/components/ui/button";
+import { Card, CardContent } from "~/common/components/ui/card";
+import { Badge } from "~/common/components/ui/badge";
+import { Textarea } from "~/common/components/ui/textarea";
+import { 
+  CalendarIcon, 
+  CheckCircleIcon,
+  ClockIcon,
+  PencilIcon,
+  SparklesIcon,
+  StarIcon
+} from "@heroicons/react/24/outline";
+import { makeSSRClient } from "~/supa-client";
+import { redirect } from "react-router";
+import { getChallengeItems } from "../queries";
+import { format, parseISO, isFuture, isPast, isToday } from "date-fns";
 
-export async function loader({ request }: { request: Request }) {
+export async function loader({ request }: Route.LoaderArgs) {
   const { client } = makeSSRClient(request);
   const { data: { user } } = await client.auth.getUser();
   if (!user) {
-    const url = new URL(request.url);
-    return redirect(`/auth/login?redirectTo=${url.pathname}`);
+    return redirect('/auth/login');
   }
-  
-  // Check usage limits
-  let canUseLetGoBuddy = true;
-  const { count } = await client
-    .from('let_go_buddy_sessions')
-    .select('*', { count: 'exact', head: true })
-    .eq('user_id', user.id);
-  if (typeof count === 'number' && count >= 2) {
-    canUseLetGoBuddy = false;
-  }
-  
-  // Fetch challenge calendar items
+
   const challengeItems = await getChallengeItems(client, { userId: user.id });
-  
-  return { user, canUseLetGoBuddy, challengeItems };
+
+  // Separate items by status
+  const upcomingItems = challengeItems.filter(item => !item.completed && isFuture(parseISO(item.scheduled_date)));
+  const todayItems = challengeItems.filter(item => !item.completed && isToday(parseISO(item.scheduled_date)));
+  const overdueItems = challengeItems.filter(item => !item.completed && isPast(parseISO(item.scheduled_date)) && !isToday(parseISO(item.scheduled_date)));
+  const completedItems = challengeItems.filter(item => item.completed);
+
+  return {
+    challengeItems,
+    upcomingItems,
+    todayItems,
+    overdueItems,
+    completedItems,
+    stats: {
+      total: challengeItems.length,
+      completed: completedItems.length,
+      upcoming: upcomingItems.length,
+      overdue: overdueItems.length
+    }
+  };
 }
 
-export async function action({ request }: { request: Request }) {
+export async function action({ request }: Route.ActionArgs) {
   const { client } = makeSSRClient(request);
   const { data: { user } } = await client.auth.getUser();
-  
   if (!user) {
-    return new Response(JSON.stringify({ error: "Authentication required" }), { 
-      status: 401,
-      headers: { "Content-Type": "application/json" }
-    });
+    return redirect('/auth/login');
   }
 
   const formData = await request.formData();
-  const intent = formData.get('intent') as string;
+  const intent = formData.get("intent");
+  const itemId = parseInt(formData.get("item_id") as string);
 
   try {
-    switch (intent) {
-      case 'create': {
-        const name = formData.get('name') as string;
-        const scheduledDate = formData.get('scheduledDate') as string;
-        
-        if (!name || !scheduledDate) {
-          return new Response(JSON.stringify({ error: "Name and scheduled date are required" }), { 
-            status: 400,
-            headers: { "Content-Type": "application/json" }
-          });
-        }
+    if (intent === "complete-item") {
+      const reflection = formData.get("reflection") as string;
+      
+      const { error } = await client
+        .from('challenge_calendar_items')
+        .update({
+          completed: true,
+          completed_at: new Date().toISOString(),
+          reflection: reflection || null,
+          updated_at: new Date().toISOString()
+        })
+        .eq('item_id', itemId)
+        .eq('user_id', user.id);
 
-        const item = await createChallengeItem(client, {
-          userId: user.id,
-          name,
-          scheduledDate
-        });
-
-        return new Response(JSON.stringify({ success: true, item }), {
-          headers: { "Content-Type": "application/json" }
-        });
+      if (error) {
+        return { error: 'Failed to complete item' };
       }
 
-      case 'update': {
-        const itemId = parseInt(formData.get('itemId') as string);
-        const completed = formData.get('completed') === 'true';
-        const reflection = formData.get('reflection') as string;
-
-        const item = await updateChallengeItemCompletion(client, {
-          itemId,
-          completed,
-          reflection: reflection || undefined,
-          userId: user.id
-        });
-
-
-        return new Response(JSON.stringify({ success: true, item }), {
-          headers: { "Content-Type": "application/json" }
-        });
-      }
-
-      case 'delete': {
-        const itemId = parseInt(formData.get('itemId') as string);
-
-        await deleteChallengeItem(client, {
-          itemId,
-          userId: user.id
-        });
-
-        return new Response(JSON.stringify({ success: true }), {
-          headers: { "Content-Type": "application/json" }
-        });
-      }
-
-      default:
-        return new Response(JSON.stringify({ error: "Invalid intent" }), { 
-          status: 400,
-          headers: { "Content-Type": "application/json" }
-        });
+      return { success: 'Item marked as completed!' };
     }
+
+    if (intent === "update-reflection") {
+      const reflection = formData.get("reflection") as string;
+      
+      const { error } = await client
+        .from('challenge_calendar_items')
+        .update({
+          reflection,
+          updated_at: new Date().toISOString()
+        })
+        .eq('item_id', itemId)
+        .eq('user_id', user.id);
+
+      if (error) {
+        return { error: 'Failed to update reflection' };
+      }
+
+      return { success: 'Reflection updated!' };
+    }
+
   } catch (error) {
-    console.error('Challenge calendar action error:', error);
-    return new Response(JSON.stringify({ 
-      error: error instanceof Error ? error.message : "Unknown error occurred" 
-    }), { 
-      status: 500,
-      headers: { "Content-Type": "application/json" }
-    });
+    console.error('Action error:', error);
+    return { error: 'Something went wrong. Please try again.' };
   }
+
+  return null;
 }
 
-export default function ChallengeCalendarPage({ loaderData }: { loaderData: { user: any; canUseLetGoBuddy: boolean; challengeItems: any[] } }) {
-  const { user, canUseLetGoBuddy, challengeItems: initialChallengeItems } = loaderData;
-  const location = useLocation();
-  
-  // Handle pending item from Let Go Buddy page
-  const pendingItem = location.state?.pendingItem;
-  
-  const [challengeItems, setChallengeItems] = useState(initialChallengeItems);
-  const [newItemName, setNewItemName] = useState(pendingItem?.name || '');
-  const [newItemDate, setNewItemDate] = useState(pendingItem?.scheduledDate || '');
-  const fetcher = useFetcher();
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(
-    pendingItem?.scheduledDate ? new Date(pendingItem.scheduledDate) : new Date()
-  );
-  const [showAllTasks, setShowAllTasks] = useState(false);
-  const [showDatePicker, setShowDatePicker] = useState(!!pendingItem); // Show date picker if there's a pending item
+export default function ChallengeCalendarPage({ loaderData, actionData }: Route.ComponentProps) {
+  const { upcomingItems, todayItems, overdueItems, completedItems, stats } = loaderData;
+  const [reflections, setReflections] = useState<Record<string, string>>({});
+  const [editingReflection, setEditingReflection] = useState<number | null>(null);
 
-  // Handle fetcher completion to refresh data
-  useEffect(() => {
-    if (fetcher.data && fetcher.state === 'idle') {
-      if (fetcher.data.success && fetcher.data.item) {
-        // Update the local state when creating a new item
-        if (typeof fetcher.data.item === 'object' && 'item_id' in fetcher.data.item) {
-          setChallengeItems(prev => [...prev, fetcher.data.item]);
-        }
-      }
-    }
-  }, [fetcher.data, fetcher.state]);
+  const getItemStatusColor = (item: any) => {
+    if (item.completed) return 'bg-green-50 border-green-200';
+    if (isToday(parseISO(item.scheduled_date))) return 'bg-blue-50 border-blue-200';
+    if (isPast(parseISO(item.scheduled_date))) return 'bg-red-50 border-red-200';
+    return 'bg-gray-50 border-gray-200';
+  };
 
-  const handleCompletion = (itemId: number) => {
-    const item = challengeItems.find(item => item.item_id === itemId);
-    if (!item) return;
+  const getStatusBadge = (item: any) => {
+    if (item.completed) return <Badge className="bg-green-100 text-green-700">Completed</Badge>;
+    if (isToday(parseISO(item.scheduled_date))) return <Badge className="bg-blue-100 text-blue-700">Due Today</Badge>;
+    if (isPast(parseISO(item.scheduled_date))) return <Badge className="bg-red-100 text-red-700">Overdue</Badge>;
+    return <Badge variant="outline">Upcoming</Badge>;
+  };
+
+  const handleCompleteItem = (itemId: number, reflection: string) => {
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.style.display = 'none';
     
-    const formData = new FormData();
-    formData.append('intent', 'update');
-    formData.append('itemId', itemId.toString());
-    formData.append('completed', (!item.completed).toString());
-    formData.append('reflection', item.reflection || '');
+    const intentInput = document.createElement('input');
+    intentInput.name = 'intent';
+    intentInput.value = 'complete-item';
+    form.appendChild(intentInput);
     
-    fetcher.submit(formData, { method: 'POST' });
+    const itemIdInput = document.createElement('input');
+    itemIdInput.name = 'item_id';
+    itemIdInput.value = itemId.toString();
+    form.appendChild(itemIdInput);
     
-    // Optimistically update UI
-    setChallengeItems(items =>
-      items.map(item => (item.item_id === itemId ? { ...item, completed: !item.completed } : item))
+    const reflectionInput = document.createElement('textarea');
+    reflectionInput.name = 'reflection';
+    reflectionInput.value = reflection;
+    form.appendChild(reflectionInput);
+    
+    document.body.appendChild(form);
+    form.submit();
+  };
+
+  const ItemCard = ({ item, showReflection = false }: { item: any; showReflection?: boolean }) => {
+    const reflectionText = reflections[item.item_id] || item.reflection || '';
+    const isEditing = editingReflection === item.item_id;
+
+    return (
+      <Card key={item.item_id} className={`${getItemStatusColor(item)} border-l-4`}>
+        <CardContent className="p-4">
+          <div className="flex items-start justify-between mb-3">
+            <div>
+              <h3 className="font-semibold text-lg">{item.name}</h3>
+              <p className="text-sm text-gray-500">
+                Scheduled for {format(parseISO(item.scheduled_date), 'MMM d, yyyy')}
+              </p>
+            </div>
+            {getStatusBadge(item)}
+          </div>
+
+          {showReflection && (
+            <div className="mt-4">
+              <div className="flex items-center justify-between mb-2">
+                <h4 className="text-sm font-medium">Reflection</h4>
+                {item.completed && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setEditingReflection(isEditing ? null : item.item_id)}
+                  >
+                    <PencilIcon className="w-3 h-3" />
+                  </Button>
+                )}
+              </div>
+              
+              {isEditing ? (
+                <div className="space-y-2">
+                  <Textarea
+                    value={reflectionText}
+                    onChange={(e) => setReflections(prev => ({ ...prev, [item.item_id]: e.target.value }))}
+                    placeholder="How did it feel to let go of this item?"
+                    rows={3}
+                  />
+                  <div className="flex gap-2">
+                    <form method="post" className="inline">
+                      <input type="hidden" name="intent" value="update-reflection" />
+                      <input type="hidden" name="item_id" value={item.item_id} />
+                      <input type="hidden" name="reflection" value={reflectionText} />
+                      <Button type="submit" size="sm">Save</Button>
+                    </form>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => setEditingReflection(null)}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-sm text-gray-600 italic">
+                  {item.reflection || "No reflection yet"}
+                </p>
+              )}
+            </div>
+          )}
+
+          {!item.completed && (
+            <div className="mt-4">
+              <div className="space-y-2">
+                <Textarea
+                  placeholder="How do you feel about letting go of this item? (Optional)"
+                  rows={2}
+                  value={reflectionText}
+                  onChange={(e) => setReflections(prev => ({ ...prev, [item.item_id]: e.target.value }))}
+                />
+                <Button
+                  size="sm"
+                  onClick={() => handleCompleteItem(item.item_id, reflectionText)}
+                  className="bg-green-600 hover:bg-green-700"
+                >
+                  <CheckCircleIcon className="w-4 h-4 mr-1" />
+                  Mark as Complete
+                </Button>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     );
   };
-
-  const handleReflection = (itemId: number, text: string) => {
-    const item = challengeItems.find(item => item.item_id === itemId);
-    if (!item) return;
-    
-    const formData = new FormData();
-    formData.append('intent', 'update');
-    formData.append('itemId', itemId.toString());
-    formData.append('completed', item.completed.toString());
-    formData.append('reflection', text);
-    
-    fetcher.submit(formData, { method: 'POST' });
-    
-    // Optimistically update UI
-    setChallengeItems(items =>
-      items.map(item => (item.item_id === itemId ? { ...item, reflection: text } : item))
-    );
-  };
-
-  const handleAddItem = () => {
-    if (!newItemName || !newItemDate) return;
-    
-    const formData = new FormData();
-    formData.append('intent', 'create');
-    formData.append('name', newItemName);
-    formData.append('scheduledDate', newItemDate);
-    
-    fetcher.submit(formData, { method: 'POST' });
-    
-    // Reset form
-    setNewItemName('');
-    setNewItemDate('');
-  };
-
-  const handleDeleteItem = (itemId: number) => {
-    const formData = new FormData();
-    formData.append('intent', 'delete');
-    formData.append('itemId', itemId.toString());
-    
-    fetcher.submit(formData, { method: 'POST' });
-    
-    // Optimistically update UI
-    setChallengeItems(items => items.filter(item => item.item_id !== itemId));
-  };
-
-  const completedCount = challengeItems.filter(item => item.completed).length;
-  const progressPercentage = (completedCount / challengeItems.length) * 100;
-  
-  const challengeDays = challengeItems.map(item => {
-    const date = new Date(item.scheduled_date);
-    return new Date(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate());
-  });
-  
-  const selectedDayItem = selectedDate 
-    ? challengeItems.find(item => {
-        const itemDate = new Date(item.scheduled_date);
-        const itemUTCDate = new Date(Date.UTC(itemDate.getUTCFullYear(), itemDate.getUTCMonth(), itemDate.getUTCDate()));
-        return itemUTCDate.toDateString() === selectedDate.toDateString();
-      })
-    : undefined;
 
   return (
-    <div className="w-full md:w-4/5 mx-auto px-4 py-8 space-y-8">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold">Declutter Challenge Calendar</h1>
-        <p className="text-lg text-muted-foreground mt-2">One item at a time. You got this!</p>
+    <div className="container max-w-6xl mx-auto px-4 py-8">
+      <div className="flex items-center gap-2 mb-6">
+        <CalendarIcon className="w-6 h-6 text-blue-500" />
+        <h1 className="text-2xl font-bold">Challenge Calendar</h1>
       </div>
 
-      {!canUseLetGoBuddy && (
-        <Card className="border-amber-200 bg-amber-50">
+      {/* Stats Overview */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+        <Card>
           <CardContent className="p-4 text-center">
-            <div className="text-amber-800 font-medium mb-2">Let Go Buddy Usage Limit Reached</div>
-            <div className="text-sm text-amber-700">
-              You've used your free Let Go Buddy sessions (2/2) as an Explorer level user. 
-              The Challenge Calendar is still available, but AI analysis requires more trust level.
-            </div>
+            <div className="text-2xl font-bold text-blue-600">{stats.total}</div>
+            <div className="text-sm text-gray-600">Total Items</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4 text-center">
+            <div className="text-2xl font-bold text-green-600">{stats.completed}</div>
+            <div className="text-sm text-gray-600">Completed</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4 text-center">
+            <div className="text-2xl font-bold text-orange-600">{stats.upcoming}</div>
+            <div className="text-sm text-gray-600">Upcoming</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4 text-center">
+            <div className="text-2xl font-bold text-red-600">{stats.overdue}</div>
+            <div className="text-sm text-gray-600">Overdue</div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {actionData?.success && (
+        <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+          <p className="text-green-700">{actionData.success}</p>
+        </div>
+      )}
+
+      {actionData?.error && (
+        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+          <p className="text-red-700">{actionData.error}</p>
+        </div>
+      )}
+
+      {/* Due Today */}
+      {todayItems.length > 0 && (
+        <div className="mb-8">
+          <div className="flex items-center gap-2 mb-4">
+            <StarIcon className="w-5 h-5 text-blue-500" />
+            <h2 className="text-xl font-semibold">Due Today</h2>
+            <Badge className="bg-blue-100 text-blue-700">{todayItems.length}</Badge>
+          </div>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {todayItems.map((item) => (
+              <ItemCard key={item.item_id} item={item} />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Overdue Items */}
+      {overdueItems.length > 0 && (
+        <div className="mb-8">
+          <div className="flex items-center gap-2 mb-4">
+            <ClockIcon className="w-5 h-5 text-red-500" />
+            <h2 className="text-xl font-semibold">Overdue</h2>
+            <Badge className="bg-red-100 text-red-700">{overdueItems.length}</Badge>
+          </div>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {overdueItems.map((item) => (
+              <ItemCard key={item.item_id} item={item} />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Upcoming Items */}
+      {upcomingItems.length > 0 && (
+        <div className="mb-8">
+          <div className="flex items-center gap-2 mb-4">
+            <CalendarIcon className="w-5 h-5 text-gray-500" />
+            <h2 className="text-xl font-semibold">Upcoming</h2>
+            <Badge variant="outline">{upcomingItems.length}</Badge>
+          </div>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {upcomingItems.map((item) => (
+              <ItemCard key={item.item_id} item={item} />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Completed Items */}
+      {completedItems.length > 0 && (
+        <div className="mb-8">
+          <div className="flex items-center gap-2 mb-4">
+            <CheckCircleIcon className="w-5 h-5 text-green-500" />
+            <h2 className="text-xl font-semibold">Completed</h2>
+            <Badge className="bg-green-100 text-green-700">{completedItems.length}</Badge>
+          </div>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {completedItems.map((item) => (
+              <ItemCard key={item.item_id} item={item} showReflection />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Empty State */}
+      {stats.total === 0 && (
+        <Card className="text-center py-12">
+          <CardContent>
+            <CalendarIcon className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+            <h3 className="text-xl font-semibold mb-2">No Items Scheduled Yet</h3>
+            <p className="text-gray-600 mb-6">
+              Start a Let Go Buddy session to add items to your challenge calendar.
+            </p>
+            <Button asChild>
+              <a href="/let-go-buddy" className="inline-flex items-center gap-2">
+                <SparklesIcon className="w-4 h-4" />
+                Start New Session
+              </a>
+            </Button>
           </CardContent>
         </Card>
       )}
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Your Progress</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="mb-2">{`You've completed ${completedCount} of ${challengeItems.length} items. Keep going!`}</p>
-          <Progress value={progressPercentage} className="bg-[#e5eecc] [&>div]:bg-[#b5e6e7]" />
-        </CardContent>
-      </Card>
-      
-      <div className="flex gap-8 items-start">
-        <div className="w-min">
-          <Calendar
-            mode="single"
-            selected={selectedDate}
-            onSelect={setSelectedDate}
-            modifiers={{ challengeDay: challengeDays }}
-            className="rounded-md border"
-          />
-        </div>
-        
-        <div className="space-y-4 flex-1">
-          {showAllTasks ? (
-            <>
-              <div className="flex justify-between items-center">
-                <h2 className="text-xl font-semibold">All Challenge Items</h2>
-                <Button variant="outline" size="sm" onClick={() => setShowAllTasks(false)}>
-                  View Selected Day
-                </Button>
-              </div>
-              <div className="space-y-4 max-h-[400px] overflow-y-auto pr-4">
-                {challengeItems.map(item => (
-                  <Card key={item.item_id} className={item.completed ? 'bg-muted/50' : ''}>
-                    <CardContent className="p-3">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h3 className="font-semibold text-sm">{item.name}</h3>
-                          <p className="text-xs text-muted-foreground">{new Date(item.scheduled_date).toLocaleDateString()}</p>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs">Done</span>
-                          <Checkbox
-                            checked={item.completed}
-                            onCheckedChange={() => handleCompletion(item.item_id)}
-                          />
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleDeleteItem(item.item_id)}
-                            className="text-red-500 hover:text-red-700 h-6 w-6 p-0"
-                          >
-                            ×
-                          </Button>
-                        </div>
-                      </div>
-                      {item.completed && item.reflection && (
-                        <div className="mt-2 pt-2 border-t">
-                          <p className="text-xs text-muted-foreground italic">{item.reflection}</p>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </>
-          ) : (
-            <>
-              <div className="flex justify-between items-center">
-                <h2 className="text-xl font-semibold">
-                  {selectedDate ? selectedDate.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) : 'Select a date'}
-                </h2>
-                <Button variant="outline" size="sm" onClick={() => setShowAllTasks(true)}>
-                  View All Tasks
-                </Button>
-              </div>
-              
-              {selectedDayItem ? (
-                <Card className={selectedDayItem.completed ? 'bg-muted/50' : ''}>
-                  <CardContent className="p-4 flex flex-col gap-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h3 className="font-semibold">{selectedDayItem.name}</h3>
-                        <p className="text-sm text-muted-foreground">Due today</p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span>Done</span>
-                        <Checkbox
-                          checked={selectedDayItem.completed}
-                          onCheckedChange={() => handleCompletion(selectedDayItem.item_id)}
-                        />
-                      </div>
-                    </div>
-
-                    {selectedDayItem.completed && (
-                      <div className="border-t pt-4">
-                        <h4 className="font-semibold text-sm mb-2">How did it feel?</h4>
-                        <Textarea
-                          placeholder="e.g., Liberating, nostalgic, difficult..."
-                          value={selectedDayItem.reflection}
-                          onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => handleReflection(selectedDayItem.item_id, e.target.value)}
-                        />
-                      </div>
-                    )}
-
-                    {!selectedDayItem.completed && (
-                      <Button variant="ghost" className="text-sm text-amber-600 h-auto p-0 justify-start">
-                        Still hesitating on this one?
-                      </Button>
-                    )}
-                  </CardContent>
-                </Card>
-              ) : (
-                <Card>
-                  <CardContent className="p-4 text-center text-muted-foreground">
-                    <p>No task scheduled for this day.</p>
-                    <p className="text-xs mt-2">Select a highlighted day to see your task.</p>
-                  </CardContent>
-                </Card>
-              )}
-            </>
-          )}
-        </div>
-      </div>
-
-      {/* Add New Item Form */}
-      <Card className={pendingItem ? "border-blue-200 bg-blue-50" : ""}>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            {pendingItem && (
-              <span className="text-blue-600">✨</span>
-            )}
-            {pendingItem ? "Schedule Your Item from Let Go Buddy" : "Add New Challenge Item"}
-          </CardTitle>
-          {pendingItem && (
-            <p className="text-sm text-blue-700">
-              Your item "{pendingItem.name}" is ready to be scheduled! Choose a date below.
-            </p>
-          )}
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div>
-            <Input
-              placeholder="Item name (e.g., Old College Hoodie)"
-              value={newItemName}
-              onChange={(e) => setNewItemName(e.target.value)}
-              className={pendingItem ? "bg-white" : ""}
-            />
-          </div>
-          <div>
-            <label className="text-sm font-medium text-gray-700 block mb-2">
-              Scheduled Date
-            </label>
-            <Input
-              type="date"
-              value={newItemDate}
-              onChange={(e) => {
-                setNewItemDate(e.target.value);
-                setSelectedDate(new Date(e.target.value));
-              }}
-              className={pendingItem ? "bg-white" : ""}
-              min={new Date().toISOString().split('T')[0]} // Cannot schedule in the past
-            />
-          </div>
-          <Button 
-            onClick={handleAddItem}
-            disabled={!newItemName || !newItemDate || fetcher.state === 'submitting'}
-            className={`w-full ${pendingItem ? 'bg-blue-600 hover:bg-blue-700' : ''}`}
-          >
-            {fetcher.state === 'submitting' ? 'Adding...' : pendingItem ? 'Schedule This Item' : 'Add Challenge Item'}
-          </Button>
-        </CardContent>
-      </Card>
     </div>
   );
 }

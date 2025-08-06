@@ -1,176 +1,163 @@
 import { SupabaseClient } from '@supabase/supabase-js';
 import { Database } from '~/supa-client';
-import { Json } from '../../../database.types';
 
-
-const ALLOWED_SITUATIONS = ["Moving", "Minimalism", "Spring Cleaning", "Other"] as const;
-type DeclutterSituation = typeof ALLOWED_SITUATIONS[number];
-
-// 이미지 업로드: Supabase Storage 사용 (버킷명: 'letgobuddy-product')
-export async function uploadLetGoBuddyImages(
+// Create a new Let Go Buddy session
+export async function createLetGoBuddySession(
   client: SupabaseClient<Database>,
-  { userId, images }: { userId: string; images: File[] }
-): Promise<string[]> {
-  const bucket = 'letgobuddy-product';
-  const uploadedUrls: string[] = [];
-  for (const file of images) {
-    const filePath = `${userId}/${Date.now()}_${file.name}`;
-    const { error } = await client.storage.from(bucket).upload(filePath, file, {
-      cacheControl: '3600',
-      upsert: false,
-    });
-    if (error) throw new Error(error.message);
-    const { data } = client.storage.from(bucket).getPublicUrl(filePath);
-    uploadedUrls.push(data.publicUrl);
-  }
-  return uploadedUrls;
-}
-
-
-// 세션 생성: let_go_buddy_sessions 테이블에 row 추가
-export async function createLetGoBuddySession(client: any, { userId, situation }: { userId: string, situation: string }) {
-  // Check completed session count before creating - only count completed sessions
-  const { count } = await client
-    .from('let_go_buddy_sessions')
-    .select('*', { count: 'exact', head: true })
-    .eq('user_id', userId)
-    .eq('is_completed', true);
-  if (typeof count === 'number' && count >= 2) {
-    throw new Error('Free usage limit reached. Upgrade your trust level to use more!');
-  }
-  if (!ALLOWED_SITUATIONS.includes(situation as DeclutterSituation)) {
-    throw new Error(`Invalid situation: ${situation}`);
-  }
-  // Note: situation is validated but not stored in DB (removed in migration 0002)
+  userId: string
+) {
   const { data, error } = await client
     .from('let_go_buddy_sessions')
-    .insert([{ user_id: userId }])
+    .insert({
+      user_id: userId,
+      is_completed: false
+    })
     .select('session_id')
     .single();
-  if (error) throw new Error(error.message);
-  return { session_id: data.session_id };
+
+  if (error) {
+    console.error('Error creating Let Go Buddy session:', error);
+    throw error;
+  }
+
+  return data.session_id;
 }
 
-// AI 분석 결과를 item_analyses 테이블에 저장
-export const insertItemAnalysis = async (
+// Update session completion status
+export async function updateSessionCompletion(
+  client: SupabaseClient<Database>,
+  sessionId: number,
+  isCompleted: boolean = true
+) {
+  const { error } = await client
+    .from('let_go_buddy_sessions')
+    .update({ 
+      is_completed: isCompleted,
+      updated_at: new Date().toISOString()
+    })
+    .eq('session_id', sessionId);
+
+  if (error) {
+    console.error('Error updating session completion:', error);
+    throw error;
+  }
+}
+
+// Create an item analysis record
+export async function createItemAnalysis(
   client: SupabaseClient<Database>,
   analysisData: {
     session_id: number;
     item_name: string;
-    item_category: Database["public"]["Enums"]["product_category"];
-    item_condition: Database["public"]["Enums"]["product_condition"];
-    recommendation: Database["public"]["Enums"]["recommendation_action"];
-    recommendation_reason: string; // This is now NOT NULL in the database
-    // Conversation insights from AI coaching (all required with defaults)
-    emotional_attachment_keywords: Json;
-    usage_pattern_keywords: Json;
-    decision_factor_keywords: Json;
-    personality_insights: Json;
-    decision_barriers: Json;
+    item_category: Database['public']['Enums']['product_category'];
+    item_condition: Database['public']['Enums']['product_condition'];
+    recommendation: Database['public']['Enums']['recommendation_action'];
+    recommendation_reason: string;
     emotional_score: number;
+    images?: any;
     ai_listing_title?: string;
     ai_listing_description?: string;
-    ai_listing_location?: Database["public"]["Enums"]["location"];
-    images: Json;
+    ai_listing_location?: Database['public']['Enums']['location'];
+    emotional_attachment_keywords?: any;
+    usage_pattern_keywords?: any;
+    decision_factor_keywords?: any;
+    personality_insights?: any;
+    decision_barriers?: any;
   }
-) => {
-  console.log('insertItemAnalysis - Starting insertion with data:', analysisData);
-  
-  const { data, error } = await client.from("item_analyses").insert([analysisData]).select();
-  
+) {
+  const { data, error } = await client
+    .from('item_analyses')
+    .insert({
+      analysis_id: crypto.randomUUID(),
+      session_id: analysisData.session_id,
+      item_name: analysisData.item_name,
+      item_category: analysisData.item_category,
+      item_condition: analysisData.item_condition,
+      recommendation: analysisData.recommendation,
+      recommendation_reason: analysisData.recommendation_reason,
+      emotional_score: analysisData.emotional_score,
+      images: analysisData.images,
+      ai_listing_title: analysisData.ai_listing_title,
+      ai_listing_description: analysisData.ai_listing_description,
+      ai_listing_location: analysisData.ai_listing_location,
+      emotional_attachment_keywords: analysisData.emotional_attachment_keywords,
+      usage_pattern_keywords: analysisData.usage_pattern_keywords,
+      decision_factor_keywords: analysisData.decision_factor_keywords,
+      personality_insights: analysisData.personality_insights,
+      decision_barriers: analysisData.decision_barriers,
+    })
+    .select('analysis_id')
+    .single();
+
   if (error) {
-    console.error('insertItemAnalysis - Supabase error:', error);
-    console.error('insertItemAnalysis - Error details:', {
-      message: error.message,
-      details: error.details,
-      hint: error.hint,
-      code: error.code
-    });
+    console.error('Error creating item analysis:', error);
     throw error;
   }
-  
-  console.log('insertItemAnalysis - Success:', data);
-  return data;
-};
 
-// Mark Let Go Buddy session as completed
-export async function markSessionCompleted(
+  return data.analysis_id;
+}
+
+// Add item to challenge calendar
+export async function addToChallengeCalendar(
   client: SupabaseClient<Database>,
-  sessionId: number
+  {
+    userId,
+    itemName,
+    scheduledDate,
+  }: {
+    userId: string;
+    itemName: string;
+    scheduledDate: string;
+  }
+) {
+  const { data, error } = await client
+    .from('challenge_calendar_items')
+    .insert({
+      user_id: userId,
+      name: itemName,
+      scheduled_date: scheduledDate,
+      completed: false,
+    })
+    .select('item_id')
+    .single();
+
+  if (error) {
+    console.error('Error adding item to challenge calendar:', error);
+    throw error;
+  }
+
+  return data.item_id;
+}
+
+// Get Let Go Buddy session with analysis data for listing creation
+export async function getLetGoSession(
+  client: SupabaseClient<Database>,
+  sessionId: string
 ) {
   const { data, error } = await client
     .from('let_go_buddy_sessions')
-    .update({ is_completed: true })
-    .eq('session_id', sessionId);
-  
-  if (error) throw new Error(error.message);
-  return data;
-}
-
-// Challenge Calendar mutations
-export async function createChallengeItem(
-  client: SupabaseClient<Database>,
-  { userId, name, scheduledDate }: { userId: string; name: string; scheduledDate: string }
-) {
-  const { data, error } = await client
-    .from('challenge_calendar_items')
-    .insert([{
-      user_id: userId,
-      name,
-      scheduled_date: scheduledDate
-    }])
-    .select()
+    .select(`
+      *,
+      item_analyses (
+        ai_listing_title,
+        ai_listing_description,
+        images
+      )
+    `)
+    .eq('session_id', parseInt(sessionId))
     .single();
-  
-  if (error) throw new Error(error.message);
-  return data;
-}
 
-export async function updateChallengeItemCompletion(
-  client: SupabaseClient<Database>,
-  { itemId, completed, reflection, userId }: { 
-    itemId: number; 
-    completed: boolean; 
-    reflection?: string;
-    userId: string;
+  if (error) {
+    console.error('Error fetching Let Go Buddy session:', error);
+    throw error;
   }
-) {
-  const updateData: any = {
-    completed,
-    updated_at: new Date().toISOString()
+
+  // Flatten the analysis data for easier access
+  const analysis = data.item_analyses?.[0];
+  return {
+    ...data,
+    ai_listing_title: analysis?.ai_listing_title || null,
+    ai_listing_description: analysis?.ai_listing_description || null,
+    image_url: analysis?.images?.[0] || null,
   };
-  
-  if (completed) {
-    updateData.completed_at = new Date().toISOString();
-  } else {
-    updateData.completed_at = null;
-  }
-  
-  if (reflection !== undefined) {
-    updateData.reflection = reflection;
-  }
-
-  const { data, error } = await client
-    .from('challenge_calendar_items')
-    .update(updateData)
-    .eq('item_id', itemId)
-    .eq('user_id', userId) // Ensure user can only update their own items
-    .select()
-    .single();
-  
-  if (error) throw new Error(error.message);
-  return data;
-}
-
-export async function deleteChallengeItem(
-  client: SupabaseClient<Database>,
-  { itemId, userId }: { itemId: number; userId: string }
-) {
-  const { error } = await client
-    .from('challenge_calendar_items')
-    .delete()
-    .eq('item_id', itemId)
-    .eq('user_id', userId); // Ensure user can only delete their own items
-  
-  if (error) throw new Error(error.message);
 }
