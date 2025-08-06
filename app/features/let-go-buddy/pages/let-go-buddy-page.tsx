@@ -20,22 +20,37 @@ export async function loader({ request }: { request: Request }) {
     return redirect(`/auth/login?redirectTo=${url.pathname}`);
   }
   
-  // Check usage limits - allow up to 2 sessions, block from 3rd
+  // Check usage limits - only count COMPLETED sessions
   let canUseLetGoBuddy = true;
-  let usageCount = 0;
-  const { count } = await client
+  let completedCount = 0;
+  let totalCount = 0;
+  
+  // Get count of completed sessions
+  const { count: completed } = await client
+    .from('let_go_buddy_sessions')
+    .select('*', { count: 'exact', head: true })
+    .eq('user_id', user.id)
+    .eq('is_completed', true);
+    
+  // Get total count for display
+  const { count: total } = await client
     .from('let_go_buddy_sessions')
     .select('*', { count: 'exact', head: true })
     .eq('user_id', user.id);
-  if (typeof count === 'number') {
-    usageCount = count;
-    // Block when user has already used 2 sessions (count >= 2 means 3rd attempt)
-    if (count >= 2) {
+    
+  if (typeof completed === 'number') {
+    completedCount = completed;
+    // Block when user has already completed 2 sessions
+    if (completed >= 2) {
       canUseLetGoBuddy = false;
     }
   }
   
-  return { user, canUseLetGoBuddy, usageCount };
+  if (typeof total === 'number') {
+    totalCount = total;
+  }
+  
+  return { user, canUseLetGoBuddy, usageCount: completedCount };
 }
 
 
@@ -585,21 +600,16 @@ export default function LetGoBuddyPage({ loaderData }: { loaderData: { user: any
                 )}
                 <Button 
                   onClick={handleGenerateAnalysis} 
-                  className={`w-full ${!canUseLetGoBuddy ? 'opacity-50 cursor-not-allowed bg-gray-100 text-gray-400 border-gray-200' : ''}`}
-                  disabled={isAnalyzing || !canUseLetGoBuddy || !situation || !uploadedImageUrls.length || !isChatComplete}
+                  className="w-full"
+                  disabled={isAnalyzing || !situation || !uploadedImageUrls.length || !isChatComplete}
                   size="lg"
                 >
                   {isAnalyzing ? (
                     <><ArrowPathIcon className="w-5 h-5 mr-2 animate-spin" />Analyzing...</>
                   ) : (
-                    <><SparklesIcon className="w-5 h-5 mr-2" />{!canUseLetGoBuddy ? 'Generate Analysis (Limit Reached)' : 'Generate AI Analysis'}</>
+                    <><SparklesIcon className="w-5 h-5 mr-2" />Generate AI Analysis</>
                   )}
                 </Button>
-                {!canUseLetGoBuddy && (
-                  <div className="text-sm text-center bg-emerald-50 text-emerald-700 rounded-md px-4 py-2 border border-emerald-100">
-                    😊 You've used all your free Let Go Buddy sessions (2/2). Build trust in the community to unlock more!
-                  </div>
-                )}
               </div>
             ) : (
               <div className="space-y-4">

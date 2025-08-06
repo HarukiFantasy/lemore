@@ -29,11 +29,12 @@ export async function uploadLetGoBuddyImages(
 
 // 세션 생성: let_go_buddy_sessions 테이블에 row 추가
 export async function createLetGoBuddySession(client: any, { userId, situation }: { userId: string, situation: string }) {
-  // Check session count before creating - allow up to 2 sessions, block from 3rd
+  // Check completed session count before creating - only count completed sessions
   const { count } = await client
     .from('let_go_buddy_sessions')
     .select('*', { count: 'exact', head: true })
-    .eq('user_id', userId);
+    .eq('user_id', userId)
+    .eq('is_completed', true);
   if (typeof count === 'number' && count >= 2) {
     throw new Error('Free usage limit reached. Upgrade your trust level to use more!');
   }
