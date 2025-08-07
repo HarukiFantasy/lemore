@@ -273,7 +273,7 @@ export default function EditProductPage({ loaderData, actionData }: Route.Compon
           
           {/* Left: Image Upload */}
           <div className="flex-1 flex flex-col items-center justify-center border rounded-lg p-6 bg-white shadow">
-            <label className="w-full flex flex-col items-center cursor-pointer">
+            <div className="w-full flex flex-col items-center">
               <div className="flex flex-wrap gap-2 justify-center mb-4">
                 {/* Existing Images */}
                 {existingImages.map((imageUrl, idx) => (
@@ -312,21 +312,29 @@ export default function EditProductPage({ loaderData, actionData }: Route.Compon
                   </div>
                 )}
               </div>
-              <Input
-                type="file"
-                accept="image/*"
-                className="hidden"
-                multiple
-                onChange={handleImageChange}
-                disabled={images.length >= 5}
-              />
+              
+              {/* Upload button */}
+              <label className="cursor-pointer inline-block">
+                <div className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors">
+                  Add Images
+                </div>
+                <Input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  multiple
+                  onChange={handleImageChange}
+                  disabled={existingImages.length + images.length >= 5}
+                />
+              </label>
+              
               <span className="text-xs text-neutral-500 mt-2">
                 {existingImages.length + images.length}/5 images
               </span>
               <span className="text-xs text-gray-400 mt-1">
                 Supported formats: JPEG, PNG, WebP (max 10MB each)
               </span>
-            </label>
+            </div>
           </div>
           
           {/* Right: Form */}
@@ -366,7 +374,7 @@ export default function EditProductPage({ loaderData, actionData }: Route.Compon
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Currency *
                   </label>
-                  <Select name="currency" value={currency} onValueChange={setCurrency}>
+                  <Select value={currency} onValueChange={setCurrency}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
@@ -378,6 +386,7 @@ export default function EditProductPage({ loaderData, actionData }: Route.Compon
                       ))}
                     </SelectContent>
                   </Select>
+                  <input type="hidden" name="currency" value={currency} />
                 </div>
               </div>
 
@@ -386,7 +395,7 @@ export default function EditProductPage({ loaderData, actionData }: Route.Compon
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Price Type *
                 </label>
-                                  <Select name="priceType" value={priceType} onValueChange={(value) => setPriceType(value as any)}>
+                  <Select value={priceType} onValueChange={(value) => setPriceType(value as any)}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
@@ -398,6 +407,7 @@ export default function EditProductPage({ loaderData, actionData }: Route.Compon
                       ))}
                     </SelectContent>
                   </Select>
+                  <input type="hidden" name="priceType" value={priceType} />
               </div>
 
               {/* Condition */}
@@ -405,7 +415,7 @@ export default function EditProductPage({ loaderData, actionData }: Route.Compon
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Condition *
                 </label>
-                                  <Select name="condition" value={condition} onValueChange={(value) => setCondition(value as any)}>
+                  <Select value={condition} onValueChange={(value) => setCondition(value as any)}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
@@ -417,6 +427,7 @@ export default function EditProductPage({ loaderData, actionData }: Route.Compon
                       ))}
                     </SelectContent>
                   </Select>
+                  <input type="hidden" name="condition" value={condition} />
               </div>
 
               {/* Category */}
@@ -424,7 +435,7 @@ export default function EditProductPage({ loaderData, actionData }: Route.Compon
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Category *
                 </label>
-                                  <Select name="category" value={category} onValueChange={(value) => setCategory(value as any)}>
+                  <Select value={category} onValueChange={(value) => setCategory(value as any)}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
@@ -436,6 +447,7 @@ export default function EditProductPage({ loaderData, actionData }: Route.Compon
                       ))}
                     </SelectContent>
                   </Select>
+                  <input type="hidden" name="category" value={category} />
               </div>
 
               {/* Location */}
@@ -443,7 +455,7 @@ export default function EditProductPage({ loaderData, actionData }: Route.Compon
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Location *
                 </label>
-                                  <Select name="location" value={location} onValueChange={(value) => setLocation(value as any)}>
+                  <Select value={location} onValueChange={(value) => setLocation(value as any)}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
@@ -455,6 +467,7 @@ export default function EditProductPage({ loaderData, actionData }: Route.Compon
                       ))}
                     </SelectContent>
                   </Select>
+                  <input type="hidden" name="location" value={location} />
               </div>
 
               {/* Description */}
