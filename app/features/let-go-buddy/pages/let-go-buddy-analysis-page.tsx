@@ -68,12 +68,9 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 }
 
 export async function action({ request, params }: Route.ActionArgs) {
-  console.log('Action called for analysis page');
-  
   const { client } = makeSSRClient(request);
   const { data: { user } } = await client.auth.getUser();
   if (!user) {
-    console.log('User not authenticated, redirecting');
     return redirect('/auth/login');
   }
 
@@ -81,12 +78,8 @@ export async function action({ request, params }: Route.ActionArgs) {
   const formData = await request.formData();
   const intent = formData.get("intent") as string;
 
-  console.log('Intent:', intent, 'SessionId:', sessionId);
-
   try {
     if (intent === "generate-analysis") {
-      console.log('Starting analysis generation...');
-      
       // Get conversation context from form data (passed from chat)
       const conversationContext = formData.get("conversation_context") as string || "";
       const itemName = formData.get("item_name") as string || "Item";
@@ -116,7 +109,7 @@ export async function action({ request, params }: Route.ActionArgs) {
           });
         } else {
           // Fallback to mock data if no API key
-          console.log('OpenAI API key not configured, using simple fallback');
+          // OpenAI API key not configured, using simple fallback
           aiAnalysis = {
             ai_listing_title: `✨ ${itemName} - Great Deal Available!`,
             ai_listing_description: `This ${itemName} is in excellent condition and ready for a new home. Perfect for anyone looking for quality at a great price. Well-maintained and ready to use. Don't miss this opportunity!`,
@@ -126,7 +119,7 @@ export async function action({ request, params }: Route.ActionArgs) {
           };
         }
       } catch (error) {
-        console.error('Error with AI generation, using simple fallback:', error);
+        // Error with AI generation, using simple fallback
         aiAnalysis = {
           ai_listing_title: `✨ ${itemName} - Great Deal Available!`,
           ai_listing_description: `This ${itemName} is in excellent condition and ready for a new home. Perfect for anyone looking for quality at a great price. Well-maintained and ready to use. Don't miss this opportunity!`,
@@ -136,11 +129,11 @@ export async function action({ request, params }: Route.ActionArgs) {
         };
       }
       
-      console.log('Generated analysis:', aiAnalysis);
+      // Analysis generated successfully
       
       try {
         // Create item analysis record
-        const analysisId = await createItemAnalysis(client, {
+        await createItemAnalysis(client, {
           session_id: sessionId,
           item_name: aiAnalysis.ai_listing_title || itemName,
           item_category: aiAnalysis.item_category as any, // AI will choose from correct enum values
@@ -158,10 +151,10 @@ export async function action({ request, params }: Route.ActionArgs) {
           images: imageUrl ? [imageUrl] : [] // Include uploaded image URL if available
         });
         
-        console.log('Analysis created with ID:', analysisId);
-      } catch (error) {
-        console.error('Failed to create analysis:', error);
-        throw error;
+        // Analysis created successfully
+      } catch {
+        // Failed to create analysis, but let the user know
+        return { error: 'Failed to create analysis. Please try again.' };
       }
 
       // Redirect to reload the page with the new analysis from the database
@@ -170,16 +163,15 @@ export async function action({ request, params }: Route.ActionArgs) {
 
     if (intent === "start-selling") {
       const analysisId = formData.get("analysis_id") as string;
-      console.log('Start selling with analysis_id:', analysisId);
       
       if (analysisId && analysisId !== 'undefined') {
-        const { data: analysis, error } = await client
+        const { data: analysis } = await client
           .from('item_analyses')
           .select('*')
           .eq('analysis_id', analysisId)
           .single();
 
-        console.log('Fetched analysis:', analysis, 'Error:', error);
+        // Fetched analysis from database
 
         if (analysis) {
           await updateSessionCompletion(client, sessionId, true);
@@ -194,7 +186,7 @@ export async function action({ request, params }: Route.ActionArgs) {
           return redirect(`/secondhand/submit-a-listing?${params}`);
         }
       } else {
-        console.error('Analysis ID is missing or undefined');
+        // Analysis ID is missing or undefined
         return { error: 'Analysis not found. Please try again.' };
       }
     }
@@ -239,7 +231,6 @@ export async function action({ request, params }: Route.ActionArgs) {
     }
 
   } catch (error) {
-    console.error('Action error:', error);
     return { error: 'Something went wrong. Please try again.' };
   }
 

@@ -41,7 +41,7 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
         try {
             images = JSON.parse(imagesParam);
         } catch (error) {
-            console.error("Error parsing images parameter:", error);
+            // Error parsing images parameter
         }
     }
 
@@ -72,7 +72,7 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
                 };
             }
         } catch (error) {
-            console.error("Error fetching let go buddy session:", error);
+            // Error fetching let go buddy session
         }
     }
 
@@ -81,13 +81,23 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
 
 const formSchema = z.object({
   title: z.string().min(1),
-  price: z.string().min(1).optional(),
+  price: z.string().optional(),
   currency: z.string().min(1),
   priceType: z.string().min(1),
   description: z.string().min(1),
   condition: z.string().min(1),
   category: z.string().min(1),
   location: z.string().min(1),
+}).refine((data) => {
+  // If price type is not "Free", price is required and must be greater than 0
+  if (data.priceType !== "Free") {
+    return data.price && data.price.length > 0 && parseFloat(data.price) > 0;
+  }
+  // If price type is "Free", price can be empty or "0"
+  return true;
+}, {
+  message: "Price is required for non-free items",
+  path: ["price"],
 });
 
 export const action = async ({ request }: Route.ActionArgs) => {
@@ -149,7 +159,7 @@ export const action = async ({ request }: Route.ActionArgs) => {
     
     return redirect(`/secondhand/product/${product.product_id}`);
   } catch (err: any) {
-    console.error("Error creating product:", err);
+    // Error creating product
     return { error: "Failed to create product. Please try again." };
   }
 };

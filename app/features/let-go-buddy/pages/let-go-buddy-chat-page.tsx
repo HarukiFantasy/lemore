@@ -21,18 +21,14 @@ const UPLOAD_SITUATIONS = [
 ];
 
 export async function loader({ request, params }: Route.LoaderArgs) {
-  console.log('Chat page loader called for session:', params.session_id);
   const { client } = makeSSRClient(request);
   const { data: { user } } = await client.auth.getUser();
   if (!user) {
-    console.log('User not authenticated in chat loader, redirecting to login');
     return redirect('/auth/login');
   }
 
   const sessionId = parseInt(params.session_id);
-  console.log('Parsed session ID:', sessionId);
   if (isNaN(sessionId)) {
-    console.log('Invalid session ID, redirecting to let-go-buddy');
     return redirect('/let-go-buddy');
   }
 
@@ -44,22 +40,17 @@ export async function loader({ request, params }: Route.LoaderArgs) {
     .eq('user_id', user.id)
     .single();
 
-  console.log('Session lookup result:', { session, error });
   if (error || !session) {
-    console.log('Session not found or error, redirecting to let-go-buddy');
     return redirect('/let-go-buddy');
   }
 
   // Get search parameters
   const url = new URL(request.url);
-  console.log('Request URL:', request.url);
   const mode = url.searchParams.get('mode') || 'setup';
   const item = url.searchParams.get('itemName') || url.searchParams.get('item') || '';
   const situation = url.searchParams.get('situation') || '';
   const additionalInfo = url.searchParams.get('additionalInfo') || '';
   const imageUrl = url.searchParams.get('imageUrl') || '';
-
-  console.log('URL parameters received:', { mode, item, situation, additionalInfo, imageUrl });
 
   return {
     sessionId,
@@ -105,7 +96,6 @@ export async function action({ request, params }: Route.ActionArgs) {
         });
 
       if (uploadError) {
-        console.error('Upload error:', uploadError);
         return { error: 'Failed to upload image' };
       }
 
@@ -114,18 +104,12 @@ export async function action({ request, params }: Route.ActionArgs) {
         .from(bucket)
         .getPublicUrl(`${user.id}/${fileName}`);
 
-      // Store session data in database (you might want to add session_data table)
-      // For now, we'll use sessionStorage on the client side
-      console.log('Image uploaded successfully:', publicUrl);
-      console.log('Session data:', { itemName, situation, additionalInfo, imageUrl: publicUrl });
-
       return { 
         success: true, 
         imageUrl: publicUrl,
         sessionData: { itemName, situation, additionalInfo }
       };
     } catch (error) {
-      console.error('Error processing upload:', error);
       return { error: 'Failed to process image upload' };
     }
   }
@@ -225,7 +209,6 @@ export default function LetGoBuddyChatPage({ loaderData }: Route.ComponentProps)
         throw new Error('Upload failed');
       }
     } catch (error) {
-      console.error('Error uploading file:', error);
       alert('Failed to upload image. Please try again.');
       setIsUploading(false);
     }

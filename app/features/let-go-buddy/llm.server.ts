@@ -112,7 +112,7 @@ Make the listing so compelling that buyers feel they NEED this item, while keepi
     };
 
   } catch (error) {
-    console.error("Error calling OpenAI:", error);
+    // Error calling OpenAI, using fallback
     
     // Return intelligent fallback
     return generateFallbackAnalysis(itemName, situation, conversationText);

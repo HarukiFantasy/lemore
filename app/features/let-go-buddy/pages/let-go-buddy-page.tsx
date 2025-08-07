@@ -39,24 +39,19 @@ export async function loader({ request }: Route.LoaderArgs) {
 }
 
 export async function action({ request }: Route.ActionArgs) {
-  console.log('Let Go Buddy action called');
   const { client } = makeSSRClient(request);
   const { data: { user } } = await client.auth.getUser();
   if (!user) {
-    console.log('User not authenticated, redirecting to login');
     return redirect('/auth/login');
   }
   
   const formData = await request.formData();
   const intent = formData.get("intent");
-  console.log('Action intent:', intent);
   
   if (intent === "start-session") {
-    console.log('Processing start-session intent');
     // Check session count first
     const sessionCount = await getLetGoSessionsCount(client, user.id);
     if (sessionCount >= MAX_FREE_SESSIONS) {
-      console.log('Session limit reached');
       return { error: "You've reached the maximum number of free sessions" };
     }
     
@@ -66,21 +61,16 @@ export async function action({ request }: Route.ActionArgs) {
     const additionalInfo = formData.get("additionalInfo") as string;
     const file = formData.get("file") as File;
     
-    console.log('Form data:', { itemName, situation, additionalInfo, fileSize: file?.size });
-    
     // Validate required fields
     if (!itemName || !situation) {
-      console.log('Missing required fields:', { itemName, situation });
       return { error: "Please fill in all required fields" };
     }
 
     // Create new session
     const sessionId = await createLetGoBuddySession(client, user.id);
-    console.log('Created session with ID:', sessionId);
     
     // Handle image upload if file is provided
     if (file && file.size > 0) {
-      console.log('Processing image upload');
       try {
         // Upload file to Supabase storage
         const fileExt = file.name.split('.').pop();
@@ -94,9 +84,8 @@ export async function action({ request }: Route.ActionArgs) {
           });
 
         if (uploadError) {
-          console.error('Upload error:', uploadError);
+          throw uploadError;
         } else {
-          console.log('Image uploaded successfully');
           // Get public URL
           const { data: { publicUrl } } = client.storage
             .from('letgobuddy-product')
@@ -113,12 +102,11 @@ export async function action({ request }: Route.ActionArgs) {
           });
           
           const redirectUrl = `/let-go-buddy/chat/${sessionId}?${params}`;
-          console.log('Redirecting to:', redirectUrl);
-          console.log('Full params:', params.toString());
           return redirect(redirectUrl);
         }
       } catch (error) {
-        console.error('Error processing upload:', error);
+        // Keep the user on the page if upload fails
+        return { error: 'Failed to upload image. Please try again.' };
       }
     }
     
@@ -131,8 +119,6 @@ export async function action({ request }: Route.ActionArgs) {
     });
     
     const redirectUrl = `/let-go-buddy/chat/${sessionId}?${params}`;
-    console.log('Redirecting to (no image):', redirectUrl);
-    console.log('Full params (no image):', params.toString());
     return redirect(redirectUrl);
   }
   
@@ -186,15 +172,12 @@ export default function LetGoBuddyPage({ loaderData, actionData }: Route.Compone
   };
 
   const handleSubmit = (e: React.FormEvent) => {
-    console.log('Form submitted');
     if (!uploadedFile || !itemName || !situation) {
-      console.log('Validation failed:', { uploadedFile: !!uploadedFile, itemName, situation });
       e.preventDefault();
       alert('Please fill in all required fields and upload an image.');
       return;
     }
     setIsUploading(true);
-    console.log('Form validation passed, submitting...');
     // Let the form submit naturally to the server action
   };
   
