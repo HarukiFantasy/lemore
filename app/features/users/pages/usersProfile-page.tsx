@@ -199,7 +199,7 @@ export default function UsersProfilePage({ loaderData }: Route.ComponentProps) {
                     <ProductCard
                       key={product.product_id || index}
                       productId={product.product_id}
-                      image={product.primary_image || '/toy1.png'}
+                      image={product.primary_image || '/lemore-logo.png'}
                       title={product.title || "Product Title"}
                       price={product.price || 0}
                       currency="THB"

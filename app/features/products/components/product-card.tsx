@@ -169,14 +169,14 @@ export function ProductCard({
         ">
           <div className="relative w-full h-40 sm:h-48 md:h-60 overflow-hidden rounded-t-lg">
             <img 
-              src={prod.image || '/toy1.png'} 
+              src={prod.image || '/lemore-logo.png'} 
               className="object-cover w-full h-full 
                 md:group-hover:scale-110 md:group-hover:brightness-110 
                 transition-all duration-300 ease-out" 
               alt={prod.title || 'Product image'} 
               onError={(e) => {
                 const target = e.target as HTMLImageElement;
-                target.src = '/toy1.png';
+                target.src = '/lemore-logo.png';
               }}
             />
             <button className="absolute top-3 left-3 bg-black/60 text-white text-xs px-3 py-1 rounded-full 

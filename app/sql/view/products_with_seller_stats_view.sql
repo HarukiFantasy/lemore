@@ -24,7 +24,7 @@ SELECT
             ORDER BY pi.image_order
             LIMIT 1
         ),
-        '/toy1.png'
+        '/lemore-logo.png'
     ) AS primary_image,
     -- 판매자 정보
     up.username AS seller_name,

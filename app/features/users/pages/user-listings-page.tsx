@@ -78,7 +78,7 @@ export default function UserListingsPage() {
             <div key={listing.product_id} className="relative">
               <ProductCard
                 productId={listing.product_id}
-                image={listing.primary_image || "/toy1.png"}
+                image={listing.primary_image || "/lemore-logo.png"}
                 title={listing.title}
                 price={listing.price}
                 currency={listing.currency}

@@ -128,7 +128,7 @@ export default function LikesPage({ loaderData }: { loaderData: LoaderData }) {
                 {item.type === "product" ? (
                   <ProductCard
                     productId={item.product_id}
-                    image={item.products?.primary_image || '/toy1.png'}
+                    image={item.products?.primary_image || '/lemore-logo.png'}
                     title={item.products?.title}
                     price={item.products?.price}
                     seller={item.products?.seller_name}
