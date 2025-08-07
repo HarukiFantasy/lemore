@@ -90,9 +90,9 @@ export async function action({ request, params }: Route.ActionArgs) {
         const analysisId = await createItemAnalysis(client, {
           session_id: sessionId,
           item_name: aiAnalysis.ai_listing_title || "Guitar",
-          item_category: "musical_instruments" as any,
-          item_condition: "good" as any,
-          recommendation: aiAnalysis.ai_category === "sell" ? "sell" : aiAnalysis.ai_category === "donate" ? "donate" : "keep" as any,
+          item_category: "Other" as any, 
+          item_condition: "Good" as any,  // Enum values are capitalized
+          recommendation: aiAnalysis.ai_category === "sell" ? "Sell" : aiAnalysis.ai_category === "donate" ? "Donate" : "Keep" as any,  // Enum values are capitalized
           recommendation_reason: aiAnalysis.analysis_summary,
           emotional_score: 7,
           ai_listing_title: aiAnalysis.ai_listing_title,
