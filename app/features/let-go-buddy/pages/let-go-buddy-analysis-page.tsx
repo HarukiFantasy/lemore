@@ -4,6 +4,9 @@ import { Button } from "~/common/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "~/common/components/ui/card";
 import { Badge } from "~/common/components/ui/badge";
 import { Input } from "~/common/components/ui/input";
+import { Popover, PopoverContent, PopoverTrigger } from "~/common/components/ui/popover";
+import { Calendar } from "~/common/components/ui/calendar";
+import { cn } from "~/lib/utils";
 import { 
   SparklesIcon, 
   HeartIcon, 
@@ -31,6 +34,13 @@ export async function loader({ request, params }: Route.LoaderArgs) {
     return redirect('/let-go-buddy');
   }
 
+  // Get session data including conversation context
+  const { data: sessionData } = await client
+    .from('let_go_buddy_sessions')
+    .select('*')
+    .eq('session_id', sessionId)
+    .single();
+
   // Check if analysis already exists for this session
   const { data: existingAnalysis } = await client
     .from('item_analyses')
@@ -49,7 +59,8 @@ export async function loader({ request, params }: Route.LoaderArgs) {
   return {
     sessionId,
     analysis: null,
-    isNewAnalysis: true
+    isNewAnalysis: true,
+    sessionData
   };
 }
 
@@ -73,14 +84,19 @@ export async function action({ request, params }: Route.ActionArgs) {
     if (intent === "generate-analysis") {
       console.log('Starting analysis generation...');
       
-      // For now, let's skip the OpenAI call and use a mock response
-      // This prevents issues if OPENAI_API_KEY is not configured
+      // Get conversation context from form data (passed from chat)
+      const conversationContext = formData.get("conversation_context") as string || "";
+      const itemName = formData.get("item_name") as string || "Item";
+      const situation = formData.get("situation") as string || "decluttering";
+      
+      // Generate more appropriate analysis based on context
+      // For now using mock data but with actual item name
       const aiAnalysis = {
-        ai_listing_title: "Acoustic Guitar - Great for Beginners",
-        ai_listing_description: "This acoustic guitar has been well-maintained and is perfect for someone looking to start their musical journey. Shows minor signs of use but plays beautifully.",
+        ai_listing_title: itemName,
+        ai_listing_description: `This ${itemName} is in good condition and ready for a new home. It has been well-cared for and would be perfect for someone looking to add this to their collection.`,
         ai_category: "sell",
-        analysis_summary: "Based on our conversation, it seems this guitar holds sentimental value but isn't actively serving your current lifestyle. The guilt you feel suggests it might be time to let it bring joy to someone who will use it regularly.",
-        emotion_summary: "conflicted but ready to move on"
+        analysis_summary: `Based on our conversation about your ${itemName}, it seems like you're ready to let go. You mentioned you're ${situation}, which is a great time to make thoughtful decisions about what serves you best.`,
+        emotion_summary: "ready to move forward"
       };
       
       console.log('Generated analysis:', aiAnalysis);
@@ -116,20 +132,29 @@ export async function action({ request, params }: Route.ActionArgs) {
 
     if (intent === "start-selling") {
       const analysisId = formData.get("analysis_id") as string;
-      const { data: analysis } = await client
-        .from('item_analyses')
-        .select('*')
-        .eq('analysis_id', analysisId)
-        .single();
+      console.log('Start selling with analysis_id:', analysisId);
+      
+      if (analysisId && analysisId !== 'undefined') {
+        const { data: analysis, error } = await client
+          .from('item_analyses')
+          .select('*')
+          .eq('analysis_id', analysisId)
+          .single();
 
-      if (analysis) {
-        await updateSessionCompletion(client, sessionId, true);
-        const params = new URLSearchParams({
-          session_id: sessionId.toString(),
-          title: analysis.ai_listing_title || '',
-          description: analysis.ai_listing_description || '',
-        });
-        return redirect(`/secondhand/submit-a-listing?${params}`);
+        console.log('Fetched analysis:', analysis, 'Error:', error);
+
+        if (analysis) {
+          await updateSessionCompletion(client, sessionId, true);
+          const params = new URLSearchParams({
+            session_id: sessionId.toString(),
+            title: analysis.ai_listing_title || '',
+            description: analysis.ai_listing_description || '',
+          });
+          return redirect(`/secondhand/submit-a-listing?${params}`);
+        }
+      } else {
+        console.error('Analysis ID is missing or undefined');
+        return { error: 'Analysis not found. Please try again.' };
       }
     }
 
@@ -178,9 +203,10 @@ export async function action({ request, params }: Route.ActionArgs) {
 }
 
 export default function LetGoBuddyAnalysisPage({ loaderData }: Route.ComponentProps) {
-  const { sessionId, analysis: existingAnalysis, isNewAnalysis } = loaderData;
+  const { sessionId, analysis: existingAnalysis, isNewAnalysis, sessionData } = loaderData;
   const [isGenerating, setIsGenerating] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(addDays(new Date(), 1));
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   
   // Since we're redirecting after creating analysis, we only need existingAnalysis
   const analysis = existingAnalysis;
@@ -211,6 +237,9 @@ export default function LetGoBuddyAnalysisPage({ loaderData }: Route.ComponentPr
             </p>
             <form method="post" onSubmit={handleGenerateAnalysis}>
               <input type="hidden" name="intent" value="generate-analysis" />
+              <input type="hidden" name="item_name" value={sessionData?.item_name || "Item"} />
+              <input type="hidden" name="situation" value={sessionData?.situation || "decluttering"} />
+              <input type="hidden" name="conversation_context" value={sessionData?.conversation_context || ""} />
               <Button 
                 type="submit"
                 disabled={isGenerating}
@@ -307,14 +336,14 @@ export default function LetGoBuddyAnalysisPage({ loaderData }: Route.ComponentPr
           <CardContent className="p-6 text-center">
             <form method="post">
               <input type="hidden" name="intent" value="start-selling" />
-              <input type="hidden" name="analysis_id" value={analysis.analysis_id} />
+              <input type="hidden" name="analysis_id" value={analysis?.analysis_id || ''} />
               
               <CurrencyDollarIcon className="w-12 h-12 text-green-500 mx-auto mb-4" />
               <h3 className="font-semibold mb-2 text-green-700">Start Selling</h3>
               <p className="text-sm text-gray-600 mb-4">
                 Create a listing with AI-generated title and description
               </p>
-              <Button type="submit" className="w-full bg-green-600 hover:bg-green-700">
+              <Button type="submit" variant="outline" className="w-full border-green-600 text-green-600 hover:bg-green-50">
                 <ArrowRightIcon className="w-4 h-4 mr-2" />
                 Create Listing
               </Button>
@@ -327,7 +356,7 @@ export default function LetGoBuddyAnalysisPage({ loaderData }: Route.ComponentPr
           <CardContent className="p-6 text-center">
             <form method="post">
               <input type="hidden" name="intent" value="donate" />
-              <input type="hidden" name="analysis_id" value={analysis.analysis_id} />
+              <input type="hidden" name="analysis_id" value={analysis?.analysis_id || ''} />
               
               <HeartIcon className="w-12 h-12 text-blue-500 mx-auto mb-4" />
               <h3 className="font-semibold mb-2 text-blue-700">Donate</h3>
@@ -351,19 +380,31 @@ export default function LetGoBuddyAnalysisPage({ loaderData }: Route.ComponentPr
               Schedule when to revisit this decision
             </p>
             
-            <div className="relative">
-              <Button 
-                variant="outline" 
-                className="w-full mb-2"
-                onClick={() => {
-                  // Simple date picker - for now just set to tomorrow
-                  setSelectedDate(addDays(new Date(), 1));
-                }}
-              >
-                <CalendarIcon className="w-4 h-4 mr-2" />
-                {selectedDate ? format(selectedDate, 'MMM d, yyyy') : 'Pick a date'}
-              </Button>
-            </div>
+            <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn(
+                    "w-full mb-2 justify-start text-left font-normal",
+                    !selectedDate && "text-muted-foreground"
+                  )}
+                >
+                  <CalendarIcon className="w-4 h-4 mr-2" />
+                  {selectedDate ? format(selectedDate, 'MMM d, yyyy') : 'Pick a date'}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="center">
+                <Calendar
+                  mode="single"
+                  selected={selectedDate}
+                  onSelect={(date) => {
+                    setSelectedDate(date);
+                    setIsCalendarOpen(false);
+                  }}
+                  disabled={(date) => date < new Date()}
+                />
+              </PopoverContent>
+            </Popover>
 
             <form method="post">
               <input type="hidden" name="intent" value="add-to-challenge" />
