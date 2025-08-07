@@ -186,10 +186,12 @@ export default function LetGoBuddyPage({ loaderData, actionData }: Route.Compone
     if (!uploadedFile || !itemName || !situation) {
       console.log('Validation failed:', { uploadedFile: !!uploadedFile, itemName, situation });
       e.preventDefault();
+      alert('Please fill in all required fields and upload an image.');
       return;
     }
     setIsUploading(true);
     console.log('Form validation passed, submitting...');
+    // Let the form submit naturally to the server action
   };
   
   return (
