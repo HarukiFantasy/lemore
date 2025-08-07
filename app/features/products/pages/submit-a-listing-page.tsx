@@ -241,10 +241,14 @@ export default function SubmitAListingPage({ loaderData, actionData }: Route.Com
                  </SelectContent>
              </Select>
 
-             <div className="relative">
-                <Input name="price" placeholder="Price" value={isFree ? "0" : price} onChange={e => setPrice(e.target.value)} disabled={isFree} />
+             <div className="flex gap-2">
+                <div className="flex-1">
+                    <Input name="price" placeholder="Price" value={isFree ? "0" : price} onChange={e => setPrice(e.target.value)} disabled={isFree} />
+                </div>
                 <Select name="currency" value={currency} onValueChange={setCurrency} disabled={isFree}>
-                    <SelectTrigger className="w-24 absolute right-1 top-1 h-8"><SelectValue /></SelectTrigger>
+                    <SelectTrigger className="w-20">
+                        <SelectValue />
+                    </SelectTrigger>
                     <SelectContent>
                         {CURRENCIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
                     </SelectContent>

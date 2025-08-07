@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type { Route } from "./+types/let-go-buddy-analysis-page";
 import { Button } from "~/common/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "~/common/components/ui/card";
@@ -18,9 +18,12 @@ import {
 } from "@heroicons/react/24/outline";
 import { makeSSRClient } from "~/supa-client";
 import { redirect } from "react-router";
-// import { generateAnalysis } from "../llm.server"; // Temporarily disabled - using mock data
+import { generateAnalysis } from "../llm.server";
 import { createItemAnalysis, updateSessionCompletion, addToChallengeCalendar } from "../mutations";
 import { format, addDays } from "date-fns";
+
+// Note: generateCommercialListing function removed - now using OpenAI API directly
+// with intelligent fallback in llm.server.ts
 
 export async function loader({ request, params }: Route.LoaderArgs) {
   const { client } = makeSSRClient(request);
@@ -88,16 +91,49 @@ export async function action({ request, params }: Route.ActionArgs) {
       const conversationContext = formData.get("conversation_context") as string || "";
       const itemName = formData.get("item_name") as string || "Item";
       const situation = formData.get("situation") as string || "decluttering";
+      const additionalInfo = formData.get("additional_info") as string || "";
       
-      // Generate more appropriate analysis based on context
-      // For now using mock data but with actual item name
-      const aiAnalysis = {
-        ai_listing_title: itemName,
-        ai_listing_description: `This ${itemName} is in good condition and ready for a new home. It has been well-cared for and would be perfect for someone looking to add this to their collection.`,
-        ai_category: "sell",
-        analysis_summary: `Based on our conversation about your ${itemName}, it seems like you're ready to let go. You mentioned you're ${situation}, which is a great time to make thoughtful decisions about what serves you best.`,
-        emotion_summary: "ready to move forward"
-      };
+      // Try to use OpenAI API if available, otherwise fall back to mock data
+      let aiAnalysis;
+      try {
+        if (process.env.OPENAI_API_KEY) {
+          // Parse conversation context if it's a JSON string
+          let chatHistory;
+          try {
+            chatHistory = conversationContext ? JSON.parse(conversationContext) : undefined;
+          } catch {
+            // If not JSON, treat as plain text
+            chatHistory = undefined;
+          }
+          
+          // Call OpenAI API for real AI-generated content
+          aiAnalysis = await generateAnalysis({
+            chatHistory,
+            itemName,
+            situation,
+            additionalContext: additionalInfo
+          });
+        } else {
+          // Fallback to mock data if no API key
+          console.log('OpenAI API key not configured, using simple fallback');
+          aiAnalysis = {
+            ai_listing_title: `✨ ${itemName} - Great Deal Available!`,
+            ai_listing_description: `This ${itemName} is in excellent condition and ready for a new home. Perfect for anyone looking for quality at a great price. Well-maintained and ready to use. Don't miss this opportunity!`,
+            ai_category: "Sell",
+            analysis_summary: `Based on your ${situation} situation, this ${itemName} seems ready for a new chapter.`,
+            emotion_summary: "ready to move forward"
+          };
+        }
+      } catch (error) {
+        console.error('Error with AI generation, using simple fallback:', error);
+        aiAnalysis = {
+          ai_listing_title: `✨ ${itemName} - Great Deal Available!`,
+          ai_listing_description: `This ${itemName} is in excellent condition and ready for a new home. Perfect for anyone looking for quality at a great price. Well-maintained and ready to use. Don't miss this opportunity!`,
+          ai_category: "Sell", 
+          analysis_summary: `This ${itemName} seems ready for a new chapter.`,
+          emotion_summary: "ready to move forward"
+        };
+      }
       
       console.log('Generated analysis:', aiAnalysis);
       
@@ -208,6 +244,26 @@ export default function LetGoBuddyAnalysisPage({ loaderData }: Route.ComponentPr
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(addDays(new Date(), 1));
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   
+  // Retrieve conversation data from sessionStorage
+  const [conversationData, setConversationData] = useState<string>('');
+  const [itemName, setItemName] = useState<string>('');
+  const [situation, setSituation] = useState<string>('');
+  const [additionalInfo, setAdditionalInfo] = useState<string>('');
+  
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const conversation = sessionStorage.getItem(`lgb_conversation_${sessionId}`) || '';
+      const item = sessionStorage.getItem(`lgb_item_${sessionId}`) || sessionData?.item_name || 'Item';
+      const sit = sessionStorage.getItem(`lgb_situation_${sessionId}`) || sessionData?.situation || 'decluttering';
+      const additional = sessionStorage.getItem(`lgb_additional_${sessionId}`) || '';
+      
+      setConversationData(conversation);
+      setItemName(item);
+      setSituation(sit);
+      setAdditionalInfo(additional);
+    }
+  }, [sessionId, sessionData]);
+  
   // Since we're redirecting after creating analysis, we only need existingAnalysis
   const analysis = existingAnalysis;
 
@@ -237,14 +293,15 @@ export default function LetGoBuddyAnalysisPage({ loaderData }: Route.ComponentPr
             </p>
             <form method="post" onSubmit={handleGenerateAnalysis}>
               <input type="hidden" name="intent" value="generate-analysis" />
-              <input type="hidden" name="item_name" value={sessionData?.item_name || "Item"} />
-              <input type="hidden" name="situation" value={sessionData?.situation || "decluttering"} />
-              <input type="hidden" name="conversation_context" value={sessionData?.conversation_context || ""} />
+              <input type="hidden" name="item_name" value={itemName} />
+              <input type="hidden" name="situation" value={situation} />
+              <input type="hidden" name="conversation_context" value={conversationData} />
+              <input type="hidden" name="additional_info" value={additionalInfo} />
               <Button 
                 type="submit"
                 disabled={isGenerating}
                 size="lg"
-                className="bg-[#91a453] text-[#D4DE95] hover:bg-[#D4DE95] hover:text-[#3D4127]"
+                className="bg-[#91a453] text-[#fcffe7] hover:bg-[#D4DE95] hover:text-[#3D4127]"
               >
                 {isGenerating ? (
                   <>

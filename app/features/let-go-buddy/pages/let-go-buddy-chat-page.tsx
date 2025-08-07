@@ -141,8 +141,14 @@ export default function LetGoBuddyChatPage({ loaderData }: Route.ComponentProps)
     }, 1000);
   };
 
-  const handleChatComplete = (_conversationData: ChatMessage[]) => {
-    // Navigate to analysis page with conversation data
+  const handleChatComplete = (conversationData: ChatMessage[]) => {
+    // Store conversation in sessionStorage to pass to analysis page
+    sessionStorage.setItem(`lgb_conversation_${sessionId}`, JSON.stringify(conversationData));
+    sessionStorage.setItem(`lgb_item_${sessionId}`, itemFromParams || itemName);
+    sessionStorage.setItem(`lgb_situation_${sessionId}`, situationFromParams || situation);
+    sessionStorage.setItem(`lgb_additional_${sessionId}`, additionalInfo);
+    
+    // Navigate to analysis page
     window.location.href = `/let-go-buddy/analysis/${sessionId}`;
   };
 
@@ -277,7 +283,7 @@ export default function LetGoBuddyChatPage({ loaderData }: Route.ComponentProps)
             <Button 
               onClick={handleStartChat}
               disabled={!uploadedFile || !itemName || !situation || isUploading}
-              className="w-full bg-blue-600 hover:bg-blue-700"
+              className="w-full bg-[#91a453] text-[#fcffe7] hover:bg-[#D4DE95] hover:text-[#3D4127]"
               size="lg"
             >
               {isUploading ? (
@@ -287,7 +293,7 @@ export default function LetGoBuddyChatPage({ loaderData }: Route.ComponentProps)
                 </>
               ) : (
                 <>
-                  <span className="mr-2 bg-[#91a453] text-[#D4DE95] hover:bg-[#D4DE95] hover:text-[#3D4127]">Start Chat with Joy</span>
+                  <span className="mr-2">Start Chat with Joy</span>
                   <ArrowRightIcon className="w-4 h-4" />
                 </>
               )}

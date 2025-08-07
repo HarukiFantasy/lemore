@@ -226,7 +226,8 @@ export default function ChallengeCalendarPage({ loaderData, actionData }: Route.
                 <Button
                   size="sm"
                   onClick={() => handleCompleteItem(item.item_id, reflectionText)}
-                  className="bg-green-600 hover:bg-green-700"
+                  variant="outline"
+                  className="bg-[#91a453] text-[#fcffe7] hover:bg-[#D4DE95] hover:text-[#3D4127]"
                 >
                   <CheckCircleIcon className="w-4 h-4 mr-1" />
                   Mark as Complete
