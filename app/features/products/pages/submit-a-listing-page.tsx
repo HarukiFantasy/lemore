@@ -283,7 +283,8 @@ export default function SubmitAListingPage({ loaderData, actionData }: Route.Com
 
              <div className="flex gap-2">
                 <div className="flex-1">
-                    <Input name="price" placeholder="Price" value={isFree ? "0" : price} onChange={e => setPrice(e.target.value)} disabled={isFree} />
+                    <Input name={isFree ? "" : "price"} placeholder="Price" value={isFree ? "0" : price} onChange={e => setPrice(e.target.value)} disabled={isFree} />
+                    {isFree && <input type="hidden" name="price" value="0" />}
                 </div>
                 <Select name="currency" value={currency} onValueChange={setCurrency} disabled={isFree}>
                     <SelectTrigger className="w-20">
