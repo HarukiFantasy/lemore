@@ -185,6 +185,9 @@ export async function action({ request, params }: Route.ActionArgs) {
             session_id: sessionId.toString(),
             title: analysis.ai_listing_title || '',
             description: analysis.ai_listing_description || '',
+            category: analysis.item_category || '',
+            images: JSON.stringify(analysis.images || []),
+            from_lgb: 'true' // Flag to indicate this came from Let Go Buddy
           });
           return redirect(`/secondhand/submit-a-listing?${params}`);
         }
@@ -208,7 +211,10 @@ export async function action({ request, params }: Route.ActionArgs) {
           session_id: sessionId.toString(),
           title: analysis.ai_listing_title || '',
           description: analysis.ai_listing_description || '',
-          donate: 'true'
+          category: analysis.item_category || '',
+          images: JSON.stringify(analysis.images || []),
+          donate: 'true',
+          from_lgb: 'true' // Flag to indicate this came from Let Go Buddy
         });
         return redirect(`/secondhand/submit-a-listing?${params}`);
       }

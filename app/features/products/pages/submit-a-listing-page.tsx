@@ -28,9 +28,38 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
     const url = new URL(request.url);
     const sessionId = url.searchParams.get("session_id");
     const isDonate = url.searchParams.get("donate") === "true";
+    const fromLGB = url.searchParams.get("from_lgb") === "true";
+    
+    // Get direct URL parameters (new approach)
+    const title = url.searchParams.get("title") || "";
+    const description = url.searchParams.get("description") || "";
+    const category = url.searchParams.get("category") || "";
+    const imagesParam = url.searchParams.get("images");
+    
+    let images = [];
+    if (imagesParam) {
+        try {
+            images = JSON.parse(imagesParam);
+        } catch (error) {
+            console.error("Error parsing images parameter:", error);
+        }
+    }
 
     let letGoBuddyData = null;
-    if (sessionId) {
+    
+    // If coming from LGB with URL params, use those directly
+    if (fromLGB) {
+        letGoBuddyData = {
+            title: title,
+            description: description,
+            category: category,
+            price: isDonate ? "0" : "",
+            priceType: isDonate ? "Free" : "Fixed",
+            images: images,
+        };
+    }
+    // Fallback to session lookup (legacy approach)
+    else if (sessionId) {
         try {
             const session = await getLetGoSession(client, sessionId);
             if (session.user_id === user.id) {
@@ -129,14 +158,14 @@ export default function SubmitAListingPage({ loaderData, actionData }: Route.Com
   const { categories, locations, letGoBuddyData } = loaderData;
   
   const [images, setImages] = useState<File[]>([]);
-  const [previews, setPreviews] = useState<string[]>([]);
-  const [title, setTitle] = useState("");
-  const [price, setPrice] = useState("");
+  const [previews, setPreviews] = useState<string[]>(letGoBuddyData?.images || []);
+  const [title, setTitle] = useState(letGoBuddyData?.title || "");
+  const [price, setPrice] = useState(letGoBuddyData?.price || "");
   const [currency, setCurrency] = useState("THB");
-  const [priceType, setPriceType] = useState("");
-  const [description, setDescription] = useState("");
+  const [priceType, setPriceType] = useState(letGoBuddyData?.priceType || "");
+  const [description, setDescription] = useState(letGoBuddyData?.description || "");
   const [condition, setCondition] = useState("");
-  const [category, setCategory] = useState("");
+  const [category, setCategory] = useState(letGoBuddyData?.category || "");
   const [location, setLocation] = useState("");
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -147,6 +176,7 @@ export default function SubmitAListingPage({ loaderData, actionData }: Route.Com
       setPrice(letGoBuddyData.price || "");
       setPriceType(letGoBuddyData.priceType || "Fixed");
       setDescription(letGoBuddyData.description || "");
+      setCategory(letGoBuddyData.category || "");
       if (letGoBuddyData.images && letGoBuddyData.images.length > 0) {
         setPreviews(letGoBuddyData.images);
       }
