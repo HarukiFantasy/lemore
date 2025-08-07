@@ -274,19 +274,20 @@ export default function SubmitAListingPage({ loaderData, actionData }: Route.Com
             {/* Form fields here... */}
             <Input name="title" placeholder="Product Title" value={title} onChange={e => setTitle(e.target.value)} />
             <Textarea name="description" placeholder="Description" value={description} onChange={e => setDescription(e.target.value)} />
-             <Select name="priceType" value={priceType} onValueChange={setPriceType}>
+             <Select value={priceType} onValueChange={setPriceType}>
                  <SelectTrigger><SelectValue placeholder="Select Price Type" /></SelectTrigger>
                  <SelectContent>
                      {PRICE_TYPES.map(type => <SelectItem key={type.value} value={type.value}>{type.label}</SelectItem>)}
                  </SelectContent>
              </Select>
+             <input type="hidden" name="priceType" value={priceType} />
 
              <div className="flex gap-2">
                 <div className="flex-1">
                     <Input name={isFree ? "" : "price"} placeholder="Price" value={isFree ? "0" : price} onChange={e => setPrice(e.target.value)} disabled={isFree} />
                     {isFree && <input type="hidden" name="price" value="0" />}
                 </div>
-                <Select name="currency" value={currency} onValueChange={setCurrency} disabled={isFree}>
+                <Select value={currency} onValueChange={setCurrency} disabled={isFree}>
                     <SelectTrigger className="w-20">
                         <SelectValue />
                     </SelectTrigger>
@@ -294,28 +295,32 @@ export default function SubmitAListingPage({ loaderData, actionData }: Route.Com
                         {CURRENCIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
                     </SelectContent>
                 </Select>
+                <input type="hidden" name="currency" value={currency} />
              </div>
             
-            <Select name="condition" value={condition} onValueChange={setCondition}>
+            <Select value={condition} onValueChange={setCondition}>
                  <SelectTrigger><SelectValue placeholder="Select Condition" /></SelectTrigger>
                  <SelectContent>
                      {PRODUCT_CONDITIONS.map(c => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}
                  </SelectContent>
             </Select>
+            <input type="hidden" name="condition" value={condition} />
 
-            <Select name="category" value={category} onValueChange={setCategory}>
+            <Select value={category} onValueChange={setCategory}>
                  <SelectTrigger><SelectValue placeholder="Select Category" /></SelectTrigger>
                  <SelectContent>
                      {categories.map(c => <SelectItem key={c.category_id} value={c.name}>{c.name}</SelectItem>)}
                  </SelectContent>
             </Select>
+            <input type="hidden" name="category" value={category} />
             
-            <Select name="location" value={location} onValueChange={setLocation}>
+            <Select value={location} onValueChange={setLocation}>
                  <SelectTrigger><SelectValue placeholder="Select Location" /></SelectTrigger>
                  <SelectContent>
                      {locations.map(l => <SelectItem key={l.id} value={l.name}>{l.name}</SelectItem>)}
                  </SelectContent>
             </Select>
+            <input type="hidden" name="location" value={location} />
 
             <Button type="submit" className="w-full" disabled={isSubmitting}>
               {isSubmitting ? "Submitting..." : "Submit Listing"}
