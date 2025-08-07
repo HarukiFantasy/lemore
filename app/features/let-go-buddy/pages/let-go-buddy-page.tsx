@@ -111,7 +111,7 @@ export default function LetGoBuddyPage({ loaderData }: Route.ComponentProps) {
               
               <form method="post">
                 <input type="hidden" name="intent" value="start-session" />
-                <Button type="submit" size="lg" className="bg-[#636B2F] text-[#D4DE95] hover:bg-[#D4DE95] hover:text-[#3D4127]">
+                <Button type="submit" size="lg" className="bg-[#91a453] text-[#D4DE95] hover:bg-[#D4DE95] hover:text-[#3D4127]">
                   <CameraIcon className="w-5 h-5 mr-2" />
                   Start New Session
                 </Button>

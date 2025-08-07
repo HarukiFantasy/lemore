@@ -287,7 +287,7 @@ export default function LetGoBuddyChatPage({ loaderData }: Route.ComponentProps)
                 </>
               ) : (
                 <>
-                  <span className="mr-2">Start Chat with Joy</span>
+                  <span className="mr-2 bg-[#91a453] text-[#D4DE95] hover:bg-[#D4DE95] hover:text-[#3D4127]">Start Chat with Joy</span>
                   <ArrowRightIcon className="w-4 h-4" />
                 </>
               )}

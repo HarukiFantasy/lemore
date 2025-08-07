@@ -36,7 +36,7 @@ export async function loader({ request, params }: Route.LoaderArgs) {
     .from('item_analyses')
     .select('*')
     .eq('session_id', sessionId)
-    .single();
+    .maybeSingle();
 
   if (existingAnalysis) {
     return {
@@ -85,23 +85,30 @@ export async function action({ request, params }: Route.ActionArgs) {
       
       console.log('Generated analysis:', aiAnalysis);
       
-      // Create item analysis record
-      await createItemAnalysis(client, {
-        session_id: sessionId,
-        item_name: aiAnalysis.ai_listing_title || "Guitar",
-        item_category: "musical_instruments" as any,
-        item_condition: "good" as any,
-        recommendation: aiAnalysis.ai_category === "sell" ? "sell" : aiAnalysis.ai_category === "donate" ? "donate" : "keep" as any,
-        recommendation_reason: aiAnalysis.analysis_summary,
-        emotional_score: 7,
-        ai_listing_title: aiAnalysis.ai_listing_title,
-        ai_listing_description: aiAnalysis.ai_listing_description,
-        emotional_attachment_keywords: ["sentimental", "memories", "guilt"],
-        usage_pattern_keywords: ["rarely_used", "neglected"],
-        decision_factor_keywords: ["emotional_value", "practical_unused"],
-        personality_insights: ["nostalgic", "guilt_driven"],
-        decision_barriers: ["sentimental_attachment"]
-      });
+      try {
+        // Create item analysis record
+        const analysisId = await createItemAnalysis(client, {
+          session_id: sessionId,
+          item_name: aiAnalysis.ai_listing_title || "Guitar",
+          item_category: "musical_instruments" as any,
+          item_condition: "good" as any,
+          recommendation: aiAnalysis.ai_category === "sell" ? "sell" : aiAnalysis.ai_category === "donate" ? "donate" : "keep" as any,
+          recommendation_reason: aiAnalysis.analysis_summary,
+          emotional_score: 7,
+          ai_listing_title: aiAnalysis.ai_listing_title,
+          ai_listing_description: aiAnalysis.ai_listing_description,
+          emotional_attachment_keywords: ["sentimental", "memories", "guilt"],
+          usage_pattern_keywords: ["rarely_used", "neglected"],
+          decision_factor_keywords: ["emotional_value", "practical_unused"],
+          personality_insights: ["nostalgic", "guilt_driven"],
+          decision_barriers: ["sentimental_attachment"]
+        });
+        
+        console.log('Analysis created with ID:', analysisId);
+      } catch (error) {
+        console.error('Failed to create analysis:', error);
+        throw error;
+      }
 
       // Redirect to reload the page with the new analysis from the database
       return redirect(`/let-go-buddy/analysis/${sessionId}`);
@@ -208,7 +215,7 @@ export default function LetGoBuddyAnalysisPage({ loaderData }: Route.ComponentPr
                 type="submit"
                 disabled={isGenerating}
                 size="lg"
-                className="bg-[#636B2F] text-[#D4DE95] hover:bg-[#D4DE95] hover:text-[#3D4127]"
+                className="bg-[#91a453] text-[#D4DE95] hover:bg-[#D4DE95] hover:text-[#3D4127]"
               >
                 {isGenerating ? (
                   <>
