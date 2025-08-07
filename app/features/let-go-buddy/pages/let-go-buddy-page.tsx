@@ -113,6 +113,7 @@ export async function action({ request }: Route.ActionArgs) {
           
           const redirectUrl = `/let-go-buddy/chat/${sessionId}?${params}`;
           console.log('Redirecting to:', redirectUrl);
+          console.log('Full params:', params.toString());
           return redirect(redirectUrl);
         }
       } catch (error) {
@@ -129,6 +130,7 @@ export async function action({ request }: Route.ActionArgs) {
     
     const redirectUrl = `/let-go-buddy/chat/${sessionId}?${params}`;
     console.log('Redirecting to (no image):', redirectUrl);
+    console.log('Full params (no image):', params.toString());
     return redirect(redirectUrl);
   }
   

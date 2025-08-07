@@ -21,14 +21,18 @@ const UPLOAD_SITUATIONS = [
 ];
 
 export async function loader({ request, params }: Route.LoaderArgs) {
+  console.log('Chat page loader called for session:', params.session_id);
   const { client } = makeSSRClient(request);
   const { data: { user } } = await client.auth.getUser();
   if (!user) {
+    console.log('User not authenticated in chat loader, redirecting to login');
     return redirect('/auth/login');
   }
 
   const sessionId = parseInt(params.session_id);
+  console.log('Parsed session ID:', sessionId);
   if (isNaN(sessionId)) {
+    console.log('Invalid session ID, redirecting to let-go-buddy');
     return redirect('/let-go-buddy');
   }
 
@@ -40,17 +44,22 @@ export async function loader({ request, params }: Route.LoaderArgs) {
     .eq('user_id', user.id)
     .single();
 
+  console.log('Session lookup result:', { session, error });
   if (error || !session) {
+    console.log('Session not found or error, redirecting to let-go-buddy');
     return redirect('/let-go-buddy');
   }
 
   // Get search parameters
   const url = new URL(request.url);
+  console.log('Request URL:', request.url);
   const mode = url.searchParams.get('mode') || 'setup';
   const item = url.searchParams.get('itemName') || url.searchParams.get('item') || '';
   const situation = url.searchParams.get('situation') || '';
   const additionalInfo = url.searchParams.get('additionalInfo') || '';
   const imageUrl = url.searchParams.get('imageUrl') || '';
+
+  console.log('URL parameters received:', { mode, item, situation, additionalInfo, imageUrl });
 
   return {
     sessionId,
