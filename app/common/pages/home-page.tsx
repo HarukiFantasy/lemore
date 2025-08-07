@@ -10,6 +10,8 @@ import { getProductsWithSellerStats, getUserLikedProducts } from '../../features
 import { DateTime } from "luxon";
 import { getUserSalesStatsByProfileId } from "~/features/users/queries";
 import { getCountryByLocation, COUNTRY_CONFIG } from "~/constants";
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "../components/ui/carousel";
+import { Card, CardContent } from "../components/ui/card";
 
 
 export const meta: Route.MetaFunction = () => {
@@ -121,6 +123,90 @@ export default function HomePage() {
           ))
         ): "No products found"}
 
+      </div>
+
+      {/* Features Section */}
+      <div className="mt-8 md:mt-16 mb-8 px-4 md:px-0">
+        <div className="max-w-5xl mx-auto">
+          <Carousel className="w-full">
+            <CarouselContent>
+              {/* Mission Statement */}
+              <CarouselItem>
+                <div className="relative">
+                  <img 
+                    src="/1.png" 
+                    alt="Lemore Mission" 
+                    className="w-full h-[300px] md:h-[500px] object-cover rounded-lg"
+                  />
+                </div>
+              </CarouselItem>
+
+              {/* Brand Photos */}
+              <CarouselItem>
+                <Card className="border-0 shadow-none">
+                  <CardContent className="p-4 md:p-8 bg-stone-50 rounded-lg">
+                    <div className="text-center mb-4 md:mb-6">
+                      <h3 className="text-xl md:text-2xl font-light text-stone-800 mb-2">Our Story</h3>
+                      <p className="text-sm md:text-base text-stone-600">Every item has a story, every exchange creates connection</p>
+                    </div>
+                    <img 
+                      src="/2.png" 
+                      alt="Brand Story" 
+                      className="w-full h-[250px] md:h-[320px] object-cover rounded-md"
+                    />
+                  </CardContent>
+                </Card>
+              </CarouselItem>
+
+              {/* Let Go Buddy Feature */}
+              <CarouselItem>
+                <Card className="border-0 shadow-none">
+                  <CardContent className="p-4 md:p-8 bg-stone-50 rounded-lg">
+                    <div className="text-center mb-4 md:mb-6">
+                      <h3 className="text-xl md:text-2xl font-light text-stone-800 mb-2">Let Go Buddy</h3>
+                      <p className="text-sm md:text-base text-stone-600">Your mindful coach for decluttering with heart</p>
+                    </div>
+                    <img 
+                      src="/3.png" 
+                      alt="Let Go Buddy" 
+                      className="w-full h-[250px] md:h-[320px] object-cover rounded-md"
+                    />
+                    <div className="mt-4 text-center">
+                      <Link 
+                        to="/let-go-buddy" 
+                        className="inline-flex items-center px-4 md:px-6 py-2 text-xs md:text-sm font-medium text-stone-700 bg-white border border-stone-300 rounded-full hover:bg-stone-100 transition-colors"
+                      >
+                        Try Let Go Buddy
+                      </Link>
+                    </div>
+                  </CardContent>
+                </Card>
+              </CarouselItem>
+
+              {/* Challenge Calendar */}
+              <CarouselItem>
+                <div className="relative">
+                  <img 
+                    src="/4.png" 
+                    alt="Challenge Calendar" 
+                    className="w-full h-[300px] md:h-[500px] object-contain rounded-lg bg-stone-50"
+                  />
+                  <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 md:bottom-80 md:left-0 md:transform md:translate-x-24">
+                    <Link 
+                      to="/let-go-buddy/challenge-calendar" 
+                      className="inline-flex items-center px-4 md:px-6 py-1.5 md:py-2 text-xs md:text-sm font-medium text-stone-800 bg-white/50 border border-stone-200 rounded-full hover:bg-white/70 hover:shadow-md transition-all"
+                    >
+                      Start Your Journey
+                    </Link>
+                  </div>
+                </div>
+              </CarouselItem>
+            </CarouselContent>
+            
+            <CarouselPrevious className="left-2 md:left-4 bg-white/80 hover:bg-white border-stone-200 h-8 w-8 md:h-10 md:w-10" />
+            <CarouselNext className="right-2 md:right-4 bg-white/80 hover:bg-white border-stone-200 h-8 w-8 md:h-10 md:w-10" />
+          </Carousel>
+        </div>
       </div>
     </div>
   );

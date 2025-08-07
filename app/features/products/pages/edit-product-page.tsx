@@ -315,7 +315,7 @@ export default function EditProductPage({ loaderData, actionData }: Route.Compon
               
               {/* Upload button */}
               <label className="cursor-pointer inline-block">
-                <div className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors">
+                <div className="px-4 py-2 rounded cursor-pointer bg-[#91a453] text-[#fcffe7] hover:bg-[#D4DE95] hover:text-[#3D4127]">
                   Add Images
                 </div>
                 <Input
