@@ -15,7 +15,7 @@ import {
 } from "@heroicons/react/24/outline";
 import { makeSSRClient } from "~/supa-client";
 import { redirect } from "react-router";
-import { generateAnalysis } from "../llm.server";
+// import { generateAnalysis } from "../llm.server"; // Temporarily disabled - using mock data
 import { createItemAnalysis, updateSessionCompletion, addToChallengeCalendar } from "../mutations";
 import { format, addDays } from "date-fns";
 
@@ -54,9 +54,12 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 }
 
 export async function action({ request, params }: Route.ActionArgs) {
+  console.log('Action called for analysis page');
+  
   const { client } = makeSSRClient(request);
   const { data: { user } } = await client.auth.getUser();
   if (!user) {
+    console.log('User not authenticated, redirecting');
     return redirect('/auth/login');
   }
 
@@ -64,24 +67,23 @@ export async function action({ request, params }: Route.ActionArgs) {
   const formData = await request.formData();
   const intent = formData.get("intent") as string;
 
+  console.log('Intent:', intent, 'SessionId:', sessionId);
+
   try {
     if (intent === "generate-analysis") {
-      // Get conversation data from form (this would normally come from the chat)
-      const mockConversation = [
-        { type: 'ai', content: "Hi! I'm Joy, your declutter buddy! How are you feeling about this item right now?" },
-        { type: 'user', content: "I'm feeling conflicted about this old guitar. I used to play it a lot." },
-        { type: 'ai', content: "I can sense that feeling. When was the last time you actually used this item?" },
-        { type: 'user', content: "Honestly, it's been over two years since I last played it." },
-        { type: 'ai', content: "If this item mysteriously disappeared tomorrow, what would your first reaction be?" },
-        { type: 'user', content: "I think I'd be sad at first but probably wouldn't really miss it day to day." },
-        { type: 'ai', content: "What's the main thing keeping this item in your life right now?" },
-        { type: 'user', content: "Sentimental value and the memories of when I used to play music with friends." },
-        { type: 'ai', content: "When you see this item, does it bring you joy or feel like it's just there?" },
-        { type: 'user', content: "It mostly just makes me feel a bit guilty for not using it." }
-      ];
-
-      // Generate AI analysis
-      const aiAnalysis = await generateAnalysis(mockConversation as any);
+      console.log('Starting analysis generation...');
+      
+      // For now, let's skip the OpenAI call and use a mock response
+      // This prevents issues if OPENAI_API_KEY is not configured
+      const aiAnalysis = {
+        ai_listing_title: "Acoustic Guitar - Great for Beginners",
+        ai_listing_description: "This acoustic guitar has been well-maintained and is perfect for someone looking to start their musical journey. Shows minor signs of use but plays beautifully.",
+        ai_category: "sell",
+        analysis_summary: "Based on our conversation, it seems this guitar holds sentimental value but isn't actively serving your current lifestyle. The guilt you feel suggests it might be time to let it bring joy to someone who will use it regularly.",
+        emotion_summary: "conflicted but ready to move on"
+      };
+      
+      console.log('Generated analysis:', aiAnalysis);
       
       // Create item analysis record
       await createItemAnalysis(client, {
@@ -101,10 +103,8 @@ export async function action({ request, params }: Route.ActionArgs) {
         decision_barriers: ["sentimental_attachment"]
       });
 
-      return { 
-        analysisResult: aiAnalysis,
-        success: true 
-      };
+      // Redirect to reload the page with the new analysis from the database
+      return redirect(`/let-go-buddy/analysis/${sessionId}`);
     }
 
     if (intent === "start-selling") {
@@ -170,28 +170,17 @@ export async function action({ request, params }: Route.ActionArgs) {
   return null;
 }
 
-export default function LetGoBuddyAnalysisPage({ loaderData, actionData }: Route.ComponentProps) {
+export default function LetGoBuddyAnalysisPage({ loaderData }: Route.ComponentProps) {
   const { sessionId, analysis: existingAnalysis, isNewAnalysis } = loaderData;
   const [isGenerating, setIsGenerating] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(addDays(new Date(), 1));
   
-  const analysis = actionData?.analysisResult || existingAnalysis;
+  // Since we're redirecting after creating analysis, we only need existingAnalysis
+  const analysis = existingAnalysis;
 
-  const handleGenerateAnalysis = async () => {
+  const handleGenerateAnalysis = () => {
     setIsGenerating(true);
-    
-    // Create form and submit
-    const form = document.createElement('form');
-    form.method = 'POST';
-    form.style.display = 'none';
-    
-    const intentInput = document.createElement('input');
-    intentInput.name = 'intent';
-    intentInput.value = 'generate-analysis';
-    form.appendChild(intentInput);
-    
-    document.body.appendChild(form);
-    form.submit();
+    // Form will submit automatically, no need to prevent default
   };
 
   if (!analysis && isNewAnalysis) {
@@ -213,24 +202,27 @@ export default function LetGoBuddyAnalysisPage({ loaderData, actionData }: Route
               I'll analyze your conversation with Joy to provide personalized recommendations 
               for your item based on your emotional attachment and usage patterns.
             </p>
-            <Button 
-              onClick={handleGenerateAnalysis} 
-              disabled={isGenerating}
-              size="lg"
-              className="bg-blue-600 hover:bg-blue-700"
-            >
-              {isGenerating ? (
-                <>
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
-                  Analyzing...
-                </>
-              ) : (
-                <>
-                  <SparklesIcon className="w-4 h-4 mr-2" />
-                  Start Analysis
-                </>
-              )}
-            </Button>
+            <form method="post" onSubmit={handleGenerateAnalysis}>
+              <input type="hidden" name="intent" value="generate-analysis" />
+              <Button 
+                type="submit"
+                disabled={isGenerating}
+                size="lg"
+                className="bg-[#636B2F] text-[#D4DE95] hover:bg-[#D4DE95] hover:text-[#3D4127]"
+              >
+                {isGenerating ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                    Analyzing...
+                  </>
+                ) : (
+                  <>
+                    <SparklesIcon className="w-4 h-4 mr-2" />
+                    Start Analysis
+                  </>
+                )}
+              </Button>
+            </form>
           </CardContent>
         </Card>
       </div>
