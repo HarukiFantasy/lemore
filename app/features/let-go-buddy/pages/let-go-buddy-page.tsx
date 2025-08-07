@@ -105,6 +105,7 @@ export async function action({ request }: Route.ActionArgs) {
           // Store image URL and session data for analysis page to use
           // We'll use URL parameters to pass this data for now
           const params = new URLSearchParams({
+            mode: 'chat',
             itemName: itemName || '',
             situation: situation || '',
             additionalInfo: additionalInfo || '',
@@ -123,6 +124,7 @@ export async function action({ request }: Route.ActionArgs) {
     
     // Redirect without image if no file or upload failed
     const params = new URLSearchParams({
+      mode: 'chat',
       itemName: itemName || '',
       situation: situation || '',
       additionalInfo: additionalInfo || ''
