@@ -1,14 +1,27 @@
+import { useState, useRef } from "react";
 import type { Route } from "./+types/let-go-buddy-page";
 import { Button } from "~/common/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "~/common/components/ui/card";
 import { Badge } from "~/common/components/ui/badge";
-import { CameraIcon, ExclamationTriangleIcon, SparklesIcon } from "@heroicons/react/24/outline";
+import { Input } from "~/common/components/ui/input";
+import { Textarea } from "~/common/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/common/components/ui/select";
+import { CameraIcon, ExclamationTriangleIcon, SparklesIcon, TrashIcon, ArrowRightIcon } from "@heroicons/react/24/outline";
 import { makeSSRClient } from "~/supa-client";
 import { getLetGoSessionsCount } from "../queries";
 import { redirect } from "react-router";
 import { createLetGoBuddySession } from "../mutations";
 
 const MAX_FREE_SESSIONS = 2;
+
+const UPLOAD_SITUATIONS = [
+  { value: "ready-to-declutter", label: "Ready to declutter" },
+  { value: "feeling-overwhelmed", label: "Feeling overwhelmed" },
+  { value: "moving-soon", label: "Moving soon" },
+  { value: "spring-cleaning", label: "Spring cleaning" },
+  { value: "need-space", label: "Need more space" },
+  { value: "organizing", label: "Getting organized" }
+];
 
 export async function loader({ request }: Route.LoaderArgs) {
   const { client } = makeSSRClient(request);
@@ -42,9 +55,61 @@ export async function action({ request }: Route.ActionArgs) {
       return { error: "You've reached the maximum number of free sessions" };
     }
     
+    // Get form data
+    const itemName = formData.get("itemName") as string;
+    const situation = formData.get("situation") as string;
+    const additionalInfo = formData.get("additionalInfo") as string;
+    const file = formData.get("file") as File;
+
     // Create new session
     const sessionId = await createLetGoBuddySession(client, user.id);
-    return redirect(`/let-go-buddy/chat/${sessionId}`);
+    
+    // Handle image upload if file is provided
+    if (file && file.size > 0) {
+      try {
+        // Upload file to Supabase storage
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${sessionId}-${Date.now()}.${fileExt}`;
+        
+        const { data: uploadData, error: uploadError } = await client.storage
+          .from('letgobuddy-product')
+          .upload(`${user.id}/${fileName}`, file, {
+            cacheControl: '3600',
+            upsert: false
+          });
+
+        if (uploadError) {
+          console.error('Upload error:', uploadError);
+        } else {
+          // Get public URL
+          const { data: { publicUrl } } = client.storage
+            .from('letgobuddy-product')
+            .getPublicUrl(`${user.id}/${fileName}`);
+          
+          // Store image URL and session data for analysis page to use
+          // We'll use URL parameters to pass this data for now
+          const params = new URLSearchParams({
+            itemName: itemName || '',
+            situation: situation || '',
+            additionalInfo: additionalInfo || '',
+            imageUrl: publicUrl
+          });
+          
+          return redirect(`/let-go-buddy/chat/${sessionId}?${params}`);
+        }
+      } catch (error) {
+        console.error('Error processing upload:', error);
+      }
+    }
+    
+    // Redirect without image if no file or upload failed
+    const params = new URLSearchParams({
+      itemName: itemName || '',
+      situation: situation || '',
+      additionalInfo: additionalInfo || ''
+    });
+    
+    return redirect(`/let-go-buddy/chat/${sessionId}?${params}`);
   }
   
   return null;
@@ -52,6 +117,54 @@ export async function action({ request }: Route.ActionArgs) {
 
 export default function LetGoBuddyPage({ loaderData }: Route.ComponentProps) {
   const { sessionCount, hasReachedLimit } = loaderData;
+  
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [itemName, setItemName] = useState("");
+  const [situation, setSituation] = useState("");
+  const [additionalInfo, setAdditionalInfo] = useState("");
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) {
+      alert('Please upload a JPEG, PNG, or WebP image.');
+      return;
+    }
+
+    // Validate file size (5MB limit)
+    if (file.size > 5 * 1024 * 1024) {
+      alert('File size must be less than 5MB.');
+      return;
+    }
+
+    setUploadedFile(file);
+    
+    // Create preview URL
+    const url = URL.createObjectURL(file);
+    setPreviewUrl(url);
+  };
+
+  const removeFile = () => {
+    if (previewUrl) {
+      URL.revokeObjectURL(previewUrl);
+    }
+    setUploadedFile(null);
+    setPreviewUrl(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const handleSubmit = () => {
+    if (!uploadedFile || !itemName || !situation) return;
+    setIsUploading(true);
+  };
   
   return (
     <div className="container max-w-4xl mx-auto px-4 py-8">
@@ -81,9 +194,9 @@ export default function LetGoBuddyPage({ loaderData }: Route.ComponentProps) {
             Upload a photo of an item you're considering letting go, and I'll help you make the right decision.
           </p>
         </CardHeader>
-        <CardContent className="text-center">
+        <CardContent>
           {hasReachedLimit ? (
-            <div className="space-y-4">
+            <div className="space-y-4 text-center">
               <div className="flex items-center justify-center gap-2 text-orange-600 mb-4">
                 <ExclamationTriangleIcon className="w-6 h-6" />
                 <p className="font-medium">Free session limit reached</p>
@@ -98,29 +211,136 @@ export default function LetGoBuddyPage({ loaderData }: Route.ComponentProps) {
               </Button>
             </div>
           ) : (
-            <div className="space-y-4">
-              <div className="bg-blue-50 p-4 rounded-lg mb-6">
-                <h3 className="font-medium text-blue-900 mb-2">How it works:</h3>
-                <ol className="text-sm text-blue-800 space-y-1 text-left max-w-md mx-auto">
-                  <li>1. Upload a photo of your item</li>
-                  <li>2. Chat with Joy, your AI decluttering coach</li>
-                  <li>3. Get personalized recommendations</li>
-                  <li>4. Choose to sell, donate, or add to your challenge calendar</li>
-                </ol>
+            <form method="post" onSubmit={handleSubmit} encType="multipart/form-data" className="space-y-6">
+              <input type="hidden" name="intent" value="start-session" />
+              
+              {/* File Upload */}
+              <div>
+                <label htmlFor="photo-upload" className="block text-sm font-medium mb-2">Item Photo *</label>
+                {!uploadedFile ? (
+                  <div 
+                    className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer hover:border-gray-400 transition-colors"
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    <CameraIcon className="w-12 h-12 mx-auto text-gray-400 mb-4" />
+                    <p className="text-lg font-medium text-gray-700 mb-2">
+                      Upload a photo of your item
+                    </p>
+                    <p className="text-sm text-gray-500">
+                      JPEG, PNG, or WebP • Max 5MB
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="relative inline-block">
+                      <img 
+                        src={previewUrl!} 
+                        alt="Item preview" 
+                        className="w-48 h-48 object-cover rounded-lg border mx-auto block"
+                      />
+                      <button
+                        type="button"
+                        onClick={removeFile}
+                        className="absolute -top-2 -right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600"
+                      >
+                        <TrashIcon className="w-4 h-4" />
+                      </button>
+                    </div>
+                    <p className="text-sm text-gray-600 text-center">
+                      {uploadedFile.name} ({Math.round(uploadedFile.size / 1024)}KB)
+                    </p>
+                  </div>
+                )}
+                
+                <input
+                  ref={fileInputRef}
+                  id="photo-upload"
+                  name="file"
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  onChange={handleFileSelect}
+                  className="hidden"
+                />
               </div>
+
+              {/* Item Name */}
+              <div>
+                <label htmlFor="item-name" className="block text-sm font-medium mb-2">What is this item? *</label>
+                <Input
+                  id="item-name"
+                  name="itemName"
+                  value={itemName}
+                  onChange={(e) => setItemName(e.target.value)}
+                  placeholder="e.g., Vintage leather jacket, Coffee maker, etc."
+                  required
+                />
+              </div>
+
+              {/* Situation */}
+              <div>
+                <label className="block text-sm font-medium mb-2">What brings you here today? *</label>
+                <Select name="situation" value={situation} onValueChange={setSituation} required>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choose your current situation" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {UPLOAD_SITUATIONS.map((situation) => (
+                      <SelectItem key={situation.value} value={situation.value}>
+                        {situation.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Additional Info */}
+              <div>
+                <label htmlFor="additional-info" className="block text-sm font-medium mb-2">Any additional context? (Optional)</label>
+                <Textarea
+                  id="additional-info"
+                  name="additionalInfo"
+                  value={additionalInfo}
+                  onChange={(e) => setAdditionalInfo(e.target.value)}
+                  placeholder="Tell me more about this item or your situation..."
+                  rows={3}
+                />
+              </div>
+
+              {/* Submit Button */}
+              <Button 
+                type="submit"
+                disabled={!uploadedFile || !itemName || !situation || isUploading}
+                size="lg"
+                className="w-full bg-[#91a453] text-[#fcffe7] hover:bg-[#D4DE95] hover:text-[#3D4127]"
+              >
+                {isUploading ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                    Starting Session...
+                  </>
+                ) : (
+                  <>
+                    <span className="mr-2">Start New Session</span>
+                    <ArrowRightIcon className="w-4 h-4" />
+                  </>
+                )}
+              </Button>
               
-              <form method="post">
-                <input type="hidden" name="intent" value="start-session" />
-                <Button type="submit" size="lg" className="bg-[#91a453] text-[#fcffe7] hover:bg-[#D4DE95] hover:text-[#3D4127] cursor-pointer">
-                  <CameraIcon className="w-5 h-5 mr-2" />
-                  Start New Session
-                </Button>
-              </form>
-              
-              <p className="text-sm text-gray-500 mt-4">
+              <p className="text-sm text-gray-500 text-center">
                 {MAX_FREE_SESSIONS - sessionCount} free session{MAX_FREE_SESSIONS - sessionCount !== 1 ? 's' : ''} remaining
               </p>
-            </div>
+
+              {/* Help Text */}
+              <div className="bg-blue-50 p-4 rounded-lg">
+                <h4 className="font-medium text-blue-900 mb-2">What happens next?</h4>
+                <ul className="text-sm text-blue-800 space-y-1">
+                  <li>• Joy will ask you thoughtful questions about your item</li>
+                  <li>• The conversation typically takes 3-5 minutes</li>
+                  <li>• You'll get personalized recommendations based on your responses</li>
+                  <li>• Choose to sell, donate, or add to your challenge calendar</li>
+                </ul>
+              </div>
+            </form>
           )}
         </CardContent>
       </Card>

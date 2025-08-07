@@ -54,6 +54,7 @@ JSON STRUCTURE REQUIRED:
   "ai_listing_title": "emoji + catchy title under 60 chars that makes people want to click",
   "ai_listing_description": "150-200 word persuasive description with: attention-grabbing opening, key features/benefits, value proposition, urgency without being pushy, authentic tone, clear CTA",
   "ai_category": "Sell" or "Donate" or "Keep" (MUST be capitalized - based on emotional analysis),
+  "item_category": "MUST choose from: Electronics, Clothing, Books, Home, Sports, Beauty, Toys, Automotive, Health, Other",
   "analysis_summary": "2-3 sentences explaining the recommendation based on the conversation",
   "emotion_summary": "brief description of user's emotional state (e.g., 'ready to let go', 'conflicted but practical')",
   "emotional_score": number 1-10 (1=no attachment, 10=very attached),
@@ -102,6 +103,7 @@ Make the listing so compelling that buyers feel they NEED this item, while keepi
       ai_listing_title: analysis.ai_listing_title || `✨ ${itemName} - Great Deal!`,
       ai_listing_description: analysis.ai_listing_description || generateFallbackDescription(itemName),
       ai_category: capitalizeRecommendation(analysis.ai_category) || 'Sell', // Ensure proper capitalization
+      item_category: analysis.item_category || categorizeItem(itemName), // Use AI's category or fallback
       analysis_summary: analysis.analysis_summary || `Based on your situation of ${situation}, this ${itemName} seems ready for a new chapter.`,
       emotion_summary: analysis.emotion_summary || 'ready to move forward',
       emotional_score: analysis.emotional_score || 5,
@@ -125,6 +127,59 @@ function capitalizeRecommendation(category: string): 'Sell' | 'Donate' | 'Keep' 
   if (lower === 'donate') return 'Donate';
   if (lower === 'keep') return 'Keep';
   return 'Sell'; // Default fallback
+}
+
+// Helper function to categorize items based on name - using exact schema enum values
+function categorizeItem(itemName: string): 'Electronics' | 'Clothing' | 'Books' | 'Home' | 'Sports' | 'Beauty' | 'Toys' | 'Automotive' | 'Health' | 'Other' {
+  const lowerItem = itemName.toLowerCase();
+  
+  // Electronics
+  if (lowerItem.match(/laptop|phone|computer|tablet|camera|tv|electronic|headphone|speaker|mouse|keyboard|monitor|gaming|console|iphone|android|mac|pc/)) {
+    return 'Electronics';
+  }
+  
+  // Clothing  
+  if (lowerItem.match(/shirt|dress|jacket|pants|clothes|shoe|bag|hat|belt|jewelry|watch|sock|underwear|coat|sweater|jeans|skirt|blouse/)) {
+    return 'Clothing';
+  }
+  
+  // Books
+  if (lowerItem.match(/book|novel|magazine|textbook|journal|diary|comic|manual|guide|dictionary/)) {
+    return 'Books';
+  }
+  
+  // Home
+  if (lowerItem.match(/furniture|chair|table|desk|sofa|shelf|lamp|decor|kitchen|cookware|appliance|bedding|curtain|rug|vase|mirror|frame/)) {
+    return 'Home';
+  }
+  
+  // Sports
+  if (lowerItem.match(/ball|racket|weights|yoga|fitness|sports|bike|bicycle|skateboard|helmet|golf|tennis|basketball|football|soccer|gym/)) {
+    return 'Sports';
+  }
+  
+  // Beauty
+  if (lowerItem.match(/makeup|cosmetic|skincare|perfume|lotion|shampoo|beauty|nail|hair|fragrance/)) {
+    return 'Beauty';
+  }
+  
+  // Toys
+  if (lowerItem.match(/toy|game|puzzle|doll|lego|action figure|board game|stuffed|plush|educational toy/)) {
+    return 'Toys';
+  }
+  
+  // Automotive
+  if (lowerItem.match(/car|auto|tire|engine|parts|motorcycle|vehicle|automotive|mechanic/)) {
+    return 'Automotive';
+  }
+  
+  // Health  
+  if (lowerItem.match(/medical|health|vitamin|supplement|first aid|thermometer|scale|medicine|healthcare/)) {
+    return 'Health';
+  }
+  
+  // Default to Other
+  return 'Other';
 }
 
 // Fallback function when OpenAI fails
@@ -169,6 +224,7 @@ function generateFallbackAnalysis(itemName: string, situation: string, conversat
     ai_listing_title: titles[category],
     ai_listing_description: generateFallbackDescription(itemName),
     ai_category: 'Sell' as const, // Properly capitalized
+    item_category: categorizeItem(itemName), // Use helper function for proper categorization
     analysis_summary: `Based on your ${situation} situation, selling this ${itemName} will help you move forward while giving it a new life with someone who needs it.`,
     emotion_summary: 'ready to let go',
     emotional_score: 5,

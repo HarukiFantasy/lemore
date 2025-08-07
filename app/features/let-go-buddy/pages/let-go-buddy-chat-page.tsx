@@ -47,14 +47,18 @@ export async function loader({ request, params }: Route.LoaderArgs) {
   // Get search parameters
   const url = new URL(request.url);
   const mode = url.searchParams.get('mode') || 'setup';
-  const item = url.searchParams.get('item') || '';
+  const item = url.searchParams.get('itemName') || url.searchParams.get('item') || '';
   const situation = url.searchParams.get('situation') || '';
+  const additionalInfo = url.searchParams.get('additionalInfo') || '';
+  const imageUrl = url.searchParams.get('imageUrl') || '';
 
   return {
     sessionId,
     mode,
     item,
-    situation
+    situation,
+    additionalInfo,
+    imageUrl
   };
 }
 
@@ -73,6 +77,50 @@ export async function action({ request, params }: Route.ActionArgs) {
     return redirect(`/let-go-buddy/chat/${sessionId}?mode=chat`);
   }
 
+  // Handle image upload and session data storage
+  const file = formData.get("file") as File;
+  const fileName = formData.get("fileName") as string;
+  const bucket = formData.get("bucket") as string;
+  const itemName = formData.get("itemName") as string;
+  const situation = formData.get("situation") as string;
+  const additionalInfo = formData.get("additionalInfo") as string;
+
+  if (file && fileName && bucket) {
+    try {
+      // Upload file to Supabase storage
+      const { data: uploadData, error: uploadError } = await client.storage
+        .from(bucket)
+        .upload(`${user.id}/${fileName}`, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
+
+      if (uploadError) {
+        console.error('Upload error:', uploadError);
+        return { error: 'Failed to upload image' };
+      }
+
+      // Get public URL
+      const { data: { publicUrl } } = client.storage
+        .from(bucket)
+        .getPublicUrl(`${user.id}/${fileName}`);
+
+      // Store session data in database (you might want to add session_data table)
+      // For now, we'll use sessionStorage on the client side
+      console.log('Image uploaded successfully:', publicUrl);
+      console.log('Session data:', { itemName, situation, additionalInfo, imageUrl: publicUrl });
+
+      return { 
+        success: true, 
+        imageUrl: publicUrl,
+        sessionData: { itemName, situation, additionalInfo }
+      };
+    } catch (error) {
+      console.error('Error processing upload:', error);
+      return { error: 'Failed to process image upload' };
+    }
+  }
+
   return null;
 }
 
@@ -84,7 +132,7 @@ interface ChatMessage {
 }
 
 export default function LetGoBuddyChatPage({ loaderData }: Route.ComponentProps) {
-  const { sessionId, mode, item: itemFromParams, situation: situationFromParams } = loaderData;
+  const { sessionId, mode, item: itemFromParams, situation: situationFromParams, additionalInfo: additionalInfoFromParams, imageUrl: imageUrlFromParams } = loaderData;
   
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -134,11 +182,44 @@ export default function LetGoBuddyChatPage({ loaderData }: Route.ComponentProps)
 
     setIsUploading(true);
     
-    // Here you would upload the file to Supabase storage
-    // For now, we'll just proceed to chat mode
-    setTimeout(() => {
-      window.location.href = `/let-go-buddy/chat/${sessionId}?mode=chat&item=${encodeURIComponent(itemName)}&situation=${encodeURIComponent(situation)}`;
-    }, 1000);
+    try {
+      // Upload image to Supabase storage
+      const fileExt = uploadedFile.name.split('.').pop();
+      const fileName = `${sessionId}-${Date.now()}.${fileExt}`;
+      
+      // Create form data for the upload
+      const formData = new FormData();
+      formData.append('file', uploadedFile);
+      formData.append('fileName', fileName);
+      formData.append('bucket', 'letgobuddy-product');
+      formData.append('sessionId', sessionId.toString());
+      formData.append('itemName', itemName);
+      formData.append('situation', situation);
+      formData.append('additionalInfo', additionalInfo);
+      
+      // Submit to the action endpoint to handle upload and session storage
+      const response = await fetch(`/let-go-buddy/chat/${sessionId}`, {
+        method: 'POST',
+        body: formData
+      });
+      
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success && result.imageUrl) {
+          // Store image URL for later use in analysis
+          sessionStorage.setItem(`lgb_image_${sessionId}`, result.imageUrl);
+        }
+        
+        // Navigate to chat mode
+        window.location.href = `/let-go-buddy/chat/${sessionId}?mode=chat&item=${encodeURIComponent(itemName)}&situation=${encodeURIComponent(situation)}`;
+      } else {
+        throw new Error('Upload failed');
+      }
+    } catch (error) {
+      console.error('Error uploading file:', error);
+      alert('Failed to upload image. Please try again.');
+      setIsUploading(false);
+    }
   };
 
   const handleChatComplete = (conversationData: ChatMessage[]) => {
@@ -146,7 +227,12 @@ export default function LetGoBuddyChatPage({ loaderData }: Route.ComponentProps)
     sessionStorage.setItem(`lgb_conversation_${sessionId}`, JSON.stringify(conversationData));
     sessionStorage.setItem(`lgb_item_${sessionId}`, itemFromParams || itemName);
     sessionStorage.setItem(`lgb_situation_${sessionId}`, situationFromParams || situation);
-    sessionStorage.setItem(`lgb_additional_${sessionId}`, additionalInfo);
+    sessionStorage.setItem(`lgb_additional_${sessionId}`, additionalInfoFromParams || additionalInfo);
+    
+    // Store image URL if available
+    if (imageUrlFromParams) {
+      sessionStorage.setItem(`lgb_image_${sessionId}`, imageUrlFromParams);
+    }
     
     // Navigate to analysis page
     window.location.href = `/let-go-buddy/analysis/${sessionId}`;

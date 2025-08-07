@@ -92,6 +92,7 @@ export async function action({ request, params }: Route.ActionArgs) {
       const itemName = formData.get("item_name") as string || "Item";
       const situation = formData.get("situation") as string || "decluttering";
       const additionalInfo = formData.get("additional_info") as string || "";
+      const imageUrl = formData.get("image_url") as string || "";
       
       // Try to use OpenAI API if available, otherwise fall back to mock data
       let aiAnalysis;
@@ -141,10 +142,10 @@ export async function action({ request, params }: Route.ActionArgs) {
         // Create item analysis record
         const analysisId = await createItemAnalysis(client, {
           session_id: sessionId,
-          item_name: aiAnalysis.ai_listing_title || "Guitar",
-          item_category: "Other" as any, 
+          item_name: aiAnalysis.ai_listing_title || itemName,
+          item_category: aiAnalysis.item_category as any, // AI will choose from correct enum values
           item_condition: "Good" as any,  // Enum values are capitalized
-          recommendation: aiAnalysis.ai_category === "sell" ? "Sell" : aiAnalysis.ai_category === "donate" ? "Donate" : "Keep" as any,  // Enum values are capitalized
+          recommendation: aiAnalysis.ai_category === "Sell" ? "Sell" : aiAnalysis.ai_category === "Donate" ? "Donate" : "Keep" as any,  // Enum values are capitalized
           recommendation_reason: aiAnalysis.analysis_summary,
           emotional_score: 7,
           ai_listing_title: aiAnalysis.ai_listing_title,
@@ -153,7 +154,8 @@ export async function action({ request, params }: Route.ActionArgs) {
           usage_pattern_keywords: ["rarely_used", "neglected"],
           decision_factor_keywords: ["emotional_value", "practical_unused"],
           personality_insights: ["nostalgic", "guilt_driven"],
-          decision_barriers: ["sentimental_attachment"]
+          decision_barriers: ["sentimental_attachment"],
+          images: imageUrl ? [imageUrl] : [] // Include uploaded image URL if available
         });
         
         console.log('Analysis created with ID:', analysisId);
@@ -255,6 +257,7 @@ export default function LetGoBuddyAnalysisPage({ loaderData }: Route.ComponentPr
   const [itemName, setItemName] = useState<string>('');
   const [situation, setSituation] = useState<string>('');
   const [additionalInfo, setAdditionalInfo] = useState<string>('');
+  const [imageUrl, setImageUrl] = useState<string>('');
   
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -262,11 +265,13 @@ export default function LetGoBuddyAnalysisPage({ loaderData }: Route.ComponentPr
       const item = sessionStorage.getItem(`lgb_item_${sessionId}`) || sessionData?.item_name || 'Item';
       const sit = sessionStorage.getItem(`lgb_situation_${sessionId}`) || sessionData?.situation || 'decluttering';
       const additional = sessionStorage.getItem(`lgb_additional_${sessionId}`) || '';
+      const image = sessionStorage.getItem(`lgb_image_${sessionId}`) || '';
       
       setConversationData(conversation);
       setItemName(item);
       setSituation(sit);
       setAdditionalInfo(additional);
+      setImageUrl(image);
     }
   }, [sessionId, sessionData]);
   
@@ -303,6 +308,7 @@ export default function LetGoBuddyAnalysisPage({ loaderData }: Route.ComponentPr
               <input type="hidden" name="situation" value={situation} />
               <input type="hidden" name="conversation_context" value={conversationData} />
               <input type="hidden" name="additional_info" value={additionalInfo} />
+              <input type="hidden" name="image_url" value={imageUrl} />
               <Button 
                 type="submit"
                 disabled={isGenerating}
