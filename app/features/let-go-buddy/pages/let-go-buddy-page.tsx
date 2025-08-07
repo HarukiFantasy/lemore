@@ -39,19 +39,24 @@ export async function loader({ request }: Route.LoaderArgs) {
 }
 
 export async function action({ request }: Route.ActionArgs) {
+  console.log('Let Go Buddy action called');
   const { client } = makeSSRClient(request);
   const { data: { user } } = await client.auth.getUser();
   if (!user) {
+    console.log('User not authenticated, redirecting to login');
     return redirect('/auth/login');
   }
   
   const formData = await request.formData();
   const intent = formData.get("intent");
+  console.log('Action intent:', intent);
   
   if (intent === "start-session") {
+    console.log('Processing start-session intent');
     // Check session count first
     const sessionCount = await getLetGoSessionsCount(client, user.id);
     if (sessionCount >= MAX_FREE_SESSIONS) {
+      console.log('Session limit reached');
       return { error: "You've reached the maximum number of free sessions" };
     }
     
@@ -60,12 +65,22 @@ export async function action({ request }: Route.ActionArgs) {
     const situation = formData.get("situation") as string;
     const additionalInfo = formData.get("additionalInfo") as string;
     const file = formData.get("file") as File;
+    
+    console.log('Form data:', { itemName, situation, additionalInfo, fileSize: file?.size });
+    
+    // Validate required fields
+    if (!itemName || !situation) {
+      console.log('Missing required fields:', { itemName, situation });
+      return { error: "Please fill in all required fields" };
+    }
 
     // Create new session
     const sessionId = await createLetGoBuddySession(client, user.id);
+    console.log('Created session with ID:', sessionId);
     
     // Handle image upload if file is provided
     if (file && file.size > 0) {
+      console.log('Processing image upload');
       try {
         // Upload file to Supabase storage
         const fileExt = file.name.split('.').pop();
@@ -81,6 +96,7 @@ export async function action({ request }: Route.ActionArgs) {
         if (uploadError) {
           console.error('Upload error:', uploadError);
         } else {
+          console.log('Image uploaded successfully');
           // Get public URL
           const { data: { publicUrl } } = client.storage
             .from('letgobuddy-product')
@@ -95,7 +111,9 @@ export async function action({ request }: Route.ActionArgs) {
             imageUrl: publicUrl
           });
           
-          return redirect(`/let-go-buddy/chat/${sessionId}?${params}`);
+          const redirectUrl = `/let-go-buddy/chat/${sessionId}?${params}`;
+          console.log('Redirecting to:', redirectUrl);
+          return redirect(redirectUrl);
         }
       } catch (error) {
         console.error('Error processing upload:', error);
@@ -109,13 +127,15 @@ export async function action({ request }: Route.ActionArgs) {
       additionalInfo: additionalInfo || ''
     });
     
-    return redirect(`/let-go-buddy/chat/${sessionId}?${params}`);
+    const redirectUrl = `/let-go-buddy/chat/${sessionId}?${params}`;
+    console.log('Redirecting to (no image):', redirectUrl);
+    return redirect(redirectUrl);
   }
   
   return null;
 }
 
-export default function LetGoBuddyPage({ loaderData }: Route.ComponentProps) {
+export default function LetGoBuddyPage({ loaderData, actionData }: Route.ComponentProps) {
   const { sessionCount, hasReachedLimit } = loaderData;
   
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
@@ -161,9 +181,15 @@ export default function LetGoBuddyPage({ loaderData }: Route.ComponentProps) {
     }
   };
 
-  const handleSubmit = () => {
-    if (!uploadedFile || !itemName || !situation) return;
+  const handleSubmit = (e: React.FormEvent) => {
+    console.log('Form submitted');
+    if (!uploadedFile || !itemName || !situation) {
+      console.log('Validation failed:', { uploadedFile: !!uploadedFile, itemName, situation });
+      e.preventDefault();
+      return;
+    }
     setIsUploading(true);
+    console.log('Form validation passed, submitting...');
   };
   
   return (
@@ -213,6 +239,13 @@ export default function LetGoBuddyPage({ loaderData }: Route.ComponentProps) {
           ) : (
             <form method="post" onSubmit={handleSubmit} encType="multipart/form-data" className="space-y-6">
               <input type="hidden" name="intent" value="start-session" />
+              
+              {/* Error Display */}
+              {actionData?.error && (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+                  <p className="text-red-800 text-sm">{actionData.error}</p>
+                </div>
+              )}
               
               {/* File Upload */}
               <div>
@@ -279,7 +312,7 @@ export default function LetGoBuddyPage({ loaderData }: Route.ComponentProps) {
               {/* Situation */}
               <div>
                 <label className="block text-sm font-medium mb-2">What brings you here today? *</label>
-                <Select name="situation" value={situation} onValueChange={setSituation} required>
+                <Select value={situation} onValueChange={setSituation} required>
                   <SelectTrigger>
                     <SelectValue placeholder="Choose your current situation" />
                   </SelectTrigger>
@@ -291,6 +324,7 @@ export default function LetGoBuddyPage({ loaderData }: Route.ComponentProps) {
                     ))}
                   </SelectContent>
                 </Select>
+                <input type="hidden" name="situation" value={situation} />
               </div>
 
               {/* Additional Info */}
