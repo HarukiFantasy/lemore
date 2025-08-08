@@ -126,34 +126,125 @@ export default function HomePage() {
       </div>
 
       {/* Features Section */}
-      <div className="mt-8 md:mt-16 mb-8 px-4 md:px-0">
+      
+      {/* Mission Statement - Hero Style */}
+      <div className="mt-12 md:mt-20 mb-12 md:mb-20">
+        <div className="relative">
+          {/* Background Image with Overlay */}
+          <div className="absolute inset-0 z-0">
+            {/* <img 
+              src="/1.png" 
+              alt="Lemore Mission" 
+              className="w-full h-full object-cover opacity-0"
+            /> */}
+            <div className="absolute inset-0 bg-gradient-to-b from-white/60 via-white/40 to-white/60"></div>
+          </div>
+          
+          {/* Content Overlay */}
+          <div className="relative z-10 max-w-6xl mx-auto px-6 md:px-12 py-16 md:py-24">
+            <div className="grid md:grid-cols-2 gap-8 md:gap-12 items-center">
+              {/* Text Content */}
+              <div className="order-2 md:order-1 space-y-6">
+                <div className="space-y-4">
+                  <h2 className="text-3xl md:text-4xl lg:text-5xl font-light text-stone-800 leading-tight">
+                    Let go,<br />
+                    share more,<br />
+                    <span className="text-stone-600">live lighter.</span>
+                  </h2>
+                  <p className="text-base md:text-lg text-stone-600 leading-relaxed">
+                    Lemore helps people declutter mindfully, connect meaningfully, and create joy through conscious sharing.
+                  </p>
+                </div>
+                
+                {/* Feature Pills */}
+                <div className="flex flex-wrap gap-3">
+                  <div className="inline-flex items-center px-4 py-2 bg-white/80 backdrop-blur-sm rounded-full border border-stone-200">
+                    <span className="text-sm text-stone-700">✨ AI-Powered Guidance</span>
+                  </div>
+                  <div className="inline-flex items-center px-4 py-2 bg-white/80 backdrop-blur-sm rounded-full border border-stone-200">
+                    <span className="text-sm text-stone-700">🌱 Sustainable Living</span>
+                  </div>
+                  <div className="inline-flex items-center px-4 py-2 bg-white/80 backdrop-blur-sm rounded-full border border-stone-200">
+                    <span className="text-sm text-stone-700">💚 Community First</span>
+                  </div>
+                </div>
+                
+                {/* CTA Button */}
+                <div className="pt-4">
+                  <Link 
+                    to="/let-go-buddy"
+                    className="inline-flex items-center px-6 py-3 bg-stone-800 text-white rounded-full hover:bg-stone-700 transition-colors text-sm md:text-base font-medium"
+                  >
+                    Start Your Journey
+                    <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </Link>
+                </div>
+              </div>
+              
+              {/* Image Card */}
+              <div className="order-1 md:order-2">
+                <div className="relative">
+                  <div className="absolute -inset-4 bg-gradient-to-r from-stone-200/50 to-stone-300/50 rounded-2xl blur-2xl opacity-60"></div>
+                  <div className="relative rounded-2xl overflow-hidden shadow-2xl">
+                    <img 
+                      src="/1.png" 
+                      alt="Lemore Mission" 
+                      className="w-full h-[350px] md:h-[450px] object-cover"
+                    />
+                    {/* Floating Badge */}
+                    <div className="absolute bottom-6 left-6 right-6">
+                      <div className="bg-white/95 backdrop-blur-sm rounded-xl p-4 shadow-lg">
+                        <p className="text-sm font-medium text-stone-800 text-center">
+                          Less is More • Joy in Simplicity
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Carousel Section */}
+      <div className="mb-8 px-4 md:px-0">
         <div className="max-w-5xl mx-auto">
           <Carousel className="w-full">
             <CarouselContent>
-              {/* Mission Statement */}
-              <CarouselItem>
-                <div className="relative">
-                  <img 
-                    src="/1.png" 
-                    alt="Lemore Mission" 
-                    className="w-full h-[300px] md:h-[500px] object-cover rounded-lg"
-                  />
-                </div>
-              </CarouselItem>
 
-              {/* Brand Photos */}
+              {/* How It Works */}
               <CarouselItem>
                 <Card className="border-0 shadow-none">
                   <CardContent className="p-4 md:p-8 bg-stone-50 rounded-lg">
                     <div className="text-center mb-4 md:mb-6">
-                      <h3 className="text-xl md:text-2xl font-light text-stone-800 mb-2">Our Story</h3>
-                      <p className="text-sm md:text-base text-stone-600">Every item has a story, every exchange creates connection</p>
+                      <h3 className="text-xl md:text-2xl font-light text-stone-800 mb-2">How It Works</h3>
+                      <p className="text-sm md:text-base text-stone-600">Simple steps to meaningful exchanges</p>
                     </div>
                     <img 
                       src="/2.png" 
-                      alt="Brand Story" 
-                      className="w-full h-[250px] md:h-[320px] object-cover rounded-md"
+                      alt="How It Works" 
+                      className="w-full h-[200px] md:h-[260px] object-cover rounded-md mb-6"
                     />
+                    <div className="grid grid-cols-3 gap-2 md:gap-4 text-center">
+                      <div>
+                        <div className="w-10 h-10 md:w-12 md:h-12 bg-stone-200 rounded-full mx-auto mb-2 flex items-center justify-center text-stone-700 font-medium text-sm md:text-base">1</div>
+                        <p className="text-xs md:text-sm text-stone-600 font-medium">Declutter</p>
+                        <p className="text-xs text-stone-500 mt-1 hidden md:block">Let go mindfully</p>
+                      </div>
+                      <div>
+                        <div className="w-10 h-10 md:w-12 md:h-12 bg-stone-200 rounded-full mx-auto mb-2 flex items-center justify-center text-stone-700 font-medium text-sm md:text-base">2</div>
+                        <p className="text-xs md:text-sm text-stone-600 font-medium">Connect</p>
+                        <p className="text-xs text-stone-500 mt-1 hidden md:block">Find your people</p>
+                      </div>
+                      <div>
+                        <div className="w-10 h-10 md:w-12 md:h-12 bg-stone-200 rounded-full mx-auto mb-2 flex items-center justify-center text-stone-700 font-medium text-sm md:text-base">3</div>
+                        <p className="text-xs md:text-sm text-stone-600 font-medium">Share</p>
+                        <p className="text-xs text-stone-500 mt-1 hidden md:block">Create joy</p>
+                      </div>
+                    </div>
                   </CardContent>
                 </Card>
               </CarouselItem>
