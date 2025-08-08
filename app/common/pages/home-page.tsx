@@ -79,50 +79,144 @@ export default function HomePage() {
 
   return (
     
-    <div className="sm:max-w-[100vw] md:max-w-[100vw] lg:max-w-[100vw] xl:max-w-[100vw] px-5">
-      <div className="flex flex-col px-0 py-15 items-center justify-center rounded-md bg-gradient-to-t from-background to-primary/10">
-        <h1 className="text-4xl font-bold text-center">Buy Less, Share More, Live Lighter</h1>
-        <p className="text-lg text-gray-600 mt-2">
-          {!urlLocation ? "across all locations" : `in ${currentLocation}`}
-        </p>
-      </div>
-      <Form className="flex items-center justify-center max-w-screen-sm mx-auto mt-1 gap-2">
-        <Input name="query" type="text" placeholder="Search for items" />
-        <Button type="submit" variant="outline">Search</Button>
-      </Form>
-      <div className="text-2xl font-bold mt-10 mx-auto sm:max-w-[100vw] md:max-w-[100vw]">
-        Latest Listings {!urlLocation ? "" : `in ${currentLocation}`}
-      </div>
-      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-4 items-start w-full max-w-none">
-        {latestListings.length > 0 ? (
-          latestListings.map((product: any) => (
-            <BlurFade key={product.product_id}>
-              <ProductCard
-                key={product.product_id}
-                productId={product.product_id}
-                image={product.primary_image || `/no_image.png`}
-                title={product.title}
-                price={product.price}
-                currency={product.currency || "THB"}
-                priceType={product.price_type || "Fixed"}
-                sellerId={product.seller_id}
-                sellerName={product.seller_name}
-                is_sold={product.is_sold || false}
-                likes={product.likes_count || 0}
-                isLikedByUser={userLikedProducts?.includes(product.product_id) || false}
-                currentUserId={user?.id}
-                sellerStats={{
-                  totalListings: product.total_listings,
-                  totalLikes: product.total_likes,
-                  totalSold: product.total_sold,
-                  level: product.seller_level, // level 정보 추가
-                  sellerJoinedAt: new Date(product.seller_joined_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
-                }}
+    <div className="w-full">
+      {/* Hero Search Section */}
+      <div className="relative overflow-hidden bg-gradient-to-br from-stone-50 via-white to-stone-50 px-6 py-12 md:py-20">
+        
+        <div className="relative z-10 max-w-3xl mx-auto text-center space-y-6">
+          {/* Tagline */}
+          <div className="inline-flex items-center px-4 py-2 bg-white/80 backdrop-blur-sm rounded-full border border-stone-200 text-sm text-stone-600 mb-4">
+            📍 {!urlLocation ? "All Locations" : currentLocation} • {currentCountry}
+          </div>
+          
+          {/* Main Heading */}
+          <h1 className="text-3xl md:text-5xl font-medium text-stone-800 leading-tight tracking-tight">
+            Buy Less, <span className="text-stone-600">Share More</span>,<br />
+            Live Lighter
+          </h1>
+          
+          {/* Search Box */}
+          <Form className="relative max-w-2xl mx-auto mt-8">
+            <div className="relative group">
+              <Input 
+                name="query" 
+                type="text" 
+                placeholder="What are you looking for today?" 
+                className="w-full pl-12 pr-24 py-6 text-base rounded-full border-2 border-stone-200 focus:border-stone-400 transition-all duration-200 bg-white/90 backdrop-blur-sm"
               />
-            </BlurFade>
-          ))
-        ): "No products found"}
+              <svg className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-stone-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              <Button 
+                type="submit" 
+                className="absolute right-2 top-1/2 transform -translate-y-1/2 rounded-full px-6 py-2 bg-stone-800 hover:bg-stone-700 text-white transition-colors"
+              >
+                Search
+              </Button>
+            </div>
+          </Form>
+          
+          {/* Quick Actions */}
+          <div className="flex flex-wrap justify-center gap-3 mt-6">
+            <Link to="/secondhand" className="text-sm text-stone-600 hover:text-stone-800 transition-colors">
+              Browse All →
+            </Link>
+            <span className="text-stone-300">•</span>
+            <Link to="/secondhand/submit-a-listing" className="text-sm text-stone-600 hover:text-stone-800 transition-colors">
+              List an Item →
+            </Link>
+            <span className="text-stone-300">•</span>
+            <Link to="/let-go-buddy" className="text-sm text-stone-600 hover:text-stone-800 transition-colors">
+              Get AI Help →
+            </Link>
+          </div>
+        </div>
+      </div>
 
+      {/* Latest Listings Section */}
+      <div className="px-6 md:px-12 py-12 bg-white">
+        <div className="max-w-7xl mx-auto">
+          {/* Section Header */}
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
+            <div>
+              <h2 className="text-2xl md:text-3xl font-semibold text-stone-800 mb-2 tracking-tight">
+                Fresh Finds
+              </h2>
+              <p className="text-stone-600">
+                Discover treasures waiting for their next chapter
+              </p>
+            </div>
+            <Link 
+              to="/secondhand"
+              className="mt-4 md:mt-0 inline-flex items-center text-sm font-medium text-stone-700 hover:text-stone-900 transition-colors"
+            >
+              View All
+              <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </Link>
+          </div>
+          
+          {/* Product Grid with Hover Effects */}
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
+            {latestListings.length > 0 ? (
+              latestListings.map((product: any, index: number) => (
+                <BlurFade key={product.product_id} delay={index * 0.05}>
+                  <div className="group relative">
+                    {/* New Badge for Recent Items */}
+                    {index === 0 && (
+                      <div className="absolute top-2 left-2 z-10 px-2 py-1 bg-stone-800 text-white text-xs rounded-full">
+                        New
+                      </div>
+                    )}
+                    <div className="transform transition-all duration-300 hover:scale-105 hover:shadow-xl">
+                      <ProductCard
+                        productId={product.product_id}
+                        image={product.primary_image || `/no_image.png`}
+                        title={product.title}
+                        price={product.price}
+                        currency={product.currency || "THB"}
+                        priceType={product.price_type || "Fixed"}
+                        sellerId={product.seller_id}
+                        sellerName={product.seller_name}
+                        is_sold={product.is_sold || false}
+                        likes={product.likes_count || 0}
+                        isLikedByUser={userLikedProducts?.includes(product.product_id) || false}
+                        currentUserId={user?.id}
+                        sellerStats={{
+                          totalListings: product.total_listings,
+                          totalLikes: product.total_likes,
+                          totalSold: product.total_sold,
+                          level: product.seller_level,
+                          sellerJoinedAt: new Date(product.seller_joined_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
+                        }}
+                      />
+                    </div>
+                  </div>
+                </BlurFade>
+              ))
+            ) : (
+              <div className="col-span-full text-center py-12">
+                <div className="inline-flex flex-col items-center space-y-4">
+                  <div className="w-20 h-20 bg-stone-100 rounded-full flex items-center justify-center">
+                    <svg className="w-10 h-10 text-stone-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="text-stone-600 mb-2">No items yet in this area</p>
+                    <Link 
+                      to="/secondhand/submit-a-listing"
+                      className="text-sm text-stone-800 font-medium hover:underline"
+                    >
+                      Be the first to list →
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* Features Section */}
@@ -146,12 +240,12 @@ export default function HomePage() {
               {/* Text Content */}
               <div className="order-2 md:order-1 space-y-6">
                 <div className="space-y-4">
-                  <h2 className="text-3xl md:text-4xl lg:text-5xl font-light text-stone-800 leading-tight">
+                  <h2 className="text-3xl md:text-4xl lg:text-5xl font-semibold text-stone-800 leading-tight tracking-tight">
                     Let go,<br />
                     share more,<br />
-                    <span className="text-stone-600">live lighter.</span>
+                    <span className="text-stone-600 font-medium">live lighter.</span>
                   </h2>
-                  <p className="text-base md:text-lg text-stone-600 leading-relaxed">
+                  <p className="text-base md:text-lg text-stone-600 leading-relaxed font-normal">
                     Lemore helps people declutter mindfully, connect meaningfully, and create joy through conscious sharing.
                   </p>
                 </div>
@@ -185,18 +279,19 @@ export default function HomePage() {
               
               {/* Image Card */}
               <div className="order-1 md:order-2">
-                <div className="relative">
-                  <div className="absolute -inset-4 bg-gradient-to-r from-stone-200/50 to-stone-300/50 rounded-2xl blur-2xl opacity-60"></div>
-                  <div className="relative rounded-2xl overflow-hidden shadow-2xl">
+                <div className="relative mx-auto max-w-sm md:max-w-none">
+                  {/* Blur effect - hidden on mobile for performance */}
+                  <div className="hidden md:block absolute -inset-4 bg-gradient-to-r from-stone-200/50 to-stone-300/50 rounded-2xl blur-2xl opacity-60"></div>
+                  <div className="relative rounded-xl md:rounded-2xl overflow-hidden shadow-xl md:shadow-2xl">
                     <img 
                       src="/1.png" 
                       alt="Lemore Mission" 
-                      className="w-full h-[350px] md:h-[450px] object-cover"
+                      className="w-full h-[280px] sm:h-[350px] md:h-[450px] object-contain md:object-cover bg-stone-50"
                     />
-                    {/* Floating Badge */}
-                    <div className="absolute bottom-6 left-6 right-6">
-                      <div className="bg-white/95 backdrop-blur-sm rounded-xl p-4 shadow-lg">
-                        <p className="text-sm font-medium text-stone-800 text-center">
+                    {/* Floating Badge - responsive positioning and sizing */}
+                    <div className="absolute bottom-3 left-3 right-3 md:bottom-6 md:left-6 md:right-6">
+                      <div className="bg-white/90 md:bg-white/95 backdrop-blur-sm rounded-lg md:rounded-xl p-3 md:p-4 shadow-md md:shadow-lg">
+                        <p className="text-xs sm:text-sm font-medium text-stone-800 text-center">
                           Less is More • Joy in Simplicity
                         </p>
                       </div>
