@@ -47,7 +47,7 @@ BEGIN
                 now()
             );
 
-        ELSIF new.raw_app_meta_data ? 'provider' AND new.raw_app_meta_data ->> 'provider' IN ('google', 'facebook') THEN
+        ELSIF new.raw_app_meta_data ? 'provider' AND new.raw_app_meta_data ->> 'provider' IN ('google', 'facebook', 'kakao') THEN
             INSERT INTO public.user_profiles (profile_id, username, email, avatar_url, created_at, updated_at)
             VALUES (
                 new.id,

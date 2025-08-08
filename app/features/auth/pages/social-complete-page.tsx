@@ -4,7 +4,7 @@ import { Route } from './+types/social-complete-page';
 import { makeSSRClient } from '~/supa-client';
 
 const paramSchema = z.object({
-  provider: z.enum(["google", "facebook", "line"]),
+  provider: z.enum(["google", "facebook", "line", "kakao"]),
 });
 
 const LINE_CHANNEL_ID = process.env.LINE_CHANNEL_ID || '';
@@ -141,9 +141,7 @@ export const loader = async ({ params, request }: Route.LoaderArgs) => {
     }
   }
   
-  // Google, Facebook는 Supabase OAuth 처리
-  console.log('🔍 Social complete URL:', url.toString());
-  console.log('🔍 Search params:', Object.fromEntries(url.searchParams.entries()));
+  // Google, Facebook, Kakao는 Supabase OAuth 처리
   
   const code = url.searchParams.get('code');
   if (!code) {
@@ -155,14 +153,9 @@ export const loader = async ({ params, request }: Route.LoaderArgs) => {
   }
   const { client, headers } = makeSSRClient(request);
   
-  console.log('🔍 Facebook/Google OAuth - exchanging code for session');
-  console.log('🔍 Code received:', code ? 'yes' : 'no');
   const { data: sessionData, error } = await client.auth.exchangeCodeForSession(code);
   
   if (error) { 
-    console.error('❌ Facebook/Google OAuth error:', error);
-    console.error('❌ Error details:', JSON.stringify(error, null, 2));
-    
     // Return a more specific error instead of throwing
     return Response.json(
       { error: `OAuth exchange failed: ${error.message || 'Unknown error'}` },
@@ -170,16 +163,11 @@ export const loader = async ({ params, request }: Route.LoaderArgs) => {
     );
   }
   
-  console.log('✅ Facebook/Google OAuth - session exchanged successfully:', sessionData);
-  
   // 세션 확인
   if (!sessionData.session) {
     console.error('❌ No session after exchange');
     throw new Error('No session after OAuth exchange');
   }
-  
-  console.log('🔍 Session ID:', sessionData.session.access_token ? 'exists' : 'missing');
-  console.log('🔍 User ID:', sessionData.user?.id);
   
   // 사용자 프로필이 없으면 생성
   if (sessionData.user) {
@@ -191,7 +179,6 @@ export const loader = async ({ params, request }: Route.LoaderArgs) => {
         .maybeSingle();
       
       if (!existingProfile) {
-        console.log('🔧 Creating user profile for:', sessionData.user.email);
                   const { error: profileError } = await client
             .from('user_profiles')
             .insert({

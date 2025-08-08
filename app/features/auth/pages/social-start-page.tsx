@@ -4,7 +4,7 @@ import { Route } from './+types/social-start-page';
 import { makeSSRClient } from '~/supa-client';
 
 const paramSchema = z.object({
-  provider: z.enum(["google", "facebook", "line"]),
+  provider: z.enum(["google", "facebook", "line", "kakao"]),
 });
 
 const LINE_CHANNEL_ID = process.env.LINE_CHANNEL_ID || '';
@@ -34,12 +34,10 @@ export const loader = async ({ params, request }: Route.LoaderArgs) => {
     return redirect(lineAuthUrl.toString());
   }
   
-  // Google, Facebook는 Supabase OAuth 사용
+  // Google, Facebook, Kakao는 Supabase OAuth 사용
   const redirectTo = `${origin}/auth/social/${provider}/complete`;
   // const redirectTo = `http://localhost:5173`;
   
-  console.log('🔍 Social OAuth redirect URL:', redirectTo);
-  console.log('🔍 Current origin:', origin);
   const { client, headers } = makeSSRClient(request);
   const { data: { url: authUrl } , error } = await client.auth.signInWithOAuth({
     provider,

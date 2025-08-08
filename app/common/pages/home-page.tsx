@@ -85,7 +85,7 @@ export default function HomePage() {
         {/* Background Image */}
         <div className="absolute inset-0 z-0">
           <img 
-            src="/searchbar_bg.png" 
+            src="/searchbar_bg2.png" 
             alt="Search Background" 
             className="w-full h-full object-cover opacity-70"
           />
