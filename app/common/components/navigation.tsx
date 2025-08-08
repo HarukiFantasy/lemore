@@ -3,9 +3,8 @@ import { Link, useSearchParams } from "react-router";
 import { NavigationMenu, NavigationMenuContent, NavigationMenuItem, NavigationMenuLink, NavigationMenuList, NavigationMenuTrigger, navigationMenuTriggerStyle } from './ui/navigation-menu';
 import { Button } from './ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from './ui/dropdown-menu';
-import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
-import { BarChart3Icon, BellIcon, LogOutIcon, MenuIcon, MessageCircleIcon, SettingsIcon, UserIcon, MapPin, ChevronDown, HeartIcon } from 'lucide-react';
-import { POPULAR_CITIES, THAILAND_OTHER_CITIES, KOREA_OTHER_CITIES, getCountryByLocation } from '~/constants';
+import { BarChart3Icon, BellIcon, LogOutIcon, MenuIcon, MessageCircleIcon, UserIcon, MapPin, ChevronDown, HeartIcon, BotIcon } from 'lucide-react';
+import { POPULAR_CITIES, THAILAND_OTHER_CITIES, KOREA_OTHER_CITIES } from '~/constants';
 import { NotificationsPage } from '../../features/users/pages/notifications-page';
 
 const menus = [
@@ -315,6 +314,11 @@ export function Navigation({
                   <DropdownMenuItem asChild className="cursor-pointer">
                     <Link to="/my/profile">
                       <UserIcon className="w-4 h-4 mr-2" />Profile
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild className="cursor-pointer">
+                    <Link to="/my/AIcoach">
+                      <BotIcon className="w-4 h-4 mr-2" />AI Coach
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild className="cursor-pointer">
