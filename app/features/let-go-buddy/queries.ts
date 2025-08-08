@@ -55,6 +55,37 @@ export async function getUserDeclutteringInsights(
   };
 }
 
+// Get all AI analysis results for a user
+export async function getAllAIAnalysisResults(
+  client: SupabaseClient<Database>,
+  userId: string
+) {
+  const { data, error } = await client
+    .from('item_analyses')
+    .select(`
+      analysis_id,
+      item_name,
+      recommendation,
+      recommendation_reason,
+      emotional_score,
+      images,
+      created_at,
+      let_go_buddy_sessions!inner(
+        session_id,
+        user_id
+      )
+    `)
+    .eq('let_go_buddy_sessions.user_id', userId)
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('Error fetching AI analysis results:', error);
+    throw error;
+  }
+
+  return data || [];
+}
+
 // Process insights to identify user patterns
 function processUserInsights(insights: any[]) {
   if (insights.length === 0) return null;

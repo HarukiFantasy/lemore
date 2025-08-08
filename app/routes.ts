@@ -41,6 +41,7 @@ export default [
     route("/notifications/:notificationId/see", "features/users/pages/notification-see-page.tsx"),
     route("/messages", "features/users/pages/messages-page.tsx"),
     route("/likes", "features/users/pages/likes-page.tsx"),
+    route("/AIcoach", "features/let-go-buddy/pages/ai-coach-page.tsx"),
   ]),
   route("/users/:username", "features/users/pages/usersProfile-page.tsx"),
   route("/api/send-welcome-email", "api/send-welcome-email.ts"),
