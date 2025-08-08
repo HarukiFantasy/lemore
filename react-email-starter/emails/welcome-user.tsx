@@ -14,7 +14,6 @@ import {
 } from '@react-email/components';
 
 
-
 export const LemoreWelcomeEmail = ({ username }: { username: string }) => {
   const previewText = `Welcome to Lemore : ${username}`;
 
@@ -63,12 +62,31 @@ export const LemoreWelcomeEmail = ({ username }: { username: string }) => {
               </Text>
 
               <Text>
-                  How does Lemore help reduce environmental impact?
+                What is the Challenge Calendar?
               </Text>
               <Text style={{ fontSize: '14px', color: '#666', marginBottom: '16px' }}>
-                By extending the life of items through reuse and sharing, Lemore helps reduce waste, lower CO2 emissions, and minimize the need for new product manufacturing—making sustainable living easier.
+                Each day brings a simple challenge to help you let go of clutter, uncover what’s meaningful, and enjoy a lighter, more intentional lifestyle.
               </Text>
               <Hr style={hr} />
+            </Row>
+          </Section>
+
+          <Section>
+            <Row>
+              <Text style={footer}>
+                By using Lemore, you agree to our{' '}
+                <Link href="https://lemore.life/terms-of-service" style={footerLink}>
+                  Terms of Service
+                </Link>{' '}
+                and{' '}
+                <Link href="https://lemore.life/privacy-policy" style={footerLink}>
+                  Privacy Policy
+                </Link>
+                .
+              </Text>
+              <Text style={footer}>
+                © 2025 Lemore. All rights reserved.
+              </Text>
             </Row>
           </Section>
         </Container>
@@ -151,4 +169,14 @@ const footer = {
   color: '#9ca299',
   fontSize: '14px',
   marginBottom: '10px',
+};
+
+const footerLink = {
+  color: '#7A8B3F',
+  textDecoration: 'underline',
+};
+
+const logo = {
+  display: 'block',
+  margin: '0 auto 24px auto',
 };
