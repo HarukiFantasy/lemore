@@ -148,17 +148,68 @@ export default function BrowseListingsPage({ loaderData }: Route.ComponentProps)
 
       {/* 메인 컨텐츠  */}
       <main className="mx-auto sm:max-w-[100vw] md:max-w-[100vw] lg:max-w-[100vw] xl:max-w-[100vw]">
-        {/* 검색바 */}
-        <form onSubmit={handleSearchSubmit} className="flex items-center justify-center max-w-screen-sm mx-auto mt-1 gap-2 mb-6 focus:ring-1 focus:ring-accent">
-          <Input 
-            name="q" 
-            type="text" 
-            placeholder="Search for items" 
-            value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
-          />
-          <Button type="submit" variant="outline">Search</Button>
-        </form>
+        {/* Hero Search Section */}
+        <div className="relative bg-gradient-to-br from-stone-50 to-white py-12 md:py-16 mb-8 -mx-5 px-5">
+          <div className="max-w-4xl mx-auto text-center">
+            {/* Search Title */}
+            <div className="mb-6">
+              <h1 className="text-2xl md:text-3xl font-semibold text-stone-800 mb-2">
+                Find Your Next Treasure
+              </h1>
+              <p className="text-stone-600 text-sm md:text-base">
+                Discover amazing items from the community
+              </p>
+            </div>
+            
+            {/* Enhanced Search Bar */}
+            <form onSubmit={handleSearchSubmit} className="max-w-2xl mx-auto">
+              <div className="relative group">
+                <div className="absolute inset-0 bg-gradient-to-r from-purple-500/10 to-blue-500/10 rounded-full blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                <div className="relative bg-white rounded-full shadow-lg border-2 border-stone-200 group-focus-within:border-purple-400 transition-colors duration-200">
+                  <Input 
+                    name="q" 
+                    type="text" 
+                    placeholder="What treasure are you looking for?" 
+                    value={searchInput}
+                    onChange={(e) => setSearchInput(e.target.value)}
+                    className="border-0 rounded-full pl-12 pr-24 py-6 text-base bg-transparent focus:ring-0 focus:border-0"
+                  />
+                  <svg className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-stone-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                  <Button 
+                    type="submit" 
+                    className="absolute right-2 top-1/2 transform -translate-y-1/2 rounded-full px-6 py-2 bg-stone-800 hover:bg-stone-700 text-white transition-colors"
+                  >
+                    Search
+                  </Button>
+                </div>
+              </div>
+            </form>
+            
+            {/* Quick Stats or Popular Searches */}
+            <div className="flex flex-wrap justify-center gap-4 mt-6 text-sm text-stone-600">
+              <div className="flex items-center gap-1">
+                <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                <span>{displayedProducts.filter(p => !p.is_sold).length} items available</span>
+              </div>
+              <span className="text-stone-300">•</span>
+              <div className="flex items-center gap-1">
+                <span className="w-2 h-2 bg-purple-500 rounded-full"></span>
+                <span>{displayedProducts.length} total listings</span>
+              </div>
+              {urlLocation && (
+                <>
+                  <span className="text-stone-300">•</span>
+                  <div className="flex items-center gap-1">
+                    <span>📍</span>
+                    <span>{currentLocation}</span>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
         {/* 카테고리 */}
         <div className="flex justify-center mb-8">
           <div className="flex space-x-2 sm:space-x-3 md:space-x-4 lg:space-x-5 xl:space-x-6">

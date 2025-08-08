@@ -1,5 +1,11 @@
 import { redirect } from "react-router";
+import type { Route } from "./+types/secondhand-page";
 
-export function loader(){
-  return redirect("/secondhand/browse-listings");
+export function loader({ request }: Route.LoaderArgs){
+  const url = new URL(request.url);
+  const searchParams = url.searchParams.toString();
+  const redirectUrl = searchParams 
+    ? `/secondhand/browse-listings?${searchParams}`
+    : "/secondhand/browse-listings";
+  return redirect(redirectUrl);
 }

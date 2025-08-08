@@ -51,7 +51,7 @@ LISTING REQUIREMENTS:
 
 JSON STRUCTURE REQUIRED:
 {
-  "ai_listing_title": "emoji + catchy title under 60 chars that makes people want to click",
+  "ai_listing_title": "emoji + catchy title under 40 chars that makes people want to click",
   "ai_listing_description": "150-200 word persuasive description with: attention-grabbing opening, key features/benefits, value proposition, urgency without being pushy, authentic tone, clear CTA",
   "ai_category": "Sell" or "Donate" or "Keep" (MUST be capitalized - based on emotional analysis),
   "item_category": "MUST choose from: Electronics, Clothing, Books, Home, Sports, Beauty, Toys, Automotive, Health, Other",

@@ -81,7 +81,17 @@ export default function HomePage() {
     
     <div className="w-full">
       {/* Hero Search Section */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-stone-50 via-white to-stone-50 px-6 py-12 md:py-20">
+      <div className="relative overflow-hidden px-6 py-12 md:py-20">
+        {/* Background Image */}
+        <div className="absolute inset-0 z-0">
+          <img 
+            src="/searchbar_bg.png" 
+            alt="Search Background" 
+            className="w-full h-full object-cover opacity-70"
+          />
+          {/* Overlay for better text readability */}
+          <div className="absolute inset-0 bg-gradient-to-br from-white/50 via-white/30 to-white/50"></div>
+        </div>
         
         <div className="relative z-10 max-w-3xl mx-auto text-center space-y-6">
           {/* Tagline */}
@@ -91,18 +101,18 @@ export default function HomePage() {
           
           {/* Main Heading */}
           <h1 className="text-3xl md:text-5xl font-medium text-stone-800 leading-tight tracking-tight">
-            Buy Less, <span className="text-stone-600">Share More</span>,<br />
+            Buy Less, Share More,<br />
             Live Lighter
           </h1>
           
           {/* Search Box */}
-          <Form className="relative max-w-2xl mx-auto mt-8">
+          <Form action="/secondhand/browse-listings" method="get" className="relative max-w-2xl mx-auto mt-8">
             <div className="relative group">
               <Input 
-                name="query" 
+                name="q" 
                 type="text" 
-                placeholder="What are you looking for today?" 
-                className="w-full pl-12 pr-24 py-6 text-base rounded-full border-2 border-stone-200 focus:border-stone-400 transition-all duration-200 bg-white/90 backdrop-blur-sm"
+                placeholder="Search items..." 
+                className="w-full pl-12 pr-24 py-6 text-base rounded-full border-2 border-stone-200 focus:border-stone-400 transition-all duration-200 bg-white/90 backdrop-blur-sm placeholder:text-sm md:placeholder:text-base"
               />
               <svg className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-stone-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -114,11 +124,15 @@ export default function HomePage() {
                 Search
               </Button>
             </div>
+            {/* Pass current location as hidden input */}
+            {urlLocation && (
+              <input type="hidden" name="location" value={urlLocation} />
+            )}
           </Form>
           
           {/* Quick Actions */}
           <div className="flex flex-wrap justify-center gap-3 mt-6">
-            <Link to="/secondhand" className="text-sm text-stone-600 hover:text-stone-800 transition-colors">
+            <Link to="/secondhand/browse-listings" className="text-sm text-stone-600 hover:text-stone-800 transition-colors">
               Browse All →
             </Link>
             <span className="text-stone-300">•</span>
@@ -131,8 +145,8 @@ export default function HomePage() {
             </Link>
           </div>
         </div>
-      </div>
 
+      </div>
       {/* Latest Listings Section */}
       <div className="px-6 md:px-12 py-12 bg-white">
         <div className="max-w-7xl mx-auto">
@@ -147,7 +161,7 @@ export default function HomePage() {
               </p>
             </div>
             <Link 
-              to="/secondhand"
+              to="/secondhand/browse-listings"
               className="mt-4 md:mt-0 inline-flex items-center text-sm font-medium text-stone-700 hover:text-stone-900 transition-colors"
             >
               View All

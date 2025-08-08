@@ -129,7 +129,7 @@ export const loader = async ({ params, request }: Route.LoaderArgs) => {
           <div className="space-y-4 px-2 md:px-0">
             <div className="aspect-square bg-white rounded-lg overflow-hidden shadow-sm relative">
               <img 
-                src={product.primary_image || `/no_image.png`}
+                src={(Array.isArray(product.all_images) && product.all_images[selectedImage]?.image_url) || product.primary_image || `/no_image.png`}
                 alt={product.title || 'Product image'}
                 className="w-full h-full object-cover"
               />
@@ -293,7 +293,7 @@ export const loader = async ({ params, request }: Route.LoaderArgs) => {
                 <span className="font-medium text-gray-900 text-sm">{product.seller_name}</span>
                 {/* Level Badge */}
                 {userStats?.level && (
-                  <Badge variant="secondary" className="text-xs bg-purple-100 text-purple-700 border border-purple-200 mt-1">
+                  <Badge variant="secondary" className="text-xs bg-purple-100 text-purple-700 border border-purple-200 mt-1 w-fit">
                     {userStats.level}
                   </Badge>
                 )}
