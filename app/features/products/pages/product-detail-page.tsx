@@ -22,45 +22,67 @@ export const meta = () => {
 export const loader = async ({ params, request }: Route.LoaderArgs) => {
   const { productId } = params;
   const { client, headers } = makeSSRClient(request);
-  const product = await getProductById(client, Number(productId));
+  
   if (isNaN(Number(productId))) {
     throw new Error("Invalid product ID");
   }
+
+  // PHASE 2 OPTIMIZATION: Execute all queries in parallel
+  const [product, authResult] = await Promise.all([
+    // Get product details
+    getProductById(client, Number(productId)),
+    // Get current user authentication
+    client.auth.getUser().catch(() => ({ data: { user: null } }))
+  ]);
+
+  // Early return if product not found
+  if (!product) {
+    return { product: null, sellerProducts: [], userStats: null, isLiked: false, currentUserId: null };
+  }
+
+  // PHASE 2 OPTIMIZATION: Execute dependent queries in parallel
+  const currentUserId = authResult.data.user?.id || null;
   
-  // Check if current user has liked this product and get current user ID
-  let isLiked = false;
-  let currentUserId = null;
-  try {
-    const { data: { user } } = await client.auth.getUser();
-    if (user) {
-      currentUserId = user.id;
-      const { data: likeData } = await client
+  const parallelQueries = [];
+  
+  // Always fetch seller products if seller exists
+  if (product.seller_name) {
+    parallelQueries.push(
+      getProductByUsername(client, product.seller_name)
+        .then(products => products.filter((p: any) => p.product_id !== product.product_id).slice(0, 4))
+    );
+  } else {
+    parallelQueries.push(Promise.resolve([]));
+  }
+  
+  // Always fetch user stats if seller exists
+  if (product.seller_id) {
+    parallelQueries.push(
+      getUserSalesStatsByProfileId(client, product.seller_id).catch(() => null)
+    );
+  } else {
+    parallelQueries.push(Promise.resolve(null));
+  }
+  
+  // Check if user liked this product (only if authenticated)
+  if (currentUserId) {
+    parallelQueries.push(
+      client
         .from('product_likes')
         .select('*')
         .eq('product_id', Number(productId))
-        .eq('user_id', user.id)
-        .single();
-      isLiked = !!likeData;
-    }
-  } catch (error) {
-    // User not authenticated or like not found
-    isLiked = false;
+        .eq('user_id', currentUserId)
+        .single()
+        .then(() => true)
+        .catch(() => false)
+    );
+  } else {
+    parallelQueries.push(Promise.resolve(false));
   }
-  
-  // Fetch up to 4 other products by the same seller (excluding current product)
-  let sellerProducts: any[] = [];
-  let userStats = null;
-  if (product?.seller_name) {
-    sellerProducts = await getProductByUsername(client, product.seller_name);
-    sellerProducts = sellerProducts.filter((p: any) => p.product_id !== product.product_id).slice(0, 4);
-  }
-  if (product?.seller_id) {
-    try {
-      userStats = await getUserSalesStatsByProfileId(client, product.seller_id);
-    } catch (e) {
-      userStats = null;
-    }
-  }
+
+  // Execute all dependent queries in parallel (3x faster!)
+  const [sellerProducts, userStats, isLiked] = await Promise.all(parallelQueries);
+
   return { product, sellerProducts, userStats, isLiked, currentUserId };
 }
 

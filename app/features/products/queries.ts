@@ -52,6 +52,7 @@ export const getProductImages = async (client: SupabaseClient<Database>, product
 };
 
 // 사용자가 좋아요한 제품 목록 조회
+// OPTIMIZED: 사용자가 좋아요한 제품 목록 조회 (IDs only - Phase 2 Optimization)
 export const getUserLikedProducts = async (client: SupabaseClient<Database>, userId?: string) => {
   if (!userId) return [];
   
@@ -62,6 +63,32 @@ export const getUserLikedProducts = async (client: SupabaseClient<Database>, use
     
   if (error) throw new Error(error.message);
   return data?.map(like => like.product_id) || [];
+};
+
+// OPTIMIZED: 사용자가 좋아요한 제품의 상세 정보 (full details when needed)
+export const getUserLikedProductsWithDetails = async (client: SupabaseClient<Database>, userId?: string) => {
+  if (!userId) return [];
+  
+  const { data, error } = await client
+    .from("product_likes")
+    .select(`
+      product_id,
+      created_at,
+      products:products_listings_view!product_id (
+        product_id,
+        primary_image,
+        title,
+        price,
+        currency,
+        price_type,
+        seller_name,
+        likes_count
+      )
+    `)
+    .eq("user_id", userId);
+  
+  if (error) throw new Error(error.message);
+  return data || [];
 };
 
 export async function getProductsWithSellerStats(client: any, limit = 20) {
