@@ -49,8 +49,7 @@ export const links: Route.LinksFunction = () => [
   { rel: "preload", href: "/lemore-logo.png", as: "image", type: "image/png" },
   // Note: lemore-logo512.png removed from preload as it's only used for PWA/favicon
   
-  // PHASE 4: Manifest and PWA related
-  { rel: "manifest", href: "/site.webmanifest" },
+  // PHASE 4: PWA related (only if you have the actual files)
   { rel: "apple-touch-icon", href: "/lemore-logo512.png", sizes: "180x180" },
 ];
 
