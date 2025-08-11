@@ -27,14 +27,12 @@ export default defineConfig((config) => ({
         "drizzle-orm/node-postgres"
       ],
       output: {
-        // PHASE 4: Safe manual chunking - avoid splitting critical UI components
+        // PHASE 4: Safe manual chunking - only for non-external libraries
         chunkFileNames: '[name]-[hash].js',
         manualChunks: {
-          // Vendor chunks
-          'react-vendor': ['react', 'react-dom'],
+          // Only chunk non-external modules
           'router-vendor': ['react-router'],
           'ui-vendor': ['@radix-ui/react-slot', '@radix-ui/react-separator'],
-          // Keep image-related code together to avoid loading issues
           'supabase-vendor': ['@supabase/supabase-js']
         }
       }
