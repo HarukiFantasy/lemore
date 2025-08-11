@@ -27,43 +27,16 @@ export default defineConfig((config) => ({
         "drizzle-orm/node-postgres"
       ],
       output: {
-        // PHASE 4: Advanced code splitting for better caching (React Router 7 compatible)
-        manualChunks: (id) => {
-          // Vendor chunks for external dependencies
-          if (id.includes('lucide-react') || id.includes('framer-motion')) {
-            return 'vendor-ui';
-          }
-          if (id.includes('@supabase/supabase-js')) {
-            return 'vendor-supabase';
-          }
-          if (id.includes('luxon') || id.includes('zod')) {
-            return 'vendor-utils';
-          }
-          
-          // Feature-based chunks
-          if (id.includes('/features/auth/')) {
-            return 'features-auth';
-          }
-          if (id.includes('/features/products/')) {
-            return 'features-products';
-          }
-          if (id.includes('/features/users/')) {
-            return 'features-users';
-          }
-          
-          // Large node_modules as separate chunks
-          if (id.includes('node_modules')) {
-            // Split large dependencies into their own chunks
-            if (id.includes('date-fns')) return 'vendor-date';
-            if (id.includes('@radix-ui')) return 'vendor-radix';
-            if (id.includes('tailwindcss')) return 'vendor-tailwind';
-            
-            // Group smaller dependencies together
-            return 'vendor';
-          }
-        },
-        // Optimize chunk naming for better caching
-        chunkFileNames: '[name]-[hash].js'
+        // PHASE 4: Safe manual chunking - avoid splitting critical UI components
+        chunkFileNames: '[name]-[hash].js',
+        manualChunks: {
+          // Vendor chunks
+          'react-vendor': ['react', 'react-dom'],
+          'router-vendor': ['react-router'],
+          'ui-vendor': ['@radix-ui/react-slot', '@radix-ui/react-separator'],
+          // Keep image-related code together to avoid loading issues
+          'supabase-vendor': ['@supabase/supabase-js']
+        }
       }
     }
   },

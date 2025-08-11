@@ -36,13 +36,10 @@ export const links: Route.LinksFunction = () => [
     rel: "preload",
     href: "https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,400..600;1,14..32,400..600&display=swap",
     as: "style",
-    onLoad: "this.onload=null;this.rel='stylesheet'",
   },
   {
     rel: "stylesheet",
     href: "https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,400..600;1,14..32,400..600&display=swap",
-    media: "print",
-    onLoad: "this.media='all'",
   },
   
   // PHASE 4: Critical image assets preloading

@@ -46,9 +46,12 @@ export const LazyImage = React.memo<LazyImageProps>(({
   const [blurDataUrl, setBlurDataUrl] = useState<string>('');
   const imgRef = useRef<HTMLImageElement>(null);
 
-  // Create blurred placeholder effect
+  // Create blurred placeholder effect immediately
   useEffect(() => {
     if (src && !hasError) {
+      // Always create a blur placeholder first
+      setBlurDataUrl(generateBlurDataUrl());
+      
       // Create a tiny version of the image for blur effect
       const img = new Image();
       img.crossOrigin = 'anonymous';
@@ -65,10 +68,13 @@ export const LazyImage = React.memo<LazyImageProps>(({
         }
       };
       img.onerror = () => {
-        // Fallback to simple gray placeholder
+        // Keep the simple gray placeholder
         setBlurDataUrl(generateBlurDataUrl());
       };
       img.src = src;
+    } else if (!src || hasError) {
+      // Set fallback blur for missing src or errors
+      setBlurDataUrl(generateBlurDataUrl());
     }
   }, [src, hasError]);
 
@@ -120,7 +126,10 @@ export const LazyImage = React.memo<LazyImageProps>(({
   // Determine which image to show
   const getImageSrc = () => {
     if (hasError) return fallback;
-    if (!shouldLoad) return blurDataUrl || placeholder || '/lemore-logo.png';
+    if (!shouldLoad) {
+      // Show blur placeholder when not in viewport
+      return blurDataUrl || placeholder || '/lemore-logo.png';
+    }
     return src;
   };
 
@@ -130,22 +139,22 @@ export const LazyImage = React.memo<LazyImageProps>(({
       transition: 'opacity 300ms ease-out, filter 300ms ease-out',
     };
 
-    if (!shouldLoad && blurDataUrl) {
-      // Show blurred placeholder
+    if (!shouldLoad) {
+      // Show blurred placeholder when not in viewport
       return {
         ...baseStyles,
         filter: 'blur(8px)',
         opacity: 0.7,
       };
     } else if (shouldLoad && isLoaded) {
-      // Show sharp final image
+      // Show sharp final image when loaded
       return {
         ...baseStyles,
         filter: 'blur(0px)',
         opacity: 1,
       };
     } else if (shouldLoad && !isLoaded) {
-      // Loading actual image
+      // Loading actual image - slight blur during load
       return {
         ...baseStyles,
         filter: 'blur(2px)',
