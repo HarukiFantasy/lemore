@@ -17,37 +17,16 @@ import { makeSSRClient } from './supa-client';
 import { cn } from './lib/utils';
 import { getUserByProfileId, getUnreadNotificationsStatus, getUnreadMessagesStatus } from "./features/users/queries";
 import { useAuthErrorHandler } from "./hooks/use-auth-error-handler";
-import { PerformanceMonitor } from "./common/components/performance-monitor";
 import * as Sentry from "@sentry/react-router";
 
 
 export const links: Route.LinksFunction = () => [
-  // PHASE 4: Essential preconnect for external services
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
   { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
-  
-  // PHASE 4: DNS prefetch for API endpoints and CDNs
-  { rel: "dns-prefetch", href: "https://api.supabase.co" },
-  { rel: "dns-prefetch", href: "https://cdn.jsdelivr.net" },
-  { rel: "dns-prefetch", href: "https://sentry.io" },
-  
-  // PHASE 4: Critical font loading with fallbacks
-  {
-    rel: "preload",
-    href: "https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,400..600;1,14..32,400..600&display=swap",
-    as: "style",
-  },
   {
     rel: "stylesheet",
     href: "https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,400..600;1,14..32,400..600&display=swap",
   },
-  
-  // PHASE 4: Critical image assets preloading
-  { rel: "preload", href: "/lemore-logo.png", as: "image", type: "image/png" },
-  // Note: lemore-logo512.png removed from preload as it's only used for PWA/favicon
-  
-  // PHASE 4: PWA related (only if you have the actual files)
-  { rel: "apple-touch-icon", href: "/lemore-logo512.png", sizes: "180x180" },
 ];
 
 export function Layout({ children }: { children: React.ReactNode }) {
@@ -160,14 +139,9 @@ export default function App({ loaderData }: Route.ComponentProps) {
 
   // Add global auth error handling
   useAuthErrorHandler();
-
-  // PHASE 4: Service Worker removed - browser HTTP caching is sufficient for small static assets
   
   return (
     <div className="min-h-screen flex flex-col">
-      {/* PHASE 4: Performance monitoring for Web Vitals */}
-      <PerformanceMonitor />
-      
       <div
         className={cn({
           "pt-14": !pathname.includes("/auth/"),

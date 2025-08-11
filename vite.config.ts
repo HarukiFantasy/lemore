@@ -17,25 +17,11 @@ const sentryConfig: SentryReactRouterBuildOptions = {
 export default defineConfig((config) => ({
   plugins: [tailwindcss(), reactRouter(), tsconfigPaths(), sentryReactRouter(sentryConfig, config)],
   build: {
-    // PHASE 4: Compression and optimization settings
-    minify: 'esbuild',
-    cssMinify: true,
-    reportCompressedSize: true,
     rollupOptions: {
       external: [
         "postgres",
         "drizzle-orm/node-postgres"
-      ],
-      output: {
-        // PHASE 4: Safe manual chunking - only for non-external libraries
-        chunkFileNames: '[name]-[hash].js',
-        manualChunks: {
-          // Only chunk non-external modules
-          'router-vendor': ['react-router'],
-          'ui-vendor': ['@radix-ui/react-slot', '@radix-ui/react-separator'],
-          'supabase-vendor': ['@supabase/supabase-js']
-        }
-      }
+      ]
     }
   },
   server: {
