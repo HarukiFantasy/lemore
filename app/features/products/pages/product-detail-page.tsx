@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { Button } from "~/common/components/ui/button";
 import { Card } from "~/common/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "~/common/components/ui/avatar";
@@ -11,6 +11,7 @@ import {DateTime} from "luxon";
 import { makeSSRClient } from "~/supa-client";
 import { getUserSalesStatsByProfileId } from "~/features/users/queries";
 import { Badge } from "~/common/components/ui/badge";
+import { LazyImage } from "~/common/components/lazy-image";
 
 export const meta = () => {
   return [
@@ -108,29 +109,36 @@ export const loader = async ({ params, request }: Route.LoaderArgs) => {
   const [selectedImage, setSelectedImage] = useState(0);
   const fetcher = useFetcher();
   
-  // Handle optimistic UI for like state
-  const isLiked = fetcher.state === 'idle' ? 
-    (fetcher.data?.isLiked ?? initialIsLiked) : 
-    (fetcher.formData?.get('action') === 'like');
+  // PHASE 3 OPTIMIZATION: Memoized calculations to prevent re-renders
+  const isLiked = useMemo(() => 
+    fetcher.state === 'idle' ? 
+      (fetcher.data?.isLiked ?? initialIsLiked) : 
+      (fetcher.formData?.get('action') === 'like'),
+    [fetcher.state, fetcher.data?.isLiked, initialIsLiked, fetcher.formData]
+  );
 
   // Check if current user is the seller
-  const isCurrentUserSeller = product.seller_id === loaderData.currentUserId;
+  const isCurrentUserSeller = useMemo(() => 
+    product.seller_id === loaderData.currentUserId,
+    [product.seller_id, loaderData.currentUserId]
+  );
 
+  const isFree = useMemo(() => 
+    product.price_type === "Free",
+    [product.price_type]
+  );
 
-  const isFree = product.price_type === "Free";
-
-  // Helper function to add location to URLs
-  const addLocationToUrl = (url: string) => {
+  // OPTIMIZED: Memoized helper function
+  const addLocationToUrl = useCallback((url: string) => {
     if (location && location !== "Bangkok") {
       const separator = url.includes('?') ? '&' : '?';
       return `${url}${separator}location=${location}`;
     }
     return url;
-  };
+  }, [location]);
 
-  // Handle contact seller button click
-  const handleContactSeller = () => {
-    // Navigate to messages page with product context
+  // OPTIMIZED: Memoized contact seller handler
+  const handleContactSeller = useCallback(() => {
     navigate(addLocationToUrl("/my/messages"), {
       state: {
         productId: product.product_id,
@@ -140,7 +148,7 @@ export const loader = async ({ params, request }: Route.LoaderArgs) => {
         fromProduct: true
       }
     });
-  };
+  }, [navigate, addLocationToUrl, product.product_id, product.title, product.seller_id, product.seller_name]);
 
   return (
     <div className="min-h-screen bg-gray-50 px-5">

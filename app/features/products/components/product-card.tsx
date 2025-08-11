@@ -5,8 +5,9 @@ import { UserStatsHoverCard } from "~/common/components/user-stats-hover-card";
 import { PRODUCT_CATEGORIES } from "../constants";
 import { formatPrice as formatCurrencyPrice } from "~/lib/currency-utils";
 import { Badge } from "../../../common/components/ui/badge";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback, useMemo, memo } from "react";
 import { useMobile } from "app/hooks/use-mobile";
+import { LazyImage } from "~/common/components/lazy-image";
 
 // 가격 포맷팅 함수 (legacy)
 const formatPrice = (price?: number, currency: string = "THB"): string => {
@@ -49,7 +50,8 @@ type ProductCardProps = {
   [key: string]: any;
 };
 
-export function ProductCard({
+// PHASE 3 OPTIMIZATION: Memoized ProductCard component
+export const ProductCard = memo(function ProductCard({
   product,
   showSoldBadge = false,
   image,
@@ -68,8 +70,8 @@ export function ProductCard({
   currentUserId,
   ...props
 }: ProductCardProps) {
-  // Support both product object and individual props
-  const prod = product || {
+  // OPTIMIZED: Memoized product object creation
+  const prod = useMemo(() => product || {
     image,
     title,
     currency,
@@ -82,31 +84,34 @@ export function ProductCard({
     seller_id: sellerId,
     seller_name: sellerName,
     sellerStats,
-  };
+  }, [product, image, title, currency, price, productId, priceType, is_sold, category, likes, sellerId, sellerName, sellerStats]);
   
   const [searchParams] = useSearchParams();
   const fetcher = useFetcher();
   const location = searchParams.get("location");
-  const isFree = priceType === "free";
+  
+  // OPTIMIZED: Memoized calculations
+  const isFree = useMemo(() => priceType === "free", [priceType]);
+  const isOwner = useMemo(() => 
+    currentUserId && prod.seller_id && currentUserId === prod.seller_id,
+    [currentUserId, prod.seller_id]
+  );
 
   // Optimistic likes count
   const [optimisticLikes, setOptimisticLikes] = useState(likes);
   const [isLiked, setIsLiked] = useState(isLikedByUser);
 
-  // 본인 상품 여부 확인
-  const isOwner = currentUserId && prod.seller_id && currentUserId === prod.seller_id;
-
-  // Helper function to add location to URLs
-  const addLocationToUrl = (url: string) => {
+  // OPTIMIZED: Memoized URL helper function
+  const addLocationToUrl = useCallback((url: string) => {
     if (location && location !== "Bangkok") {
       const separator = url.includes('?') ? '&' : '?';
       return `${url}${separator}location=${location}`;
     }
     return url;
-  };
+  }, [location]);
 
-  // Handle like button click
-  const handleLikeClick = (e: React.MouseEvent) => {
+  // OPTIMIZED: Memoized like button click handler
+  const handleLikeClick = useCallback((e: React.MouseEvent) => {
     e.preventDefault(); // Prevent navigation
     e.stopPropagation();
     
@@ -121,7 +126,7 @@ export function ProductCard({
       },
       { method: "post", action: `/secondhand/${productId}/like` }
     );
-  };
+  }, [isLiked, optimisticLikes, productId, fetcher.submit]);
 
   // Update state when props change
   useEffect(() => {
@@ -168,16 +173,16 @@ export function ProductCard({
           md:active:bg-white
         ">
           <div className="relative w-full h-40 sm:h-48 md:h-60 overflow-hidden rounded-t-lg">
-            <img 
-              src={prod.image || '/lemore-logo.png'} 
+            {/* PHASE 3 OPTIMIZATION: Lazy loaded image with proper error handling */}
+            <LazyImage
+              src={prod.image || '/lemore-logo.png'}
+              alt={prod.title || 'Product image'}
+              fallback="/lemore-logo.png"
+              placeholder="/placeholder.png"
               className="object-cover w-full h-full 
                 md:group-hover:scale-110 md:group-hover:brightness-110 
-                transition-all duration-300 ease-out" 
-              alt={prod.title || 'Product image'} 
-              onError={(e) => {
-                const target = e.target as HTMLImageElement;
-                target.src = '/lemore-logo.png';
-              }}
+                transition-all duration-300 ease-out"
+              sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, 33vw"
             />
             <button className="absolute top-3 left-3 bg-black/60 text-white text-xs px-3 py-1 rounded-full 
               opacity-0 md:group-hover:opacity-100 transition-opacity">Save</button>
