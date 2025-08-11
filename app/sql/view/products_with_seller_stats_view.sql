@@ -1,6 +1,5 @@
 DROP VIEW IF EXISTS products_with_seller_stats_view CASCADE;
 
--- Products with Seller Stats View
 CREATE OR REPLACE VIEW products_with_seller_stats_view AS
 SELECT
     p.*,
@@ -30,13 +29,9 @@ SELECT
     up.username AS seller_name,
     up.avatar_url AS seller_avatar,
     up.created_at AS seller_joined_at,
-    up.level AS seller_level,
-    -- 판매자 stats
-    us.total_listings,
-    us.total_likes,
-    us.sold_items AS total_sold
+    up.level AS seller_level
 FROM
     products p
     LEFT JOIN categories c ON p.category_id = c.category_id
-    LEFT JOIN user_profiles up ON p.seller_id = up.profile_id
-    LEFT JOIN user_sales_stats_view us ON p.seller_id = us.profile_id;
+    LEFT JOIN user_profiles up ON p.seller_id = up.profile_id;
+-- Removed: LEFT JOIN user_sales_stats_view us ON p.seller_id = us.profile_id;
