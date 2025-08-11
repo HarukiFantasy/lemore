@@ -165,18 +165,7 @@ export default function App({ loaderData }: Route.ComponentProps) {
   // Add global auth error handling
   useAuthErrorHandler();
 
-  // PHASE 4: Register service worker for caching
-  useEffect(() => {
-    if ('serviceWorker' in navigator && process.env.NODE_ENV === 'production') {
-      navigator.serviceWorker.register('/sw.js')
-        .then((registration) => {
-          console.log('✅ Service Worker registered successfully:', registration);
-        })
-        .catch((error) => {
-          console.warn('❌ Service Worker registration failed:', error);
-        });
-    }
-  }, []);
+  // PHASE 4: Service Worker removed - browser HTTP caching is sufficient for small static assets
   
   return (
     <div className="min-h-screen flex flex-col">
