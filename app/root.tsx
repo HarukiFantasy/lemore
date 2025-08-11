@@ -8,6 +8,7 @@ import {
   useLocation,
   useNavigation,
 } from "react-router";
+import { useEffect } from "react";
 import type { Route } from "./+types/root";
 import "./app.css";
 import { Navigation } from "./common/components/navigation";
@@ -16,20 +17,41 @@ import { makeSSRClient } from './supa-client';
 import { cn } from './lib/utils';
 import { getUserByProfileId, getUnreadNotificationsStatus, getUnreadMessagesStatus } from "./features/users/queries";
 import { useAuthErrorHandler } from "./hooks/use-auth-error-handler";
+import { PerformanceMonitor } from "./common/components/performance-monitor";
 import * as Sentry from "@sentry/react-router";
 
 
 export const links: Route.LinksFunction = () => [
+  // PHASE 4: Essential preconnect for external services
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
+  { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
+  
+  // PHASE 4: DNS prefetch for API endpoints and CDNs
+  { rel: "dns-prefetch", href: "https://api.supabase.co" },
+  { rel: "dns-prefetch", href: "https://cdn.jsdelivr.net" },
+  { rel: "dns-prefetch", href: "https://sentry.io" },
+  
+  // PHASE 4: Critical font loading with fallbacks
   {
-    rel: "preconnect",
-    href: "https://fonts.gstatic.com",
-    crossOrigin: "anonymous",
+    rel: "preload",
+    href: "https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,400..600;1,14..32,400..600&display=swap",
+    as: "style",
+    onLoad: "this.onload=null;this.rel='stylesheet'",
   },
   {
     rel: "stylesheet",
-    href: "https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap",
+    href: "https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,400..600;1,14..32,400..600&display=swap",
+    media: "print",
+    onLoad: "this.media='all'",
   },
+  
+  // PHASE 4: Critical image assets preloading
+  { rel: "preload", href: "/lemore-logo.png", as: "image", type: "image/png" },
+  { rel: "preload", href: "/lemore-logo512.png", as: "image", type: "image/png" },
+  
+  // PHASE 4: Manifest and PWA related
+  { rel: "manifest", href: "/site.webmanifest" },
+  { rel: "apple-touch-icon", href: "/lemore-logo512.png", sizes: "180x180" },
 ];
 
 export function Layout({ children }: { children: React.ReactNode }) {
@@ -142,9 +164,25 @@ export default function App({ loaderData }: Route.ComponentProps) {
 
   // Add global auth error handling
   useAuthErrorHandler();
+
+  // PHASE 4: Register service worker for caching
+  useEffect(() => {
+    if ('serviceWorker' in navigator && process.env.NODE_ENV === 'production') {
+      navigator.serviceWorker.register('/sw.js')
+        .then((registration) => {
+          console.log('✅ Service Worker registered successfully:', registration);
+        })
+        .catch((error) => {
+          console.warn('❌ Service Worker registration failed:', error);
+        });
+    }
+  }, []);
   
   return (
     <div className="min-h-screen flex flex-col">
+      {/* PHASE 4: Performance monitoring for Web Vitals */}
+      <PerformanceMonitor />
+      
       <div
         className={cn({
           "pt-14": !pathname.includes("/auth/"),
