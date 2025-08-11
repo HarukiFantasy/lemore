@@ -245,4 +245,4 @@ export const ProductCard = memo(function ProductCard({
       </div>
     </div>
   );
-} 
+}); 

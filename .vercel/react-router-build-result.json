@@ -35,6 +35,7 @@
       "features/users/pages/notification-see-page": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
       "features/users/pages/messages-page": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
       "features/users/pages/likes-page": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
+      "features/let-go-buddy/pages/ai-coach-page": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
       "features/users/pages/usersProfile-page": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
       "api/send-welcome-email": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
       "common/pages/privacy-policy-page": "nodejs_eyJydW50aW1lIjoibm9kZWpzIn0",
@@ -281,6 +282,15 @@
           "runtime": "nodejs"
         }
       },
+      "features/let-go-buddy/pages/ai-coach-page": {
+        "id": "features/let-go-buddy/pages/ai-coach-page",
+        "parentId": "root",
+        "file": "app/features/let-go-buddy/pages/ai-coach-page.tsx",
+        "path": "/my/AIcoach",
+        "config": {
+          "runtime": "nodejs"
+        }
+      },
       "features/users/pages/usersProfile-page": {
         "id": "features/users/pages/usersProfile-page",
         "parentId": "root",
@@ -501,6 +511,12 @@
         "parentId": "root",
         "file": "features/users/pages/likes-page.tsx",
         "path": "/my/likes"
+      },
+      "features/let-go-buddy/pages/ai-coach-page": {
+        "id": "features/let-go-buddy/pages/ai-coach-page",
+        "parentId": "root",
+        "file": "features/let-go-buddy/pages/ai-coach-page.tsx",
+        "path": "/my/AIcoach"
       },
       "features/users/pages/usersProfile-page": {
         "id": "features/users/pages/usersProfile-page",
