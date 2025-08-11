@@ -23,6 +23,7 @@ export const PerformanceMonitor = () => {
     // Only run in browser environment
     if (typeof window === 'undefined') return;
 
+    console.log('🔍 Performance Monitor initialized - watching Web Vitals...');
     const metrics: PerformanceMetrics = {};
 
     // Monitor Core Web Vitals
@@ -35,9 +36,7 @@ export const PerformanceMonitor = () => {
             const lastEntry = entries[entries.length - 1];
             metrics.lcp = lastEntry.startTime;
             
-            if (process.env.NODE_ENV === 'development') {
-              console.log('🎯 LCP:', `${metrics.lcp?.toFixed(2)}ms`, getMetricStatus('lcp', metrics.lcp));
-            }
+            console.log('🎯 LCP:', `${metrics.lcp?.toFixed(2)}ms`, getMetricStatus('lcp', metrics.lcp));
           });
           lcpObserver.observe({ entryTypes: ['largest-contentful-paint'] });
 
@@ -47,9 +46,7 @@ export const PerformanceMonitor = () => {
             entries.forEach((entry: any) => {
               metrics.fid = entry.processingStart - entry.startTime;
               
-              if (process.env.NODE_ENV === 'development') {
-                console.log('⚡ FID:', `${metrics.fid?.toFixed(2)}ms`, getMetricStatus('fid', metrics.fid));
-              }
+              console.log('⚡ FID:', `${metrics.fid?.toFixed(2)}ms`, getMetricStatus('fid', metrics.fid));
             });
           });
           fidObserver.observe({ entryTypes: ['first-input'] });
@@ -65,9 +62,7 @@ export const PerformanceMonitor = () => {
             });
             metrics.cls = clsValue;
             
-            if (process.env.NODE_ENV === 'development') {
-              console.log('📐 CLS:', metrics.cls?.toFixed(3), getMetricStatus('cls', metrics.cls));
-            }
+            console.log('📐 CLS:', metrics.cls?.toFixed(3), getMetricStatus('cls', metrics.cls));
           });
           clsObserver.observe({ entryTypes: ['layout-shift'] });
 
@@ -93,13 +88,11 @@ export const PerformanceMonitor = () => {
           // Time to First Byte
           metrics.ttfb = navigationEntry.responseStart - navigationEntry.requestStart;
 
-          if (process.env.NODE_ENV === 'development') {
-            console.log('🚀 Performance Metrics:');
-            console.log('   FCP:', `${metrics.fcp?.toFixed(2)}ms`, getMetricStatus('fcp', metrics.fcp));
-            console.log('   TTFB:', `${metrics.ttfb?.toFixed(2)}ms`, getMetricStatus('ttfb', metrics.ttfb));
-            console.log('   DOM Load:', `${navigationEntry.domContentLoadedEventEnd - navigationEntry.fetchStart}ms`);
-            console.log('   Full Load:', `${navigationEntry.loadEventEnd - navigationEntry.fetchStart}ms`);
-          }
+          console.log('🚀 Performance Metrics:');
+          console.log('   FCP:', `${metrics.fcp?.toFixed(2)}ms`, getMetricStatus('fcp', metrics.fcp));
+          console.log('   TTFB:', `${metrics.ttfb?.toFixed(2)}ms`, getMetricStatus('ttfb', metrics.ttfb));
+          console.log('   DOM Load:', `${navigationEntry.domContentLoadedEventEnd - navigationEntry.fetchStart}ms`);
+          console.log('   Full Load:', `${navigationEntry.loadEventEnd - navigationEntry.fetchStart}ms`);
         }
       }
     };
@@ -115,7 +108,7 @@ export const PerformanceMonitor = () => {
           resource.name.includes('font')
         );
 
-        if (process.env.NODE_ENV === 'development' && criticalResources.length > 0) {
+        if (criticalResources.length > 0) {
           console.log('📦 Resource Loading Times:');
           criticalResources
             .sort((a, b) => b.duration - a.duration)
@@ -146,6 +139,11 @@ export const PerformanceMonitor = () => {
 
     // Send metrics after page is fully loaded
     setTimeout(sendMetricsToAnalytics, 5000);
+
+    // Make getPerformanceReport available globally
+    if (typeof window !== 'undefined') {
+      (window as any).getPerformanceReport = getPerformanceReport;
+    }
 
   }, []);
 

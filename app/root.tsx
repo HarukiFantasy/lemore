@@ -47,7 +47,7 @@ export const links: Route.LinksFunction = () => [
   
   // PHASE 4: Critical image assets preloading
   { rel: "preload", href: "/lemore-logo.png", as: "image", type: "image/png" },
-  { rel: "preload", href: "/lemore-logo512.png", as: "image", type: "image/png" },
+  // Note: lemore-logo512.png removed from preload as it's only used for PWA/favicon
   
   // PHASE 4: Manifest and PWA related
   { rel: "manifest", href: "/site.webmanifest" },
