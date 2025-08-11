@@ -93,7 +93,7 @@ export const getUserLikedProductsWithDetails = async (client: SupabaseClient<Dat
 
 export async function getProductsWithSellerStats(client: any, limit = 20) {
   const { data, error } = await client
-    .from("products_with_seller_stats_view")
+    .from("products_listings_view")
     .select("*")
     .order("created_at", { ascending: false })
     .limit(limit);

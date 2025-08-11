@@ -6,9 +6,9 @@ import { Input } from '~/common/components/ui/input';
 import { Button } from '~/common/components/ui/button';
 import { PRODUCT_CATEGORIES, CATEGORY_ICONS } from "../constants";
 import { BlurFade } from 'components/magicui/blur-fade';
-import { getProductsWithSellerStats, getUserLikedProducts } from '../queries';
+import { getProductsListings, getUserLikedProducts } from '../queries';
 import { makeSSRClient } from '~/supa-client';
-import { getUserStats } from '~/features/users/queries';
+import { getUserSalesStatsByProfileId } from '~/features/users/queries';
 import { Tabs, TabsList, TabsTrigger } from '~/common/components/ui/tabs';
 
 export const meta: Route.MetaFunction = () => {
@@ -24,7 +24,39 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
   const url = new URL(request.url);
   const location = url.searchParams.get("location");
   
-  const products = await getProductsWithSellerStats(client);
+  // Get products first
+  const products = await getProductsListings(client);
+  
+  // Get seller stats for all unique sellers
+  const sellerIds = [...new Set(products.map((p: any) => p.seller_id))];
+  const sellerStatsPromises = sellerIds.map(async (sellerId: string) => {
+    const stats = await getUserSalesStatsByProfileId(client, sellerId);
+    return { sellerId, stats };
+  });
+  const sellerStatsResults = await Promise.all(sellerStatsPromises);
+  const sellerStatsMap = new Map();
+  sellerStatsResults.forEach(({ sellerId, stats }) => {
+    if (stats) {
+      sellerStatsMap.set(sellerId, {
+        totalListings: stats.total_listings,
+        totalLikes: stats.total_likes,
+        totalSold: stats.sold_items,
+        sellerJoinedAt: 'N/A' // Will be set from product.seller_joined_at
+      });
+    }
+  });
+  
+  // Add seller stats to products
+  const productsWithStats = products.map((product: any) => {
+    const stats = sellerStatsMap.get(product.seller_id);
+    if (stats && product.seller_joined_at) {
+      stats.sellerJoinedAt = new Date(product.seller_joined_at).toLocaleDateString();
+    }
+    return {
+      ...product,
+      sellerStats: stats || null
+    };
+  });
   
   // 사용자 인증 정보 가져오기
   const { data: { user } } = await client.auth.getUser();
@@ -40,9 +72,9 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
   }
   
   // Location filtering
-  let filteredProducts = products;
+  let filteredProducts = productsWithStats;
   if (location && location !== "All Locations" && location !== "Other Cities") {
-    filteredProducts = products.filter((product: any) => product.location === location);
+    filteredProducts = productsWithStats.filter((product: any) => product.location === location);
   }
   
   
@@ -301,29 +333,25 @@ export default function BrowseListingsPage({ loaderData }: Route.ComponentProps)
           {displayedProducts && displayedProducts.length > 0 ? (
             displayedProducts.map((product: any) => (
               <BlurFade key={product.product_id}>
-                <ProductCard
-                  productId={product.product_id}
-                  image={product.primary_image || `/no_image.png`}
-                  title={product.title || "No title"}
-                  price={product.price}
-                  currency={product.currency || "THB"}
-                  priceType={product.price_type || "fixed"}
-                  sellerId={product.seller_id}
-                  sellerName={product.seller_name}
-                  is_sold={product.is_sold}
-                  showSoldBadge={true}
-                  category={product.category_name || "electronics"}
-                  likes={product.likes_count || 0}
-                  sellerStats={{
-                    totalListings: product.total_listings,
-                    totalLikes: product.total_likes,
-                    totalSold: product.total_sold,
-                    level: product.seller_level, // 수정: level로 전달
-                    sellerJoinedAt: new Date(product.seller_joined_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
-                  }}
-                  isLikedByUser={userLikedProducts?.includes(product.product_id) || false}
-                  currentUserId={user?.id}
-                />
+                <div className="transform transition-all duration-300 hover:scale-105 hover:shadow-xl">
+                  <ProductCard
+                    productId={product.product_id}
+                    image={product.primary_image || `/no_image.png`}
+                    title={product.title || "No title"}
+                    price={product.price}
+                    currency={product.currency || "THB"}
+                    priceType={product.price_type || "fixed"}
+                    sellerId={product.seller_id}
+                    sellerName={product.seller_name}
+                    is_sold={product.is_sold}
+                    showSoldBadge={true}
+                    category={product.category_name || "electronics"}
+                    likes={product.likes_count || 0}
+                    sellerStats={product.sellerStats}
+                    isLikedByUser={userLikedProducts?.includes(product.product_id) || false}
+                    currentUserId={user?.id}
+                  />
+                </div>
               </BlurFade>
             ))
           ) : (

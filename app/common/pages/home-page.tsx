@@ -6,7 +6,7 @@ import { ProductCard } from "../../features/products/components/product-card";
 import { useLoaderData } from "react-router";
 import { BlurFade } from 'components/magicui/blur-fade';
 import { makeSSRClient } from '~/supa-client';
-import { getProductsWithSellerStats, getUserLikedProducts } from '../../features/products/queries';
+import { getProductsListings, getUserLikedProducts } from '../../features/products/queries';
 import { DateTime } from "luxon";
 import { getUserSalesStatsByProfileId } from "~/features/users/queries";
 import { getCountryByLocation, COUNTRY_CONFIG } from "~/constants";
@@ -28,14 +28,45 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
   const location = url.searchParams.get("location");
   
   // PHASE 2 OPTIMIZATION: Execute all queries in parallel (3x faster!)
-  const [authResult, latestListingsResult] = await Promise.all([
+  const [authResult, productsResult] = await Promise.all([
     // Get user authentication
     client.auth.getUser().catch(() => ({ data: { user: null } })),
     // Get products (independent of user auth)
-    getProductsWithSellerStats(client, 20)
+    getProductsListings(client, 20)
   ]);
 
   const user = authResult.data.user;
+  
+  // Get seller stats for all unique sellers
+  const sellerIds = [...new Set(productsResult.map((p: any) => p.seller_id))];
+  const sellerStatsPromises = sellerIds.map(async (sellerId: string) => {
+    const stats = await getUserSalesStatsByProfileId(client, sellerId);
+    return { sellerId, stats };
+  });
+  const sellerStatsResults = await Promise.all(sellerStatsPromises);
+  const sellerStatsMap = new Map();
+  sellerStatsResults.forEach(({ sellerId, stats }) => {
+    if (stats) {
+      sellerStatsMap.set(sellerId, {
+        totalListings: stats.total_listings,
+        totalLikes: stats.total_likes,
+        totalSold: stats.sold_items,
+        sellerJoinedAt: 'N/A' // Will be set from product.seller_joined_at
+      });
+    }
+  });
+  
+  // Add seller stats to products
+  const latestListingsWithStats = productsResult.map((product: any) => {
+    const stats = sellerStatsMap.get(product.seller_id);
+    if (stats && product.seller_joined_at) {
+      stats.sellerJoinedAt = new Date(product.seller_joined_at).toLocaleDateString();
+    }
+    return {
+      ...product,
+      sellerStats: stats || null
+    };
+  });
 
   // If user is authenticated, fetch user-specific data in parallel
   let userLikedProducts: number[] = [];
@@ -56,7 +87,7 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
   }
 
   // Filter and limit products after fetching
-  let latestListings = latestListingsResult;
+  let latestListings = latestListingsWithStats;
   if (location && location !== "All Locations" && location !== "Other Cities") {
     latestListings = latestListings.filter((product: any) => product.location === location);
   }
@@ -205,13 +236,7 @@ export default function HomePage() {
                         likes={product.likes_count || 0}
                         isLikedByUser={userLikedProducts?.includes(product.product_id) || false}
                         currentUserId={user?.id}
-                        sellerStats={{
-                          totalListings: product.total_listings,
-                          totalLikes: product.total_likes,
-                          totalSold: product.total_sold,
-                          level: product.seller_level,
-                          sellerJoinedAt: new Date(product.seller_joined_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
-                        }}
+                        sellerStats={product.sellerStats}
                       />
                     </div>
                   </div>
