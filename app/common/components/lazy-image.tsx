@@ -1,4 +1,4 @@
-// PHASE 3 OPTIMIZATION: Lazy Loading Image Component
+// PHASE 3 OPTIMIZATION: Lazy Loading Image Component with Blur Effect
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 
 interface LazyImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {
@@ -12,33 +12,85 @@ interface LazyImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {
   onError?: () => void;
 }
 
+// Generate a blurred, low-quality placeholder from the original image
+const generateBlurDataUrl = (): string => {
+  // Create a tiny blurred version using CSS filter as data URL
+  // This creates a 1x1 pixel with average color estimation
+  const canvas = document.createElement('canvas');
+  canvas.width = 1;
+  canvas.height = 1;
+  const ctx = canvas.getContext('2d');
+  if (ctx) {
+    ctx.fillStyle = '#f3f4f6'; // Light gray as fallback
+    ctx.fillRect(0, 0, 1, 1);
+  }
+  return canvas.toDataURL();
+};
+
 export const LazyImage = React.memo<LazyImageProps>(({
   src,
   alt,
-  placeholder = '/placeholder.png',
-  fallback = '/no-image.png',
+  placeholder,
+  fallback = '/lemore-logo.png',
   rootMargin = '50px',
   threshold = 0.1,
   onLoad,
   onError,
   className = '',
+  style,
   ...props
 }) => {
   const [isLoaded, setIsLoaded] = useState(false);
-  const [isInView, setIsInView] = useState(false);
   const [hasError, setHasError] = useState(false);
+  const [shouldLoad, setShouldLoad] = useState(false);
+  const [blurDataUrl, setBlurDataUrl] = useState<string>('');
   const imgRef = useRef<HTMLImageElement>(null);
+
+  // Create blurred placeholder effect
+  useEffect(() => {
+    if (src && !hasError) {
+      // Create a tiny version of the image for blur effect
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          // Very small canvas for blur effect
+          canvas.width = 10;
+          canvas.height = 10;
+          ctx.filter = 'blur(2px)';
+          ctx.drawImage(img, 0, 0, 10, 10);
+          setBlurDataUrl(canvas.toDataURL('image/jpeg', 0.1));
+        }
+      };
+      img.onerror = () => {
+        // Fallback to simple gray placeholder
+        setBlurDataUrl(generateBlurDataUrl());
+      };
+      img.src = src;
+    }
+  }, [src, hasError]);
 
   // Intersection Observer for lazy loading
   useEffect(() => {
     const img = imgRef.current;
     if (!img) return;
 
+    // Check if already in viewport on mount
+    const rect = img.getBoundingClientRect();
+    const inViewport = rect.top < window.innerHeight + 50; // 50px margin
+    
+    if (inViewport) {
+      setShouldLoad(true);
+      return;
+    }
+
     const observer = new IntersectionObserver(
       (entries) => {
         const [entry] = entries;
         if (entry.isIntersecting) {
-          setIsInView(true);
+          setShouldLoad(true);
           observer.unobserve(img);
         }
       },
@@ -66,21 +118,58 @@ export const LazyImage = React.memo<LazyImageProps>(({
   }, [onError]);
 
   // Determine which image to show
-  const imageSrc = hasError ? fallback : (isInView ? src : placeholder);
+  const getImageSrc = () => {
+    if (hasError) return fallback;
+    if (!shouldLoad) return blurDataUrl || placeholder || '/lemore-logo.png';
+    return src;
+  };
+
+  const getImageStyles = (): React.CSSProperties => {
+    const baseStyles: React.CSSProperties = {
+      ...style,
+      transition: 'opacity 300ms ease-out, filter 300ms ease-out',
+    };
+
+    if (!shouldLoad && blurDataUrl) {
+      // Show blurred placeholder
+      return {
+        ...baseStyles,
+        filter: 'blur(8px)',
+        opacity: 0.7,
+      };
+    } else if (shouldLoad && isLoaded) {
+      // Show sharp final image
+      return {
+        ...baseStyles,
+        filter: 'blur(0px)',
+        opacity: 1,
+      };
+    } else if (shouldLoad && !isLoaded) {
+      // Loading actual image
+      return {
+        ...baseStyles,
+        filter: 'blur(2px)',
+        opacity: 0.8,
+      };
+    }
+
+    return baseStyles;
+  };
 
   return (
-    <img
-      ref={imgRef}
-      src={imageSrc}
-      alt={alt}
-      className={`transition-opacity duration-300 ${
-        isLoaded ? 'opacity-100' : 'opacity-50'
-      } ${className}`}
-      onLoad={handleLoad}
-      onError={handleError}
-      loading="lazy"
-      {...props}
-    />
+    <div className="relative overflow-hidden" style={{ width: '100%', height: '100%' }}>
+      <img
+        ref={imgRef}
+        src={getImageSrc()}
+        alt={alt}
+        className={className}
+        style={getImageStyles()}
+        onLoad={handleLoad}
+        onError={handleError}
+        loading="lazy"
+        {...props}
+      />
+    </div>
   );
 });
 

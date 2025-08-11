@@ -178,7 +178,7 @@ export const ProductCard = memo(function ProductCard({
               src={prod.image || '/lemore-logo.png'}
               alt={prod.title || 'Product image'}
               fallback="/lemore-logo.png"
-              placeholder="/placeholder.png"
+              placeholder="/lemore-logo.png"
               className="object-cover w-full h-full 
                 md:group-hover:scale-110 md:group-hover:brightness-110 
                 transition-all duration-300 ease-out"
