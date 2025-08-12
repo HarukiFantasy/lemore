@@ -109,13 +109,42 @@ export const loader = async ({ params, request }: Route.LoaderArgs) => {
   const [selectedImage, setSelectedImage] = useState(0);
   const fetcher = useFetcher();
   
-  // PHASE 3 OPTIMIZATION: Memoized calculations to prevent re-renders
-  const isLiked = useMemo(() => 
-    fetcher.state === 'idle' ? 
-      (fetcher.data?.isLiked ?? initialIsLiked) : 
-      (fetcher.formData?.get('action') === 'like'),
-    [fetcher.state, fetcher.data?.isLiked, initialIsLiked, fetcher.formData]
-  );
+  // Optimistic like state management
+  const [isLiked, setIsLiked] = useState(initialIsLiked);
+
+  // Update state when initial data changes
+  useEffect(() => {
+    setIsLiked(initialIsLiked);
+  }, [initialIsLiked]);
+
+  // Handle like/unlike with optimistic updates
+  const handleLikeClick = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    // Immediately update UI
+    setIsLiked(!isLiked);
+    
+    // Submit to server
+    fetcher.submit(
+      { 
+        productId: String(product.product_id),
+        action: isLiked ? 'unlike' : 'like'
+      },
+      { method: "post", action: `/secondhand/${product.product_id}/like` }
+    );
+  }, [isLiked, product.product_id, fetcher.submit]);
+
+  // Handle server response
+  useEffect(() => {
+    if (fetcher.state === 'idle' && fetcher.data) {
+      // Only handle errors - let optimistic updates stay for success
+      if (!fetcher.data.success) {
+        // Revert on error
+        setIsLiked(initialIsLiked);
+      }
+    }
+  }, [fetcher.state, fetcher.data, initialIsLiked]);
 
   // Check if current user is the seller
   const isCurrentUserSeller = useMemo(() => 
@@ -243,21 +272,22 @@ export const loader = async ({ params, request }: Route.LoaderArgs) => {
                   {product.is_sold ? "Item Sold" : "Contact Seller"}
                 </Button>
               )}
-              <fetcher.Form method="post" action={`/secondhand/${product.product_id}/like`}>
-                <input type="hidden" name="action" value={isLiked ? "unlike" : "like"} />
-                <Button 
-                  variant="outline" 
-                  size="lg"
-                  type="submit"
-                  className={isLiked ? "text-rose-500 border-primary" : ""}
-                  disabled={isCurrentUserSeller || product.is_sold || fetcher.state !== 'idle'}
-                >
-                  <HeartIcon 
-                    className={`w-5 h-5 ${isLiked ? 'fill-rose-500 text-rose-500' : 'text-gray-600'}`} 
-                  />
-                  {isLiked ? "Liked" : "Like"}
-                </Button>
-              </fetcher.Form>
+              <Button 
+                variant="outline" 
+                size="lg"
+                onClick={handleLikeClick}
+                className={`transition-all duration-150 hover:scale-105 active:scale-95 ${
+                  isLiked 
+                    ? "text-rose-500 border-rose-300 bg-rose-50 hover:bg-rose-100" 
+                    : "hover:border-gray-300"
+                } ${fetcher.state === 'loading' ? 'animate-pulse' : ''}`}
+                disabled={isCurrentUserSeller || product.is_sold}
+              >
+                <HeartIcon 
+                  className={`w-5 h-5 mr-2 transition-all duration-150 ${isLiked ? 'fill-rose-500 text-rose-500 scale-110' : 'text-gray-600'}`} 
+                />
+                {isLiked ? "Liked" : "Like"}
+              </Button>
             </div>
 
             {/* Product Details */}
