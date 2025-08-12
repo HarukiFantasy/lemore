@@ -137,11 +137,8 @@ export const ProductCard = memo(function ProductCard({
   // Update optimistic state based on fetcher state
   useEffect(() => {
     if (fetcher.state === 'idle' && fetcher.data) {
-      // Server response received, update with actual data
-      if (fetcher.data.success) {
-        setOptimisticLikes(fetcher.data.likes);
-        setIsLiked(fetcher.data.isLiked);
-      } else {
+      // Only handle errors - let optimistic updates stay for success
+      if (!fetcher.data.success) {
         // Revert on error
         setOptimisticLikes(likes);
         setIsLiked(isLikedByUser);
@@ -227,13 +224,12 @@ export const ProductCard = memo(function ProductCard({
                 {!isOwner && (
                 <button
                   onClick={handleLikeClick}
-                  className={`flex items-center gap-1 transition-colors duration-200 hover:scale-110 ${
+                  className={`flex items-center gap-1 transition-all duration-150 hover:scale-110 active:scale-95 ${
                     isLiked ? 'text-red-500 hover:text-red-400' : 'text-neutral-500 hover:text-neutral-400'
-                  }`}
-                    disabled={fetcher.state !== 'idle'}
+                  } ${fetcher.state === 'loading' ? 'animate-pulse' : ''}`}
                   >
-                  <HeartIcon className={`w-4 h-4 ${isLiked ? 'fill-current' : ''}`} />
-                  <span>{optimisticLikes}</span>
+                  <HeartIcon className={`w-4 h-4 transition-all duration-150 ${isLiked ? 'fill-current scale-110' : ''}`} />
+                  <span className="transition-all duration-150">{optimisticLikes}</span>
                 </button>
                 )}
               </div>
