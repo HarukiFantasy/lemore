@@ -4,7 +4,6 @@ import React, { useState, useCallback, useRef, useEffect } from 'react';
 interface LazyImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {
   src: string;
   alt: string;
-  placeholder?: string;
   fallback?: string;
   rootMargin?: string;
   threshold?: number;
@@ -30,8 +29,7 @@ const generateBlurDataUrl = (): string => {
 export const LazyImage = React.memo<LazyImageProps>(({
   src,
   alt,
-  placeholder,
-  fallback = '/lemore-logo.png',
+  fallback,
   rootMargin = '50px',
   threshold = 0.1,
   onLoad,
@@ -128,7 +126,7 @@ export const LazyImage = React.memo<LazyImageProps>(({
     if (hasError) return fallback;
     if (!shouldLoad) {
       // Show blur placeholder when not in viewport
-      return blurDataUrl || placeholder || '/lemore-logo.png';
+      return blurDataUrl || fallback;
     }
     return src;
   };

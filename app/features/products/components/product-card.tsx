@@ -175,10 +175,8 @@ export const ProductCard = memo(function ProductCard({
           <div className="relative w-full h-40 sm:h-48 md:h-60 overflow-hidden rounded-t-lg">
             {/* PHASE 3 OPTIMIZATION: Lazy loaded image with proper error handling */}
             <LazyImage
-              src={prod.image || '/lemore-logo.png'}
+              src={prod.image}
               alt={prod.title || 'Product image'}
-              fallback="/lemore-logo.png"
-              placeholder="/lemore-logo.png"
               className="object-cover w-full h-full 
                 md:group-hover:scale-110 md:group-hover:brightness-110 
                 transition-all duration-300 ease-out"
