@@ -197,7 +197,7 @@ export const ProductCard = memo(function ProductCard({
           </div>
           <div className="flex flex-col gap-1 p-3 pb-2 flex-grow">
             <div className="flex items-start justify-between gap-2">
-              <span className="text-base font-semibold line-clamp-2 flex-1">{title}</span>
+              <span className="text-base font-semibold line-clamp-2 flex-1 min-h-[3rem]">{title}</span>
               <span className="text-sm text-neutral-500 whitespace-nowrap">{category}</span>
             </div>
             <div>

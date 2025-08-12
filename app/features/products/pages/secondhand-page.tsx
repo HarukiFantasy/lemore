@@ -5,7 +5,7 @@ export function loader({ request }: Route.LoaderArgs){
   const url = new URL(request.url);
   const searchParams = url.searchParams.toString();
   const redirectUrl = searchParams 
-    ? `/secondhand/browse-listings?${searchParams}`
-    : "/secondhand/browse-listings";
+    ? `/?${searchParams}`
+    : "/";
   return redirect(redirectUrl);
 }

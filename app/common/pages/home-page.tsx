@@ -1,4 +1,4 @@
-import { Form, Link, useSearchParams } from "react-router";
+import { Link, useSearchParams } from "react-router";
 import { Input } from "../components/ui/input";
 import type { Route } from "../../+types/root";
 import { Button } from '../components/ui/button';
@@ -7,12 +7,12 @@ import { useLoaderData } from "react-router";
 import { BlurFade } from 'components/magicui/blur-fade';
 import { makeSSRClient } from '~/supa-client';
 import { getProductsListings, getUserLikedProducts } from '../../features/products/queries';
-import { DateTime } from "luxon";
 import { getUserSalesStatsByProfileId } from "~/features/users/queries";
 import { getCountryByLocation, COUNTRY_CONFIG } from "~/constants";
-import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "../components/ui/carousel";
-import { Card, CardContent } from "../components/ui/card";
-
+import { Tabs, TabsList, TabsTrigger } from '~/common/components/ui/tabs';
+import { PRODUCT_CATEGORIES, CATEGORY_ICONS } from "../../features/products/constants";
+import { useState, useEffect } from "react";
+import React from "react";
 
 export const meta: Route.MetaFunction = () => {
   return [
@@ -23,16 +23,16 @@ export const meta: Route.MetaFunction = () => {
 };  
 
 export const loader = async ({ request }: Route.LoaderArgs) => {
-  const { client, headers } = makeSSRClient(request);
+  const { client } = makeSSRClient(request);
   const url = new URL(request.url);
   const location = url.searchParams.get("location");
   
-  // PHASE 2 OPTIMIZATION: Execute all queries in parallel (3x faster!)
+  // Execute all queries in parallel
   const [authResult, productsResult] = await Promise.all([
     // Get user authentication
     client.auth.getUser().catch(() => ({ data: { user: null } })),
-    // Get products (independent of user auth)
-    getProductsListings(client, 20)
+    // Get all products (not limited to 20)
+    getProductsListings(client)
   ]);
 
   const user = authResult.data.user;
@@ -57,7 +57,7 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
   });
   
   // Add seller stats to products
-  const latestListingsWithStats = productsResult.map((product: any) => {
+  const allProducts = productsResult.map((product: any) => {
     const stats = sellerStatsMap.get(product.seller_id);
     if (stats && product.seller_joined_at) {
       stats.sellerJoinedAt = new Date(product.seller_joined_at).toLocaleDateString();
@@ -70,57 +70,137 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
 
   // If user is authenticated, fetch user-specific data in parallel
   let userLikedProducts: number[] = [];
-  let userStats = null;
 
   if (user) {
-    // Execute user-specific queries in parallel
-    const [likedProductsResult, userStatsResult] = await Promise.all([
-      getUserLikedProducts(client, user.id).catch((error) => {
-        console.error('Error fetching user liked products:', error);
-        return [];
-      }),
-      getUserSalesStatsByProfileId(client, user.id).catch(() => null)
-    ]);
-
-    userLikedProducts = likedProductsResult;
-    userStats = userStatsResult;
+    userLikedProducts = await getUserLikedProducts(client, user.id).catch((error) => {
+      console.error('Error fetching user liked products:', error);
+      return [];
+    });
   }
 
-  // Filter and limit products after fetching
-  let latestListings = latestListingsWithStats;
+  // Filter products by location if specified
+  let filteredProducts = allProducts;
   if (location && location !== "All Locations" && location !== "Other Cities") {
-    latestListings = latestListings.filter((product: any) => product.location === location);
+    filteredProducts = allProducts.filter((product: any) => product.location === location);
   }
-  latestListings = latestListings.slice(0, 4); // Limit to 4 after filtering
   
-  return { latestListings, userLikedProducts, user, userStats };
+  return { 
+    allProducts: filteredProducts, 
+    userLikedProducts, 
+    user,
+    location 
+  };
 };
 
-
-// Date 객체 또는 ISO 문자열을 시간 문자열로 변환하는 헬퍼 함수 (Luxon 사용)
-function getTimeAgo(date: Date | string): string {
-  const dt = typeof date === "string" ? DateTime.fromISO(date) : DateTime.fromJSDate(date);
-  return dt.toRelative() ?? "";
-}
-
 export default function HomePage() {
-  const [searchParams] = useSearchParams();
-  const { latestListings, userLikedProducts, user, userStats } = useLoaderData() as {
-    latestListings: any[];
-    location: string | null;
+  const [searchParams, setSearchParams] = useSearchParams();
+  const { allProducts, userLikedProducts, user } = useLoaderData() as {
+    allProducts: any[];
     userLikedProducts: number[];
     user: any;
-    userStats: any;
   };
+  
+  // Add custom styles for animations
+  React.useEffect(() => {
+    const styleElement = document.createElement('style');
+    styleElement.textContent = `
+      @keyframes float {
+        0%, 100% { transform: translateY(0px); }
+        50% { transform: translateY(-10px); }
+      }
+      .animate-float {
+        animation: float 3s ease-in-out infinite;
+      }
+    `;
+    document.head.appendChild(styleElement);
+    return () => {
+      document.head.removeChild(styleElement);
+    };
+  }, []);
+
+  const [searchInput, setSearchInput] = useState(searchParams.get("q") || "");
+  const [displayedProducts, setDisplayedProducts] = useState<any[]>(allProducts || []);
+  const [tabValue, setTabValue] = useState<'all' | 'onSale' | 'sold'>('all');
+  
   const urlLocation = searchParams.get("location");
   const currentLocation = urlLocation || COUNTRY_CONFIG.Thailand.defaultCity;
   const currentCountry = urlLocation ? getCountryByLocation(urlLocation as any) : "Thailand";
+  const searchQuery = searchParams.get("q") || "";
+  const categoryFilter = searchParams.get("category") || "";
+
+  // Filter products based on search query, category, and sale status
+  useEffect(() => {
+    if (!allProducts) return;
+    let filtered = allProducts;
+    
+    // Apply search filter
+    if (searchQuery) {
+      filtered = filtered.filter((product: any) =>
+        product.title?.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+    
+    // Apply category filter
+    if (categoryFilter) {
+      filtered = filtered.filter((product: any) =>
+        product.category_name?.toLowerCase().includes(categoryFilter.toLowerCase())
+      );
+    }
+    
+    // Apply on sale filter
+    if (tabValue === 'onSale') {
+      filtered = filtered.filter((product: any) => product.is_sold === false);
+    } else if (tabValue === 'sold') {
+      filtered = filtered.filter((product: any) => product.is_sold === true);
+    }
+    
+    setDisplayedProducts(filtered as any);
+  }, [searchQuery, categoryFilter, allProducts, tabValue]);
+
+  // Handle category click
+  const handleCategoryClick = (categoryName: string) => {
+    setSearchInput("");
+    const newSearchParams = new URLSearchParams(searchParams);
+    newSearchParams.delete("q");
+    newSearchParams.set("category", categoryName);
+    setSearchParams(newSearchParams);
+  };
+
+  // Handle search form submission
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const newSearchParams = new URLSearchParams(searchParams);
+    newSearchParams.set("q", searchInput);
+    newSearchParams.delete("category");
+    setSearchParams(newSearchParams);
+  };
+
+  // Clear specific filter
+  const handleClearFilter = (filterType: 'search' | 'category') => {
+    const newSearchParams = new URLSearchParams(searchParams);
+    if (filterType === 'search') {
+      newSearchParams.delete("q");
+      setSearchInput("");
+    } else if (filterType === 'category') {
+      newSearchParams.delete("category");
+    }
+    setSearchParams(newSearchParams);
+  };
+
+  // Clear all filters
+  const handleClearFilters = () => {
+    setSearchInput("");
+    const newSearchParams = new URLSearchParams();
+    if (urlLocation) {
+      newSearchParams.set("location", urlLocation);
+    }
+    setSearchParams(newSearchParams);
+  };
 
   return (
-    
     <div className="w-full">
-      {/* Hero Search Section */}
-      <div className="relative overflow-hidden px-6 py-12 md:py-20">
+      {/* Hero Search Section with Background Image */}
+      <div className="relative overflow-hidden px-6 py-8 md:py-12">
         {/* Background Image */}
         <div className="absolute inset-0 z-0">
           <img 
@@ -132,11 +212,7 @@ export default function HomePage() {
           <div className="absolute inset-0 bg-gradient-to-br from-white/50 via-white/30 to-white/50"></div>
         </div>
         
-        <div className="relative z-10 max-w-3xl mx-auto text-center space-y-6">
-          {/* Tagline */}
-          <div className="inline-flex items-center px-4 py-2 bg-white/80 backdrop-blur-sm rounded-full border border-stone-200 text-sm text-stone-600 mb-4">
-            📍 {!urlLocation ? "All Locations" : currentLocation} • {currentCountry}
-          </div>
+        <div className="relative z-10 max-w-4xl mx-auto text-center space-y-6">
           
           {/* Main Heading */}
           <h1 className="text-3xl md:text-5xl font-medium text-stone-800 leading-tight tracking-tight">
@@ -144,101 +220,170 @@ export default function HomePage() {
             Live Lighter
           </h1>
           
-          {/* Search Box */}
-          <Form action="/secondhand/browse-listings" method="get" className="relative max-w-2xl mx-auto mt-8">
+          {/* Enhanced Search Box */}
+          <form onSubmit={handleSearchSubmit} className="relative max-w-2xl mx-auto mt-8">
             <div className="relative group">
-              <Input 
-                name="q" 
-                type="text" 
-                placeholder="Search items..." 
-                className="w-full pl-12 pr-24 py-6 text-base rounded-full border-2 border-stone-200 focus:border-stone-400 transition-all duration-200 bg-white/90 backdrop-blur-sm placeholder:text-sm md:placeholder:text-base"
-              />
-              <svg className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-stone-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-              <Button 
-                type="submit" 
-                className="absolute right-2 top-1/2 transform -translate-y-1/2 rounded-full px-6 py-2 bg-stone-800 hover:bg-stone-700 text-white transition-colors"
-              >
-                Search
-              </Button>
+              <div className="absolute inset-0 bg-gradient-to-r from-purple-500/10 to-blue-500/10 rounded-full blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              <div className="relative bg-white/90 backdrop-blur-sm rounded-full shadow-lg border-2 border-stone-200 group-focus-within:border-purple-400 transition-colors duration-200">
+                <Input 
+                  name="q" 
+                  type="text" 
+                  placeholder="What treasure are you looking for?" 
+                  value={searchInput}
+                  onChange={(e) => setSearchInput(e.target.value)}
+                  className="border-0 rounded-full pl-12 pr-24 py-6 text-base bg-transparent focus:ring-0 focus:border-0 placeholder:text-sm md:placeholder:text-base"
+                />
+                <svg className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-stone-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+                <Button 
+                  type="submit" 
+                  className="absolute right-2 top-1/2 transform -translate-y-1/2 rounded-full px-6 py-2 bg-stone-800 hover:bg-stone-700 text-white transition-colors"
+                >
+                  Search
+                </Button>
+              </div>
             </div>
             {/* Pass current location as hidden input */}
             {urlLocation && (
               <input type="hidden" name="location" value={urlLocation} />
             )}
-          </Form>
+          </form>
           
-          {/* Quick Actions */}
-          <div className="flex flex-wrap justify-center gap-3 mt-6">
-            <Link to="/secondhand/browse-listings" className="text-sm text-stone-600 hover:text-stone-800 transition-colors">
-              Browse All →
-            </Link>
+          {/* Quick Stats */}
+          <div className="flex flex-wrap justify-center gap-4 mt-6 text-sm text-stone-600">
+            <div className="flex items-center gap-1">
+              <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+              <span>{displayedProducts.filter(p => !p.is_sold).length} items available</span>
+            </div>
             <span className="text-stone-300">•</span>
-            <Link to="/secondhand/submit-a-listing" className="text-sm text-stone-600 hover:text-stone-800 transition-colors">
+            <div className="flex items-center gap-1">
+              <span className="w-2 h-2 bg-purple-500 rounded-full"></span>
+              <span>{displayedProducts.length} total listings</span>
+            </div>
+            <span className="text-stone-300">•</span>
+            <Link to="/secondhand/submit-a-listing" className="text-stone-600 hover:text-stone-800 transition-colors font-medium">
               List an Item →
-            </Link>
-            <span className="text-stone-300">•</span>
-            <Link to="/let-go-buddy" className="text-sm text-stone-600 hover:text-stone-800 transition-colors">
-              Get AI Help →
             </Link>
           </div>
         </div>
-
       </div>
-      {/* Latest Listings Section */}
-      <div className="px-6 md:px-12 py-12 bg-white">
+
+      {/* Categories Section - Compact */}
+      <div className="py-6 -mt-1">
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="flex justify-center">
+            <div className="flex space-x-2 md:space-x-3 overflow-x-auto pb-2">
+              {PRODUCT_CATEGORIES.slice(0, 10).map((category, index) => {
+                const isActive = categoryFilter.toLowerCase() === category.toLowerCase();
+                const isHiddenOnMobile = index >= 7; // Hide from 8th item on mobile
+                return (
+                  <div 
+                    key={category} 
+                    className={`flex flex-col items-center min-w-[60px] cursor-pointer hover:scale-105 transition-transform ${
+                      isHiddenOnMobile ? 'hidden md:flex' : ''
+                    }`}
+                    onClick={() => handleCategoryClick(category)}
+                  >
+                    <div className={`w-10 h-10 md:w-12 md:h-12 flex items-center justify-center rounded-full text-lg md:text-xl mb-1 transition-colors ${
+                      isActive 
+                        ? 'bg-purple-200 text-purple-700' 
+                        : 'bg-white hover:bg-purple-100 shadow-sm'
+                    }`}>
+                      {CATEGORY_ICONS[category] || "📦"}
+                    </div>
+                    <span className={`text-xs text-center leading-tight ${
+                      isActive ? 'font-semibold text-purple-600' : 'text-stone-600'
+                    }`}>
+                      {category}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content Area */}
+      <div className="px-6 md:px-12 py-8 bg-white">
         <div className="max-w-7xl mx-auto">
-          {/* Section Header */}
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
+          {/* Active Filters */}
+          {(searchQuery || categoryFilter) && (
+            <div className="mb-6 flex flex-wrap items-center gap-2">
+              <span className="text-sm text-gray-600">Active filters:</span>
+              {searchQuery && (
+                <div className="flex items-center gap-1 bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-sm">
+                  <span>Search: "{searchQuery}"</span>
+                  <button
+                    onClick={() => handleClearFilter('search')}
+                    className="ml-1 text-purple-600 hover:text-purple-800"
+                  >
+                    ×
+                  </button>
+                </div>
+              )}
+              {categoryFilter && (
+                <div className="flex items-center gap-1 bg-gray-200/70 text-gray-700 px-3 py-1 rounded-full text-sm">
+                  <span>Category: {categoryFilter}</span>
+                  <button
+                    onClick={() => handleClearFilter('category')}
+                    className="ml-1 text-gray-700 hover:text-gray-800"
+                  >
+                    ×
+                  </button>
+                </div>
+              )}
+              <button
+                onClick={handleClearFilters}
+                className="text-sm text-gray-500 hover:text-gray-700 underline"
+              >
+                Clear all
+              </button>
+            </div>
+          )}
+
+          {/* Section Header with Tabs */}
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
             <div>
               <h2 className="text-2xl md:text-3xl font-semibold text-stone-800 mb-2 tracking-tight">
-                Fresh Finds
+                All Treasures{!urlLocation ? "" : ` in ${currentLocation}`}
               </h2>
-              <p className="text-stone-600">
-                Discover treasures waiting for their next chapter
-              </p>
             </div>
-            <Link 
-              to="/secondhand/browse-listings"
-              className="mt-4 md:mt-0 inline-flex items-center text-sm font-medium text-stone-700 hover:text-stone-900 transition-colors"
-            >
-              View All
-              <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-            </Link>
+            
+            {/* Tabs */}
+            <Tabs value={tabValue} onValueChange={(val) => setTabValue(val as 'all' | 'onSale' | 'sold')}>
+              <TabsList>
+                <TabsTrigger value="all">All</TabsTrigger>
+                <TabsTrigger value="onSale">On Sale</TabsTrigger>
+                <TabsTrigger value="sold">Sold</TabsTrigger>
+              </TabsList>
+            </Tabs>
           </div>
           
-          {/* Product Grid with Hover Effects */}
+          {/* Product Grid */}
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
-            {latestListings.length > 0 ? (
-              latestListings.map((product: any, index: number) => (
-                <BlurFade key={product.product_id} delay={index * 0.05}>
-                  <div className="group relative">
-                    {/* New Badge for Recent Items */}
-                    {index === 0 && (
-                      <div className="absolute top-2 left-2 z-10 px-2 py-1 bg-stone-800 text-white text-xs rounded-full">
-                        New
-                      </div>
-                    )}
-                    <div className="transform transition-all duration-300 hover:scale-105 hover:shadow-xl">
-                      <ProductCard
-                        productId={product.product_id}
-                        image={product.primary_image || `/no_image.png`}
-                        title={product.title}
-                        price={product.price}
-                        currency={product.currency || "THB"}
-                        priceType={product.price_type || "Fixed"}
-                        sellerId={product.seller_id}
-                        sellerName={product.seller_name}
-                        is_sold={product.is_sold || false}
-                        likes={product.likes_count || 0}
-                        isLikedByUser={userLikedProducts?.includes(product.product_id) || false}
-                        currentUserId={user?.id}
-                        sellerStats={product.sellerStats}
-                      />
-                    </div>
+            {displayedProducts && displayedProducts.length > 0 ? (
+              displayedProducts.map((product: any, index: number) => (
+                <BlurFade key={product.product_id} delay={Math.min(index * 0.05, 0.3)}>
+                  <div className="transform transition-all duration-300 hover:scale-105 hover:shadow-xl rounded-lg">
+                    <ProductCard
+                      productId={product.product_id}
+                      image={product.primary_image || `/no_image.png`}
+                      title={product.title || "No title"}
+                      price={product.price}
+                      currency={product.currency || "THB"}
+                      priceType={product.price_type || "fixed"}
+                      sellerId={product.seller_id}
+                      sellerName={product.seller_name}
+                      is_sold={product.is_sold}
+                      showSoldBadge={true}
+                      category={product.category_name || "Other"}
+                      likes={product.likes_count || 0}
+                      sellerStats={product.sellerStats}
+                      isLikedByUser={userLikedProducts?.includes(product.product_id) || false}
+                      currentUserId={user?.id}
+                    />
                   </div>
                 </BlurFade>
               ))
@@ -251,7 +396,7 @@ export default function HomePage() {
                     </svg>
                   </div>
                   <div>
-                    <p className="text-stone-600 mb-2">No items yet in this area</p>
+                    <p className="text-stone-600 mb-2">No items found</p>
                     <Link 
                       to="/secondhand/submit-a-listing"
                       className="text-sm text-stone-800 font-medium hover:underline"
@@ -266,26 +411,13 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* Features Section */}
-      
-      {/* Mission Statement - Hero Style */}
-      <div className="mt-12 md:mt-20 mb-12 md:mb-20">
-        <div className="relative">
-          {/* Background Image with Overlay */}
-          <div className="absolute inset-0 z-0">
-            {/* <img 
-              src="/1.png" 
-              alt="Lemore Mission" 
-              className="w-full h-full object-cover opacity-0"
-            /> */}
-            <div className="absolute inset-0 bg-gradient-to-b from-white/60 via-white/40 to-white/60"></div>
-          </div>
-          
-          {/* Content Overlay */}
-          <div className="relative z-10 max-w-6xl mx-auto px-6 md:px-12 py-16 md:py-24">
+      {/* Mission Statement with Featured Products */}
+      <div className="mt-12 md:mt-20 mb-12 md:mb-20 bg-gradient-to-br from-stone-50 via-white to-stone-50">
+        <div className="relative overflow-hidden">
+          <div className="relative z-10 max-w-7xl mx-auto px-6 md:px-12 py-16 md:py-24">
             <div className="grid md:grid-cols-2 gap-8 md:gap-12 items-center">
-              {/* Text Content */}
-              <div className="order-2 md:order-1 space-y-6">
+              {/* Text Content - Keep Original */}
+              <div className="space-y-6">
                 <div className="space-y-4">
                   <h2 className="text-3xl md:text-4xl lg:text-5xl font-semibold text-stone-800 leading-tight tracking-tight">
                     Let go,<br />
@@ -324,121 +456,9 @@ export default function HomePage() {
                 </div>
               </div>
               
-              {/* Image Card */}
-              <div className="order-1 md:order-2">
-                <div className="relative mx-auto max-w-sm md:max-w-none">
-                  {/* Blur effect - hidden on mobile for performance */}
-                  <div className="hidden md:block absolute -inset-4 bg-gradient-to-r from-stone-200/50 to-stone-300/50 rounded-2xl blur-2xl opacity-60"></div>
-                  <div className="relative rounded-xl md:rounded-2xl overflow-hidden shadow-xl md:shadow-2xl">
-                    <img 
-                      src="/1.png" 
-                      alt="Lemore Mission" 
-                      className="w-full h-[280px] sm:h-[350px] md:h-[450px] object-contain md:object-cover bg-stone-50"
-                    />
-                    {/* Floating Badge - responsive positioning and sizing */}
-                    <div className="absolute bottom-3 left-3 right-3 md:bottom-6 md:left-6 md:right-6">
-                      <div className="bg-white/90 md:bg-white/95 backdrop-blur-sm rounded-lg md:rounded-xl p-3 md:p-4 shadow-md md:shadow-lg">
-                        <p className="text-xs sm:text-sm font-medium text-stone-800 text-center">
-                          Less is More • Joy in Simplicity
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
+
             </div>
           </div>
-        </div>
-      </div>
-
-      {/* Carousel Section */}
-      <div className="mb-8 px-4 md:px-0">
-        <div className="max-w-5xl mx-auto">
-          <Carousel className="w-full">
-            <CarouselContent>
-
-              {/* How It Works */}
-              <CarouselItem>
-                <Card className="border-0 shadow-none">
-                  <CardContent className="p-4 md:p-8 bg-stone-50 rounded-lg">
-                    <div className="text-center mb-4 md:mb-6">
-                      <h3 className="text-xl md:text-2xl font-light text-stone-800 mb-2">How It Works</h3>
-                      <p className="text-sm md:text-base text-stone-600">Simple steps to meaningful exchanges</p>
-                    </div>
-                    <img 
-                      src="/2.png" 
-                      alt="How It Works" 
-                      className="w-full h-[200px] md:h-[260px] object-cover rounded-md mb-6"
-                    />
-                    <div className="grid grid-cols-3 gap-2 md:gap-4 text-center">
-                      <div>
-                        <div className="w-10 h-10 md:w-12 md:h-12 bg-stone-200 rounded-full mx-auto mb-2 flex items-center justify-center text-stone-700 font-medium text-sm md:text-base">1</div>
-                        <p className="text-xs md:text-sm text-stone-600 font-medium">Declutter</p>
-                        <p className="text-xs text-stone-500 mt-1 hidden md:block">Let go mindfully</p>
-                      </div>
-                      <div>
-                        <div className="w-10 h-10 md:w-12 md:h-12 bg-stone-200 rounded-full mx-auto mb-2 flex items-center justify-center text-stone-700 font-medium text-sm md:text-base">2</div>
-                        <p className="text-xs md:text-sm text-stone-600 font-medium">Connect</p>
-                        <p className="text-xs text-stone-500 mt-1 hidden md:block">Find your people</p>
-                      </div>
-                      <div>
-                        <div className="w-10 h-10 md:w-12 md:h-12 bg-stone-200 rounded-full mx-auto mb-2 flex items-center justify-center text-stone-700 font-medium text-sm md:text-base">3</div>
-                        <p className="text-xs md:text-sm text-stone-600 font-medium">Share</p>
-                        <p className="text-xs text-stone-500 mt-1 hidden md:block">Create joy</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </CarouselItem>
-
-              {/* Let Go Buddy Feature */}
-              <CarouselItem>
-                <Card className="border-0 shadow-none">
-                  <CardContent className="p-4 md:p-8 bg-stone-50 rounded-lg">
-                    <div className="text-center mb-4 md:mb-6">
-                      <h3 className="text-xl md:text-2xl font-light text-stone-800 mb-2">Let Go Buddy</h3>
-                      <p className="text-sm md:text-base text-stone-600">Your mindful coach for decluttering with heart</p>
-                    </div>
-                    <img 
-                      src="/3.png" 
-                      alt="Let Go Buddy" 
-                      className="w-full h-[250px] md:h-[320px] object-cover rounded-md"
-                    />
-                    <div className="mt-4 text-center">
-                      <Link 
-                        to="/let-go-buddy" 
-                        className="inline-flex items-center px-4 md:px-6 py-2 text-xs md:text-sm font-medium text-stone-700 bg-white border border-stone-300 rounded-full hover:bg-stone-100 transition-colors"
-                      >
-                        Try Let Go Buddy
-                      </Link>
-                    </div>
-                  </CardContent>
-                </Card>
-              </CarouselItem>
-
-              {/* Challenge Calendar */}
-              <CarouselItem>
-                <div className="relative">
-                  <img 
-                    src="/4.png" 
-                    alt="Challenge Calendar" 
-                    className="w-full h-[300px] md:h-[500px] object-contain rounded-lg bg-stone-50"
-                  />
-                  <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 md:bottom-80 md:left-0 md:transform md:translate-x-24">
-                    <Link 
-                      to="/let-go-buddy/challenge-calendar" 
-                      className="inline-flex items-center px-4 md:px-6 py-1.5 md:py-2 text-xs md:text-sm font-medium text-stone-800 bg-white/50 border border-stone-200 rounded-full hover:bg-white/70 hover:shadow-md transition-all"
-                    >
-                      Start Your Journey
-                    </Link>
-                  </div>
-                </div>
-              </CarouselItem>
-            </CarouselContent>
-            
-            <CarouselPrevious className="left-2 md:left-4 bg-white/80 hover:bg-white border-stone-200 h-8 w-8 md:h-10 md:w-10" />
-            <CarouselNext className="right-2 md:right-4 bg-white/80 hover:bg-white border-stone-200 h-8 w-8 md:h-10 md:w-10" />
-          </Carousel>
         </div>
       </div>
     </div>

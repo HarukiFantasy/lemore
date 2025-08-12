@@ -4,12 +4,10 @@ export default [
   index("common/pages/home-page.tsx"),
   ...prefix("secondhand", [
     index("features/products/pages/secondhand-page.tsx"),
-    route("/submit-a-listing", "features/products/pages/submit-a-listing-page.tsx"), 
-    route("/browse-listings", "features/products/pages/browse-listings-page.tsx"),
+    route("/submit-a-listing", "features/products/pages/submit-a-listing-page.tsx"),
     route("/product/:productId", "features/products/pages/product-detail-page.tsx"),
     route("/product/:productId/edit", "features/products/pages/edit-product-page.tsx"),
     route("/:productId/like", "features/products/pages/like-product-page.tsx"),
-    
   ]),
   ...prefix("let-go-buddy", [
     index("features/let-go-buddy/pages/let-go-buddy-page.tsx"),

@@ -13,11 +13,6 @@ const menus = [
     to: '/secondhand',
     items: [
       {
-        name: 'Browse Listings',
-        description: 'Find great deals on used items',
-        to: '/secondhand/browse-listings',
-      },
-      {
         name: 'Submit a Listing',
         description: 'Sell your stuff. Make some cash',
         to: '/secondhand/submit-a-listing',

@@ -27,8 +27,8 @@ export function Footer() {
             </h3>
             <ul className="mt-4 space-y-2">
               <li>
-                <Link to="/secondhand/browse-listings" className="text-sm text-gray-600 hover:text-gray-900">
-                  Browse Listings
+                <Link to="/" className="text-sm text-gray-600 hover:text-gray-900">
+                  Browse All Items
                 </Link>
               </li>
               <li>
