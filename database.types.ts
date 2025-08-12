@@ -65,48 +65,6 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "challenge_calendar_items_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "product_detail_view"
-            referencedColumns: ["seller_id"]
-          },
-          {
-            foreignKeyName: "challenge_calendar_items_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "products_listings_view"
-            referencedColumns: ["seller_id"]
-          },
-          {
-            foreignKeyName: "challenge_calendar_items_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "user_dashboard_view"
-            referencedColumns: ["profile_id"]
-          },
-          {
-            foreignKeyName: "challenge_calendar_items_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "user_profiles"
-            referencedColumns: ["profile_id"]
-          },
-          {
-            foreignKeyName: "challenge_calendar_items_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "user_sales_stats_view"
-            referencedColumns: ["profile_id"]
-          },
-          {
-            foreignKeyName: "challenge_calendar_items_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "user_stats_view"
-            referencedColumns: ["profile_id"]
-          },
-          {
             foreignKeyName: "challenge_calendar_items_user_id_user_profiles_profile_id_fk"
             columns: ["user_id"]
             isOneToOne: false
@@ -150,153 +108,289 @@ export type Database = {
           },
         ]
       }
-      item_analyses: {
+      lgb_challenge_entries: {
         Row: {
-          ai_listing_description: string | null
-          ai_listing_location: Database["public"]["Enums"]["location"] | null
-          ai_listing_title: string | null
-          analysis_id: string
-          created_at: string
-          decision_barriers: Json
-          decision_factor_keywords: Json
-          emotional_attachment_keywords: Json
-          emotional_score: number
-          images: Json
-          item_category: Database["public"]["Enums"]["product_category"]
-          item_condition: Database["public"]["Enums"]["product_condition"]
-          item_name: string
-          personality_insights: Json
-          recommendation: Database["public"]["Enums"]["recommendation_action"]
-          recommendation_reason: string
-          session_id: number
-          updated_at: string
-          usage_pattern_keywords: Json
+          challenge_id: string
+          completed: boolean | null
+          created_at: string | null
+          date: string
+          entry_id: string
+          item_id: string | null
+          mission_text: string | null
+          tip_text: string | null
         }
         Insert: {
-          ai_listing_description?: string | null
-          ai_listing_location?: Database["public"]["Enums"]["location"] | null
-          ai_listing_title?: string | null
-          analysis_id?: string
-          created_at?: string
-          decision_barriers?: Json
-          decision_factor_keywords?: Json
-          emotional_attachment_keywords?: Json
-          emotional_score: number
-          images?: Json
-          item_category: Database["public"]["Enums"]["product_category"]
-          item_condition: Database["public"]["Enums"]["product_condition"]
-          item_name: string
-          personality_insights?: Json
-          recommendation: Database["public"]["Enums"]["recommendation_action"]
-          recommendation_reason?: string
-          session_id: number
-          updated_at?: string
-          usage_pattern_keywords?: Json
+          challenge_id: string
+          completed?: boolean | null
+          created_at?: string | null
+          date: string
+          entry_id?: string
+          item_id?: string | null
+          mission_text?: string | null
+          tip_text?: string | null
         }
         Update: {
-          ai_listing_description?: string | null
-          ai_listing_location?: Database["public"]["Enums"]["location"] | null
-          ai_listing_title?: string | null
-          analysis_id?: string
-          created_at?: string
-          decision_barriers?: Json
-          decision_factor_keywords?: Json
-          emotional_attachment_keywords?: Json
-          emotional_score?: number
-          images?: Json
-          item_category?: Database["public"]["Enums"]["product_category"]
-          item_condition?: Database["public"]["Enums"]["product_condition"]
-          item_name?: string
-          personality_insights?: Json
-          recommendation?: Database["public"]["Enums"]["recommendation_action"]
-          recommendation_reason?: string
-          session_id?: number
-          updated_at?: string
-          usage_pattern_keywords?: Json
+          challenge_id?: string
+          completed?: boolean | null
+          created_at?: string | null
+          date?: string
+          entry_id?: string
+          item_id?: string | null
+          mission_text?: string | null
+          tip_text?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "item_analyses_session_id_let_go_buddy_sessions_session_id_fk"
-            columns: ["session_id"]
+            foreignKeyName: "lgb_challenge_entries_challenge_id_fkey"
+            columns: ["challenge_id"]
             isOneToOne: false
-            referencedRelation: "let_go_buddy_sessions"
-            referencedColumns: ["session_id"]
+            referencedRelation: "lgb_challenges"
+            referencedColumns: ["challenge_id"]
           },
           {
-            foreignKeyName: "item_analyses_session_id_let_go_buddy_sessions_session_id_fk"
-            columns: ["session_id"]
+            foreignKeyName: "lgb_challenge_entries_item_id_fkey"
+            columns: ["item_id"]
             isOneToOne: false
-            referencedRelation: "let_go_buddy_sessions_with_items_view"
-            referencedColumns: ["session_id"]
+            referencedRelation: "lgb_items"
+            referencedColumns: ["item_id"]
           },
         ]
       }
-      let_go_buddy_sessions: {
+      lgb_challenges: {
         Row: {
-          created_at: string
-          is_completed: boolean
-          session_id: number
-          updated_at: string
+          challenge_id: string
+          created_at: string | null
+          current_streak: number | null
+          days: number
+          max_streak: number | null
+          start_date: string
+          status: string | null
           user_id: string
         }
         Insert: {
-          created_at?: string
-          is_completed?: boolean
-          session_id?: never
-          updated_at?: string
+          challenge_id?: string
+          created_at?: string | null
+          current_streak?: number | null
+          days: number
+          max_streak?: number | null
+          start_date: string
+          status?: string | null
           user_id: string
         }
         Update: {
-          created_at?: string
-          is_completed?: boolean
-          session_id?: never
-          updated_at?: string
+          challenge_id?: string
+          created_at?: string | null
+          current_streak?: number | null
+          days?: number
+          max_streak?: number | null
+          start_date?: string
+          status?: string | null
           user_id?: string
         }
+        Relationships: []
+      }
+      lgb_item_photos: {
+        Row: {
+          created_at: string | null
+          item_id: string
+          photo_id: string
+          storage_path: string
+        }
+        Insert: {
+          created_at?: string | null
+          item_id: string
+          photo_id?: string
+          storage_path: string
+        }
+        Update: {
+          created_at?: string | null
+          item_id?: string
+          photo_id?: string
+          storage_path?: string
+        }
         Relationships: [
           {
-            foreignKeyName: "let_go_buddy_sessions_user_id_user_profiles_profile_id_fk"
-            columns: ["user_id"]
+            foreignKeyName: "lgb_item_photos_item_id_fkey"
+            columns: ["item_id"]
             isOneToOne: false
-            referencedRelation: "product_detail_view"
-            referencedColumns: ["seller_id"]
-          },
-          {
-            foreignKeyName: "let_go_buddy_sessions_user_id_user_profiles_profile_id_fk"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "products_listings_view"
-            referencedColumns: ["seller_id"]
-          },
-          {
-            foreignKeyName: "let_go_buddy_sessions_user_id_user_profiles_profile_id_fk"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "user_dashboard_view"
-            referencedColumns: ["profile_id"]
-          },
-          {
-            foreignKeyName: "let_go_buddy_sessions_user_id_user_profiles_profile_id_fk"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "user_profiles"
-            referencedColumns: ["profile_id"]
-          },
-          {
-            foreignKeyName: "let_go_buddy_sessions_user_id_user_profiles_profile_id_fk"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "user_sales_stats_view"
-            referencedColumns: ["profile_id"]
-          },
-          {
-            foreignKeyName: "let_go_buddy_sessions_user_id_user_profiles_profile_id_fk"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "user_stats_view"
-            referencedColumns: ["profile_id"]
+            referencedRelation: "lgb_items"
+            referencedColumns: ["item_id"]
           },
         ]
+      }
+      lgb_items: {
+        Row: {
+          ai_rationale: string | null
+          ai_recommendation: string | null
+          category: string | null
+          condition: string | null
+          created_at: string | null
+          decision: string | null
+          decision_reason: string | null
+          item_id: string
+          notes: string | null
+          price_confidence: number | null
+          price_high: number | null
+          price_low: number | null
+          price_mid: number | null
+          sentiment: string | null
+          session_id: string
+          title: string | null
+          updated_at: string | null
+          usage_score: number | null
+        }
+        Insert: {
+          ai_rationale?: string | null
+          ai_recommendation?: string | null
+          category?: string | null
+          condition?: string | null
+          created_at?: string | null
+          decision?: string | null
+          decision_reason?: string | null
+          item_id?: string
+          notes?: string | null
+          price_confidence?: number | null
+          price_high?: number | null
+          price_low?: number | null
+          price_mid?: number | null
+          sentiment?: string | null
+          session_id: string
+          title?: string | null
+          updated_at?: string | null
+          usage_score?: number | null
+        }
+        Update: {
+          ai_rationale?: string | null
+          ai_recommendation?: string | null
+          category?: string | null
+          condition?: string | null
+          created_at?: string | null
+          decision?: string | null
+          decision_reason?: string | null
+          item_id?: string
+          notes?: string | null
+          price_confidence?: number | null
+          price_high?: number | null
+          price_low?: number | null
+          price_mid?: number | null
+          sentiment?: string | null
+          session_id?: string
+          title?: string | null
+          updated_at?: string | null
+          usage_score?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lgb_items_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "lgb_sessions"
+            referencedColumns: ["session_id"]
+          },
+          {
+            foreignKeyName: "lgb_items_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "v_session_full"
+            referencedColumns: ["session_id"]
+          },
+          {
+            foreignKeyName: "lgb_items_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "view_session_dashboard"
+            referencedColumns: ["session_id"]
+          },
+        ]
+      }
+      lgb_listings: {
+        Row: {
+          body: string
+          channels: string[] | null
+          created_at: string | null
+          hashtags: string[] | null
+          item_id: string
+          lang: string
+          listing_id: string
+          title: string
+        }
+        Insert: {
+          body: string
+          channels?: string[] | null
+          created_at?: string | null
+          hashtags?: string[] | null
+          item_id: string
+          lang: string
+          listing_id?: string
+          title: string
+        }
+        Update: {
+          body?: string
+          channels?: string[] | null
+          created_at?: string | null
+          hashtags?: string[] | null
+          item_id?: string
+          lang?: string
+          listing_id?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lgb_listings_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "lgb_items"
+            referencedColumns: ["item_id"]
+          },
+        ]
+      }
+      lgb_sessions: {
+        Row: {
+          created_at: string | null
+          decided_count: number | null
+          expected_revenue: number | null
+          item_count: number | null
+          move_date: string | null
+          region: string | null
+          scenario: string
+          session_id: string
+          status: string | null
+          title: string | null
+          trade_method: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          decided_count?: number | null
+          expected_revenue?: number | null
+          item_count?: number | null
+          move_date?: string | null
+          region?: string | null
+          scenario: string
+          session_id?: string
+          status?: string | null
+          title?: string | null
+          trade_method?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          decided_count?: number | null
+          expected_revenue?: number | null
+          item_count?: number | null
+          move_date?: string | null
+          region?: string | null
+          scenario?: string
+          session_id?: string
+          status?: string | null
+          title?: string | null
+          trade_method?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
       }
       locations: {
         Row: {
@@ -311,15 +405,15 @@ export type Database = {
           timezone: string
         }
         Insert: {
-          country?: Database["public"]["Enums"]["country"]
-          currency?: string
+          country: Database["public"]["Enums"]["country"]
+          currency: string
           description?: string | null
           display_name: string
           is_active?: boolean
           location_id?: never
           name: Database["public"]["Enums"]["location"]
           population?: number | null
-          timezone?: string
+          timezone: string
         }
         Update: {
           country?: Database["public"]["Enums"]["country"]
@@ -684,7 +778,7 @@ export type Database = {
           currency?: string
           description: string
           is_sold?: boolean
-          location?: Database["public"]["Enums"]["location"]
+          location: Database["public"]["Enums"]["location"]
           price: number
           price_type?: Database["public"]["Enums"]["price_type"]
           product_id?: never
@@ -1097,7 +1191,6 @@ export type Database = {
           product_id: number | null
           read_at: string | null
           receiver_id: string
-          review_id: number | null
           sender_id: string
           type: Database["public"]["Enums"]["notification_type"]
         }
@@ -1110,7 +1203,6 @@ export type Database = {
           product_id?: number | null
           read_at?: string | null
           receiver_id: string
-          review_id?: number | null
           sender_id: string
           type: Database["public"]["Enums"]["notification_type"]
         }
@@ -1123,7 +1215,6 @@ export type Database = {
           product_id?: number | null
           read_at?: string | null
           receiver_id?: string
-          review_id?: number | null
           sender_id?: string
           type?: Database["public"]["Enums"]["notification_type"]
         }
@@ -1429,139 +1520,6 @@ export type Database = {
       }
     }
     Views: {
-      item_analyses_detailed_view: {
-        Row: {
-          ai_listing_description: string | null
-          ai_listing_location: Database["public"]["Enums"]["location"] | null
-          ai_listing_title: string | null
-          analysis_id: string | null
-          avatar_url: string | null
-          created_at: string | null
-          decision_barriers: Json | null
-          decision_factor_keywords: Json | null
-          emotional_attachment_keywords: Json | null
-          emotional_attachment_level: string | null
-          emotional_score: number | null
-          images: Json | null
-          is_decision_made: boolean | null
-          item_category: Database["public"]["Enums"]["product_category"] | null
-          item_condition:
-            | Database["public"]["Enums"]["product_condition"]
-            | null
-          item_name: string | null
-          personality_insights: Json | null
-          primary_emotional_pattern: string | null
-          recommendation:
-            | Database["public"]["Enums"]["recommendation_action"]
-            | null
-          recommendation_display: string | null
-          recommendation_reason: string | null
-          session_completed: boolean | null
-          session_created_at: string | null
-          session_id: number | null
-          updated_at: string | null
-          usage_pattern_keywords: Json | null
-          user_location: Database["public"]["Enums"]["location"] | null
-          username: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "item_analyses_session_id_let_go_buddy_sessions_session_id_fk"
-            columns: ["session_id"]
-            isOneToOne: false
-            referencedRelation: "let_go_buddy_sessions"
-            referencedColumns: ["session_id"]
-          },
-          {
-            foreignKeyName: "item_analyses_session_id_let_go_buddy_sessions_session_id_fk"
-            columns: ["session_id"]
-            isOneToOne: false
-            referencedRelation: "let_go_buddy_sessions_with_items_view"
-            referencedColumns: ["session_id"]
-          },
-        ]
-      }
-      let_go_buddy_sessions_with_items_view: {
-        Row: {
-          ai_listing_description: string | null
-          ai_listing_location: Database["public"]["Enums"]["location"] | null
-          ai_listing_title: string | null
-          analysis_id: string | null
-          avatar_url: string | null
-          avg_emotional_score: number | null
-          completed_items_in_session: number | null
-          decision_barriers: Json | null
-          decision_factor_keywords: Json | null
-          emotional_attachment_keywords: Json | null
-          emotional_score: number | null
-          images: Json | null
-          is_completed: boolean | null
-          item_category: Database["public"]["Enums"]["product_category"] | null
-          item_condition:
-            | Database["public"]["Enums"]["product_condition"]
-            | null
-          item_created_at: string | null
-          item_name: string | null
-          item_updated_at: string | null
-          personality_insights: Json | null
-          recommendation:
-            | Database["public"]["Enums"]["recommendation_action"]
-            | null
-          recommendation_reason: string | null
-          session_created_at: string | null
-          session_id: number | null
-          session_updated_at: string | null
-          total_items_in_session: number | null
-          usage_pattern_keywords: Json | null
-          user_id: string | null
-          user_location: Database["public"]["Enums"]["location"] | null
-          username: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "let_go_buddy_sessions_user_id_user_profiles_profile_id_fk"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "product_detail_view"
-            referencedColumns: ["seller_id"]
-          },
-          {
-            foreignKeyName: "let_go_buddy_sessions_user_id_user_profiles_profile_id_fk"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "products_listings_view"
-            referencedColumns: ["seller_id"]
-          },
-          {
-            foreignKeyName: "let_go_buddy_sessions_user_id_user_profiles_profile_id_fk"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "user_dashboard_view"
-            referencedColumns: ["profile_id"]
-          },
-          {
-            foreignKeyName: "let_go_buddy_sessions_user_id_user_profiles_profile_id_fk"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "user_profiles"
-            referencedColumns: ["profile_id"]
-          },
-          {
-            foreignKeyName: "let_go_buddy_sessions_user_id_user_profiles_profile_id_fk"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "user_sales_stats_view"
-            referencedColumns: ["profile_id"]
-          },
-          {
-            foreignKeyName: "let_go_buddy_sessions_user_id_user_profiles_profile_id_fk"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "user_stats_view"
-            referencedColumns: ["profile_id"]
-          },
-        ]
-      }
       notification_view: {
         Row: {
           created_at: string | null
@@ -1573,7 +1531,6 @@ export type Database = {
           read_at: string | null
           receiver_id: string | null
           receiver_name: string | null
-          review_id: number | null
           sender_id: string | null
           sender_name: string | null
           type: Database["public"]["Enums"]["notification_type"] | null
@@ -2178,6 +2135,61 @@ export type Database = {
         }
         Relationships: []
       }
+      v_session_full: {
+        Row: {
+          created_at: string | null
+          decided_count: number | null
+          expected_revenue: number | null
+          item_count: number | null
+          items: Json | null
+          move_date: string | null
+          region: string | null
+          scenario: string | null
+          session_id: string | null
+          status: string | null
+          title: string | null
+          trade_method: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Relationships: []
+      }
+      view_session_dashboard: {
+        Row: {
+          completion_percentage: number | null
+          created_at: string | null
+          decided_count: number | null
+          expected_revenue: number | null
+          item_count: number | null
+          scenario: string | null
+          session_id: string | null
+          status: string | null
+          title: string | null
+        }
+        Insert: {
+          completion_percentage?: never
+          created_at?: string | null
+          decided_count?: number | null
+          expected_revenue?: number | null
+          item_count?: number | null
+          scenario?: string | null
+          session_id?: string | null
+          status?: string | null
+          title?: string | null
+        }
+        Update: {
+          completion_percentage?: never
+          created_at?: string | null
+          decided_count?: number | null
+          expected_revenue?: number | null
+          item_count?: number | null
+          scenario?: string | null
+          session_id?: string | null
+          status?: string | null
+          title?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       get_or_create_conversation_with_participants: {
@@ -2188,19 +2200,41 @@ export type Database = {
         }
         Returns: Json
       }
+      get_user_products: {
+        Args: { user_id_param: string }
+        Returns: {
+          product_id: number
+          title: string
+          price: number
+          is_sold: boolean
+        }[]
+      }
+      rpc_can_open_new_session: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
+      rpc_create_session: {
+        Args: {
+          p_scenario: string
+          p_title?: string
+          p_move_date?: string
+          p_region?: string
+          p_trade_method?: string
+        }
+        Returns: string
+      }
+      rpc_get_session_full: {
+        Args: { p_session_id: string }
+        Returns: Json
+      }
+      rpc_update_session_status: {
+        Args: { p_session_id: string; p_status: string }
+        Returns: boolean
+      }
     }
     Enums: {
       country: "Thailand" | "Korea"
       declutter_situation: "Moving" | "Minimalism" | "Spring Cleaning" | "Other"
-      environmental_impact_level: "Low" | "Medium" | "High" | "Critical"
-      local_tip_categories:
-        | "Visa"
-        | "Bank"
-        | "Tax"
-        | "Health"
-        | "Education"
-        | "Transportation"
-        | "Other"
       location:
         | "Bangkok"
         | "ChiangMai"
@@ -2377,16 +2411,6 @@ export const Constants = {
     Enums: {
       country: ["Thailand", "Korea"],
       declutter_situation: ["Moving", "Minimalism", "Spring Cleaning", "Other"],
-      environmental_impact_level: ["Low", "Medium", "High", "Critical"],
-      local_tip_categories: [
-        "Visa",
-        "Bank",
-        "Tax",
-        "Health",
-        "Education",
-        "Transportation",
-        "Other",
-      ],
       location: [
         "Bangkok",
         "ChiangMai",

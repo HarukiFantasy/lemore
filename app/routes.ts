@@ -10,10 +10,10 @@ export default [
     route("/:productId/like", "features/products/pages/like-product-page.tsx"),
   ]),
   ...prefix("let-go-buddy", [
-    index("features/let-go-buddy/pages/let-go-buddy-page.tsx"),
-    route("chat/:session_id", "features/let-go-buddy/pages/let-go-buddy-chat-page.tsx"),
-    route("analysis/:session_id", "features/let-go-buddy/pages/let-go-buddy-analysis-page.tsx"),
-    route("challenge-calendar", "features/let-go-buddy/pages/challenge-calendar-page.tsx"),
+    index("features/let-go-buddy/pages/index.tsx"),
+    route("new", "features/let-go-buddy/pages/new.tsx"),
+    route("session/:sessionId", "features/let-go-buddy/pages/session.tsx"),
+    route("challenges", "features/let-go-buddy/pages/challenges.tsx"),
   ]),
 
   ...prefix("/auth", [
@@ -39,7 +39,6 @@ export default [
     route("/notifications/:notificationId/see", "features/users/pages/notification-see-page.tsx"),
     route("/messages", "features/users/pages/messages-page.tsx"),
     route("/likes", "features/users/pages/likes-page.tsx"),
-    route("/AIcoach", "features/let-go-buddy/pages/ai-coach-page.tsx"),
   ]),
   route("/users/:username", "features/users/pages/usersProfile-page.tsx"),
   route("/api/send-welcome-email", "api/send-welcome-email.ts"),

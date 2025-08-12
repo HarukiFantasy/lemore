@@ -215,10 +215,27 @@ export default function HomePage() {
         <div className="relative z-10 max-w-4xl mx-auto text-center space-y-6">
           
           {/* Main Heading */}
-          <h1 className="text-3xl md:text-5xl font-medium text-stone-800 leading-tight tracking-tight">
-            Buy Less, Share More,<br />
-            Live Lighter
-          </h1>
+          <div className="relative">
+            {/* Subtle background accent */}
+            <div className="absolute inset-0 bg-gradient-to-r from-purple-600/10 via-transparent to-amber-600/10 blur-2xl transform scale-110 opacity-50"></div>
+            
+            <h1 
+              className="relative text-3xl md:text-5xl font-light leading-[1.1] tracking-tight"
+              style={{ fontFamily: "'Poppins', sans-serif" }}
+            >
+              <span className="inline font-normal text-transparent bg-clip-text bg-gradient-to-br from-stone-800 via-stone-700 to-stone-800">Buy Less, </span>
+              <span className="inline font-light bg-gradient-to-r from-purple-600 to-amber-600 bg-clip-text text-transparent">
+                Share More,
+              </span>
+              <br />
+              <span className="inline-block text-[0.9em] font-extralight text-stone-700 opacity-90 mt-3">
+                Live Lighter
+              </span>
+            </h1>
+            
+            {/* Subtle underline accent */}
+            <div className="mx-auto mt-3 w-20 h-0.5 bg-gradient-to-r from-purple-400 to-amber-400 rounded-full opacity-50"></div>
+          </div>
           
           {/* Enhanced Search Box */}
           <form onSubmit={handleSearchSubmit} className="relative max-w-2xl mx-auto mt-8">

@@ -24,14 +24,14 @@ const menus = [
     to: '/let-go-buddy',
     items: [
       {
-        name: 'Let Go Buddy',
-        description: 'Your AI companion for decluttering with heart.',
+        name: 'AI Declutter Helper',
+        description: 'Smart guidance for your items - keep, sell, or donate.',
         to: '/let-go-buddy',
       },
       {
-        name: 'Challenge Calendar',
-        description: 'Your AI companion for decluttering with heart.',
-        to: '/let-go-buddy/challenge-calendar',
+        name: 'Challenges',
+        description: 'Daily decluttering challenges to build habits.',
+        to: '/let-go-buddy/challenges',
       },
     ],
   }

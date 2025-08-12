@@ -5,15 +5,12 @@ import { Input } from "~/common/components/ui/input";
 import { Button } from "~/common/components/ui/button";
 import { Textarea } from "~/common/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/common/components/ui/select";
-import { Badge } from "~/common/components/ui/badge";
-import { PRICE_TYPES, ALLOWED_IMAGE_TYPES, MAX_FILE_SIZE, PRODUCT_CONDITIONS } from "../constants";
+import { PRICE_TYPES, PRODUCT_CONDITIONS } from "../constants";
 import { CURRENCIES } from '~/constants';
 import { makeSSRClient } from "~/supa-client";
 import { getCategories, getlocations } from '../queries';
 import { createProduct, uploadProductImages, saveProductImages } from '../mutations';
-import { getLetGoSession } from "~/features/let-go-buddy/mutations";
 import { z } from 'zod';
-import { CircleIcon } from 'lucide-react';
 
 export const loader = async ({ request }: Route.LoaderArgs) => {
     const { client } = makeSSRClient(request);
@@ -57,23 +54,6 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
             priceType: isDonate ? "Free" : "Fixed",
             images: images,
         };
-    }
-    // Fallback to session lookup (legacy approach)
-    else if (sessionId) {
-        try {
-            const session = await getLetGoSession(client, sessionId);
-            if (session.user_id === user.id) {
-                letGoBuddyData = {
-                    title: session.ai_listing_title || "",
-                    description: session.ai_listing_description || "",
-                    price: isDonate ? "0" : "",
-                    priceType: isDonate ? "Free" : "Fixed",
-                    images: session.image_url ? [session.image_url] : [],
-                };
-            }
-        } catch (error) {
-            // Error fetching let go buddy session
-        }
     }
 
     return { categories, locations, letGoBuddyData };
