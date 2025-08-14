@@ -1,4 +1,3 @@
-import React from 'react';
 import { Link } from 'react-router';
 import { Button } from '~/common/components/ui/button';
 import { Card } from '~/common/components/ui/card';
@@ -6,7 +5,6 @@ import { Badge } from '~/common/components/ui/badge';
 import { 
   Sparkles, 
   Heart, 
-  ShoppingCart, 
   Calendar, 
   Package,
   Zap,
@@ -49,7 +47,9 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
       const { data: limitCheck } = await client
         .rpc('rpc_can_open_new_session');
       
-      canCreateNewSession = limitCheck || canCreateNewSession;
+      if (limitCheck && typeof limitCheck === 'object' && 'allowed' in limitCheck) {
+        canCreateNewSession = limitCheck as { allowed: boolean; active_count: number; limit: number; };
+      }
     } catch (error) {
       console.error('Error loading user data:', error);
     }

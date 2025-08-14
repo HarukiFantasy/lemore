@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, Link, Form, useActionData, redirect, useNavigate } from 'react-router';
+import { useState } from 'react';
+import { Link, Form, useActionData, redirect, useNavigate } from 'react-router';
 import { Button } from '~/common/components/ui/button';
 import { Card } from '~/common/components/ui/card';
 import { Badge } from '~/common/components/ui/badge';
@@ -7,11 +7,9 @@ import {
   ArrowLeft,
   Plus,
   BarChart3,
-  Calendar,
   Package,
   DollarSign,
-  Target,
-  Clock
+  Target
 } from 'lucide-react';
 import type { Route } from './+types/session';
 import { makeSSRClient, getAuthUser, browserClient } from '~/supa-client';
@@ -46,15 +44,19 @@ export const loader = async ({ request, params }: Route.LoaderArgs) => {
   
   if (error) {
     console.log('View query failed, trying base table:', error);
-    // Fallback to base let_go_buddy_sessions table
+    // Fallback to base lgb_sessions table
     const { data: baseSessionData, error: baseError } = await client
-      .from('let_go_buddy_sessions')
+      .from('lgb_sessions')
       .select(`
         session_id,
         user_id,
+        scenario,
+        title,
+        status,
         created_at,
-        updated_at,
-        is_completed
+        move_date,
+        region,
+        trade_method
       `)
       .eq('session_id', sessionId)
       .eq('user_id', user.id)
@@ -65,17 +67,9 @@ export const loader = async ({ request, params }: Route.LoaderArgs) => {
       throw redirect('/let-go-buddy?error=session_not_found');
     }
     
-    // Map to expected session format with defaults
+    // Add default values for dashboard stats
     session = {
-      session_id: baseSessionData.session_id,
-      user_id: baseSessionData.user_id,
-      scenario: 'A', // Default scenario
-      title: 'Let Go Buddy Session',
-      status: baseSessionData.is_completed ? 'completed' : 'active',
-      created_at: baseSessionData.created_at,
-      move_date: null,
-      region: null,
-      trade_method: null,
+      ...baseSessionData,
       item_count: 0,
       decided_count: 0,
       expected_revenue: 0
@@ -86,39 +80,33 @@ export const loader = async ({ request, params }: Route.LoaderArgs) => {
 
   // Get session items from database
   const { data: itemsData } = await client
-    .from('item_analyses')
+    .from('lgb_items')
     .select(`
-      analysis_id,
-      session_id,
-      item_name,
-      item_category,
-      item_condition,
-      recommendation,
-      recommendation_reason,
-      emotional_score,
-      ai_listing_title,
-      ai_listing_description,
-      images,
-      created_at,
-      updated_at
+      *,
+      lgb_item_photos (
+        photo_id,
+        storage_path,
+        created_at
+      ),
+      lgb_listings (
+        listing_id,
+        lang,
+        title,
+        body,
+        hashtags,
+        channels
+      )
     `)
     .eq('session_id', sessionId)
     .order('created_at', { ascending: false });
   
   // Transform items to match expected format
   const items = (itemsData || []).map(item => ({
-    item_id: item.analysis_id,
-    session_id: item.session_id,
-    title: item.item_name,
-    category: item.item_category,
-    condition: item.item_condition,
-    ai_recommendation: item.recommendation,
-    ai_rationale: item.recommendation_reason,
-    usage_score: item.emotional_score,
-    photos: item.images ? (Array.isArray(item.images) ? item.images : [item.images]) : [],
-    listings: [],
-    status: 'analyzed',
-    created_at: item.created_at
+    ...item,
+    // Transform photos from database format to expected format
+    photos: item.lgb_item_photos ? item.lgb_item_photos.map((photo: any) => photo.storage_path) : [],
+    // Transform listings if they exist
+    listings: item.lgb_listings || []
   }));
 
   return { 
@@ -137,8 +125,8 @@ export const action = async ({ request, params }: Route.ActionArgs) => {
   try {
     if (action === 'archive_session') {
       const { error } = await client
-        .from('let_go_buddy_sessions')
-        .update({ is_completed: true })
+        .from('lgb_sessions')
+        .update({ status: 'archived' })
         .eq('session_id', sessionId);
 
       if (error) throw error;
@@ -147,8 +135,8 @@ export const action = async ({ request, params }: Route.ActionArgs) => {
 
     if (action === 'complete_session') {
       const { error } = await client
-        .from('let_go_buddy_sessions')
-        .update({ is_completed: true })
+        .from('lgb_sessions')
+        .update({ status: 'completed' })
         .eq('session_id', sessionId);
 
       if (error) throw error;
@@ -171,13 +159,6 @@ export default function SessionPage({ loaderData }: Route.ComponentProps) {
   const navigate = useNavigate();
   const actionData = useActionData<typeof action>();
   const [uploadingItems, setUploadingItems] = useState<any[]>([]);
-  const [items, setItems] = useState(initialItems);
-
-  const handleItemUploaded = (newItem: any) => {
-    setUploadingItems(prev => prev.filter(item => item.temp_id !== newItem.temp_id));
-    // Refresh the page to show new items
-    navigate(`/let-go-buddy/session/${session.session_id}`, { replace: true });
-  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -189,11 +170,12 @@ export default function SessionPage({ loaderData }: Route.ComponentProps) {
   };
 
   const getCompletionPercentage = () => {
-    if (session.item_count === 0) return 0;
-    return Math.round((session.decided_count / session.item_count) * 100);
+    if (!session || !session.item_count || session.item_count === 0) return 0;
+    const decidedCount = session.decided_count || 0;
+    return Math.round((decidedCount / session.item_count) * 100);
   };
 
-  const allItems = [...items, ...uploadingItems];
+  const allItems = [...initialItems, ...uploadingItems];
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
@@ -211,15 +193,15 @@ export default function SessionPage({ loaderData }: Route.ComponentProps) {
             <div>
               <div className="flex items-center gap-3 mb-2">
                 <h1 className="text-3xl font-bold text-gray-900">
-                  {session.title || 'Untitled Session'}
+                  {session?.title || 'Untitled Session'}
                 </h1>
-                <Badge className={getStatusColor(session.status)}>
-                  {session.status}
+                <Badge className={getStatusColor(session?.status || 'active')}>
+                  {session?.status || 'active'}
                 </Badge>
               </div>
               
               <p className="text-gray-600 mb-4">
-                Scenario {session.scenario} • Created {new Date(session.created_at).toLocaleDateString()}
+                Scenario {session?.scenario || 'A'} • Created {session?.created_at ? new Date(session.created_at).toLocaleDateString() : 'Unknown'}
               </p>
 
               {/* Quick Stats */}
@@ -228,7 +210,7 @@ export default function SessionPage({ loaderData }: Route.ComponentProps) {
                   <div className="flex items-center">
                     <Package className="w-5 h-5 text-blue-500 mr-2" />
                     <div>
-                      <div className="text-2xl font-bold">{session.item_count}</div>
+                      <div className="text-2xl font-bold">{session?.item_count || 0}</div>
                       <div className="text-sm text-gray-600">Items</div>
                     </div>
                   </div>
@@ -238,7 +220,7 @@ export default function SessionPage({ loaderData }: Route.ComponentProps) {
                   <div className="flex items-center">
                     <Target className="w-5 h-5 text-green-500 mr-2" />
                     <div>
-                      <div className="text-2xl font-bold">{session.decided_count}</div>
+                      <div className="text-2xl font-bold">{session?.decided_count || 0}</div>
                       <div className="text-sm text-gray-600">Decided</div>
                     </div>
                   </div>
@@ -249,7 +231,7 @@ export default function SessionPage({ loaderData }: Route.ComponentProps) {
                     <DollarSign className="w-5 h-5 text-purple-500 mr-2" />
                     <div>
                       <div className="text-2xl font-bold">
-                        ${session.expected_revenue?.toFixed(0) || '0'}
+                        ${session?.expected_revenue?.toFixed(0) || '0'}
                       </div>
                       <div className="text-sm text-gray-600">Expected</div>
                     </div>
@@ -268,7 +250,7 @@ export default function SessionPage({ loaderData }: Route.ComponentProps) {
               </div>
 
               {/* Progress Bar */}
-              {session.item_count > 0 && (
+              {(session?.item_count || 0) > 0 && (
                 <div className="w-full bg-gray-200 rounded-full h-3 mb-6">
                   <div 
                     className="bg-blue-500 h-3 rounded-full transition-all"
@@ -280,7 +262,7 @@ export default function SessionPage({ loaderData }: Route.ComponentProps) {
 
             {/* Actions */}
             <div className="flex gap-2">
-              {session.status === 'active' && (
+              {session?.status === 'active' && (
                 <>
                   <Form method="post">
                     <input type="hidden" name="action" value="complete_session" />
@@ -310,7 +292,7 @@ export default function SessionPage({ loaderData }: Route.ComponentProps) {
         )}
 
         {/* Item Upload Section */}
-        {session.status === 'active' && (
+        {session?.status === 'active' && (
           <Card className="p-6 mb-8">
             <h2 className="text-xl font-semibold mb-4 flex items-center">
               <Plus className="w-5 h-5 mr-2" />
@@ -323,20 +305,16 @@ export default function SessionPage({ loaderData }: Route.ComponentProps) {
                 if (photos.length === 0) return;
                 
                 try {
-                  // Create basic item entry first
+                  // Create item in database using direct insertion (since RPC may not exist)
                   const { data: newItemData, error: createError } = await browserClient
-                    .from('item_analyses')
-                    .insert({
-                      session_id: session.session_id,
-                      item_name: 'Analyzing...',
-                      item_category: 'Other',
-                      item_condition: 'Good',
-                      recommendation: 'Keep',
-                      recommendation_reason: 'Analysis in progress',
-                      emotional_score: 50,
-                      images: photos
-                    })
-                    .select('analysis_id')
+                    .from('lgb_items')
+                    .insert([{
+                      session_id: session?.session_id || '',
+                      title: null,
+                      notes: null,
+                      status: 'uploaded'
+                    }])
+                    .select('item_id')
                     .single();
 
                   if (createError) {
@@ -344,13 +322,26 @@ export default function SessionPage({ loaderData }: Route.ComponentProps) {
                     throw createError;
                   }
 
-                  const itemId = newItemData.analysis_id;
+                  const itemId = newItemData.item_id;
+
+                  // Insert photos separately
+                  if (photos.length > 0) {
+                    const photoInserts = photos.map(photoPath => ({
+                      item_id: itemId,
+                      storage_path: photoPath
+                    }));
+
+                    await browserClient
+                      .from('lgb_item_photos')
+                      .insert(photoInserts);
+                  }
+
                   console.log('Created item with ID:', itemId);
 
                   // Add to uploading items temporarily with analyzing status
                   const tempItem = {
                     item_id: itemId,
-                    session_id: session.session_id,
+                    session_id: session?.session_id,
                     photos: photos,
                     status: 'analyzing',
                     created_at: new Date().toISOString()
@@ -364,8 +355,8 @@ export default function SessionPage({ loaderData }: Route.ComponentProps) {
                     body: JSON.stringify({
                       photos: photos,
                       context: {
-                        scenario: session.scenario,
-                        region: session.region
+                        scenario: session?.scenario,
+                        region: (session as any)?.region || null
                       }
                     })
                   });
@@ -378,17 +369,20 @@ export default function SessionPage({ loaderData }: Route.ComponentProps) {
                   console.log('AI analysis result:', analysisResult);
 
                   // Update item with AI results
+                  const confidence = typeof analysisResult.data.confidence === 'number' ? analysisResult.data.confidence : 0.5;
+                  
                   const { error: updateError } = await browserClient
-                    .from('item_analyses')
+                    .from('lgb_items')
                     .update({
-                      item_name: analysisResult.data.title || 'AI Analyzed Item',
-                      item_category: analysisResult.data.category,
-                      item_condition: analysisResult.data.condition,
-                      emotional_score: analysisResult.data.usage_score,
-                      recommendation: analysisResult.data.recommendation,
-                      recommendation_reason: analysisResult.data.rationale
+                      category: analysisResult.data.category || null,
+                      condition: analysisResult.data.condition || null,
+                      usage_score: analysisResult.data.usage_score || null,
+                      ai_recommendation: analysisResult.data.recommendation || null,
+                      ai_rationale: analysisResult.data.rationale || null,
+                      ai_confidence: confidence,
+                      status: 'analyzed'
                     })
-                    .eq('analysis_id', itemId);
+                    .eq('item_id', itemId);
 
                   if (updateError) {
                     console.error('Error updating item:', updateError);
@@ -399,7 +393,7 @@ export default function SessionPage({ loaderData }: Route.ComponentProps) {
                   setUploadingItems(prev => prev.filter(item => item.item_id !== itemId));
                   
                   // Refresh to show updated item
-                  navigate(`/let-go-buddy/session/${session.session_id}`, { replace: true });
+                  navigate(`/let-go-buddy/session/${session?.session_id}`, { replace: true });
 
                 } catch (error) {
                   console.error('Error processing item:', error);

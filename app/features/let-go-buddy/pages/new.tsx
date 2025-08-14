@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Form, useActionData, redirect } from 'react-router';
+import { Form, useActionData, redirect, Link } from 'react-router';
 import { Button } from '~/common/components/ui/button';
 import { Input } from '~/common/components/ui/input';
 import { Label } from '~/common/components/ui/label';
@@ -38,7 +38,7 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
     throw new Error('Failed to check session limits');
   }
   
-  if (!canCreate?.allowed) {
+  if (canCreate && typeof canCreate === 'object' && 'allowed' in canCreate && !canCreate.allowed) {
     throw redirect('/let-go-buddy?error=session_limit');
   }
   
@@ -79,28 +79,31 @@ export const action = async ({ request }: Route.ActionArgs) => {
 
     // Create session
     if (scenario === 'C') {
-      // Challenge scenario - create challenge instead of session
+      // Challenge scenario - create challenge item
+      const challengeName = `${days || 7}-Day Declutter Challenge`;
+      const scheduledDate = new Date();
+      
       const { data: challenge, error } = await client
-        .from('lgb_challenges')
+        .from('challenge_calendar_items')
         .insert({
           user_id: user.id,
-          days: days || 7,
-          start_date: new Date().toISOString().split('T')[0]
+          name: challengeName,
+          scheduled_date: scheduledDate.toISOString()
         })
         .select()
         .single();
 
       if (error) throw error;
       
-      return redirect(`/let-go-buddy/challenges?new=${challenge.challenge_id}`);
+      return redirect(`/let-go-buddy/challenges?new=${challenge.item_id}`);
     } else {
       // Create session using RPC
       const { data: sessionId, error: rpcError } = await client
         .rpc('rpc_create_session', {
           p_scenario: scenario,
           p_title: title,
-          p_move_date: move_date || null,
-          p_region: region || null,
+          p_move_date: move_date || undefined,
+          p_region: region || undefined,
           p_trade_method: trade_method || null
         });
       
@@ -169,10 +172,10 @@ export default function NewSession({ loaderData }: Route.ComponentProps) {
         {/* Header */}
         <div className="mb-8">
           <Button variant="ghost" asChild className="mb-4">
-            <a href="/let-go-buddy">
+            <Link to="/let-go-buddy">
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back to Let Go Buddy
-            </a>
+            </Link>
           </Button>
           
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
