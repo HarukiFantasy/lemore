@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, Link, Form, useActionData, redirect, useNavigate } from 'react-router';
 import { Button } from '~/common/components/ui/button';
 import { Card } from '~/common/components/ui/card';
@@ -14,7 +14,7 @@ import {
   Clock
 } from 'lucide-react';
 import type { Route } from './+types/session';
-import { makeSSRClient } from '~/supa-client';
+import { makeSSRClient, getAuthUser, browserClient } from '~/supa-client';
 import { ItemUploader } from '../components/ItemUploader';
 import { ItemCard } from '../components/ItemCard';
 
@@ -29,26 +29,28 @@ export const loader = async ({ request, params }: Route.LoaderArgs) => {
   const { client } = makeSSRClient(request);
   const sessionId = params.sessionId;
   
-  // Check if user is authenticated
-  const { data: { user } } = await client.auth.getUser();
+  // Check if user is authenticated (with development bypass)
+  const { data: { user } } = await getAuthUser(client);
   if (!user) {
     throw redirect('/auth/login?redirect=/let-go-buddy');
   }
   
   // Get session details with items
-  const { data: session, error } = await client
+  const { data: sessionData, error } = await client
     .from('view_session_dashboard')
     .select('*')
     .eq('session_id', sessionId)
     .eq('user_id', user.id)
     .single();
   
-  if (error || !session) {
+  if (error || !sessionData) {
     throw redirect('/let-go-buddy?error=session_not_found');
   }
+  
+  const session = sessionData;
 
-  // Get session items
-  const { data: items } = await client
+  // Get session items from database
+  const { data: itemsData } = await client
     .from('lgb_items')
     .select(`
       *,
@@ -67,6 +69,8 @@ export const loader = async ({ request, params }: Route.LoaderArgs) => {
     `)
     .eq('session_id', sessionId)
     .order('created_at', { ascending: false });
+  
+  const items = itemsData || [];
 
   return { 
     session,
@@ -114,10 +118,11 @@ export const action = async ({ request, params }: Route.ActionArgs) => {
 };
 
 export default function SessionPage({ loaderData }: Route.ComponentProps) {
-  const { session, items } = loaderData;
+  const { session, items: initialItems } = loaderData;
   const navigate = useNavigate();
   const actionData = useActionData<typeof action>();
   const [uploadingItems, setUploadingItems] = useState<any[]>([]);
+  const [items, setItems] = useState(initialItems);
 
   const handleItemUploaded = (newItem: any) => {
     setUploadingItems(prev => prev.filter(item => item.temp_id !== newItem.temp_id));
@@ -263,9 +268,91 @@ export default function SessionPage({ loaderData }: Route.ComponentProps) {
               Add New Items
             </h2>
             <ItemUploader 
-              sessionId={session.session_id}
-              onItemUploaded={handleItemUploaded}
-              onItemsUploading={setUploadingItems}
+              onUpload={async (photos) => {
+                console.log('Photos uploaded:', photos);
+                
+                if (photos.length === 0) return;
+                
+                try {
+                  // Create item in database using RPC
+                  const { data: newItemData, error: createError } = await browserClient
+                    .rpc('create_lgb_item_with_photos', {
+                      p_session_id: session.session_id,
+                      p_photos: photos,
+                      p_title: null,
+                      p_notes: null
+                    });
+
+                  if (createError) {
+                    console.error('Error creating item:', createError);
+                    throw createError;
+                  }
+
+                  const itemId = newItemData;
+                  console.log('Created item with ID:', itemId);
+
+                  // Add to uploading items temporarily with analyzing status
+                  const tempItem = {
+                    item_id: itemId,
+                    session_id: session.session_id,
+                    photos: photos,
+                    status: 'analyzing',
+                    created_at: new Date().toISOString()
+                  };
+                  setUploadingItems(prev => [...prev, tempItem]);
+
+                  // Call AI analysis API
+                  const analysisResponse = await fetch('/api/ai/analyze-item', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      photos: photos,
+                      context: {
+                        scenario: session.scenario,
+                        region: session.region
+                      }
+                    })
+                  });
+
+                  if (!analysisResponse.ok) {
+                    throw new Error('AI analysis failed');
+                  }
+
+                  const analysisResult = await analysisResponse.json();
+                  console.log('AI analysis result:', analysisResult);
+
+                  // Update item with AI results
+                  const { error: updateError } = await browserClient
+                    .from('lgb_items')
+                    .update({
+                      category: analysisResult.data.category,
+                      condition: analysisResult.data.condition,
+                      usage_score: analysisResult.data.usage_score,
+                      ai_recommendation: analysisResult.data.recommendation,
+                      ai_rationale: analysisResult.data.rationale,
+                      ai_confidence: analysisResult.data.confidence || 0.5,
+                      status: 'analyzed'
+                    })
+                    .eq('item_id', itemId);
+
+                  if (updateError) {
+                    console.error('Error updating item:', updateError);
+                    throw updateError;
+                  }
+
+                  // Remove from uploading items
+                  setUploadingItems(prev => prev.filter(item => item.item_id !== itemId));
+                  
+                  // Refresh to show updated item
+                  navigate(`/let-go-buddy/session/${session.session_id}`, { replace: true });
+
+                } catch (error) {
+                  console.error('Error processing item:', error);
+                  // Remove from uploading items on error
+                  setUploadingItems(prev => prev.filter(item => item.item_id));
+                }
+              }}
+              maxPhotos={5}
             />
           </Card>
         )}
@@ -294,8 +381,6 @@ export default function SessionPage({ loaderData }: Route.ComponentProps) {
                 <ItemCard 
                   key={item.item_id || item.temp_id}
                   item={item}
-                  sessionId={session.session_id}
-                  scenario={session.scenario}
                 />
               ))}
             </div>

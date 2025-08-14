@@ -13,6 +13,7 @@ import type { Route } from "./+types/root";
 import "./app.css";
 import { Navigation } from "./common/components/navigation";
 import { Footer } from "./common/components/footer";
+import { Toaster } from "~/common/components/ui/toaster";
 import { makeSSRClient } from './supa-client';
 import { cn } from './lib/utils';
 import { getUserByProfileId, getUnreadNotificationsStatus, getUnreadMessagesStatus } from "./features/users/queries";
@@ -162,6 +163,7 @@ export default function App({ loaderData }: Route.ComponentProps) {
         </main>
       </div>
       {pathname.includes("/auth") ? null : <Footer />}
+      <Toaster />
     </div>
   );
 }

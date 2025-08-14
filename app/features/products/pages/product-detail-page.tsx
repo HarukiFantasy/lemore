@@ -74,8 +74,7 @@ export const loader = async ({ params, request }: Route.LoaderArgs) => {
         .eq('product_id', Number(productId))
         .eq('user_id', currentUserId)
         .single()
-        .then(() => true)
-        .catch(() => false)
+        .then(() => true, () => false)
     );
   } else {
     parallelQueries.push(Promise.resolve(false));

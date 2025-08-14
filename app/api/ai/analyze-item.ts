@@ -1,17 +1,19 @@
-import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import OpenAI from 'openai';
 import type { 
-  AIAnalyzeItemRequest, 
   AIAnalyzeItemResponse, 
   ApiResponse 
 } from '~/features/let-go-buddy/types';
 
 // Validation schema
 const analyzeItemSchema = z.object({
-  title: z.string().min(1, 'Title is required'),
+  photos: z.array(z.string()).min(1, 'At least one photo is required'),
+  context: z.object({
+    scenario: z.string().optional(),
+    region: z.string().optional(),
+  }).optional(),
+  title: z.string().optional(),
   notes: z.string().optional(),
-  image_urls: z.array(z.string().url()).min(1, 'At least one image is required'),
   locale: z.string().default('en'),
 });
 
@@ -20,7 +22,8 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-export async function POST(request: NextRequest) {
+// React Router action for AI item analysis
+export async function action({ request }: { request: Request }) {
   const requestId = crypto.randomUUID();
   const startTime = Date.now();
 
@@ -50,10 +53,13 @@ Consider these factors:
 
 Be practical and honest in your assessment.`;
 
-    const userPrompt = `Item: ${validatedData.title}
+    // Skip blob URL check - use real OpenAI API for all requests
+    
+    const userPrompt = `Item: ${validatedData.title || 'Untitled'}
 ${validatedData.notes ? `Notes: ${validatedData.notes}` : ''}
+${validatedData.context ? `Context: Scenario ${validatedData.context.scenario}, Region: ${validatedData.context.region}` : ''}
 
-Please analyze this item and provide recommendations. I've included ${validatedData.image_urls.length} photo(s) for reference.`;
+Please analyze this item and provide recommendations. I've included ${validatedData.photos.length} photo(s) for reference.`;
 
     // Prepare messages for OpenAI
     const messages: any[] = [
@@ -62,7 +68,7 @@ Please analyze this item and provide recommendations. I've included ${validatedD
         role: 'user',
         content: [
           { type: 'text', text: userPrompt },
-          ...validatedData.image_urls.map(url => ({
+          ...validatedData.photos.map(url => ({
             type: 'image_url',
             image_url: { url, detail: 'low' }
           }))
@@ -114,7 +120,7 @@ Please analyze this item and provide recommendations. I've included ${validatedD
       }
     };
 
-    return NextResponse.json(response);
+    return response;
 
   } catch (error) {
     console.error('AI analyze-item error:', error);
@@ -133,9 +139,6 @@ Please analyze this item and provide recommendations. I've included ${validatedD
       }
     };
 
-    return NextResponse.json(
-      errorResponse, 
-      { status: error instanceof z.ZodError ? 400 : 500 }
-    );
+    throw errorResponse;
   }
-}
+};

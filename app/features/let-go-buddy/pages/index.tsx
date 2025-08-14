@@ -16,7 +16,7 @@ import {
   Target
 } from 'lucide-react';
 import type { Route } from './+types/index';
-import { makeSSRClient } from '~/supa-client';
+import { makeSSRClient, getAuthUser } from '~/supa-client';
 
 export const meta: Route.MetaFunction = () => {
   return [
@@ -28,8 +28,8 @@ export const meta: Route.MetaFunction = () => {
 export const loader = async ({ request }: Route.LoaderArgs) => {
   const { client } = makeSSRClient(request);
   
-  // Check if user is authenticated
-  const { data: { user } } = await client.auth.getUser().catch(() => ({ data: { user: null } }));
+  // Check if user is authenticated (with development bypass)
+  const { data: { user } } = await getAuthUser(client).catch(() => ({ data: { user: null } }));
   
   let userSessions = null;
   let canCreateNewSession = { allowed: true, active_count: 0, limit: 2 };

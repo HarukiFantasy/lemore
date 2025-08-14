@@ -14,7 +14,7 @@ import {
   Clock
 } from 'lucide-react';
 import type { Route } from './+types/challenges';
-import { makeSSRClient } from '~/supa-client';
+import { makeSSRClient, getAuthUser } from '~/supa-client';
 
 export const meta: Route.MetaFunction = () => {
   return [
@@ -26,8 +26,8 @@ export const meta: Route.MetaFunction = () => {
 export const loader = async ({ request }: Route.LoaderArgs) => {
   const { client } = makeSSRClient(request);
   
-  // Check if user is authenticated
-  const { data: { user } } = await client.auth.getUser();
+  // Check if user is authenticated (with development bypass)
+  const { data: { user } } = await getAuthUser(client);
   if (!user) {
     throw redirect('/auth/login?redirect=/let-go-buddy/challenges');
   }

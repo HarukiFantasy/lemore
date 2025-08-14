@@ -1,8 +1,6 @@
-import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import OpenAI from 'openai';
 import type { 
-  AIPriceSuggestRequest, 
   AIPriceSuggestResponse, 
   ApiResponse 
 } from '~/features/let-go-buddy/types';
@@ -21,7 +19,8 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-export async function POST(request: NextRequest) {
+// React Router action for AI price suggestion
+export async function action({ request }: { request: Request }) {
   const requestId = crypto.randomUUID();
   const startTime = Date.now();
 
@@ -121,7 +120,7 @@ Please suggest pricing for this secondhand item. Be realistic about depreciation
       }
     };
 
-    return NextResponse.json(response);
+    return response;
 
   } catch (error) {
     console.error('AI price-suggest error:', error);
@@ -140,9 +139,6 @@ Please suggest pricing for this secondhand item. Be realistic about depreciation
       }
     };
 
-    return NextResponse.json(
-      errorResponse, 
-      { status: error instanceof z.ZodError ? 400 : 500 }
-    );
+    throw errorResponse;
   }
 }

@@ -1,15 +1,14 @@
-import React, { useState } from 'react';
-import { useSearchParams, Form, useActionData, redirect } from 'react-router';
+import { useState } from 'react';
+import { Form, useActionData, redirect } from 'react-router';
 import { Button } from '~/common/components/ui/button';
 import { Input } from '~/common/components/ui/input';
 import { Label } from '~/common/components/ui/label';
-import { Textarea } from '~/common/components/ui/textarea';
 import { Card } from '~/common/components/ui/card';
 import { Badge } from '~/common/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/common/components/ui/select';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
 import type { Route } from './+types/new';
-import { makeSSRClient } from '~/supa-client';
+import { makeSSRClient, getAuthUser } from '~/supa-client';
 import { z } from 'zod';
 import type { Scenario } from '../types';
 
@@ -26,13 +25,19 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
   const { client } = makeSSRClient(request);
   
   // Check if user is authenticated
-  const { data: { user } } = await client.auth.getUser();
+  const { data: { user } } = await getAuthUser(client);
   if (!user) {
     throw redirect('/auth/login?redirect=/let-go-buddy/new');
   }
   
   // Check session limits
-  const { data: canCreate } = await client.rpc('rpc_can_open_new_session');
+  const { data: canCreate, error: limitError } = await client.rpc('rpc_can_open_new_session');
+  
+  if (limitError) {
+    console.error('Session limit check failed:', limitError);
+    throw new Error('Failed to check session limits');
+  }
+  
   if (!canCreate?.allowed) {
     throw redirect('/let-go-buddy?error=session_limit');
   }
@@ -47,16 +52,23 @@ export const action = async ({ request }: Route.ActionArgs) => {
   const { client } = makeSSRClient(request);
   
   const formData = await request.formData();
-  const scenario = formData.get('scenario') as Scenario;
-  const title = formData.get('title') as string;
-  const move_date = formData.get('move_date') as string;
-  const region = formData.get('region') as string; 
-  const trade_method = formData.get('trade_method') as 'meet' | 'ship' | 'both';
-  const days = formData.get('days') ? parseInt(formData.get('days') as string) : undefined;
+  const scenario = formData.get('scenario')?.toString() as Scenario;
+  const title = formData.get('title')?.toString() || '';
+  const move_date = formData.get('move_date')?.toString() || '';
+  const region = formData.get('region')?.toString() || ''; 
+  const trade_method = formData.get('trade_method')?.toString() as 'meet' | 'ship' | 'both';
+  const daysStr = formData.get('days')?.toString();
+  const days = daysStr ? parseInt(daysStr) : undefined;
 
   try {
+    // Get authenticated user
+    const { data: { user } } = await getAuthUser(client);
+    if (!user) {
+      throw new Error('User not authenticated');
+    }
+
     // Validate input
-    const validData = createSessionSchema.parse({
+    createSessionSchema.parse({
       scenario,
       title: title || undefined,
       move_date: move_date || undefined,
@@ -71,6 +83,7 @@ export const action = async ({ request }: Route.ActionArgs) => {
       const { data: challenge, error } = await client
         .from('lgb_challenges')
         .insert({
+          user_id: user.id,
           days: days || 7,
           start_date: new Date().toISOString().split('T')[0]
         })
@@ -81,8 +94,8 @@ export const action = async ({ request }: Route.ActionArgs) => {
       
       return redirect(`/let-go-buddy/challenges?new=${challenge.challenge_id}`);
     } else {
-      // Regular session
-      const { data: sessionId } = await client
+      // Create session using RPC
+      const { data: sessionId, error: rpcError } = await client
         .rpc('rpc_create_session', {
           p_scenario: scenario,
           p_title: title,
@@ -90,8 +103,15 @@ export const action = async ({ request }: Route.ActionArgs) => {
           p_region: region || null,
           p_trade_method: trade_method || null
         });
-
-      if (!sessionId) throw new Error('Failed to create session');
+      
+      if (rpcError) {
+        console.error('Session creation failed:', rpcError);
+        throw rpcError;
+      }
+      
+      if (!sessionId) {
+        throw new Error('Failed to create session - no session ID returned');
+      }
       
       return redirect(`/let-go-buddy/session/${sessionId}`);
     }
@@ -107,7 +127,6 @@ export const action = async ({ request }: Route.ActionArgs) => {
 
 export default function NewSession({ loaderData }: Route.ComponentProps) {
   const { preselectedScenario } = loaderData;
-  const [searchParams] = useSearchParams();
   const actionData = useActionData<typeof action>();
 
   const [selectedScenario, setSelectedScenario] = useState<Scenario>(
@@ -218,7 +237,7 @@ export default function NewSession({ loaderData }: Route.ComponentProps) {
                     id="title"
                     name="title"
                     placeholder="e.g., Spring cleaning, Moving prep"
-                    defaultValue={actionData?.values?.title}
+                    defaultValue={actionData?.values?.title?.toString()}
                   />
                 </div>
               )}
@@ -230,7 +249,7 @@ export default function NewSession({ loaderData }: Route.ComponentProps) {
                     id="move_date"
                     name="move_date"
                     type="date"
-                    defaultValue={actionData?.values?.move_date}
+                    defaultValue={actionData?.values?.move_date?.toString()}
                     required
                   />
                 </div>
@@ -239,7 +258,7 @@ export default function NewSession({ loaderData }: Route.ComponentProps) {
               {currentScenario.fields.includes('region') && (
                 <div>
                   <Label htmlFor="region">Region</Label>
-                  <Select name="region" defaultValue={actionData?.values?.region}>
+                  <Select name="region" defaultValue={actionData?.values?.region?.toString()}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select region" />
                     </SelectTrigger>
@@ -256,7 +275,7 @@ export default function NewSession({ loaderData }: Route.ComponentProps) {
               {currentScenario.fields.includes('trade_method') && (
                 <div>
                   <Label htmlFor="trade_method">Preferred Trading Method</Label>
-                  <Select name="trade_method" defaultValue={actionData?.values?.trade_method}>
+                  <Select name="trade_method" defaultValue={actionData?.values?.trade_method?.toString()}>
                     <SelectTrigger>
                       <SelectValue placeholder="How will you trade items?" />
                     </SelectTrigger>

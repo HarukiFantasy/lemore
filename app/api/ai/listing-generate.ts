@@ -1,8 +1,6 @@
-import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import OpenAI from 'openai';
 import type { 
-  AIListingGenerateRequest, 
   AIListingGenerateResponse, 
   ApiResponse 
 } from '~/features/let-go-buddy/types';
@@ -22,7 +20,8 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-export async function POST(request: NextRequest) {
+// React Router action for AI listing generation
+export async function action({ request }: { request: Request }) {
   const requestId = crypto.randomUUID();
   const startTime = Date.now();
 
@@ -144,7 +143,7 @@ Make the listings compelling but honest. Focus on what makes this item valuable 
       }
     };
 
-    return NextResponse.json(response);
+    return response;
 
   } catch (error) {
     console.error('AI listing-generate error:', error);
@@ -163,9 +162,6 @@ Make the listings compelling but honest. Focus on what makes this item valuable 
       }
     };
 
-    return NextResponse.json(
-      errorResponse, 
-      { status: error instanceof z.ZodError ? 400 : 500 }
-    );
+    throw errorResponse;
   }
 }

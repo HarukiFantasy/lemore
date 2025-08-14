@@ -2,7 +2,7 @@ import { useState, useRef, useCallback } from 'react';
 import { Upload, X, Image as ImageIcon, Loader2 } from 'lucide-react';
 import { Button } from '~/common/components/ui/button';
 import { useToast } from '~/common/components/ui/use-toast';
-import { makeSSRClient } from '~/supa-client';
+import { browserClient } from '~/supa-client';
 import type { ItemUploaderProps } from '../types';
 
 export function ItemUploader({ 
@@ -18,13 +18,15 @@ export function ItemUploader({
 
   const uploadToStorage = async (file: File): Promise<string | null> => {
     try {
-      const { client } = makeSSRClient();
+      const client = browserClient;
       
       // Generate unique filename
       const fileExt = file.name.split('.').pop();
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
       const filePath = `items/${fileName}`;
 
+      console.log('Uploading file to storage:', filePath);
+      
       // Upload file to letgobuddy-product bucket
       const { data, error } = await client.storage
         .from('letgobuddy-product')
@@ -34,22 +36,27 @@ export function ItemUploader({
         });
 
       if (error) {
+        console.error('Storage upload error:', error);
         throw error;
       }
+
+      console.log('Upload successful:', data);
 
       // Get public URL
       const { data: { publicUrl } } = client.storage
         .from('letgobuddy-product')
         .getPublicUrl(data.path);
 
+      console.log('Public URL:', publicUrl);
       return publicUrl;
     } catch (error) {
-      console.error('Upload error:', error);
+      console.error('uploadToStorage error:', error);
       return null;
     }
   };
 
   const processFiles = async (files: FileList) => {
+    console.log('Processing files:', files.length);
     if (files.length === 0) return;
 
     const remainingSlots = maxPhotos - photos.length;
@@ -89,7 +96,9 @@ export function ItemUploader({
           continue;
         }
 
+        console.log('Processing file:', file.name);
         const url = await uploadToStorage(file);
+        console.log('Upload result for', file.name, ':', url ? 'success' : 'failed');
         if (url) {
           newPhotos.push(url);
         } else {
@@ -103,6 +112,7 @@ export function ItemUploader({
 
       if (newPhotos.length > 0) {
         const updatedPhotos = [...photos, ...newPhotos];
+        console.log('Setting photos state:', updatedPhotos);
         setPhotos(updatedPhotos);
         onUpload(updatedPhotos);
         toast({
@@ -111,6 +121,7 @@ export function ItemUploader({
         });
       }
     } catch (error) {
+      console.error('processFiles error:', error);
       toast({
         title: "Upload error",
         description: "An error occurred while uploading. Please try again.",
@@ -121,11 +132,12 @@ export function ItemUploader({
     }
   };
 
-  const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    console.log('File selected:', e.target.files?.length);
     if (e.target.files) {
       processFiles(e.target.files);
     }
-  }, []);
+  };
 
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -155,6 +167,8 @@ export function ItemUploader({
     fileInputRef.current?.click();
   };
 
+  console.log('ItemUploader render, photos state:', photos);
+  
   return (
     <div className="space-y-4">
       {/* Photo Grid */}
@@ -166,6 +180,8 @@ export function ItemUploader({
                 src={photo}
                 alt={`Upload ${index + 1}`}
                 className="w-full h-32 object-cover rounded-lg border border-gray-200"
+                onError={(e) => console.error('Image load error:', e, 'URL:', photo)}
+                onLoad={() => console.log('Image loaded:', photo)}
               />
               <button
                 onClick={() => removePhoto(index)}

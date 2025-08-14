@@ -42,9 +42,10 @@ export default [
   ]),
   route("/users/:username", "features/users/pages/usersProfile-page.tsx"),
   route("/api/send-welcome-email", "api/send-welcome-email.ts"),
+  route("/api/ai/analyze-item", "api/ai/analyze-item.ts"),
+  route("/api/ai/price-suggest", "api/ai/price-suggest.ts"),
+  route("/api/ai/listing-generate", "api/ai/listing-generate.ts"),
   
-  
-  // Legal pages for Facebook OAuth
   route("/privacy-policy", "common/pages/privacy-policy-page.tsx"),
   route("/terms-of-service", "common/pages/terms-of-service-page.tsx"),
   route("/data-deletion", "common/pages/data-deletion-page.tsx"),
