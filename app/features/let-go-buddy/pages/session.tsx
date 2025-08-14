@@ -35,19 +35,50 @@ export const loader = async ({ request, params }: Route.LoaderArgs) => {
     throw redirect('/auth/login?redirect=/let-go-buddy');
   }
   
-  // Get session details with items
-  const { data: sessionData, error } = await client
+  // Get session details with items - fallback to base table if view doesn't exist
+  let session;
+  let { data: sessionData, error } = await client
     .from('view_session_dashboard')
     .select('*')
     .eq('session_id', sessionId)
     .eq('user_id', user.id)
     .single();
   
-  if (error || !sessionData) {
-    throw redirect('/let-go-buddy?error=session_not_found');
+  if (error) {
+    console.log('View query failed, trying base table:', error);
+    // Fallback to base lgb_sessions table
+    const { data: baseSessionData, error: baseError } = await client
+      .from('lgb_sessions')
+      .select(`
+        session_id,
+        user_id,
+        scenario,
+        title,
+        status,
+        created_at,
+        move_date,
+        region,
+        trade_method
+      `)
+      .eq('session_id', sessionId)
+      .eq('user_id', user.id)
+      .single();
+    
+    if (baseError || !baseSessionData) {
+      console.error('Session not found:', baseError);
+      throw redirect('/let-go-buddy?error=session_not_found');
+    }
+    
+    // Add default values for dashboard stats
+    session = {
+      ...baseSessionData,
+      item_count: 0,
+      decided_count: 0,
+      expected_revenue: 0
+    };
+  } else {
+    session = sessionData;
   }
-  
-  const session = sessionData;
 
   // Get session items from database
   const { data: itemsData } = await client
@@ -56,25 +87,33 @@ export const loader = async ({ request, params }: Route.LoaderArgs) => {
       *,
       lgb_item_photos (
         photo_id,
-        photo_url,
-        is_primary
+        storage_path,
+        created_at
       ),
       lgb_listings (
         listing_id,
-        marketplace,
-        status,
-        price,
-        listing_url
+        lang,
+        title,
+        body,
+        hashtags,
+        channels
       )
     `)
     .eq('session_id', sessionId)
     .order('created_at', { ascending: false });
   
-  const items = itemsData || [];
+  // Transform items to match expected format
+  const items = (itemsData || []).map(item => ({
+    ...item,
+    // Transform photos from database format to expected format
+    photos: item.lgb_item_photos ? item.lgb_item_photos.map((photo: any) => photo.storage_path) : [],
+    // Transform listings if they exist
+    listings: item.lgb_listings || []
+  }));
 
   return { 
     session,
-    items: items || []
+    items
   };
 };
 
