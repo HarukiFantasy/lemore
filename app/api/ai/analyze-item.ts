@@ -120,7 +120,10 @@ Please analyze this item and provide recommendations. I've included ${validatedD
       }
     };
 
-    return response;
+    return new Response(JSON.stringify(response), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' }
+    });
 
   } catch (error) {
     console.error('AI analyze-item error:', error);
@@ -139,6 +142,9 @@ Please analyze this item and provide recommendations. I've included ${validatedD
       }
     };
 
-    throw errorResponse;
+    return new Response(JSON.stringify(errorResponse), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    });
   }
 };
