@@ -10,7 +10,7 @@ const analyzeItemSchema = z.object({
   photos: z.array(z.string()).min(1, 'At least one photo is required'),
   context: z.object({
     scenario: z.string().optional(),
-    region: z.string().optional(),
+    region: z.string().optional().nullable(),
   }).optional(),
   title: z.string().optional(),
   notes: z.string().optional(),
