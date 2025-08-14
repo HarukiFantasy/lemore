@@ -87,14 +87,6 @@ export const loader = async ({ request, params }: Route.LoaderArgs) => {
         photo_id,
         storage_path,
         created_at
-      ),
-      lgb_listings (
-        listing_id,
-        lang,
-        title,
-        body,
-        hashtags,
-        channels
       )
     `)
     .eq('session_id', sessionId)
@@ -104,9 +96,7 @@ export const loader = async ({ request, params }: Route.LoaderArgs) => {
   const items = (itemsData || []).map(item => ({
     ...item,
     // Transform photos from database format to expected format
-    photos: item.lgb_item_photos ? item.lgb_item_photos.map((photo: any) => photo.storage_path) : [],
-    // Transform listings if they exist
-    listings: item.lgb_listings || []
+    photos: item.lgb_item_photos ? item.lgb_item_photos.map((photo: any) => photo.storage_path) : []
   }));
 
   return { 
@@ -305,14 +295,16 @@ export default function SessionPage({ loaderData }: Route.ComponentProps) {
                 if (photos.length === 0) return;
                 
                 try {
-                  // Create item in database using direct insertion (since RPC may not exist)
+                  // Create item in database using direct insertion
                   const { data: newItemData, error: createError } = await browserClient
                     .from('lgb_items')
                     .insert([{
                       session_id: session?.session_id || '',
-                      title: null,
-                      notes: null,
-                      status: 'uploaded'
+                      title: 'Untitled Item',
+                      category: 'Other',
+                      condition: 'Good',
+                      ai_recommendation: 'keep',
+                      ai_rationale: 'Analyzing...'
                     }])
                     .select('item_id')
                     .single();
@@ -369,18 +361,16 @@ export default function SessionPage({ loaderData }: Route.ComponentProps) {
                   console.log('AI analysis result:', analysisResult);
 
                   // Update item with AI results
-                  const confidence = typeof analysisResult.data.confidence === 'number' ? analysisResult.data.confidence : 0.5;
-                  
                   const { error: updateError } = await browserClient
                     .from('lgb_items')
                     .update({
-                      category: analysisResult.data.category || null,
-                      condition: analysisResult.data.condition || null,
-                      usage_score: analysisResult.data.usage_score || null,
-                      ai_recommendation: analysisResult.data.recommendation || null,
-                      ai_rationale: analysisResult.data.rationale || null,
-                      ai_confidence: confidence,
-                      status: 'analyzed'
+                      category: analysisResult.data.category || 'Other',
+                      condition: analysisResult.data.condition || 'Good',
+                      usage_score: analysisResult.data.usage_score || 50,
+                      ai_recommendation: analysisResult.data.recommendation || 'keep',
+                      ai_rationale: analysisResult.data.rationale || 'AI analysis completed',
+                      sentiment: analysisResult.data.sentiment || 'neutral',
+                      updated_at: new Date().toISOString()
                     })
                     .eq('item_id', itemId);
 
