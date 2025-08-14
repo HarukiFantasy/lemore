@@ -46,19 +46,15 @@ export const loader = async ({ request, params }: Route.LoaderArgs) => {
   
   if (error) {
     console.log('View query failed, trying base table:', error);
-    // Fallback to base lgb_sessions table
+    // Fallback to base let_go_buddy_sessions table
     const { data: baseSessionData, error: baseError } = await client
-      .from('lgb_sessions')
+      .from('let_go_buddy_sessions')
       .select(`
         session_id,
         user_id,
-        scenario,
-        title,
-        status,
         created_at,
-        move_date,
-        region,
-        trade_method
+        updated_at,
+        is_completed
       `)
       .eq('session_id', sessionId)
       .eq('user_id', user.id)
@@ -69,9 +65,17 @@ export const loader = async ({ request, params }: Route.LoaderArgs) => {
       throw redirect('/let-go-buddy?error=session_not_found');
     }
     
-    // Add default values for dashboard stats
+    // Map to expected session format with defaults
     session = {
-      ...baseSessionData,
+      session_id: baseSessionData.session_id,
+      user_id: baseSessionData.user_id,
+      scenario: 'A', // Default scenario
+      title: 'Let Go Buddy Session',
+      status: baseSessionData.is_completed ? 'completed' : 'active',
+      created_at: baseSessionData.created_at,
+      move_date: null,
+      region: null,
+      trade_method: null,
       item_count: 0,
       decided_count: 0,
       expected_revenue: 0
@@ -82,33 +86,39 @@ export const loader = async ({ request, params }: Route.LoaderArgs) => {
 
   // Get session items from database
   const { data: itemsData } = await client
-    .from('lgb_items')
+    .from('item_analyses')
     .select(`
-      *,
-      lgb_item_photos (
-        photo_id,
-        storage_path,
-        created_at
-      ),
-      lgb_listings (
-        listing_id,
-        lang,
-        title,
-        body,
-        hashtags,
-        channels
-      )
+      analysis_id,
+      session_id,
+      item_name,
+      item_category,
+      item_condition,
+      recommendation,
+      recommendation_reason,
+      emotional_score,
+      ai_listing_title,
+      ai_listing_description,
+      images,
+      created_at,
+      updated_at
     `)
     .eq('session_id', sessionId)
     .order('created_at', { ascending: false });
   
   // Transform items to match expected format
   const items = (itemsData || []).map(item => ({
-    ...item,
-    // Transform photos from database format to expected format
-    photos: item.lgb_item_photos ? item.lgb_item_photos.map((photo: any) => photo.storage_path) : [],
-    // Transform listings if they exist
-    listings: item.lgb_listings || []
+    item_id: item.analysis_id,
+    session_id: item.session_id,
+    title: item.item_name,
+    category: item.item_category,
+    condition: item.item_condition,
+    ai_recommendation: item.recommendation,
+    ai_rationale: item.recommendation_reason,
+    usage_score: item.emotional_score,
+    photos: item.images ? (Array.isArray(item.images) ? item.images : [item.images]) : [],
+    listings: [],
+    status: 'analyzed',
+    created_at: item.created_at
   }));
 
   return { 
@@ -127,8 +137,8 @@ export const action = async ({ request, params }: Route.ActionArgs) => {
   try {
     if (action === 'archive_session') {
       const { error } = await client
-        .from('lgb_sessions')
-        .update({ status: 'archived' })
+        .from('let_go_buddy_sessions')
+        .update({ is_completed: true })
         .eq('session_id', sessionId);
 
       if (error) throw error;
@@ -137,8 +147,8 @@ export const action = async ({ request, params }: Route.ActionArgs) => {
 
     if (action === 'complete_session') {
       const { error } = await client
-        .from('lgb_sessions')
-        .update({ status: 'completed' })
+        .from('let_go_buddy_sessions')
+        .update({ is_completed: true })
         .eq('session_id', sessionId);
 
       if (error) throw error;
@@ -313,21 +323,28 @@ export default function SessionPage({ loaderData }: Route.ComponentProps) {
                 if (photos.length === 0) return;
                 
                 try {
-                  // Create item in database using RPC
+                  // Create basic item entry first
                   const { data: newItemData, error: createError } = await browserClient
-                    .rpc('create_lgb_item_with_photos', {
-                      p_session_id: session.session_id,
-                      p_photos: photos,
-                      p_title: null,
-                      p_notes: null
-                    });
+                    .from('item_analyses')
+                    .insert({
+                      session_id: session.session_id,
+                      item_name: 'Analyzing...',
+                      item_category: 'Other',
+                      item_condition: 'Good',
+                      recommendation: 'Keep',
+                      recommendation_reason: 'Analysis in progress',
+                      emotional_score: 50,
+                      images: photos
+                    })
+                    .select('analysis_id')
+                    .single();
 
                   if (createError) {
                     console.error('Error creating item:', createError);
                     throw createError;
                   }
 
-                  const itemId = newItemData;
+                  const itemId = newItemData.analysis_id;
                   console.log('Created item with ID:', itemId);
 
                   // Add to uploading items temporarily with analyzing status
@@ -362,17 +379,16 @@ export default function SessionPage({ loaderData }: Route.ComponentProps) {
 
                   // Update item with AI results
                   const { error: updateError } = await browserClient
-                    .from('lgb_items')
+                    .from('item_analyses')
                     .update({
-                      category: analysisResult.data.category,
-                      condition: analysisResult.data.condition,
-                      usage_score: analysisResult.data.usage_score,
-                      ai_recommendation: analysisResult.data.recommendation,
-                      ai_rationale: analysisResult.data.rationale,
-                      ai_confidence: analysisResult.data.confidence || 0.5,
-                      status: 'analyzed'
+                      item_name: analysisResult.data.title || 'AI Analyzed Item',
+                      item_category: analysisResult.data.category,
+                      item_condition: analysisResult.data.condition,
+                      emotional_score: analysisResult.data.usage_score,
+                      recommendation: analysisResult.data.recommendation,
+                      recommendation_reason: analysisResult.data.rationale
                     })
-                    .eq('item_id', itemId);
+                    .eq('analysis_id', itemId);
 
                   if (updateError) {
                     console.error('Error updating item:', updateError);

@@ -330,7 +330,33 @@ export const userLevels = pgTable("user_levels", {
   free_let_go_buddy_uses: integer("free_let_go_buddy_uses").notNull().default(2),
   created_at: timestamp("created_at", { withTimezone: true }).defaultNow(),
   updated_at: timestamp("updated_at", { withTimezone: true }).defaultNow(),
-});
+}, (table) => [
+  pgPolicy("user_levels_select_policy", {
+    for: "select",
+    to: authenticatedRole,
+    as: "permissive",
+    using: sql`${table.user_id} = ${authUid}`
+  }),
+  pgPolicy("user_levels_insert_policy", {
+    for: "insert",
+    to: authenticatedRole,
+    as: "permissive",
+    withCheck: sql`${table.user_id} = ${authUid}`
+  }),
+  pgPolicy("user_levels_update_policy", {
+    for: "update",
+    to: authenticatedRole,
+    as: "permissive",
+    using: sql`${table.user_id} = ${authUid}`,
+    withCheck: sql`${table.user_id} = ${authUid}`
+  }),
+  pgPolicy("user_levels_delete_policy", {
+    for: "delete",
+    to: authenticatedRole,
+    as: "permissive",
+    using: sql`${table.user_id} = ${authUid}`
+  })
+]);
 
 // trust_scores 테이블
 export const trustScores = pgTable("trust_scores", {
@@ -339,7 +365,33 @@ export const trustScores = pgTable("trust_scores", {
   completed_trades: integer("completed_trades").notNull().default(0),
   created_at: timestamp("created_at", { withTimezone: true }).defaultNow(),
   updated_at: timestamp("updated_at", { withTimezone: true }).defaultNow(),
-});
+}, (table) => [
+  pgPolicy("trust_scores_select_policy", {
+    for: "select",
+    to: "public",
+    as: "permissive",
+    using: sql`true`
+  }),
+  pgPolicy("trust_scores_insert_policy", {
+    for: "insert",
+    to: authenticatedRole,
+    as: "permissive",
+    withCheck: sql`${table.user_id} = ${authUid}`
+  }),
+  pgPolicy("trust_scores_update_policy", {
+    for: "update",
+    to: authenticatedRole,
+    as: "permissive",
+    using: sql`${table.user_id} = ${authUid}`,
+    withCheck: sql`${table.user_id} = ${authUid}`
+  }),
+  pgPolicy("trust_scores_delete_policy", {
+    for: "delete",
+    to: authenticatedRole,
+    as: "permissive",
+    using: sql`${table.user_id} = ${authUid}`
+  })
+]);
 
 
 // User reviews table
