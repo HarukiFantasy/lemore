@@ -78,7 +78,7 @@ Please analyze this item and provide recommendations. I've included ${validatedD
 
     // Call OpenAI API
     const completion = await openai.chat.completions.create({
-      model: 'gpt-4-vision-preview',
+      model: 'gpt-4o',
       messages,
       max_tokens: 500,
       temperature: 0.7,
@@ -115,7 +115,7 @@ Please analyze this item and provide recommendations. I've included ${validatedD
       meta: {
         request_id: requestId,
         duration_ms: Date.now() - startTime,
-        model: 'gpt-4-vision-preview',
+        model: 'gpt-4o',
         version: '1.0.0'
       }
     };
