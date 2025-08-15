@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, Form, useActionData, redirect, useNavigate } from 'react-router';
+import { Link, Form, useActionData, redirect, useNavigate, useRevalidator } from 'react-router';
 import { Button } from '~/common/components/ui/button';
 import { Card } from '~/common/components/ui/card';
 import { Badge } from '~/common/components/ui/badge';
@@ -147,6 +147,7 @@ export const action = async ({ request, params }: Route.ActionArgs) => {
 export default function SessionPage({ loaderData }: Route.ComponentProps) {
   const { session, items: initialItems } = loaderData;
   const navigate = useNavigate();
+  const revalidator = useRevalidator();
   const actionData = useActionData<typeof action>();
   const [uploadingItems, setUploadingItems] = useState<any[]>([]);
 
@@ -382,8 +383,8 @@ export default function SessionPage({ loaderData }: Route.ComponentProps) {
                   // Remove from uploading items
                   setUploadingItems(prev => prev.filter(item => item.item_id !== itemId));
                   
-                  // Refresh to show updated item
-                  navigate(`/let-go-buddy/session/${session?.session_id}`, { replace: true });
+                  // Refresh data to show updated item
+                  revalidator.revalidate();
 
                 } catch (error) {
                   console.error('Error processing item:', error);
