@@ -7,6 +7,8 @@ export function DecisionBar({
   onDecisionChange, 
   disabled = false 
 }: DecisionBarProps) {
+  // Once a decision is made, only allow clicking the same decision (for reason input)
+  const isLocked = !!decision;
   const decisions: { 
     key: ItemDecision; 
     label: string; 
@@ -57,6 +59,7 @@ export function DecisionBar({
       <div className="grid grid-cols-2 gap-2">
         {decisions.map((item) => {
           const isSelected = decision === item.key;
+          const isDisabled = disabled || (isLocked && decision !== item.key);
           
           return (
             <Button
@@ -65,10 +68,12 @@ export function DecisionBar({
               className={`flex flex-col items-center gap-2 h-auto py-3 px-2 transition-all ${
                 isSelected 
                   ? item.color
+                  : isDisabled
+                  ? 'opacity-50 cursor-not-allowed border-gray-200'
                   : 'hover:bg-gray-50 border-gray-200'
               }`}
               onClick={() => handleDecisionClick(item.key)}
-              disabled={disabled}
+              disabled={isDisabled}
             >
               <div className="flex items-center gap-1">
                 {item.icon}
@@ -85,9 +90,12 @@ export function DecisionBar({
       </div>
       
       {decision && (
-        <div className="text-center">
+        <div className="text-center space-y-1">
           <p className="text-sm text-gray-600">
             You chose to <strong className="text-gray-900">{decision}</strong> this item
+          </p>
+          <p className="text-xs text-gray-500">
+            Click the same option to add a reason
           </p>
         </div>
       )}

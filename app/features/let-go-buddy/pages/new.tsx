@@ -30,22 +30,12 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
     throw redirect('/auth/login?redirect=/let-go-buddy/new');
   }
   
-  // Check session limits
-  const { data: canCreate, error: limitError } = await client.rpc('rpc_can_open_new_session');
-  
-  if (limitError) {
-    console.error('Session limit check failed:', limitError);
-    throw new Error('Failed to check session limits');
-  }
-  
-  if (canCreate && typeof canCreate === 'object' && 'allowed' in canCreate && !canCreate.allowed) {
-    throw redirect('/let-go-buddy?error=session_limit');
-  }
+  // Sessions are now unlimited - AI analysis limits are checked per item upload
   
   const url = new URL(request.url);
   const preselectedScenario = url.searchParams.get('scenario') as Scenario;
   
-  return { preselectedScenario, canCreate };
+  return { preselectedScenario };
 };
 
 export const action = async ({ request }: Route.ActionArgs) => {

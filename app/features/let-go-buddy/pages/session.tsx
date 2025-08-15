@@ -395,6 +395,71 @@ export default function SessionPage({ loaderData }: Route.ComponentProps) {
 
                   console.log('Created item with ID:', itemId);
 
+                  // Check AI analysis limits before proceeding
+                  console.log('Checking AI analysis limits...');
+                  const { data: { user } } = await browserClient.auth.getUser();
+                  if (!user) {
+                    console.error('No user found');
+                    return;
+                  }
+
+                  // Count user's AI analyses directly
+                  const { data: userSessions } = await browserClient
+                    .from('lgb_sessions')
+                    .select('session_id')
+                    .eq('user_id', user.id);
+                  
+                  const sessionIds = userSessions?.map(s => s.session_id) || [];
+                  
+                  const { data: analysisItems, count: analysisCount } = await browserClient
+                    .from('lgb_items')
+                    .select('item_id', { count: 'exact' })
+                    .in('session_id', sessionIds.length > 0 ? sessionIds : ['dummy'])
+                    .not('ai_recommendation', 'is', null)
+                    .neq('ai_recommendation', 'keep'); // Don't count placeholder values
+
+                  const maxFreeAnalyses = 2;
+                  const usedAnalyses = analysisCount || 0;
+                  const canAnalyze = usedAnalyses < maxFreeAnalyses;
+
+                  if (!canAnalyze) {
+                    console.log('AI analysis limit reached:', { used: usedAnalyses, max: maxFreeAnalyses });
+                    // Show limit reached message and don't perform analysis
+                    const basicItem = {
+                      item_id: itemId,
+                      session_id: session?.session_id,
+                      photos: photos,
+                      title: 'Upload Complete',
+                      category: 'Other',
+                      status: 'limit_reached',
+                      ai_recommendation: 'keep',
+                      ai_rationale: `AI analysis limit reached (${usedAnalyses}/${maxFreeAnalyses}). You can still make decisions manually.`,
+                      created_at: new Date().toISOString()
+                    };
+                    setUploadingItems(prev => [...prev, basicItem]);
+
+                    // Update item in database without AI analysis
+                    await browserClient
+                      .from('lgb_items')
+                      .update({
+                        title: 'Upload Complete',
+                        category: 'Other',
+                        condition: 'Good',
+                        ai_recommendation: 'keep',
+                        ai_rationale: `AI analysis limit reached (${usedAnalyses}/${maxFreeAnalyses}). You can still make decisions manually.`,
+                        updated_at: new Date().toISOString()
+                      })
+                      .eq('item_id', itemId);
+
+                    // Refresh and remove from uploading items
+                    setTimeout(() => {
+                      revalidator.revalidate();
+                      setUploadingItems(prev => prev.filter(item => item.item_id !== itemId));
+                    }, 1000);
+
+                    return; // Exit early, don't call AI API
+                  }
+
                   // Add to uploading items temporarily with analyzing status
                   const tempItem = {
                     item_id: itemId,
@@ -404,7 +469,7 @@ export default function SessionPage({ loaderData }: Route.ComponentProps) {
                     category: 'Analyzing',
                     status: 'analyzing',
                     ai_recommendation: null,
-                    ai_rationale: 'AI is analyzing your item...',
+                    ai_rationale: `AI is analyzing your item... (${usedAnalyses + 1}/${maxFreeAnalyses} analyses used)`,
                     created_at: new Date().toISOString()
                   };
                   setUploadingItems(prev => [...prev, tempItem]);

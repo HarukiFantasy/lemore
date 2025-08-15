@@ -13,7 +13,10 @@ import {
   DollarSign,
   MessageCircle,
   Loader2,
-  ExternalLink
+  ExternalLink,
+  Home,
+  MapPin,
+  Recycle
 } from 'lucide-react';
 import type { ItemCardProps, ItemDecision } from '../types';
 import { DecisionBar } from './DecisionBar';
@@ -180,7 +183,7 @@ export function ItemCard({
         )}
         
         {/* Price Range */}
-        {!loadingPricing && item.price_mid && (
+        {!loadingPricing && item.decision === 'sell' && item.price_mid && (
           <div className="bg-green-50 rounded-lg p-3 space-y-2">
             <div className="flex items-center gap-2">
               <DollarSign className="w-4 h-4 text-green-600" />
@@ -225,6 +228,67 @@ export function ItemCard({
                 Create Listing
               </Link>
             </Button>
+          </div>
+        )}
+
+        {/* Keep Decision Actions */}
+        {item.decision === 'keep' && (
+          <div className="bg-green-50 rounded-lg p-3 space-y-2">
+            <div className="flex items-center gap-2">
+              <Home className="w-4 h-4 text-green-600" />
+              <span className="text-sm font-medium text-green-700">Storage Tips</span>
+            </div>
+            <p className="text-xs text-green-700">
+              Consider organizing this item in a designated space. Keep similar items together for easy access.
+            </p>
+            <div className="text-xs text-green-600">
+              💡 Tip: Take a photo of where you store this item to remember its location
+            </div>
+          </div>
+        )}
+
+        {/* Donate Decision Actions */}
+        {item.decision === 'donate' && (
+          <div className="bg-purple-50 rounded-lg p-3 space-y-2">
+            <div className="flex items-center gap-2">
+              <Gift className="w-4 h-4 text-purple-600" />
+              <span className="text-sm font-medium text-purple-700">Donation Options</span>
+            </div>
+            <p className="text-xs text-purple-700">
+              This item can help someone in need. Consider local charities, community centers, or online donation platforms.
+            </p>
+            <div className="flex gap-2 mt-2">
+              <Button size="sm" variant="outline" className="text-xs h-7">
+                <MapPin className="w-3 h-3 mr-1" />
+                Find Centers
+              </Button>
+              <Button size="sm" variant="outline" className="text-xs h-7">
+                Tax Info
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Dispose Decision Actions */}
+        {item.decision === 'dispose' && (
+          <div className="bg-gray-50 rounded-lg p-3 space-y-2">
+            <div className="flex items-center gap-2">
+              <Recycle className="w-4 h-4 text-gray-600" />
+              <span className="text-sm font-medium text-gray-700">Disposal Guide</span>
+            </div>
+            <p className="text-xs text-gray-700">
+              Dispose of this item responsibly. Check if it can be recycled or needs special disposal.
+            </p>
+            <div className="flex gap-2 mt-2">
+              <Button size="sm" variant="outline" className="text-xs h-7">
+                <Recycle className="w-3 h-3 mr-1" />
+                Recycling Info
+              </Button>
+              <Button size="sm" variant="outline" className="text-xs h-7">
+                <MapPin className="w-3 h-3 mr-1" />
+                Drop-off Sites
+              </Button>
+            </div>
           </div>
         )}
 
