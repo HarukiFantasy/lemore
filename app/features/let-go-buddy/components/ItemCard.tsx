@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router';
 import { Card } from '~/common/components/ui/card';
 import { Badge } from '~/common/components/ui/badge';
 import { Button } from '~/common/components/ui/button';
@@ -11,7 +12,8 @@ import {
   Sparkles,
   DollarSign,
   MessageCircle,
-  Loader2
+  Loader2,
+  ExternalLink
 } from 'lucide-react';
 import type { ItemCardProps, ItemDecision } from '../types';
 import { DecisionBar } from './DecisionBar';
@@ -206,6 +208,23 @@ export function ItemCard({
                 </div>
               )}
             </div>
+            
+            {/* Create Listing Button */}
+            <Button asChild className="w-full mt-3">
+              <Link 
+                to={`/secondhand/submit-a-listing?${new URLSearchParams({
+                  from_lgb: 'true',
+                  title: item.title || 'Untitled Item',
+                  description: item.ai_rationale || '',
+                  category: item.category || 'Other',
+                  images: JSON.stringify(item.photos || []),
+                  price_mid: item.price_mid?.toString() || ''
+                }).toString()}`}
+              >
+                <ExternalLink className="w-4 h-4 mr-2" />
+                Create Listing
+              </Link>
+            </Button>
           </div>
         )}
 
