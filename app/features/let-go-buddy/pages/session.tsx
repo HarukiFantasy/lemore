@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, Form, useActionData, redirect, useNavigate, useRevalidator } from 'react-router';
+import { Link, Form, useActionData, redirect, useRevalidator } from 'react-router';
 import { Button } from '~/common/components/ui/button';
 import { Card } from '~/common/components/ui/card';
 import { Badge } from '~/common/components/ui/badge';
@@ -146,7 +146,6 @@ export const action = async ({ request, params }: Route.ActionArgs) => {
 
 export default function SessionPage({ loaderData }: Route.ComponentProps) {
   const { session, items: initialItems } = loaderData;
-  const navigate = useNavigate();
   const revalidator = useRevalidator();
   const actionData = useActionData<typeof action>();
   const [uploadingItems, setUploadingItems] = useState<any[]>([]);
@@ -295,12 +294,19 @@ export default function SessionPage({ loaderData }: Route.ComponentProps) {
                 
                 if (photos.length === 0) return;
                 
+                if (!session?.session_id) {
+                  console.error('No session ID available');
+                  return;
+                }
+                
+                console.log('Creating item for session:', session.session_id);
+                
                 try {
                   // Create item in database using direct insertion
                   const { data: newItemData, error: createError } = await browserClient
                     .from('lgb_items')
                     .insert([{
-                      session_id: session?.session_id || '',
+                      session_id: session.session_id,
                       title: 'Untitled Item',
                       category: 'Other',
                       condition: 'Good',
