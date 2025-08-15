@@ -96,15 +96,20 @@ Please analyze this item and provide recommendations. I've included ${validatedD
       }
     ];
 
-    // Call OpenAI API with timeout handling
-    const completion = await openai.chat.completions.create({
+    // Call OpenAI API with timeout wrapper
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('Analysis timed out')), 30000); // 30 second timeout
+    });
+
+    const apiPromise = openai.chat.completions.create({
       model: 'gpt-4o',
       messages,
       max_tokens: 500,
       temperature: 0.7,
-      response_format: { type: 'json_object' },
-      timeout: 30000 // 30 second timeout
+      response_format: { type: 'json_object' }
     });
+
+    const completion = await Promise.race([apiPromise, timeoutPromise]) as any;
 
     const aiResponse = completion.choices[0]?.message?.content;
     if (!aiResponse) {
@@ -155,14 +160,18 @@ Please analyze this item and provide recommendations. I've included ${validatedD
     if (error instanceof z.ZodError) {
       errorCode = 'validation_error';
       errorMessage = error.errors.map(e => e.message).join(', ');
-    } else if (error && typeof error === 'object' && 'code' in error) {
-      // Handle OpenAI specific errors
-      if (error.code === 'invalid_image_url') {
-        errorCode = 'image_access_error';
-        errorMessage = 'Unable to access uploaded images. Please try uploading again.';
-      } else if (error.code === 'timeout') {
+    } else if (error && typeof error === 'object') {
+      // Handle timeout errors
+      if (error instanceof Error && error.message === 'Analysis timed out') {
         errorCode = 'timeout_error';
         errorMessage = 'Analysis timed out. Please try with smaller images.';
+      } 
+      // Handle OpenAI specific errors
+      else if ('code' in error) {
+        if (error.code === 'invalid_image_url') {
+          errorCode = 'image_access_error';
+          errorMessage = 'Unable to access uploaded images. Please try uploading again.';
+        }
       }
     }
 
