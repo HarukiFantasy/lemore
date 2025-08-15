@@ -7,11 +7,15 @@ import type {
 
 // Validation schema
 const priceSuggestSchema = z.object({
+  photos: z.array(z.string()).min(1, 'At least one photo is required'),
   title: z.string().min(1, 'Title is required'),
   category: z.string().min(1, 'Category is required'),
   condition: z.string().min(1, 'Condition is required'),
-  region: z.string().min(1, 'Region is required'),
-  comps: z.array(z.any()).optional(),
+  context: z.object({
+    region: z.string().optional().nullable(),
+    scenario: z.string().optional(),
+  }).optional(),
+  locale: z.string().default('en'),
 });
 
 // Initialize OpenAI client
@@ -31,50 +35,64 @@ export async function action({ request }: { request: Request }) {
 
     // Regional pricing context
     const regionContext = {
-      'Thailand': { currency: 'THB', context: 'Thai baht, consider local market conditions' },
-      'Bangkok': { currency: 'THB', context: 'Bangkok market, higher purchasing power' },
-      'Korea': { currency: 'KRW', context: 'Korean won, consider local market conditions' },
-      'Seoul': { currency: 'KRW', context: 'Seoul market, higher purchasing power' },
+      'Thailand': { currency: 'USD', context: 'Thai market, convert to local THB mentally' },
+      'Bangkok': { currency: 'USD', context: 'Bangkok market, convert to local THB mentally' },
+      'Korea': { currency: 'USD', context: 'Korean market, convert to local KRW mentally' },
+      'Seoul': { currency: 'USD', context: 'Seoul market, convert to local KRW mentally' },
     };
 
-    const region = regionContext[validatedData.region as keyof typeof regionContext] || 
+    const regionKey = validatedData.context?.region || 'Thailand';
+    const region = regionContext[regionKey as keyof typeof regionContext] || 
                   regionContext['Thailand'];
 
-    // Prepare AI prompt
-    const systemPrompt = `You are a pricing expert for secondhand items. Provide pricing suggestions in JSON format:
+    // Prepare AI prompt for price suggestions
+    const systemPrompt = `You are an expert in secondhand item pricing. Analyze the provided item and return a JSON response with price suggestions in USD:
 
 {
-  "price_low": number (conservative estimate),
-  "price_mid": number (realistic market price),
-  "price_high": number (optimistic estimate),
+  "price_low": number (conservative/quick sale price),
+  "price_mid": number (fair market value),
+  "price_high": number (optimistic/premium price),
   "confidence": number (0.0-1.0, confidence in pricing accuracy),
-  "factors": string[] (key factors affecting price)
+  "rationale": "string (brief explanation of pricing factors)",
+  "market_notes": "string (additional market insights)"
 }
 
 Consider these factors:
 - Item condition and age
-- Brand reputation and quality
-- Market demand and supply
+- Category market demand
+- Regional market differences
 - Seasonal factors
-- Regional market conditions
-- Depreciation rates for the category
+- Brand value and popularity
+- Comparable items on marketplace platforms
 
-Provide realistic secondhand market prices in ${region.currency}. ${region.context}.`;
+Be realistic and consider local secondhand market conditions. ${region.context}.`;
 
     const userPrompt = `Item: ${validatedData.title}
 Category: ${validatedData.category}
 Condition: ${validatedData.condition}
-Location: ${validatedData.region}
+${regionKey ? `Region: ${regionKey}` : ''}
 
-Please suggest pricing for this secondhand item. Be realistic about depreciation and local market conditions.`;
+Please analyze this item and provide price suggestions for selling on secondhand marketplaces. I've included ${validatedData.photos.length} photo(s) for reference.`;
+
+    // Prepare messages for OpenAI
+    const messages: any[] = [
+      { role: 'system', content: systemPrompt },
+      {
+        role: 'user',
+        content: [
+          { type: 'text', text: userPrompt },
+          ...validatedData.photos.map(url => ({
+            type: 'image_url',
+            image_url: { url, detail: 'low' }
+          }))
+        ]
+      }
+    ];
 
     // Call OpenAI API
     const completion = await openai.chat.completions.create({
-      model: 'gpt-4',
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: userPrompt }
-      ],
+      model: 'gpt-4o',
+      messages,
       max_tokens: 400,
       temperature: 0.3,
       response_format: { type: 'json_object' }
@@ -99,7 +117,8 @@ Please suggest pricing for this secondhand item. Be realistic about depreciation
       price_mid: z.number().min(0),
       price_high: z.number().min(0),
       confidence: z.number().min(0).max(1),
-      factors: z.array(z.string()),
+      rationale: z.string(),
+      market_notes: z.string().optional(),
     });
 
     const validatedResponse = responseSchema.parse(pricingResult);
@@ -115,12 +134,15 @@ Please suggest pricing for this secondhand item. Be realistic about depreciation
       meta: {
         request_id: requestId,
         duration_ms: Date.now() - startTime,
-        model: 'gpt-4',
+        model: 'gpt-4o',
         version: '1.0.0'
       }
     };
 
-    return response;
+    return new Response(JSON.stringify(response), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' }
+    });
 
   } catch (error) {
     console.error('AI price-suggest error:', error);
@@ -139,6 +161,9 @@ Please suggest pricing for this secondhand item. Be realistic about depreciation
       }
     };
 
-    throw errorResponse;
+    return new Response(JSON.stringify(errorResponse), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    });
   }
 }

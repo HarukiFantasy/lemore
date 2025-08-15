@@ -508,47 +508,114 @@ export default function SessionPage({ loaderData }: Route.ComponentProps) {
             </Card>
           ) : (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {allItems.map((item) => {
-                const shouldShowControls = session?.scenario === 'A' && item.ai_recommendation && item.status !== 'analyzing';
-                console.log('Item decision controls check:', {
-                  itemId: item.item_id,
-                  scenario: session?.scenario,
-                  hasAiRecommendation: !!item.ai_recommendation,
-                  status: item.status,
-                  shouldShow: shouldShowControls
-                });
-                
-                return (
-                  <ItemCard 
-                    key={item.item_id || item.temp_id}
-                    item={item}
-                    showDecisionControls={shouldShowControls}
+              {allItems.map((item) => (
+                <ItemCard 
+                  key={item.item_id || item.temp_id}
+                  item={item}
+                  showDecisionControls={session?.scenario === 'A' && item.ai_recommendation && item.status !== 'analyzing'}
                     onDecisionChange={async (decision, reason) => {
                     try {
-                      // Update item decision in database
-                      const { error } = await browserClient
-                        .from('lgb_items')
-                        .update({
-                          decision: decision,
-                          decision_reason: reason || null,
-                          updated_at: new Date().toISOString()
-                        })
-                        .eq('item_id', item.item_id);
+                      // If user chose "sell", get price suggestions first
+                      if (decision === 'sell' && item.photos && item.photos.length > 0) {
+                        console.log('Getting price suggestions for item:', item.item_id);
+                        
+                        try {
+                          const priceResponse = await fetch('/api/ai/price-suggest', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                              photos: item.photos,
+                              title: item.title || 'Untitled Item',
+                              category: item.category || 'Other',
+                              condition: item.condition || 'Good',
+                              context: {
+                                region: (session as any)?.region || null,
+                                scenario: session?.scenario
+                              }
+                            })
+                          });
 
-                      if (error) {
-                        console.error('Error saving decision:', error);
-                        return;
+                          if (priceResponse.ok) {
+                            const priceResult = await priceResponse.json();
+                            console.log('Price suggestions received:', priceResult);
+
+                            // Update item with both decision and price data
+                            const { error } = await browserClient
+                              .from('lgb_items')
+                              .update({
+                                decision: decision,
+                                decision_reason: reason || null,
+                                price_low: priceResult.data?.price_low || null,
+                                price_mid: priceResult.data?.price_mid || null,
+                                price_high: priceResult.data?.price_high || null,
+                                price_confidence: priceResult.data?.confidence || null,
+                                updated_at: new Date().toISOString()
+                              })
+                              .eq('item_id', item.item_id);
+
+                            if (error) {
+                              console.error('Error saving decision with pricing:', error);
+                              return;
+                            }
+                          } else {
+                            console.error('Price suggestion failed, saving decision without pricing');
+                            // Save decision without pricing if API fails
+                            const { error } = await browserClient
+                              .from('lgb_items')
+                              .update({
+                                decision: decision,
+                                decision_reason: reason || null,
+                                updated_at: new Date().toISOString()
+                              })
+                              .eq('item_id', item.item_id);
+
+                            if (error) {
+                              console.error('Error saving decision:', error);
+                              return;
+                            }
+                          }
+                        } catch (priceError) {
+                          console.error('Price suggestion error:', priceError);
+                          // Save decision without pricing if API fails
+                          const { error } = await browserClient
+                            .from('lgb_items')
+                            .update({
+                              decision: decision,
+                              decision_reason: reason || null,
+                              updated_at: new Date().toISOString()
+                            })
+                            .eq('item_id', item.item_id);
+
+                          if (error) {
+                            console.error('Error saving decision:', error);
+                            return;
+                          }
+                        }
+                      } else {
+                        // For non-sell decisions, just update the decision
+                        const { error } = await browserClient
+                          .from('lgb_items')
+                          .update({
+                            decision: decision,
+                            decision_reason: reason || null,
+                            updated_at: new Date().toISOString()
+                          })
+                          .eq('item_id', item.item_id);
+
+                        if (error) {
+                          console.error('Error saving decision:', error);
+                          return;
+                        }
                       }
 
-                      // Refresh to show updated progress
+                      // Refresh to show updated progress and pricing
                       revalidator.revalidate();
                     } catch (error) {
                       console.error('Error processing decision:', error);
                     }
                   }}
                 />
-                );
-              })}
+              ))}
             </div>
           )}
         </div>

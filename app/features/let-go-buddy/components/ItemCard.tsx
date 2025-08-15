@@ -24,15 +24,24 @@ export function ItemCard({
 }: ItemCardProps) {
   const [showReason, setShowReason] = useState(false);
   const [reason, setReason] = useState(item.decision_reason || '');
+  const [loadingPricing, setLoadingPricing] = useState(false);
 
-  const handleDecisionChange = (decision: ItemDecision) => {
+  const handleDecisionChange = async (decision: ItemDecision) => {
     if (decision === item.decision) {
       // Same decision clicked - show reason input
       setShowReason(true);
     } else {
-      // New decision
-      onDecisionChange?.(decision, reason);
-      setShowReason(false);
+      // New decision - show loading for sell decisions
+      if (decision === 'sell') {
+        setLoadingPricing(true);
+      }
+      
+      try {
+        await onDecisionChange?.(decision, reason);
+      } finally {
+        setLoadingPricing(false);
+        setShowReason(false);
+      }
     }
   };
 
@@ -152,23 +161,43 @@ export function ItemCard({
           </div>
         )}
 
+        {/* Price Loading State */}
+        {loadingPricing && (
+          <div className="bg-blue-50 rounded-lg p-3 flex items-center gap-2">
+            <Loader2 className="w-4 h-4 text-blue-600 animate-spin" />
+            <span className="text-sm font-medium text-blue-900">Getting price suggestions...</span>
+          </div>
+        )}
+        
         {/* Price Range */}
-        {item.price_mid && (
-          <div className="flex items-center gap-2 text-sm">
-            <DollarSign className="w-4 h-4 text-green-600" />
-            <span className="font-medium text-green-700">
-              {formatPrice(item.price_mid)}
+        {!loadingPricing && item.price_mid && (
+          <div className="bg-green-50 rounded-lg p-3 space-y-2">
+            <div className="flex items-center gap-2">
+              <DollarSign className="w-4 h-4 text-green-600" />
+              <span className="text-sm font-medium text-green-700">Price Suggestions</span>
+            </div>
+            <div className="space-y-1">
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-green-700">Recommended:</span>
+                <span className="font-semibold text-green-800">{formatPrice(item.price_mid)}</span>
+              </div>
               {item.price_low && item.price_high && (
-                <span className="text-gray-500 font-normal">
-                  {' '}({formatPrice(item.price_low)} - {formatPrice(item.price_high)})
-                </span>
+                <div className="flex justify-between items-center text-xs">
+                  <span className="text-green-600">Range:</span>
+                  <span className="text-green-700">
+                    {formatPrice(item.price_low)} - {formatPrice(item.price_high)}
+                  </span>
+                </div>
               )}
-            </span>
-            {item.price_confidence && (
-              <span className="text-xs text-gray-500">
-                {Math.round(item.price_confidence * 100)}% confidence
-              </span>
-            )}
+              {item.price_confidence && (
+                <div className="flex justify-between items-center text-xs">
+                  <span className="text-green-600">Confidence:</span>
+                  <span className="text-green-700">
+                    {Math.round(item.price_confidence * 100)}%
+                  </span>
+                </div>
+              )}
+            </div>
           </div>
         )}
 
@@ -218,6 +247,7 @@ export function ItemCard({
             <DecisionBar
               decision={item.decision}
               onDecisionChange={handleDecisionChange}
+              disabled={loadingPricing}
             />
             
             {/* Reason Input */}

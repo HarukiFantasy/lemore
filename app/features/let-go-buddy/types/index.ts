@@ -90,6 +90,7 @@ export interface LgbChallengeEntry {
 export interface LgbItemWithPhotosAndListings extends LgbItem {
   photos: string[];
   listings: LgbListing[];
+  status?: string; // For temporary loading states
 }
 
 export interface LgbSessionFull extends LgbSession {
@@ -126,7 +127,8 @@ export interface AIPriceSuggestResponse {
   price_mid: number;
   price_high: number;
   confidence: number; // 0-1
-  factors: string[];
+  rationale: string;
+  market_notes?: string;
 }
 
 export interface AIListingGenerateRequest {
