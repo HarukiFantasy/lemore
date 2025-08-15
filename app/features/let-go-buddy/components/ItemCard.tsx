@@ -10,7 +10,8 @@ import {
   Trash2, 
   Sparkles,
   DollarSign,
-  MessageCircle 
+  MessageCircle,
+  Loader2
 } from 'lucide-react';
 import type { ItemCardProps, ItemDecision } from '../types';
 import { DecisionBar } from './DecisionBar';
@@ -90,13 +91,21 @@ export function ItemCard({
       )}
 
       <div className="p-4 space-y-3">
+        {/* Loading State for Analyzing Items */}
+        {item.status === 'analyzing' && (
+          <div className="bg-blue-50 rounded-lg p-3 flex items-center gap-2">
+            <Loader2 className="w-4 h-4 text-blue-600 animate-spin" />
+            <span className="text-sm font-medium text-blue-900">AI is analyzing your item...</span>
+          </div>
+        )}
+        
         {/* Header */}
         <div className="flex items-start justify-between">
           <div className="flex-1">
             <h3 className="font-medium text-gray-900 line-clamp-2">
               {item.title || 'Untitled Item'}
             </h3>
-            {item.category && (
+            {item.category && item.category !== 'Analyzing' && (
               <p className="text-sm text-gray-500 mt-1">{item.category}</p>
             )}
           </div>

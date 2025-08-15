@@ -342,7 +342,11 @@ export default function SessionPage({ loaderData }: Route.ComponentProps) {
                     item_id: itemId,
                     session_id: session?.session_id,
                     photos: photos,
+                    title: 'Analyzing...',
+                    category: 'Analyzing',
                     status: 'analyzing',
+                    ai_recommendation: null,
+                    ai_rationale: 'AI is analyzing your item...',
                     created_at: new Date().toISOString()
                   };
                   setUploadingItems(prev => [...prev, tempItem]);
@@ -368,9 +372,13 @@ export default function SessionPage({ loaderData }: Route.ComponentProps) {
                   console.log('AI analysis result:', analysisResult);
 
                   // Update item with AI results
+                  // Generate a title based on category and condition
+                  const generatedTitle = `${analysisResult.data.category || 'Unknown'} - ${analysisResult.data.condition || 'Unknown Condition'}`;
+                  
                   const { error: updateError } = await browserClient
                     .from('lgb_items')
                     .update({
+                      title: generatedTitle,
                       category: analysisResult.data.category || 'Other',
                       condition: analysisResult.data.condition || 'Good',
                       usage_score: analysisResult.data.usage_score || 50,
