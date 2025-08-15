@@ -61,28 +61,49 @@ ${validatedData.context ? `Context: Scenario ${validatedData.context.scenario}, 
 
 Please analyze this item and provide recommendations. I've included ${validatedData.photos.length} photo(s) for reference.`;
 
-    // Prepare messages for OpenAI
+    // Prepare messages for OpenAI with image URL validation
+    let imageContent: any[] = [];
+    
+    // Test image URLs and only include accessible ones
+    for (const url of validatedData.photos) {
+      try {
+        // Simple URL format check
+        if (url && (url.startsWith('http://') || url.startsWith('https://'))) {
+          imageContent.push({
+            type: 'image_url',
+            image_url: { url, detail: 'low' }
+          });
+        }
+      } catch (error) {
+        console.warn('Skipping invalid image URL:', url);
+      }
+    }
+
+    // If no valid images, provide text-only analysis
     const messages: any[] = [
       { role: 'system', content: systemPrompt },
       {
         role: 'user',
         content: [
-          { type: 'text', text: userPrompt },
-          ...validatedData.photos.map(url => ({
-            type: 'image_url',
-            image_url: { url, detail: 'low' }
-          }))
+          { 
+            type: 'text', 
+            text: imageContent.length > 0 
+              ? userPrompt 
+              : `${userPrompt}\n\nNote: Unable to analyze photos due to technical issues. Please provide analysis based on the item description only.`
+          },
+          ...imageContent
         ]
       }
     ];
 
-    // Call OpenAI API
+    // Call OpenAI API with timeout handling
     const completion = await openai.chat.completions.create({
       model: 'gpt-4o',
       messages,
       max_tokens: 500,
       temperature: 0.7,
-      response_format: { type: 'json_object' }
+      response_format: { type: 'json_object' },
+      timeout: 30000 // 30 second timeout
     });
 
     const aiResponse = completion.choices[0]?.message?.content;
@@ -128,12 +149,27 @@ Please analyze this item and provide recommendations. I've included ${validatedD
   } catch (error) {
     console.error('AI analyze-item error:', error);
 
+    let errorMessage = 'Failed to analyze item. Please try again.';
+    let errorCode = 'internal_error';
+
+    if (error instanceof z.ZodError) {
+      errorCode = 'validation_error';
+      errorMessage = error.errors.map(e => e.message).join(', ');
+    } else if (error && typeof error === 'object' && 'code' in error) {
+      // Handle OpenAI specific errors
+      if (error.code === 'invalid_image_url') {
+        errorCode = 'image_access_error';
+        errorMessage = 'Unable to access uploaded images. Please try uploading again.';
+      } else if (error.code === 'timeout') {
+        errorCode = 'timeout_error';
+        errorMessage = 'Analysis timed out. Please try with smaller images.';
+      }
+    }
+
     const errorResponse: ApiResponse<AIAnalyzeItemResponse> = {
       error: {
-        code: error instanceof z.ZodError ? 'validation_error' : 'internal_error',
-        message: error instanceof z.ZodError 
-          ? error.errors.map(e => e.message).join(', ')
-          : 'Failed to analyze item. Please try again.'
+        code: errorCode,
+        message: errorMessage
       },
       meta: {
         request_id: requestId,

@@ -488,11 +488,18 @@ export default function SessionPage({ loaderData }: Route.ComponentProps) {
                   });
 
                   if (!analysisResponse.ok) {
-                    throw new Error('AI analysis failed');
+                    const errorData = await analysisResponse.json().catch(() => null);
+                    const errorMessage = errorData?.error?.message || 'AI analysis failed';
+                    throw new Error(errorMessage);
                   }
 
                   const analysisResult = await analysisResponse.json();
                   console.log('AI analysis result:', analysisResult);
+
+                  // Check if the API returned an error in the response body
+                  if (analysisResult.error) {
+                    throw new Error(analysisResult.error.message || 'AI analysis failed');
+                  }
 
                   // Update item with AI results
                   // Generate a title based on category and condition
@@ -544,8 +551,55 @@ export default function SessionPage({ loaderData }: Route.ComponentProps) {
 
                 } catch (error) {
                   console.error('Error processing item:', error);
-                  // Remove from uploading items on error
-                  setUploadingItems(prev => prev.filter(item => item.item_id));
+                  
+                  // Show error message to user and update item
+                  const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+                  
+                  // Find the current itemId from the uploading items
+                  const currentUploadingItem = uploadingItems.find(item => item.status === 'analyzing');
+                  const currentItemId = currentUploadingItem?.item_id;
+
+                  if (currentItemId) {
+                    // Update the temporary item to show error
+                    setUploadingItems(prev => prev.map(item => 
+                      item.item_id === currentItemId 
+                        ? {
+                            ...item,
+                            title: 'Analysis Failed',
+                            category: 'Other',
+                            status: 'error',
+                            ai_recommendation: 'keep',
+                            ai_rationale: errorMessage
+                          }
+                        : item
+                    ));
+
+                    // Update item in database with error state
+                    try {
+                      await browserClient
+                        .from('lgb_items')
+                        .update({
+                          title: 'Analysis Failed',
+                          category: 'Other',
+                          condition: 'Good',
+                          ai_recommendation: 'keep',
+                          ai_rationale: errorMessage,
+                          updated_at: new Date().toISOString()
+                        })
+                        .eq('item_id', currentItemId);
+                    } catch (updateError) {
+                      console.error('Error updating item with error state:', updateError);
+                    }
+
+                    // Refresh after delay
+                    setTimeout(() => {
+                      revalidator.revalidate();
+                      setUploadingItems(prev => prev.filter(item => item.item_id !== currentItemId));
+                    }, 3000); // Show error for 3 seconds
+                  } else {
+                    // Fallback: just remove any analyzing items
+                    setUploadingItems(prev => prev.filter(item => item.status !== 'analyzing'));
+                  }
                 }
               }}
               maxPhotos={5}

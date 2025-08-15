@@ -120,6 +120,27 @@ export function ItemCard({
             <span className="text-sm font-medium text-blue-900">AI is analyzing your item...</span>
           </div>
         )}
+
+        {/* Error State */}
+        {item.status === 'error' && (
+          <div className="bg-red-50 rounded-lg p-3">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="text-sm font-medium text-red-900">Analysis Error</span>
+            </div>
+            <p className="text-xs text-red-700">{item.ai_rationale}</p>
+            <p className="text-xs text-red-600 mt-1">You can still make decisions manually using the buttons below.</p>
+          </div>
+        )}
+
+        {/* Limit Reached State */}
+        {item.status === 'limit_reached' && (
+          <div className="bg-amber-50 rounded-lg p-3">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="text-sm font-medium text-amber-900">AI Limit Reached</span>
+            </div>
+            <p className="text-xs text-amber-700">{item.ai_rationale}</p>
+          </div>
+        )}
         
         {/* Header */}
         <div className="flex items-start justify-between">
