@@ -45,9 +45,17 @@ export function ItemCard({
     }
   };
 
-  const handleReasonSubmit = () => {
+  const handleReasonSubmit = async () => {
     if (item.decision) {
-      onDecisionChange?.(item.decision, reason);
+      if (item.decision === 'sell') {
+        setLoadingPricing(true);
+      }
+      
+      try {
+        await onDecisionChange?.(item.decision, reason);
+      } finally {
+        setLoadingPricing(false);
+      }
     }
     setShowReason(false);
   };
@@ -271,8 +279,16 @@ export function ItemCard({
                   <Button
                     size="sm"
                     onClick={handleReasonSubmit}
+                    disabled={loadingPricing}
                   >
-                    Save
+                    {loadingPricing && item.decision === 'sell' ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Getting Price...
+                      </>
+                    ) : (
+                      'Save'
+                    )}
                   </Button>
                 </div>
               </div>
