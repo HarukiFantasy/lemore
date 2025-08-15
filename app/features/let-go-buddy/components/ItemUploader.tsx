@@ -115,10 +115,6 @@ export function ItemUploader({
         console.log('Setting photos state:', updatedPhotos);
         setPhotos(updatedPhotos);
         onUpload(updatedPhotos);
-        toast({
-          title: "Photos uploaded",
-          description: `Successfully uploaded ${newPhotos.length} photo(s).`,
-        });
       }
     } catch (error) {
       console.error('processFiles error:', error);

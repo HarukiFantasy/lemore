@@ -9,7 +9,11 @@ import {
   BarChart3,
   Package,
   DollarSign,
-  Target
+  Target,
+  Heart,
+  ShoppingCart,
+  Gift,
+  Trash2
 } from 'lucide-react';
 import type { Route } from './+types/session';
 import { makeSSRClient, getAuthUser, browserClient } from '~/supa-client';
@@ -160,7 +164,16 @@ export default function SessionPage({ loaderData }: Route.ComponentProps) {
   };
 
   const getCompletionPercentage = () => {
-    if (!session || !session.item_count || session.item_count === 0) return 0;
+    if (!session || allItems.length === 0) return 0;
+    
+    // For Scenario A, count items with decisions made
+    if (session.scenario === 'A') {
+      const itemsWithDecisions = allItems.filter(item => item.decision).length;
+      return Math.round((itemsWithDecisions / allItems.length) * 100);
+    }
+    
+    // For other scenarios, use database decided_count
+    if (!session.item_count || session.item_count === 0) return 0;
     const decidedCount = session.decided_count || 0;
     return Math.round((decidedCount / session.item_count) * 100);
   };
@@ -246,6 +259,51 @@ export default function SessionPage({ loaderData }: Route.ComponentProps) {
                     className="bg-blue-500 h-3 rounded-full transition-all"
                     style={{ width: `${getCompletionPercentage()}%` }}
                   />
+                </div>
+              )}
+
+              {/* Decision Breakdown for Scenario A */}
+              {session?.scenario === 'A' && allItems.length > 0 && (
+                <div className="bg-white rounded-lg border p-4 mb-6">
+                  <h3 className="text-lg font-semibold mb-3">Decision Summary</h3>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <div className="text-center">
+                      <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-2">
+                        <Heart className="w-6 h-6 text-green-600" />
+                      </div>
+                      <div className="text-2xl font-bold text-green-700">
+                        {allItems.filter(item => item.decision === 'keep').length}
+                      </div>
+                      <div className="text-sm text-gray-600">Keep</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-2">
+                        <ShoppingCart className="w-6 h-6 text-blue-600" />
+                      </div>
+                      <div className="text-2xl font-bold text-blue-700">
+                        {allItems.filter(item => item.decision === 'sell').length}
+                      </div>
+                      <div className="text-sm text-gray-600">Sell</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-2">
+                        <Gift className="w-6 h-6 text-purple-600" />
+                      </div>
+                      <div className="text-2xl font-bold text-purple-700">
+                        {allItems.filter(item => item.decision === 'donate').length}
+                      </div>
+                      <div className="text-sm text-gray-600">Donate</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-2">
+                        <Trash2 className="w-6 h-6 text-gray-600" />
+                      </div>
+                      <div className="text-2xl font-bold text-gray-700">
+                        {allItems.filter(item => item.decision === 'dispose').length}
+                      </div>
+                      <div className="text-sm text-gray-600">Dispose</div>
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
@@ -394,11 +452,30 @@ export default function SessionPage({ loaderData }: Route.ComponentProps) {
                     throw updateError;
                   }
 
-                  // Remove from uploading items
-                  setUploadingItems(prev => prev.filter(item => item.item_id !== itemId));
+                  // Update the temporary item to show it's complete but keep it visible
+                  setUploadingItems(prev => prev.map(item => 
+                    item.item_id === itemId 
+                      ? {
+                          ...item,
+                          title: generatedTitle,
+                          category: analysisResult.data.category || 'Other',
+                          condition: analysisResult.data.condition || 'Good',
+                          ai_recommendation: analysisResult.data.recommendation || 'keep',
+                          ai_rationale: analysisResult.data.rationale || 'AI analysis completed',
+                          usage_score: analysisResult.data.usage_score || 50,
+                          sentiment: analysisResult.data.sentiment || 'neutral',
+                          status: 'analyzed'
+                        }
+                      : item
+                  ));
                   
-                  // Refresh data to show updated item
+                  // Refresh data from database (this is async internally)
                   revalidator.revalidate();
+                  
+                  // Wait briefly then remove from uploading items since it's now in the database
+                  setTimeout(() => {
+                    setUploadingItems(prev => prev.filter(item => item.item_id !== itemId));
+                  }, 1000);
 
                 } catch (error) {
                   console.error('Error processing item:', error);
@@ -431,12 +508,47 @@ export default function SessionPage({ loaderData }: Route.ComponentProps) {
             </Card>
           ) : (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {allItems.map((item) => (
-                <ItemCard 
-                  key={item.item_id || item.temp_id}
-                  item={item}
+              {allItems.map((item) => {
+                const shouldShowControls = session?.scenario === 'A' && item.ai_recommendation && item.status !== 'analyzing';
+                console.log('Item decision controls check:', {
+                  itemId: item.item_id,
+                  scenario: session?.scenario,
+                  hasAiRecommendation: !!item.ai_recommendation,
+                  status: item.status,
+                  shouldShow: shouldShowControls
+                });
+                
+                return (
+                  <ItemCard 
+                    key={item.item_id || item.temp_id}
+                    item={item}
+                    showDecisionControls={shouldShowControls}
+                    onDecisionChange={async (decision, reason) => {
+                    try {
+                      // Update item decision in database
+                      const { error } = await browserClient
+                        .from('lgb_items')
+                        .update({
+                          decision: decision,
+                          decision_reason: reason || null,
+                          updated_at: new Date().toISOString()
+                        })
+                        .eq('item_id', item.item_id);
+
+                      if (error) {
+                        console.error('Error saving decision:', error);
+                        return;
+                      }
+
+                      // Refresh to show updated progress
+                      revalidator.revalidate();
+                    } catch (error) {
+                      console.error('Error processing decision:', error);
+                    }
+                  }}
                 />
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
