@@ -27,6 +27,15 @@ export function ItemUploader({
 
       console.log('Uploading file to storage:', filePath);
       
+      // First check if user is authenticated
+      const { data: { user } } = await client.auth.getUser();
+      if (!user) {
+        console.error('User not authenticated for storage upload');
+        throw new Error('Authentication required for file upload');
+      }
+
+      console.log('User authenticated, uploading to letgobuddy-product bucket...');
+      
       // Upload file to letgobuddy-product bucket
       const { data, error } = await client.storage
         .from('letgobuddy-product')
@@ -36,7 +45,21 @@ export function ItemUploader({
         });
 
       if (error) {
-        console.error('Storage upload error:', error);
+        console.error('Storage upload error details:', {
+          message: error.message,
+          statusCode: error.statusCode,
+          error: error
+        });
+        
+        // Provide more specific error messages
+        if (error.message?.includes('not found') || error.message?.includes('bucket')) {
+          throw new Error('Storage bucket not configured. Please contact support.');
+        } else if (error.message?.includes('permission') || error.message?.includes('policy')) {
+          throw new Error('Storage permissions issue. Please check your account settings.');
+        } else if (error.message?.includes('CORS')) {
+          throw new Error('Storage configuration issue. Please try again later.');
+        }
+        
         throw error;
       }
 
@@ -67,6 +90,51 @@ export function ItemUploader({
         variant: "destructive"
       });
       return;
+    }
+
+    // Check AI analysis limits before uploading to avoid wasting storage
+    try {
+      console.log('Checking AI analysis limits before upload...');
+      const { data: { user } } = await browserClient.auth.getUser();
+      if (!user) {
+        toast({
+          title: "Authentication required",
+          description: "Please log in to upload items.",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Count user's AI analyses
+      const { data: userSessions } = await browserClient
+        .from('lgb_sessions')
+        .select('session_id')
+        .eq('user_id', user.id);
+      
+      const sessionIds = userSessions?.map(s => s.session_id) || [];
+      
+      const { count: analysisCount } = await browserClient
+        .from('lgb_items')
+        .select('item_id', { count: 'exact' })
+        .in('session_id', sessionIds.length > 0 ? sessionIds : ['dummy'])
+        .not('ai_recommendation', 'is', null)
+        .neq('ai_recommendation', 'keep'); // Don't count placeholder values
+
+      const maxFreeAnalyses = 2;
+      const usedAnalyses = analysisCount || 0;
+      const canAnalyze = usedAnalyses < maxFreeAnalyses;
+
+      if (!canAnalyze) {
+        toast({
+          title: "AI Analysis Limit Reached",
+          description: `You've used ${usedAnalyses}/${maxFreeAnalyses} free AI analyses. You can still upload items but they won't be analyzed automatically.`,
+          variant: "destructive"
+        });
+        return;
+      }
+    } catch (error) {
+      console.error('Error checking AI limits:', error);
+      // Continue with upload even if limit check fails
     }
 
     setUploading(true);
