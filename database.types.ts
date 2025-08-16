@@ -29,85 +29,6 @@ export type Database = {
         }
         Relationships: []
       }
-      challenge_calendar_items: {
-        Row: {
-          completed: boolean
-          completed_at: string | null
-          created_at: string
-          item_id: number
-          name: string
-          reflection: string | null
-          scheduled_date: string
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          completed?: boolean
-          completed_at?: string | null
-          created_at?: string
-          item_id?: never
-          name: string
-          reflection?: string | null
-          scheduled_date: string
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          completed?: boolean
-          completed_at?: string | null
-          created_at?: string
-          item_id?: never
-          name?: string
-          reflection?: string | null
-          scheduled_date?: string
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "challenge_calendar_items_user_id_user_profiles_profile_id_fk"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "product_detail_view"
-            referencedColumns: ["seller_id"]
-          },
-          {
-            foreignKeyName: "challenge_calendar_items_user_id_user_profiles_profile_id_fk"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "products_listings_view"
-            referencedColumns: ["seller_id"]
-          },
-          {
-            foreignKeyName: "challenge_calendar_items_user_id_user_profiles_profile_id_fk"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "user_dashboard_view"
-            referencedColumns: ["profile_id"]
-          },
-          {
-            foreignKeyName: "challenge_calendar_items_user_id_user_profiles_profile_id_fk"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "user_profiles"
-            referencedColumns: ["profile_id"]
-          },
-          {
-            foreignKeyName: "challenge_calendar_items_user_id_user_profiles_profile_id_fk"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "user_sales_stats_view"
-            referencedColumns: ["profile_id"]
-          },
-          {
-            foreignKeyName: "challenge_calendar_items_user_id_user_profiles_profile_id_fk"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "user_stats_view"
-            referencedColumns: ["profile_id"]
-          },
-        ]
-      }
       lgb_item_photos: {
         Row: {
           created_at: string | null
@@ -132,7 +53,21 @@ export type Database = {
             foreignKeyName: "lgb_item_photos_item_id_fkey"
             columns: ["item_id"]
             isOneToOne: false
+            referencedRelation: "declutter_items"
+            referencedColumns: ["item_id"]
+          },
+          {
+            foreignKeyName: "lgb_item_photos_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
             referencedRelation: "lgb_items"
+            referencedColumns: ["item_id"]
+          },
+          {
+            foreignKeyName: "lgb_item_photos_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "moving_calendar_items"
             referencedColumns: ["item_id"]
           },
         ]
@@ -142,6 +77,8 @@ export type Database = {
           ai_rationale: string | null
           ai_recommendation: string | null
           category: string | null
+          completed: boolean | null
+          completed_at: string | null
           condition: string | null
           created_at: string | null
           decision: string | null
@@ -152,8 +89,11 @@ export type Database = {
           price_high: number | null
           price_low: number | null
           price_mid: number | null
+          reflection: string | null
+          scheduled_date: string | null
           sentiment: string | null
           session_id: string
+          tip: string | null
           title: string | null
           updated_at: string | null
           usage_score: number | null
@@ -162,6 +102,8 @@ export type Database = {
           ai_rationale?: string | null
           ai_recommendation?: string | null
           category?: string | null
+          completed?: boolean | null
+          completed_at?: string | null
           condition?: string | null
           created_at?: string | null
           decision?: string | null
@@ -172,8 +114,11 @@ export type Database = {
           price_high?: number | null
           price_low?: number | null
           price_mid?: number | null
+          reflection?: string | null
+          scheduled_date?: string | null
           sentiment?: string | null
           session_id: string
+          tip?: string | null
           title?: string | null
           updated_at?: string | null
           usage_score?: number | null
@@ -182,6 +127,8 @@ export type Database = {
           ai_rationale?: string | null
           ai_recommendation?: string | null
           category?: string | null
+          completed?: boolean | null
+          completed_at?: string | null
           condition?: string | null
           created_at?: string | null
           decision?: string | null
@@ -192,8 +139,11 @@ export type Database = {
           price_high?: number | null
           price_low?: number | null
           price_mid?: number | null
+          reflection?: string | null
+          scheduled_date?: string | null
           sentiment?: string | null
           session_id?: string
+          tip?: string | null
           title?: string | null
           updated_at?: string | null
           usage_score?: number | null
@@ -251,7 +201,21 @@ export type Database = {
             foreignKeyName: "lgb_listings_item_id_fkey"
             columns: ["item_id"]
             isOneToOne: false
+            referencedRelation: "declutter_items"
+            referencedColumns: ["item_id"]
+          },
+          {
+            foreignKeyName: "lgb_listings_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
             referencedRelation: "lgb_items"
+            referencedColumns: ["item_id"]
+          },
+          {
+            foreignKeyName: "lgb_listings_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "moving_calendar_items"
             referencedColumns: ["item_id"]
           },
         ]
@@ -1435,6 +1399,138 @@ export type Database = {
       }
     }
     Views: {
+      declutter_items: {
+        Row: {
+          ai_rationale: string | null
+          ai_recommendation: string | null
+          category: string | null
+          condition: string | null
+          created_at: string | null
+          decision: string | null
+          decision_reason: string | null
+          item_id: string | null
+          notes: string | null
+          price_confidence: number | null
+          price_high: number | null
+          price_low: number | null
+          price_mid: number | null
+          sentiment: string | null
+          session_id: string | null
+          title: string | null
+          updated_at: string | null
+          usage_score: number | null
+        }
+        Insert: {
+          ai_rationale?: string | null
+          ai_recommendation?: string | null
+          category?: string | null
+          condition?: string | null
+          created_at?: string | null
+          decision?: string | null
+          decision_reason?: string | null
+          item_id?: string | null
+          notes?: string | null
+          price_confidence?: number | null
+          price_high?: number | null
+          price_low?: number | null
+          price_mid?: number | null
+          sentiment?: string | null
+          session_id?: string | null
+          title?: string | null
+          updated_at?: string | null
+          usage_score?: number | null
+        }
+        Update: {
+          ai_rationale?: string | null
+          ai_recommendation?: string | null
+          category?: string | null
+          condition?: string | null
+          created_at?: string | null
+          decision?: string | null
+          decision_reason?: string | null
+          item_id?: string | null
+          notes?: string | null
+          price_confidence?: number | null
+          price_high?: number | null
+          price_low?: number | null
+          price_mid?: number | null
+          sentiment?: string | null
+          session_id?: string | null
+          title?: string | null
+          updated_at?: string | null
+          usage_score?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lgb_items_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "lgb_sessions"
+            referencedColumns: ["session_id"]
+          },
+          {
+            foreignKeyName: "lgb_items_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "view_session_dashboard"
+            referencedColumns: ["session_id"]
+          },
+        ]
+      }
+      moving_calendar_items: {
+        Row: {
+          completed: boolean | null
+          completed_at: string | null
+          created_at: string | null
+          item_id: string | null
+          name: string | null
+          reflection: string | null
+          scheduled_date: string | null
+          session_id: string | null
+          tip: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          completed?: boolean | null
+          completed_at?: string | null
+          created_at?: string | null
+          item_id?: string | null
+          name?: string | null
+          reflection?: string | null
+          scheduled_date?: string | null
+          session_id?: string | null
+          tip?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          completed?: boolean | null
+          completed_at?: string | null
+          created_at?: string | null
+          item_id?: string | null
+          name?: string | null
+          reflection?: string | null
+          scheduled_date?: string | null
+          session_id?: string | null
+          tip?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lgb_items_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "lgb_sessions"
+            referencedColumns: ["session_id"]
+          },
+          {
+            foreignKeyName: "lgb_items_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "view_session_dashboard"
+            referencedColumns: ["session_id"]
+          },
+        ]
+      }
       notification_view: {
         Row: {
           created_at: string | null

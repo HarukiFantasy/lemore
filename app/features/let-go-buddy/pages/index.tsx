@@ -102,7 +102,7 @@ export default function LetGoBuddyIndex({ loaderData }: Route.ComponentProps) {
       title: 'Keep vs Sell Helper',
       description: 'Get AI guidance on whether to keep, sell, donate, or dispose of your items',
       icon: <Heart className="w-6 h-6" />,
-      color: 'bg-green-200',
+      color: 'bg-green-500',
       features: ['Photo analysis', 'Smart recommendations', 'Price suggestions'],
     },
     {
@@ -110,7 +110,7 @@ export default function LetGoBuddyIndex({ loaderData }: Route.ComponentProps) {
       title: 'Quick Listing Generator',
       description: 'Create marketplace-ready listings in English quickly',
       icon: <Zap className="w-6 h-6" />,
-      color: 'bg-blue-200',
+      color: 'bg-blue-500',
       features: ['AI listing copy', 'Professional tone', 'Copy & paste ready'],
     },
     {
@@ -118,7 +118,7 @@ export default function LetGoBuddyIndex({ loaderData }: Route.ComponentProps) {
       title: 'Moving Assistant',
       description: 'Plan your move or departure with week-by-week action plans',
       icon: <Target className="w-6 h-6 " />,
-      color: 'bg-orange-200',
+      color: 'bg-orange-500',
       features: ['Timeline planning', 'Multi-channel posting', 'Translation help'],
     }
   ];
@@ -297,7 +297,7 @@ export default function LetGoBuddyIndex({ loaderData }: Route.ComponentProps) {
                     />
                   </div>
                   
-                  <Button asChild className="w-full">
+                  <Button asChild variant="outline" className="w-full `bg-teal-50 text-teal-600 hover:bg-teal-400 hover:text-teal-50 ">
                     <Link to={`/let-go-buddy/session/${session.session_id}`}>
                       {session.status === 'completed' ? 'Session Completed' : 'Continue Session'}
                       <ArrowRight className="w-4 h-4 ml-2" />
@@ -383,7 +383,7 @@ export default function LetGoBuddyIndex({ loaderData }: Route.ComponentProps) {
               <Button 
                 asChild 
                 variant="outline"
-                className={`w-full transition-transform ${
+                className={`bg-teal-50 text-teal-600 hover:bg-teal-400 hover:text-teal-50 w-full transition-transform ${
                   user && aiUsageData && !aiUsageData.canUse 
                     ? 'bg-gray-400 hover:bg-gray-400 cursor-not-allowed pointer-events-none' 
                     : 'group-hover:scale-105'

@@ -208,7 +208,7 @@ export default function ChallengesPage({ loaderData }: Route.ComponentProps) {
     const weeks: { [key: string]: typeof movingTasks } = {};
     
     movingTasks.forEach(task => {
-      const taskDate = new Date(task.scheduled_date);
+      const taskDate = new Date(task.scheduled_date!);
       const daysDiff = Math.floor((taskDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
       
       let weekKey;
@@ -276,7 +276,7 @@ export default function ChallengesPage({ loaderData }: Route.ComponentProps) {
   const getTasksForDate = useCallback((date: Date) => {
     const dateStr = date.toISOString().split('T')[0];
     return challenges.filter(task => {
-      const taskDate = new Date(task.scheduled_date).toISOString().split('T')[0];
+      const taskDate = new Date(task.scheduled_date!).toISOString().split('T')[0];
       return taskDate === dateStr;
     });
   }, [challenges]);
@@ -566,7 +566,7 @@ export default function ChallengesPage({ loaderData }: Route.ComponentProps) {
               <div className="p-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                 {regularChallenges.map((challenge) => {
                   const completed = challenge.completed;
-                  const daysSinceScheduled = getDaysFromScheduled(challenge.scheduled_date);
+                  const daysSinceScheduled = getDaysFromScheduled(challenge.scheduled_date!);
                   const isOverdue = daysSinceScheduled > 0 && !completed;
                   const isToday = daysSinceScheduled === 0;
 
@@ -591,7 +591,7 @@ export default function ChallengesPage({ loaderData }: Route.ComponentProps) {
                             {isToday ? 'Today' : 
                              daysSinceScheduled > 0 ? `${daysSinceScheduled} days ago` :
                              `In ${Math.abs(daysSinceScheduled)} days`} • 
-                            {new Date(challenge.scheduled_date).toLocaleDateString()}
+                            {new Date(challenge.scheduled_date!).toLocaleDateString()}
                           </p>
                           {challenge.reflection && (
                             <p className="text-xs sm:text-sm text-green-700 mt-2 italic">\"{challenge.reflection}\"</p>
