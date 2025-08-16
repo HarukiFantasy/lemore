@@ -7,8 +7,11 @@ import {
   Calendar,
   Plus,
   CheckCircle,
-  Clock
+  Clock,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
+import { useState } from 'react';
 import type { Route } from './+types/challenges';
 import { makeSSRClient, getAuthUser } from '~/supa-client';
 
@@ -86,6 +89,8 @@ export const action = async ({ request }: Route.ActionArgs) => {
 export default function ChallengesPage({ loaderData }: Route.ComponentProps) {
   const { challenges, regularChallenges, movingTasks } = loaderData;
   const actionData = useActionData<typeof action>();
+  const [showCalendar, setShowCalendar] = useState(false);
+  const [currentDate, setCurrentDate] = useState(new Date());
 
   const getStatusColor = (completed: boolean) => {
     return completed ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800';
@@ -96,6 +101,42 @@ export default function ChallengesPage({ loaderData }: Route.ComponentProps) {
     const today = new Date();
     const daysDiff = Math.ceil((today.getTime() - scheduled.getTime()) / (1000 * 60 * 60 * 24));
     return daysDiff;
+  };
+
+  // Calendar helper functions
+  const getCalendarDays = (date: Date) => {
+    const year = date.getFullYear();
+    const month = date.getMonth();
+    
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const startDate = new Date(firstDay);
+    startDate.setDate(startDate.getDate() - firstDay.getDay());
+    
+    const days = [];
+    for (let i = 0; i < 42; i++) {
+      const day = new Date(startDate);
+      day.setDate(startDate.getDate() + i);
+      days.push(day);
+    }
+    
+    return days;
+  };
+
+  const getTasksForDate = (date: Date) => {
+    const dateStr = date.toISOString().split('T')[0];
+    return challenges.filter(task => {
+      const taskDate = new Date(task.scheduled_date).toISOString().split('T')[0];
+      return taskDate === dateStr;
+    });
+  };
+
+  const navigateMonth = (direction: 'prev' | 'next') => {
+    setCurrentDate(prev => {
+      const newDate = new Date(prev);
+      newDate.setMonth(prev.getMonth() + (direction === 'next' ? 1 : -1));
+      return newDate;
+    });
   };
 
   return (
@@ -120,12 +161,24 @@ export default function ChallengesPage({ loaderData }: Route.ComponentProps) {
               </p>
             </div>
             
-            <Button asChild size="lg" className="bg-pink-600 hover:bg-pink-700">
-              <Link to="/let-go-buddy/new?scenario=C">
-                <Plus className="w-5 h-5 mr-2" />
-                New Challenge
-              </Link>
-            </Button>
+            <div className="flex gap-3">
+              <Button 
+                onClick={() => setShowCalendar(!showCalendar)}
+                size="lg" 
+                variant={showCalendar ? "default" : "outline"}
+                className={showCalendar ? "bg-purple-600 hover:bg-purple-700" : ""}
+              >
+                <Calendar className="w-5 h-5 mr-2" />
+                {showCalendar ? "List View" : "Calendar View"}
+              </Button>
+              
+              <Button asChild size="lg" className="bg-pink-600 hover:bg-pink-700">
+                <Link to="/let-go-buddy/new?scenario=C">
+                  <Plus className="w-5 h-5 mr-2" />
+                  New Challenge
+                </Link>
+              </Button>
+            </div>
           </div>
         </div>
       </div>
@@ -141,6 +194,92 @@ export default function ChallengesPage({ loaderData }: Route.ComponentProps) {
         {actionData?.error && (
           <Card className="p-4 border-red-200 bg-red-50 mb-6">
             <p className="text-red-600 text-sm">{actionData.error}</p>
+          </Card>
+        )}
+
+        {/* Calendar View */}
+        {showCalendar && challenges.length > 0 && (
+          <Card className="p-6 mb-8">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-semibold text-gray-900">Task Calendar</h2>
+              <div className="flex items-center gap-2">
+                <Button 
+                  onClick={() => navigateMonth('prev')}
+                  variant="outline"
+                  size="sm"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </Button>
+                <span className="px-4 py-2 font-semibold text-gray-900">
+                  {currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                </span>
+                <Button 
+                  onClick={() => navigateMonth('next')}
+                  variant="outline"
+                  size="sm"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+
+            {/* Calendar Grid */}
+            <div className="grid grid-cols-7 gap-1 mb-4">
+              {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+                <div key={day} className="text-center py-2 font-semibold text-gray-600 text-sm">
+                  {day}
+                </div>
+              ))}
+            </div>
+
+            <div className="grid grid-cols-7 gap-1">
+              {getCalendarDays(currentDate).map((day, index) => {
+                const isCurrentMonth = day.getMonth() === currentDate.getMonth();
+                const isToday = day.toDateString() === new Date().toDateString();
+                const dayTasks = getTasksForDate(day);
+                const hasMovingTasks = dayTasks.some(t => t.name.startsWith('📦') || t.name.startsWith('⚡'));
+                const hasRegularTasks = dayTasks.some(t => !t.name.startsWith('📦') && !t.name.startsWith('⚡'));
+                const completedTasks = dayTasks.filter(t => t.completed).length;
+                
+                return (
+                  <div
+                    key={index}
+                    className={`
+                      min-h-[80px] p-1 border rounded-lg cursor-pointer transition-colors
+                      ${isCurrentMonth ? 'bg-white' : 'bg-gray-50'}
+                      ${isToday ? 'border-blue-500 bg-blue-50' : 'border-gray-200'}
+                      ${dayTasks.length > 0 ? 'hover:bg-gray-50' : ''}
+                    `}
+                  >
+                    <div className={`text-sm font-medium ${
+                      isCurrentMonth ? 'text-gray-900' : 'text-gray-400'
+                    } ${isToday ? 'text-blue-600' : ''}`}>
+                      {day.getDate()}
+                    </div>
+                    
+                    {dayTasks.length > 0 && (
+                      <div className="space-y-1 mt-1">
+                        {hasMovingTasks && (
+                          <div className="text-xs bg-purple-100 text-purple-700 px-1 rounded truncate">
+                            📦 Moving ({dayTasks.filter(t => t.name.startsWith('📦') || t.name.startsWith('⚡')).length})
+                          </div>
+                        )}
+                        {hasRegularTasks && (
+                          <div className="text-xs bg-pink-100 text-pink-700 px-1 rounded truncate">
+                            🎯 Challenge ({dayTasks.filter(t => !t.name.startsWith('📦') && !t.name.startsWith('⚡')).length})
+                          </div>
+                        )}
+                        {completedTasks > 0 && (
+                          <div className="text-xs text-green-600">
+                            ✓ {completedTasks} done
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           </Card>
         )}
 
