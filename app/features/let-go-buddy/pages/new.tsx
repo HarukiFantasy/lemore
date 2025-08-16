@@ -73,23 +73,25 @@ export const action = async ({ request }: Route.ActionArgs) => {
 
     // Create session
     if (scenario === 'C') {
-      // Challenge scenario - create challenge item
-      const challengeName = `${days || 7}-Day Declutter Challenge`;
-      const scheduledDate = new Date();
+      // Challenge scenario - create session first, then challenge items
+      const { data: sessionId, error: rpcError } = await client
+        .rpc('rpc_create_session', {
+          p_scenario: scenario,
+          p_title: title || `${days || 7}-Day Declutter Challenge`,
+          p_move_date: undefined,
+          p_region: region || undefined
+        });
       
-      const { data: challenge, error } = await client
-        .from('challenge_calendar_items')
-        .insert({
-          user_id: user.id,
-          name: challengeName,
-          scheduled_date: scheduledDate.toISOString()
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
+      if (rpcError) {
+        console.error('Session creation failed:', rpcError);
+        throw rpcError;
+      }
       
-      return redirect(`/let-go-buddy/challenges?new=${challenge.item_id}`);
+      if (!sessionId) {
+        throw new Error('Failed to create session - no session ID returned');
+      }
+      
+      return redirect(`/let-go-buddy/session/${sessionId}`);
     } else {
       // Create session using RPC
       console.log('Creating session for user:', user.id, 'scenario:', scenario);

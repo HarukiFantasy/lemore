@@ -297,7 +297,7 @@ export default function LetGoBuddyIndex({ loaderData }: Route.ComponentProps) {
                     />
                   </div>
                   
-                  <Button asChild variant="outline" className="w-full `bg-teal-50 text-teal-600 hover:bg-teal-400 hover:text-teal-50 ">
+                  <Button asChild variant="outline" className="w-full `bg-teal-50 text-teal-600 hover:bg-teal-700 hover:text-teal-50 ">
                     <Link to={`/let-go-buddy/session/${session.session_id}`}>
                       {session.status === 'completed' ? 'Session Completed' : 'Continue Session'}
                       <ArrowRight className="w-4 h-4 ml-2" />
@@ -383,7 +383,7 @@ export default function LetGoBuddyIndex({ loaderData }: Route.ComponentProps) {
               <Button 
                 asChild 
                 variant="outline"
-                className={`bg-teal-50 text-teal-600 hover:bg-teal-400 hover:text-teal-50 w-full transition-transform ${
+                className={`bg-teal-50 text-teal-600 hover:bg-teal-700 hover:text-teal-50 w-full transition-transform ${
                   user && aiUsageData && !aiUsageData.canUse 
                     ? 'bg-gray-400 hover:bg-gray-400 cursor-not-allowed pointer-events-none' 
                     : 'group-hover:scale-105'
