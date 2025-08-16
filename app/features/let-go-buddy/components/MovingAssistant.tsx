@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card } from '~/common/components/ui/card';
 import { Button } from '~/common/components/ui/button';
 import { Badge } from '~/common/components/ui/badge';
@@ -60,7 +60,29 @@ export function MovingAssistant({ session, onPlanGenerated }: MovingAssistantPro
   const [movingPlan, setMovingPlan] = useState<any>(null);
   const [isAddingToCalendar, setIsAddingToCalendar] = useState(false);
   const [addedToCalendar, setAddedToCalendar] = useState(false);
+  const [aiUsage, setAiUsage] = useState<{ total: number; maxFree: number; canUse: boolean }>({ total: 0, maxFree: 2, canUse: true });
   const { toast } = useToast();
+  
+  // Check AI usage on component mount
+  useEffect(() => {
+    const checkAiUsage = async () => {
+      try {
+        const { data: { user } } = await browserClient.auth.getUser();
+        if (!user) return;
+
+        const usage = await getAIUsageCount(user.id);
+        setAiUsage({ 
+          total: usage.total, 
+          maxFree: usage.maxFree, 
+          canUse: usage.canUse 
+        });
+      } catch (error) {
+        console.error('Error checking AI usage:', error);
+      }
+    };
+
+    checkAiUsage();
+  }, []);
 
   const toggleCategory = (categoryId: string) => {
     const newSelected = new Set(selectedCategories);
@@ -79,6 +101,19 @@ export function MovingAssistant({ session, onPlanGenerated }: MovingAssistantPro
   };
 
   const handleImageUpload = (categoryId: string, images: string[]) => {
+    // Check if free user is trying to upload to more than 2 categories
+    const categoriesWithImages = Object.keys(categoryImages).filter(id => categoryImages[id].length > 0);
+    const isNewCategory = !categoryImages[categoryId] || categoryImages[categoryId].length === 0;
+    
+    if (aiUsage.total < aiUsage.maxFree && isNewCategory && categoriesWithImages.length >= 2) {
+      toast({
+        title: "Photo Upload Limit",
+        description: "Free users can only upload photos for 2 categories. Remove photos from another category first.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     setCategoryImages(prev => ({
       ...prev,
       [categoryId]: images
@@ -454,6 +489,11 @@ export function MovingAssistant({ session, onPlanGenerated }: MovingAssistantPro
           </h2>
           <p className="text-gray-600 mb-6">
             Add photos to help AI create a more accurate moving plan
+            {aiUsage.total < aiUsage.maxFree && (
+              <span className="block text-sm text-amber-600 mt-1">
+                📸 Free users can upload photos for up to 2 categories maximum
+              </span>
+            )}
           </p>
           
           <div className="space-y-4">
@@ -494,9 +534,19 @@ export function MovingAssistant({ session, onPlanGenerated }: MovingAssistantPro
                       onClick={() => setActiveCategory(categoryId)}
                       variant="outline"
                       size="sm"
+                      disabled={
+                        aiUsage.total < aiUsage.maxFree && 
+                        (!categoryImages[categoryId] || categoryImages[categoryId].length === 0) &&
+                        Object.keys(categoryImages).filter(id => categoryImages[id].length > 0).length >= 2
+                      }
                     >
                       <Upload className="w-4 h-4 mr-2" />
                       {categoryImages[categoryId]?.length > 0 ? 'Edit' : 'Add'} Photos
+                      {aiUsage.total < aiUsage.maxFree && 
+                       (!categoryImages[categoryId] || categoryImages[categoryId].length === 0) &&
+                       Object.keys(categoryImages).filter(id => categoryImages[id].length > 0).length >= 2 && (
+                        <span className="ml-1 text-xs">(Limit: 2)</span>
+                      )}
                     </Button>
                   )}
                 </Card>
