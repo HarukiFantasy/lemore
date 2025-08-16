@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, Form, useActionData, redirect, useRevalidator } from 'react-router';
+import { Link, Form, useActionData, redirect, useRevalidator, useNavigation } from 'react-router';
 import { Button } from '~/common/components/ui/button';
 import { Card } from '~/common/components/ui/card';
 import { Badge } from '~/common/components/ui/badge';
@@ -16,7 +16,8 @@ import {
   Gift,
   Trash2,
   Sparkles,
-  Calendar
+  Calendar,
+  Loader2
 } from 'lucide-react';
 import type { Route } from './+types/session';
 import { makeSSRClient, getAuthUser, browserClient } from '~/supa-client';
@@ -166,9 +167,11 @@ export default function SessionPage({ loaderData }: Route.ComponentProps) {
   const { session, items: initialItems } = loaderData;
   const revalidator = useRevalidator();
   const actionData = useActionData<typeof action>();
+  const navigation = useNavigation();
   const { toast } = useToast();
   const [uploadingItems, setUploadingItems] = useState<any[]>([]);
   const [aiUsage, setAiUsage] = useState<{ used: number; max: number; limitReached: boolean }>({ used: 0, max: 2, limitReached: false });
+  const isSubmitting = navigation.state === 'submitting';
 
   // Check AI usage on component mount
   React.useEffect(() => {
@@ -245,7 +248,7 @@ export default function SessionPage({ loaderData }: Route.ComponentProps) {
               </p>
 
               {/* Quick Stats */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+              <div className="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
                 <div className="bg-white p-4 rounded-lg shadow-sm">
                   <div className="flex items-center">
                     <Package className="w-5 h-5 text-blue-500 mr-2" />
@@ -303,7 +306,7 @@ export default function SessionPage({ loaderData }: Route.ComponentProps) {
               {session?.scenario === 'A' && allItems.length > 0 && (
                 <div className="bg-white rounded-lg border p-4 mb-6">
                   <h3 className="text-lg font-semibold mb-3">Decision Summary</h3>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
                     <div className="text-center">
                       <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-2">
                         <Heart className="w-6 h-6 text-green-600" />
@@ -351,16 +354,32 @@ export default function SessionPage({ loaderData }: Route.ComponentProps) {
                 <>
                   <Form method="post">
                     <input type="hidden" name="action" value="complete_session" />
-                    <Button type="submit" variant="outline">
-                      <Target className="w-4 h-4 mr-2" />
-                      Complete
+                    <Button type="submit" variant="outline" disabled={isSubmitting}>
+                      {isSubmitting && navigation.formData?.get('action') === 'complete_session' ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Completing...
+                        </>
+                      ) : (
+                        <>
+                          <Target className="w-4 h-4 mr-2" />
+                          Complete
+                        </>
+                      )}
                     </Button>
                   </Form>
                   
                   <Form method="post">
                     <input type="hidden" name="action" value="archive_session" />
-                    <Button type="submit" variant="outline">
-                      Archive
+                    <Button type="submit" variant="outline" disabled={isSubmitting}>
+                      {isSubmitting && navigation.formData?.get('action') === 'archive_session' ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Archiving...
+                        </>
+                      ) : (
+                        "Archive"
+                      )}
                     </Button>
                   </Form>
                 </>

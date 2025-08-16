@@ -122,10 +122,10 @@ export function DonationModal({ isOpen, onClose, type, onSelectCenter }: Donatio
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-hidden">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-2 sm:p-4">
+      <div className="bg-white rounded-lg max-w-4xl w-full max-h-[95vh] sm:max-h-[90vh] overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b">
+        <div className="flex items-center justify-between p-4 sm:p-6 border-b">
           <h2 className="text-xl font-semibold">
             {type === 'centers' ? 'Donation Centers' : 'Tax Information'}
           </h2>
@@ -135,7 +135,7 @@ export function DonationModal({ isOpen, onClose, type, onSelectCenter }: Donatio
         </div>
 
         {/* Content */}
-        <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
+        <div className="p-4 sm:p-6 overflow-y-auto max-h-[calc(95vh-100px)] sm:max-h-[calc(90vh-120px)]">
           {/* Country Selector */}
           <div className="mb-6">
             <label className="text-sm font-medium text-gray-700 mb-2 block">

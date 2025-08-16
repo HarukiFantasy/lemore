@@ -76,7 +76,7 @@ export function Navigation({
   }, [searchParams, location]);
 
   return (
-    <nav className="flex items-center justify-between px-4 sm:px-5 h-12 sm:h-14 bg-primary fixed top-0 left-0 right-0 z-50">
+    <nav className="flex items-center justify-between px-3 sm:px-4 md:px-5 h-11 sm:h-12 md:h-14 bg-primary fixed top-0 left-0 right-0 z-50">
       {/* 왼쪽 메뉴 */}
       <div className="flex items-center gap-2 sm:gap-4 min-w-0">
         {/* 모바일 메뉴 */}
@@ -175,13 +175,13 @@ export function Navigation({
               className="rounded-full p-1 sm:p-2 flex items-center space-x-1 bg-transparent min-w-0"
             >
               <MapPin className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
-              <span className="font-semibold text-xs sm:text-sm truncate max-w-16 sm:max-w-20">
+              <span className="font-semibold text-xs sm:text-sm truncate max-w-12 sm:max-w-16 md:max-w-20">
                 {location}
               </span>
               <ChevronDown className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-80 p-0">
+          <DropdownMenuContent align="end" className="w-screen max-w-sm sm:w-80 p-0">
             {/* All Cities Option */}
             <div className="p-3 border-b">
               <DropdownMenuItem onClick={() => updateLocation("All Cities")} className="justify-start">
@@ -209,7 +209,7 @@ export function Navigation({
 
             {/* All Cities - 2 columns by country */}
             <div className="p-3">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {/* Thailand Column */}
                 <div>
                   <DropdownMenuLabel className="text-xs font-semibold text-neutral-600 px-0 pb-2">

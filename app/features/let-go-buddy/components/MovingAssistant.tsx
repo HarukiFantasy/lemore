@@ -19,6 +19,7 @@ import {
   Sparkles,
   Calendar,
   MapPin,
+  Loader2,
 } from 'lucide-react';
 import { ItemUploader } from './ItemUploader';
 import { browserClient } from '~/supa-client';
@@ -373,7 +374,10 @@ export function MovingAssistant({ session, onPlanGenerated }: MovingAssistantPro
                     disabled={isAddingToCalendar}
                   >
                     {isAddingToCalendar ? (
-                      <>Adding to Calendar...</>
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Adding to Calendar...
+                      </>
                     ) : (
                       <>
                         <Calendar className="w-4 h-4 mr-2" />
@@ -574,7 +578,10 @@ export function MovingAssistant({ session, onPlanGenerated }: MovingAssistantPro
               className="px-8"
             >
               {isGeneratingPlan ? (
-                <>Generating Plan...</>
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Generating Plan...
+                </>
               ) : (
                 <>
                   <Sparkles className="w-4 h-4 mr-2" />

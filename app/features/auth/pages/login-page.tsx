@@ -4,7 +4,7 @@ import { Input } from "../../../common/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../../common/components/ui/card";
 import { AnimatedGradientText } from "components/magicui/animated-gradient-text";
 import { Route } from './+types/login-page';
-import { CircleIcon } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { z } from 'zod';
 import { makeSSRClient } from '~/supa-client';
 import { redirect } from "react-router";
@@ -92,7 +92,14 @@ export default function LoginPage({actionData}: Route.ComponentProps) {
               )}
             </div>
             <Button type="submit" className="w-full cursor-pointer" disabled={isSubmitting}>
-              {isSubmitting ? <CircleIcon className="animate-spin" /> : "Log in"}
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Logging in...
+                </>
+              ) : (
+                "Log in"
+              )}
             </Button>
             {actionData && "loginError" in actionData && (
               <p className="text-red-500 text-sm italic">{actionData.loginError}</p>

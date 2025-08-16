@@ -145,7 +145,7 @@ export default function App({ loaderData }: Route.ComponentProps) {
     <div className="min-h-screen flex flex-col">
       <div
         className={cn({
-          "pt-14": !pathname.includes("/auth/"),
+          "pt-11 sm:pt-12 md:pt-14": !pathname.includes("/auth/"),
           "transition-opacity animate-pulse": isLoading,
         })}
       > 

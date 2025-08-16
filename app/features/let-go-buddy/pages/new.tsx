@@ -6,7 +6,7 @@ import { Label } from '~/common/components/ui/label';
 import { Card } from '~/common/components/ui/card';
 import { Badge } from '~/common/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/common/components/ui/select';
-import { ArrowLeft, ArrowRight } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Loader2 } from 'lucide-react';
 import type { Route } from './+types/new';
 import { makeSSRClient, getAuthUser } from '~/supa-client';
 import { z } from 'zod';
@@ -314,8 +314,17 @@ export default function NewSession({ loaderData }: Route.ComponentProps) {
               className="px-8"
               disabled={isSubmitting}
             >
-              {isSubmitting ? 'Creating Session...' : 'Create Session'}
-              <ArrowRight className="w-4 h-4 ml-2" />
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Creating Session...
+                </>
+              ) : (
+                <>
+                  Create Session
+                  <ArrowRight className="w-4 h-4 ml-2" />
+                </>
+              )}
             </Button>
           </div>
         </Form>

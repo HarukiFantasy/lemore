@@ -12,7 +12,7 @@ import { getUserByProfileId, getUserSalesStatsByProfileId } from "../queries";
 import { updateUserAvatar } from "../mutations";
 import { redirect, useNavigation, useActionData, Form, useRevalidator } from 'react-router';
 import { LOCATIONS, type Location } from "~/constants";
-import { CircleIcon, CheckCircleIcon, AlertCircleIcon, UploadIcon } from 'lucide-react';
+import { Loader2, CheckCircleIcon, AlertCircleIcon, UploadIcon } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { Badge } from "../../../common/components/ui/badge";
 
@@ -378,7 +378,14 @@ export default function ProfilePage({ loaderData }: Route.ComponentProps) {
                   </div>
                   <div className="flex justify-end">
                     <Button type="submit" className='cursor-pointer' disabled={isSubmitting}>
-                      {isSubmitting ? <CircleIcon className="animate-spin" /> : "Save Changes"}
+                      {isSubmitting ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Saving...
+                        </>
+                      ) : (
+                        "Save Changes"
+                      )}
                     </Button>
                   </div>
                 </div>

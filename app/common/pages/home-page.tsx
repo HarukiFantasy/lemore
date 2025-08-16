@@ -200,7 +200,7 @@ export default function HomePage() {
   return (
     <div className="w-full">
       {/* Hero Search Section with Background Image */}
-      <div className="relative overflow-hidden px-6 py-8 md:py-12">
+      <div className="relative overflow-hidden px-4 sm:px-6 py-6 sm:py-8 md:py-12">
         {/* Background Image */}
         <div className="absolute inset-0 z-0">
           <img 
@@ -220,7 +220,7 @@ export default function HomePage() {
             <div className="absolute inset-0 bg-gradient-to-r from-purple-600/10 via-transparent to-amber-600/10 blur-2xl transform scale-110 opacity-50"></div>
             
             <h1 
-              className="relative text-3xl md:text-5xl font-light leading-[1.1] tracking-tight"
+              className="relative text-2xl sm:text-3xl md:text-5xl font-light leading-[1.1] tracking-tight"
               style={{ fontFamily: "'Poppins', sans-serif" }}
             >
               <span className="inline font-normal text-transparent bg-clip-text bg-gradient-to-br from-stone-800 via-stone-700 to-stone-800">Buy Less, </span>
@@ -248,7 +248,7 @@ export default function HomePage() {
                   placeholder="What treasure are you looking for?" 
                   value={searchInput}
                   onChange={(e) => setSearchInput(e.target.value)}
-                  className="border-0 rounded-full pl-12 pr-24 py-6 text-base bg-transparent focus:ring-0 focus:border-0 placeholder:text-sm md:placeholder:text-base"
+                  className="border-0 rounded-full pl-10 sm:pl-12 pr-20 sm:pr-24 py-4 sm:py-6 text-sm sm:text-base bg-transparent focus:ring-0 focus:border-0 placeholder:text-xs sm:placeholder:text-sm md:placeholder:text-base"
                 />
                 <svg className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-stone-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -293,7 +293,7 @@ export default function HomePage() {
             <div className="flex space-x-2 md:space-x-3 overflow-x-auto pb-2">
               {PRODUCT_CATEGORIES.slice(0, 10).map((category, index) => {
                 const isActive = categoryFilter.toLowerCase() === category.toLowerCase();
-                const isHiddenOnMobile = index >= 7; // Hide from 8th item on mobile
+                const isHiddenOnMobile = index >= 5; // Hide from 6th item on mobile
                 return (
                   <div 
                     key={category} 
@@ -379,7 +379,7 @@ export default function HomePage() {
           </div>
           
           {/* Product Grid */}
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
+          <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
             {displayedProducts && displayedProducts.length > 0 ? (
               displayedProducts.map((product: any, index: number) => (
                 <BlurFade key={product.product_id} delay={Math.min(index * 0.05, 0.3)}>

@@ -120,7 +120,10 @@ export default function OtpStartPage({actionData}: Route.ComponentProps) {
                 </div>
                 <Button className="w-full cursor-pointer" type="submit" disabled={isSubmitting}>
                   {isSubmitting ? (
-                    <LoaderCircle className="animate-spin" />
+                    <>
+                      <LoaderCircle className="w-4 h-4 mr-2 animate-spin" />
+                      Sending...
+                    </>
                   ) : (
                     "Send Email OTP"
                   )}
@@ -145,7 +148,10 @@ export default function OtpStartPage({actionData}: Route.ComponentProps) {
                 </div>
                 <Button className="w-full cursor-pointer" type="submit" disabled={isSubmitting}>
                   {isSubmitting ? (
-                    <LoaderCircle className="animate-spin" />
+                    <>
+                      <LoaderCircle className="w-4 h-4 mr-2 animate-spin" />
+                      Sending...
+                    </>
                   ) : (
                     "Send SMS OTP"
                   )}

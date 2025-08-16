@@ -11,6 +11,7 @@ import { makeSSRClient } from "~/supa-client";
 import { getCategories, getlocations } from '../queries';
 import { createProduct, uploadProductImages, saveProductImages } from '../mutations';
 import { z } from 'zod';
+import { Loader2 } from 'lucide-react';
 
 export const loader = async ({ request }: Route.LoaderArgs) => {
     const { client } = makeSSRClient(request);
@@ -303,7 +304,14 @@ export default function SubmitAListingPage({ loaderData, actionData }: Route.Com
             <input type="hidden" name="location" value={location} />
 
             <Button type="submit" className="w-full" disabled={isSubmitting}>
-              {isSubmitting ? "Submitting..." : "Submit Listing"}
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Submitting...
+                </>
+              ) : (
+                "Submit Listing"
+              )}
             </Button>
             {actionData?.error && <p className="text-red-500">{actionData.error}</p>}
         </div>

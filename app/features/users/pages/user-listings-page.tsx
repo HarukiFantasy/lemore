@@ -4,6 +4,7 @@ import { Button } from "../../../common/components/ui/button";
 import { Badge } from "../../../common/components/ui/badge";
 import { Separator } from "../../../common/components/ui/separator";
 import { Link, useLoaderData, useFetcher } from "react-router";
+import { Loader2 } from "lucide-react";
 import { ProductCard } from "../../products/components/product-card";
 import { makeSSRClient } from "~/supa-client";
 import { markProductAsSold } from "../../products/mutations";
@@ -93,7 +94,16 @@ export default function UserListingsPage() {
               {!listing.is_sold && (
                 <fetcher.Form method="post" action="/my/listings/mark-as-sold">
                   <input type="hidden" name="productId" value={listing.product_id} />
-                  <Button type="submit" size="sm" className="absolute top-2 right-2 z-20">Mark as Sold</Button>
+                  <Button type="submit" size="sm" className="absolute top-2 right-2 z-20" disabled={fetcher.state === 'submitting'}>
+                    {fetcher.state === 'submitting' && fetcher.formData?.get('productId') === listing.product_id ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Marking...
+                      </>
+                    ) : (
+                      "Mark as Sold"
+                    )}
+                  </Button>
                 </fetcher.Form>
               )}
             </div>

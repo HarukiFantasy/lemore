@@ -1,4 +1,4 @@
-import { Link, Form, useActionData, redirect } from 'react-router';
+import { Link, Form, useActionData, redirect, useNavigation } from 'react-router';
 import { Button } from '~/common/components/ui/button';
 import { Card } from '~/common/components/ui/card';
 import { Badge } from '~/common/components/ui/badge';
@@ -9,7 +9,8 @@ import {
   CheckCircle,
   Clock,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Loader2
 } from 'lucide-react';
 import { useState } from 'react';
 import type { Route } from './+types/challenges';
@@ -89,8 +90,10 @@ export const action = async ({ request }: Route.ActionArgs) => {
 export default function ChallengesPage({ loaderData }: Route.ComponentProps) {
   const { challenges, regularChallenges, movingTasks } = loaderData;
   const actionData = useActionData<typeof action>();
+  const navigation = useNavigation();
   const [showCalendar, setShowCalendar] = useState(false);
   const [currentDate, setCurrentDate] = useState(new Date());
+  const isSubmitting = navigation.state === 'submitting';
 
   const getStatusColor = (completed: boolean) => {
     return completed ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800';
@@ -338,8 +341,12 @@ export default function ChallengesPage({ loaderData }: Route.ComponentProps) {
                             <Form method="post" className="flex items-center gap-2">
                               <input type="hidden" name="action" value="complete_item" />
                               <input type="hidden" name="challengeId" value={task.item_id.toString()} />
-                              <Button type="submit" size="sm" className="bg-purple-600 hover:bg-purple-700">
-                                <CheckCircle className="w-4 h-4" />
+                              <Button type="submit" size="sm" className="bg-purple-600 hover:bg-purple-700" disabled={isSubmitting}>
+                                {isSubmitting && navigation.formData?.get('challengeId') === task.item_id.toString() ? (
+                                  <Loader2 className="w-4 h-4 animate-spin" />
+                                ) : (
+                                  <CheckCircle className="w-4 h-4" />
+                                )}
                               </Button>
                             </Form>
                           ) : (
@@ -450,9 +457,18 @@ export default function ChallengesPage({ loaderData }: Route.ComponentProps) {
                                 />
                               </div>
                               
-                              <Button type="submit" className="w-full bg-pink-600 hover:bg-pink-700">
-                                <CheckCircle className="w-4 h-4 mr-2" />
-                                Complete Challenge
+                              <Button type="submit" className="w-full bg-pink-600 hover:bg-pink-700" disabled={isSubmitting}>
+                                {isSubmitting && navigation.formData?.get('action') === 'complete_challenge' ? (
+                                  <>
+                                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                    Completing...
+                                  </>
+                                ) : (
+                                  <>
+                                    <CheckCircle className="w-4 h-4 mr-2" />
+                                    Complete Challenge
+                                  </>
+                                )}
                               </Button>
                             </Form>
                           )}

@@ -147,7 +147,14 @@ export default function OtpCompletePage({actionData}: Route.ComponentProps) {
               )}
             </div>
             <Button type="submit" className="w-full cursor-pointer" disabled={isSubmitting}>
-              {isSubmitting ? (<LoaderCircle className="animate-spin" />) : ("Verify code")}
+              {isSubmitting ? (
+                <>
+                  <LoaderCircle className="w-4 h-4 mr-2 animate-spin" />
+                  Verifying...
+                </>
+              ) : (
+                "Verify code"
+              )}
             </Button>
           </Form>
           <div className="mt-4 text-center text-sm">

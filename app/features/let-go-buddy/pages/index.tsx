@@ -227,7 +227,7 @@ export default function LetGoBuddyIndex({ loaderData }: Route.ComponentProps) {
             <p className="text-gray-600">Pick up where you left off</p>
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {userSessions.map((session: any) => {
               const completion = getCompletionPercentage(session);
               const scenario = scenarios.find(s => s.id === session.scenario);
@@ -291,7 +291,7 @@ export default function LetGoBuddyIndex({ loaderData }: Route.ComponentProps) {
           <p className="text-xl text-gray-600">Different scenarios for different needs</p>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
           {scenarios.map((scenario) => (
             <Card key={scenario.id} className="p-6 hover:shadow-xl transition-all duration-300 group">
               <div className="flex items-center mb-4">
@@ -345,7 +345,7 @@ export default function LetGoBuddyIndex({ loaderData }: Route.ComponentProps) {
             <h2 className="text-3xl font-bold text-gray-900 mb-4">Why Let Go Buddy?</h2>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
             <div className="text-center">
               <div className="bg-purple-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Sparkles className="w-8 h-8 text-purple-600" />

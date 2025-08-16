@@ -7,7 +7,7 @@ import { Route } from "./+types/join-page";
 import { makeSSRClient } from "~/supa-client";
 import z from 'zod';
 import { checkUsernameExists } from '../queries';
-import { CircleIcon } from "lucide-react";   
+import { Loader2 } from "lucide-react";   
 
 
 export const meta: Route.MetaFunction = () => {
@@ -143,7 +143,14 @@ export default function JoinPage({actionData}: Route.ComponentProps) {
               )}
             </div>
             <Button type="submit" className="w-full" disabled={isSubmitting}>
-              {isSubmitting ? <CircleIcon className="animate-spin" /> : "Create account"}
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Creating account...
+                </>
+              ) : (
+                "Create account"
+              )}
             </Button>
             {actionData && "signUpError" in actionData && (
               <p className="text-red-500 text-sm italic">{actionData.signUpError}</p>
