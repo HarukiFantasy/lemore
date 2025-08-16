@@ -7,7 +7,6 @@ import {
   Calendar,
   Plus,
   CheckCircle,
-  Clock,
   ChevronLeft,
   ChevronRight,
   Loader2
@@ -91,20 +90,57 @@ export default function ChallengesPage({ loaderData }: Route.ComponentProps) {
   const { challenges, regularChallenges, movingTasks } = loaderData;
   const actionData = useActionData<typeof action>();
   const navigation = useNavigation();
-  const [showCalendar, setShowCalendar] = useState(false);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<'month' | 'week'>('week');
   const isSubmitting = navigation.state === 'submitting';
 
-  const getStatusColor = (completed: boolean) => {
-    return completed ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800';
-  };
 
   const getDaysFromScheduled = (scheduledDate: string) => {
     const scheduled = new Date(scheduledDate);
     const today = new Date();
     const daysDiff = Math.ceil((today.getTime() - scheduled.getTime()) / (1000 * 60 * 60 * 24));
     return daysDiff;
+  };
+
+  // Group moving tasks by week
+  const groupTasksByWeek = (tasks: typeof movingTasks) => {
+    const today = new Date();
+    const weeks: { [key: string]: typeof tasks } = {};
+    
+    tasks.forEach(task => {
+      const taskDate = new Date(task.scheduled_date);
+      const daysDiff = Math.floor((taskDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+      
+      let weekKey;
+      if (daysDiff < -7) {
+        weekKey = 'past';
+      } else if (daysDiff < 0) {
+        weekKey = 'thisWeek';
+      } else if (daysDiff < 7) {
+        weekKey = 'nextWeek';
+      } else {
+        weekKey = 'future';
+      }
+      
+      if (!weeks[weekKey]) {
+        weeks[weekKey] = [];
+      }
+      weeks[weekKey].push(task);
+    });
+    
+    return weeks;
+  };
+
+  const weeklyTasks = groupTasksByWeek(movingTasks);
+  
+  const getWeekTitle = (weekKey: string) => {
+    switch (weekKey) {
+      case 'past': return 'Past Due';
+      case 'thisWeek': return 'This Week';
+      case 'nextWeek': return 'Next Week';
+      case 'future': return 'Future';
+      default: return 'Other';
+    }
   };
 
   // Calendar helper functions
@@ -126,7 +162,6 @@ export default function ChallengesPage({ loaderData }: Route.ComponentProps) {
     const month = date.getMonth();
     
     const firstDay = new Date(year, month, 1);
-    const lastDay = new Date(year, month + 1, 0);
     const startDate = new Date(firstDay);
     startDate.setDate(startDate.getDate() - firstDay.getDay());
     
@@ -175,44 +210,44 @@ export default function ChallengesPage({ loaderData }: Route.ComponentProps) {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-purple-50">
+    <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div className="bg-white border-b border-gray-100">
-        <div className="max-w-6xl mx-auto px-6 py-8">
-          <Button variant="ghost" asChild className="mb-4">
+      <div className="bg-white border-b border-gray-200/50">
+        <div className="max-w-7xl mx-auto px-6 py-6">
+          <Button variant="ghost" asChild className="mb-6 text-gray-600 hover:text-gray-900">
             <Link to="/let-go-buddy">
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back to Let Go Buddy
             </Link>
           </Button>
           
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                Daily Challenges
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+            <div className="space-y-4">
+              <h1 className="text-4xl font-light text-gray-900 tracking-tight">
+                Challenges
               </h1>
-              <p className="text-xl text-gray-600 mb-6">
-                Build consistent decluttering habits with daily goals
+              <p className="text-lg text-gray-600 font-light max-w-2xl">
+                Build consistent decluttering habits with daily goals and organized moving tasks
               </p>
-
+              
+              {/* Challenge Tips */}
+              <div className="flex flex-wrap gap-3 mt-6">
+                <div className="px-4 py-2 bg-emerald-50 text-emerald-700 rounded-full text-sm font-medium border border-emerald-200/50">
+                  🌱 Start Small: Even 1 item per day builds momentum
+                </div>
+                <div className="px-4 py-2 bg-blue-50 text-blue-700 rounded-full text-sm font-medium border border-blue-200/50">
+                  🔄 Be Consistent: Daily action beats weekend marathons
+                </div>
+                <div className="px-4 py-2 bg-purple-50 text-purple-700 rounded-full text-sm font-medium border border-purple-200/50">
+                  📊 Track Progress: Reflections help you see patterns
+                </div>
+              </div>
             </div>
             
             <div className="flex gap-3">
-              <Button 
-                onClick={() => setShowCalendar(!showCalendar)}
-                size="lg" 
-                variant={showCalendar ? "default" : "secondary"}
-                className={showCalendar ? "bg-purple-500 hover:bg-purple-600 text-white" : "text-purple-600 bg-purple-200 hover:text-purple-50 hover:bg-purple-400"}
-              >
-                <Calendar className="w-5 h-5 mr-2" />
-                {showCalendar ? "List View" : "Calendar View"}
-              </Button>
-              
-              <Button asChild size="lg" 
-              variant="secondary"
-              className="text-rose-600 bg-rose-200 hover:text-rose-50 hover:bg-pink-400">
+              <Button asChild size="lg" className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm rounded-lg font-medium">
                 <Link to="/let-go-buddy/new?scenario=C">
-                  <Plus className="w-5 h-5 mr-2" />
+                  <Plus className="w-4 h-4 mr-2" />
                   New Challenge
                 </Link>
               </Button>
@@ -221,7 +256,7 @@ export default function ChallengesPage({ loaderData }: Route.ComponentProps) {
         </div>
       </div>
 
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
+      <div className="max-w-7xl mx-auto px-6 py-8 space-y-12">
         {/* Success/Error Messages */}
         {actionData?.success && (
           <Card className="p-4 border-green-200 bg-green-50 mb-6">
@@ -235,157 +270,280 @@ export default function ChallengesPage({ loaderData }: Route.ComponentProps) {
           </Card>
         )}
 
-        {/* Calendar View */}
-        {showCalendar && challenges.length > 0 && (
-          <Card className="p-4 sm:p-6 mb-8">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-              <h2 className="text-xl sm:text-2xl font-semibold text-gray-900">Task Calendar</h2>
-              
-              {/* Mobile-first controls */}
-              <div className="flex flex-col sm:flex-row gap-3">
-                {/* View Mode Toggle */}
-                <div className="flex rounded-lg border border-gray-200 p-1">
-                  <button
-                    onClick={() => setViewMode('week')}
-                    className={`px-3 py-1 text-xs sm:text-sm rounded-md transition-colors ${
-                      viewMode === 'week' ? 'bg-purple-100 text-purple-700' : 'text-gray-600 hover:text-gray-900'
-                    }`}
-                  >
-                    Week
-                  </button>
-                  <button
-                    onClick={() => setViewMode('month')}
-                    className={`px-3 py-1 text-xs sm:text-sm rounded-md transition-colors ${
-                      viewMode === 'month' ? 'bg-purple-100 text-purple-700' : 'text-gray-600 hover:text-gray-900'
-                    }`}
-                  >
-                    Month
-                  </button>
-                </div>
+        {/* Calendar Section */}
+        {challenges.length > 0 && (
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-200/50 overflow-hidden">
+            <div className="p-6 border-b border-gray-100">
+              <div className="flex items-center justify-between">
+                <h2 className="text-2xl font-light text-gray-900">Calendar Overview</h2>
                 
-                {/* Navigation */}
-                <div className="flex items-center gap-2">
-                  <Button 
-                    onClick={() => navigateMonth('prev')}
-                    variant="outline"
-                    size="sm"
-                  >
-                    <ChevronLeft className="w-4 h-4" />
-                  </Button>
-                  <span className="px-2 sm:px-4 py-2 font-semibold text-gray-900 text-xs sm:text-sm whitespace-nowrap">
-                    {getDateRangeText()}
-                  </span>
-                  <Button 
-                    onClick={() => navigateMonth('next')}
-                    variant="outline"
-                    size="sm"
-                  >
-                    <ChevronRight className="w-4 h-4" />
-                  </Button>
+                <div className="flex items-center gap-4">
+                  {/* View Mode Toggle */}
+                  <div className="flex rounded-lg bg-gray-100 p-1">
+                    <button
+                      onClick={() => setViewMode('week')}
+                      className={`px-4 py-2 text-sm font-medium rounded-md transition-all ${
+                        viewMode === 'week' 
+                          ? 'bg-white text-gray-900 shadow-sm' 
+                          : 'text-gray-600 hover:text-gray-900'
+                      }`}
+                    >
+                      Week
+                    </button>
+                    <button
+                      onClick={() => setViewMode('month')}
+                      className={`px-4 py-2 text-sm font-medium rounded-md transition-all ${
+                        viewMode === 'month' 
+                          ? 'bg-white text-gray-900 shadow-sm' 
+                          : 'text-gray-600 hover:text-gray-900'
+                      }`}
+                    >
+                      Month
+                    </button>
+                  </div>
+                  
+                  {/* Navigation */}
+                  <div className="flex items-center gap-3">
+                    <Button 
+                      onClick={() => navigateMonth('prev')}
+                      variant="ghost"
+                      size="sm"
+                      className="h-9 w-9 p-0 hover:bg-gray-100"
+                    >
+                      <ChevronLeft className="w-4 h-4" />
+                    </Button>
+                    <span className="px-4 py-2 font-medium text-gray-900 text-sm min-w-[140px] text-center">
+                      {getDateRangeText()}
+                    </span>
+                    <Button 
+                      onClick={() => navigateMonth('next')}
+                      variant="ghost"
+                      size="sm"
+                      className="h-9 w-9 p-0 hover:bg-gray-100"
+                    >
+                      <ChevronRight className="w-4 h-4" />
+                    </Button>
+                  </div>
                 </div>
               </div>
             </div>
 
-            {/* Calendar Grid */}
-            <div className="grid grid-cols-7 gap-0.5 sm:gap-1 mb-2 sm:mb-4">
-              {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-                <div key={day} className="text-center py-1 sm:py-2 font-semibold text-gray-600 text-xs sm:text-sm">
-                  {viewMode === 'week' ? day.slice(0, 1) : day.slice(0, 3)}
+            <div className="p-6">
+              {/* Calendar Grid */}
+              <div className="grid grid-cols-7 gap-1 mb-4">
+                {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+                  <div key={day} className="text-center py-3 font-medium text-gray-500 text-sm">
+                    {day.slice(0, 3)}
+                  </div>
+                ))}
+              </div>
+
+              <div className="grid grid-cols-7 gap-1">
+                {getCalendarDays(currentDate).map((day, index) => {
+                  const isCurrentMonth = viewMode === 'week' || day.getMonth() === currentDate.getMonth();
+                  const isToday = day.toDateString() === new Date().toDateString();
+                  const dayTasks = getTasksForDate(day);
+                  const hasMovingTasks = dayTasks.some(t => t.name.startsWith('📦') || t.name.startsWith('⚡'));
+                  const hasRegularTasks = dayTasks.some(t => !t.name.startsWith('📦') && !t.name.startsWith('⚡'));
+                  const completedTasks = dayTasks.filter(t => t.completed).length;
+                  
+                  return (
+                    <div
+                      key={index}
+                      className={`
+                        ${viewMode === 'week' ? 'min-h-[120px]' : 'min-h-[80px]'} 
+                        p-3 rounded-xl transition-all hover:bg-gray-50 cursor-pointer
+                        ${isCurrentMonth ? 'bg-white' : 'bg-gray-50/50'}
+                        ${isToday ? 'bg-emerald-50 border-2 border-emerald-200' : 'border border-gray-100'}
+                      `}
+                    >
+                      <div className={`text-sm font-medium mb-2 ${
+                        isCurrentMonth ? 'text-gray-900' : 'text-gray-400'
+                      } ${isToday ? 'text-emerald-700' : ''}`}>
+                        {day.getDate()}
+                      </div>
+                      
+                      {dayTasks.length > 0 && (
+                        <div className="space-y-1">
+                          {hasMovingTasks && (
+                            <div className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-md font-medium">
+                              📦 Moving ({dayTasks.filter(t => t.name.startsWith('📦') || t.name.startsWith('⚡')).length})
+                            </div>
+                          )}
+                          {hasRegularTasks && (
+                            <div className="text-xs bg-emerald-100 text-emerald-700 px-2 py-1 rounded-md font-medium">
+                              🎯 Challenges ({dayTasks.filter(t => !t.name.startsWith('📦') && !t.name.startsWith('⚡')).length})
+                            </div>
+                          )}
+                          {completedTasks > 0 && (
+                            <div className="text-xs text-gray-600 font-medium">
+                              ✓ {completedTasks} completed
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        )}
+
+        <div className="space-y-12">
+          {/* Moving Tasks Section */}
+          {movingTasks.length > 0 && (
+            <div className="space-y-8">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="bg-blue-100 p-3 rounded-xl">
+                    <Calendar className="w-6 h-6 text-blue-600" />
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-light text-gray-900">Moving Plan</h2>
+                    <p className="text-gray-600 font-light">Organized by timeline</p>
+                  </div>
+                </div>
+                <div className="px-4 py-2 bg-blue-50 text-blue-700 rounded-full text-sm font-medium border border-blue-200/50">
+                  {movingTasks.filter(t => t.completed).length}/{movingTasks.length} completed
+                </div>
+              </div>
+
+              {Object.entries(weeklyTasks).map(([weekKey, tasks]) => (
+                <div key={weekKey} className="bg-white rounded-2xl shadow-sm border border-gray-200/50 overflow-hidden">
+                  <div className="p-6 border-b border-gray-100">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-lg font-medium text-gray-900">{getWeekTitle(weekKey)}</h3>
+                      <div className="text-sm text-gray-500 font-medium">
+                        {tasks.filter(t => t.completed).length} of {tasks.length} completed
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {tasks.map((task) => {
+                      const completed = task.completed;
+                      const daysSinceScheduled = getDaysFromScheduled(task.scheduled_date);
+                      const isOverdue = daysSinceScheduled > 0 && !completed;
+                      const isToday = daysSinceScheduled === 0;
+                      const isPriority = task.name.startsWith('⚡');
+
+                      return (
+                        <div key={task.item_id} className={`p-4 rounded-xl border-2 transition-all ${
+                          completed ? 'border-emerald-200 bg-emerald-50/50' :
+                          isPriority ? 'border-orange-200 bg-orange-50/50' :
+                          isOverdue ? 'border-red-200 bg-red-50/50' :
+                          isToday ? 'border-blue-200 bg-blue-50/50' :
+                          'border-gray-200 bg-white hover:border-gray-300'
+                        }`}>
+                          <div className="space-y-3">
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="flex-1 min-w-0">
+                                <h4 className={`font-medium text-sm ${completed ? 'line-through text-gray-500' : 'text-gray-900'}`}>
+                                  {task.name?.replace(/^(📦|⚡)\s/, '') || 'Moving Task'}
+                                </h4>
+                                <div className="flex flex-wrap items-center gap-2 mt-2">
+                                  {isPriority && (
+                                    <span className="px-2 py-1 bg-orange-100 text-orange-700 rounded-md text-xs font-medium">
+                                      ⚡ Priority
+                                    </span>
+                                  )}
+                                  {isToday && !completed && (
+                                    <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded-md text-xs font-medium">
+                                      Today
+                                    </span>
+                                  )}
+                                  {isOverdue && (
+                                    <span className="px-2 py-1 bg-red-100 text-red-700 rounded-md text-xs font-medium">
+                                      Overdue
+                                    </span>
+                                  )}
+                                </div>
+                                <p className="text-xs text-gray-600 mt-2">
+                                  {new Date(task.scheduled_date).toLocaleDateString()}
+                                </p>
+                              </div>
+                              
+                              {!completed ? (
+                                <Form method="post">
+                                  <input type="hidden" name="action" value="complete_item" />
+                                  <input type="hidden" name="challengeId" value={task.item_id.toString()} />
+                                  <Button type="submit" variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-emerald-100" disabled={isSubmitting}>
+                                    {isSubmitting && navigation.formData?.get('challengeId') === task.item_id.toString() ? (
+                                      <Loader2 className="w-4 h-4 animate-spin" />
+                                    ) : (
+                                      <CheckCircle className="w-4 h-4 text-gray-400 hover:text-emerald-600" />
+                                    )}
+                                  </Button>
+                                </Form>
+                              ) : (
+                                <div className="flex items-center gap-1 text-emerald-600">
+                                  <CheckCircle className="w-4 h-4" />
+                                </div>
+                              )}
+                            </div>
+                            
+                            {task.reflection && (
+                              <div className="text-xs text-emerald-700 italic bg-emerald-50 p-2 rounded-lg">
+                                "{task.reflection}"
+                              </div>
+                            )}
+                            
+                            {(task as any).tip && (
+                              <div className="text-xs text-blue-700 bg-blue-50 p-2 rounded-lg border-l-2 border-blue-300">
+                                💡 {(task as any).tip}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
               ))}
             </div>
+          )}
 
-            <div className="grid grid-cols-7 gap-0.5 sm:gap-1">
-              {getCalendarDays(currentDate).map((day, index) => {
-                const isCurrentMonth = viewMode === 'week' || day.getMonth() === currentDate.getMonth();
-                const isToday = day.toDateString() === new Date().toDateString();
-                const dayTasks = getTasksForDate(day);
-                const hasMovingTasks = dayTasks.some(t => t.name.startsWith('📦') || t.name.startsWith('⚡'));
-                const hasRegularTasks = dayTasks.some(t => !t.name.startsWith('📦') && !t.name.startsWith('⚡'));
-                const completedTasks = dayTasks.filter(t => t.completed).length;
-                
-                return (
-                  <div
-                    key={index}
-                    className={`
-                      ${viewMode === 'week' ? 'min-h-[100px] sm:min-h-[120px]' : 'min-h-[60px] sm:min-h-[80px]'} 
-                      p-1 sm:p-2 border rounded-md sm:rounded-lg cursor-pointer transition-colors
-                      ${isCurrentMonth ? 'bg-white' : 'bg-gray-50'}
-                      ${isToday ? 'border-blue-500 bg-blue-50' : 'border-gray-200'}
-                      ${dayTasks.length > 0 ? 'hover:bg-gray-50' : ''}
-                    `}
-                  >
-                    <div className={`text-xs sm:text-sm font-medium ${
-                      isCurrentMonth ? 'text-gray-900' : 'text-gray-400'
-                    } ${isToday ? 'text-blue-600' : ''} mb-1`}>
-                      {day.getDate()}
+          {/* Regular Challenges Section */}
+          {regularChallenges.length > 0 && (
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-200/50 overflow-hidden">
+              <div className="p-6 border-b border-gray-100">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="bg-emerald-100 p-3 rounded-xl">
+                      <Calendar className="w-6 h-6 text-emerald-600" />
                     </div>
-                    
-                    {dayTasks.length > 0 && (
-                      <div className="space-y-0.5 sm:space-y-1">
-                        {hasMovingTasks && (
-                          <div className="text-[10px] sm:text-xs bg-purple-100 text-purple-700 px-1 rounded truncate">
-                            📦 {viewMode === 'week' ? 'Moving' : 'M'} ({dayTasks.filter(t => t.name.startsWith('📦') || t.name.startsWith('⚡')).length})
-                          </div>
-                        )}
-                        {hasRegularTasks && (
-                          <div className="text-[10px] sm:text-xs bg-pink-100 text-pink-700 px-1 rounded truncate">
-                            🎯 {viewMode === 'week' ? 'Challenge' : 'C'} ({dayTasks.filter(t => !t.name.startsWith('📦') && !t.name.startsWith('⚡')).length})
-                          </div>
-                        )}
-                        {completedTasks > 0 && (
-                          <div className="text-[10px] sm:text-xs text-green-600">
-                            ✓ {completedTasks}
-                          </div>
-                        )}
-                      </div>
-                    )}
+                    <div>
+                      <h2 className="text-2xl font-light text-gray-900">Daily Challenges</h2>
+                      <p className="text-gray-600 font-light">Build consistent habits</p>
+                    </div>
                   </div>
-                );
-              })}
-            </div>
-          </Card>
-        )}
-
-        <div className="space-y-8">
-          {/* Moving Tasks Section */}
-          {movingTasks.length > 0 && (
-            <div>
-              <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 mb-4 sm:mb-6">
-                <div className="flex items-center gap-3">
-                  <div className="bg-purple-100 p-2 rounded-lg flex-shrink-0">
-                    <Calendar className="w-5 h-5 sm:w-6 sm:h-6 text-purple-600" />
+                  <div className="px-4 py-2 bg-emerald-50 text-emerald-700 rounded-full text-sm font-medium border border-emerald-200/50">
+                    {regularChallenges.filter(c => c.completed).length}/{regularChallenges.length} completed
                   </div>
-                  <h2 className="text-xl sm:text-2xl font-semibold text-gray-900">Moving Plan Tasks</h2>
                 </div>
-                <Badge className="bg-purple-100 text-purple-800 self-start sm:self-auto">
-                  {movingTasks.filter(t => t.completed).length}/{movingTasks.length} completed
-                </Badge>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                {movingTasks.map((task) => {
-                  const completed = task.completed;
-                  const daysSinceScheduled = getDaysFromScheduled(task.scheduled_date);
+              <div className="p-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                {regularChallenges.map((challenge) => {
+                  const completed = challenge.completed;
+                  const daysSinceScheduled = getDaysFromScheduled(challenge.scheduled_date);
                   const isOverdue = daysSinceScheduled > 0 && !completed;
                   const isToday = daysSinceScheduled === 0;
-                  const isPriority = task.name.startsWith('⚡');
 
                   return (
-                    <Card key={task.item_id} className={`p-3 sm:p-4 ${
-                      isPriority ? 'border-orange-300 bg-orange-50' :
-                      isOverdue ? 'border-red-300 bg-red-50' :
-                      isToday ? 'border-blue-300 bg-blue-50' :
-                      completed ? 'border-green-300 bg-green-50' : 'border-gray-200'
+                    <Card key={challenge.item_id} className={`p-3 sm:p-4 ${
+                      isOverdue ? 'border-red-200 bg-red-50' :
+                      isToday ? 'border-blue-200 bg-blue-50' :
+                      completed ? 'border-green-200 bg-green-50' : 'border-gray-200'
                     }`}>
                       <div className="flex flex-col sm:flex-row sm:items-start gap-3">
                         <div className="flex-1 min-w-0">
                           <div className="flex flex-col gap-2">
-                            <h3 className={`font-medium text-sm sm:text-base ${completed ? 'line-through text-gray-500' : ''}`}>
-                              {task.name?.replace(/^(📦|⚡)\s/, '') || 'Moving Task'}
+                            <h3 className={`font-medium text-sm sm:text-base line-clamp-2 ${completed ? 'line-through text-gray-500' : ''}`}>
+                              {challenge.name || 'Daily Challenge'}
                             </h3>
                             <div className="flex flex-wrap items-center gap-1.5">
-                              {isPriority && <Badge variant="outline" className="text-xs text-rose-600 bg-rose-200" >Priority</Badge>}
                               {isToday && !completed && <Badge variant="outline" className="text-teal-700 text-xs bg-teal-200">Today</Badge>}
                               {isOverdue && <Badge variant="outline" className="text-xs text-red-600 bg-red-200">Overdue</Badge>}
                             </div>
@@ -394,14 +552,14 @@ export default function ChallengesPage({ loaderData }: Route.ComponentProps) {
                             {isToday ? 'Today' : 
                              daysSinceScheduled > 0 ? `${daysSinceScheduled} days ago` :
                              `In ${Math.abs(daysSinceScheduled)} days`} • 
-                            {new Date(task.scheduled_date).toLocaleDateString()}
+                            {new Date(challenge.scheduled_date).toLocaleDateString()}
                           </p>
-                          {task.reflection && (
-                            <p className="text-xs sm:text-sm text-green-700 mt-2 italic">"{task.reflection}"</p>
+                          {challenge.reflection && (
+                            <p className="text-xs sm:text-sm text-green-700 mt-2 italic">\"{challenge.reflection}\"</p>
                           )}
-                          {(task as any).tip && (
+                          {(challenge as any).tip && (
                             <div className="text-xs sm:text-sm text-blue-700 mt-2 pl-3 border-l-2 border-blue-300 bg-blue-50 p-2 rounded-r">
-                              💡 <strong>Tip:</strong> {(task as any).tip}
+                              💡 <strong>Tip:</strong> {(challenge as any).tip}
                             </div>
                           )}
                         </div>
@@ -410,9 +568,10 @@ export default function ChallengesPage({ loaderData }: Route.ComponentProps) {
                           {!completed ? (
                             <Form method="post" className="flex items-center gap-2">
                               <input type="hidden" name="action" value="complete_item" />
-                              <input type="hidden" name="challengeId" value={task.item_id.toString()} />
-                              <Button type="submit" variant="outline" size="sm" className="text-purple-500 bg-purple-200 hover:text-purple-50 hover:bg-purple-400" disabled={isSubmitting}>
-                                {isSubmitting && navigation.formData?.get('challengeId') === task.item_id.toString() ? (
+                              <input type="hidden" name="challengeId" value={challenge.item_id.toString()} />
+                              <input type="hidden" name="reflection" value="" />
+                              <Button type="submit" variant="outline" size="sm" className="text-pink-500 hover:text-pink-50 hover:bg-pink-400" disabled={isSubmitting}>
+                                {isSubmitting && navigation.formData?.get('challengeId') === challenge.item_id.toString() ? (
                                   <Loader2 className="w-4 h-4 animate-spin" />
                                 ) : (
                                   <CheckCircle className="w-4 h-4" />
@@ -426,105 +585,6 @@ export default function ChallengesPage({ loaderData }: Route.ComponentProps) {
                             </div>
                           )}
                         </div>
-                      </div>
-                    </Card>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* Regular Challenges Section */}
-          {regularChallenges.length > 0 && (
-            <div>
-              <h2 className="text-2xl font-semibold text-gray-900 mb-6">Daily Challenges</h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {regularChallenges.map((challenge) => {
-                  const completed = challenge.completed;
-                  const daysSinceScheduled = getDaysFromScheduled(challenge.scheduled_date);
-
-                  return (
-                    <Card key={challenge.item_id} className="p-4 flex flex-col h-full">
-                      {/* Header */}
-                      <div className="flex items-center gap-2 mb-3">
-                        <div className="bg-pink-100 p-1.5 rounded-lg flex-shrink-0">
-                          <Calendar className="w-4 h-4 text-pink-600" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <h3 className="font-medium text-sm line-clamp-2">
-                            {challenge.name || 'Daily Challenge'}
-                          </h3>
-                          <p className="text-xs text-gray-600">
-                            {new Date(challenge.scheduled_date).toLocaleDateString()}
-                          </p>
-                        </div>
-                        <Badge className={`${getStatusColor(completed)} text-xs`}>
-                          {completed ? 'Done' : 'Pending'}
-                        </Badge>
-                      </div>
-
-                      {/* Status */}
-                      <div className="flex items-center gap-1 mb-3 text-xs text-gray-600">
-                        <Clock className="w-3 h-3" />
-                        {daysSinceScheduled === 0 && 'Today'}
-                        {daysSinceScheduled > 0 && `${daysSinceScheduled} days ago`}
-                        {daysSinceScheduled < 0 && `In ${Math.abs(daysSinceScheduled)} days`}
-                      </div>
-
-                      {/* Reflection */}
-                      {challenge.reflection && (
-                        <div className="bg-green-50 rounded p-2 mb-3">
-                          <p className="text-xs text-green-800">
-                            <strong>Reflection:</strong> {challenge.reflection}
-                          </p>
-                        </div>
-                      )}
-                      
-                      {/* Tip */}
-                      {(challenge as any).tip && (
-                        <div className="bg-blue-50 rounded p-2 mb-3">
-                          <p className="text-xs text-blue-800">
-                            💡 <strong>Tip:</strong> {(challenge as any).tip}
-                          </p>
-                        </div>
-                      )}
-
-                      {/* Action */}
-                      <div className="mt-auto">
-                        {!completed ? (
-                          <Form method="post" className="space-y-2">
-                            <input type="hidden" name="action" value="complete_item" />
-                            <input type="hidden" name="challengeId" value={challenge.item_id.toString()} />
-                            
-                            <textarea
-                              name="reflection"
-                              rows={2}
-                              className="w-full px-2 py-1 border border-gray-300 rounded text-xs"
-                              placeholder="How did this go?"
-                            />
-                            
-                            <Button type="submit" size="sm" 
-                            variant="secondary"
-                            className="w-full text-pink-600 bg-pink-200 hover:text-pink-50 hover:bg-pink-400" disabled={isSubmitting}>
-                              {isSubmitting && navigation.formData?.get('challengeId') === challenge.item_id.toString() ? (
-                                <Loader2 className="w-3 h-3 mr-1 animate-spin" />
-                              ) : (
-                                <CheckCircle className="w-3 h-3 mr-1" />
-                              )}
-                              Complete
-                            </Button>
-                          </Form>
-                        ) : (
-                          <div className="text-center p-2 bg-green-50 rounded">
-                            <CheckCircle className="w-5 h-5 text-green-500 mx-auto mb-1" />
-                            <p className="text-xs font-medium text-green-800">Completed!</p>
-                            {challenge.completed_at && (
-                              <p className="text-xs text-green-600">
-                                {new Date(challenge.completed_at).toLocaleDateString()}
-                              </p>
-                            )}
-                          </div>
-                        )}
                       </div>
                     </Card>
                   );
