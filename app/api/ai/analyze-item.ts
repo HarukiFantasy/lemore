@@ -31,6 +31,7 @@ export async function action({ request }: { request: Request }) {
   const systemPrompt = `You are an expert item decluttering analyst. Analyze the provided item and return a JSON response with the following structure:
 
 {
+  "title": "string (descriptive name of the item, e.g., 'Black Leather Office Chair', 'Vintage Blue Ceramic Vase', 'Red Winter Coat Size M')",
   "category": "string (e.g., 'furniture', 'clothing', 'electronics', 'books', 'kitchenware', 'decor', 'sports', 'toys', 'other')",
   "condition": "string (e.g., 'excellent', 'good', 'fair', 'poor')",
   "usage_score": number (0-100, ESTIMATED typical usage frequency based on item type - 100 = items typically used daily, 80 = weekly items, 60 = monthly items, 40 = seasonal/occasional items, 20 = rarely used items, 0 = decorative/collectible items),
@@ -56,6 +57,7 @@ Be realistic about actual usage patterns, not ideal usage.`;
 
   // Define response schema for validation (move outside try block for accessibility)
   const responseSchema = z.object({
+    title: z.string(),
     category: z.string(),
     condition: z.string(),
     usage_score: z.number().min(0).max(100),

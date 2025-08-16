@@ -108,6 +108,7 @@ export interface AIAnalyzeItemRequest {
 }
 
 export interface AIAnalyzeItemResponse {
+  title: string;
   category: string;
   condition: string;
   usage_score: number; // 0-100

@@ -129,7 +129,7 @@ export function DonationModal({ isOpen, onClose, type, onSelectCenter }: Donatio
           <h2 className="text-xl font-semibold">
             {type === 'centers' ? 'Donation Centers' : 'Tax Information'}
           </h2>
-          <Button variant="ghost" size="sm" onClick={onClose}>
+          <Button className="bg-zinc-50 hover:bg-white border border-gray-200 hover:border-gray-300 text-zinc-700 hover:text-zinc-800 px-8 py-3 rounded-2xl shadow-sm hover:shadow-md transition-all duration-200" size="sm" onClick={onClose}>
             <X className="w-4 h-4" />
           </Button>
         </div>
@@ -161,7 +161,7 @@ export function DonationModal({ isOpen, onClose, type, onSelectCenter }: Donatio
                     <div className="flex gap-2">
                       {onSelectCenter && (
                         <Button 
-                          variant={selectedCenter === center.name ? "default" : "outline"} 
+                          className={selectedCenter === center.name ? "bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-2xl shadow-sm hover:shadow-md transition-all duration-200" : "bg-zinc-50 hover:bg-white border border-gray-200 hover:border-gray-300 text-zinc-700 hover:text-zinc-800 px-8 py-3 rounded-2xl shadow-sm hover:shadow-md transition-all duration-200"} 
                           size="sm" 
                           onClick={() => handleSelectCenter(center)}
                         >
@@ -169,7 +169,7 @@ export function DonationModal({ isOpen, onClose, type, onSelectCenter }: Donatio
                         </Button>
                       )}
                       {center.website && (
-                        <Button variant="outline" size="sm" asChild>
+                        <Button className="bg-zinc-50 hover:bg-white border border-gray-200 hover:border-gray-300 text-zinc-700 hover:text-zinc-800 px-8 py-3 rounded-2xl shadow-sm hover:shadow-md transition-all duration-200" size="sm" asChild>
                           <a href={center.website} target="_blank" rel="noopener noreferrer">
                             <ExternalLink className="w-4 h-4 mr-1" />
                             Visit

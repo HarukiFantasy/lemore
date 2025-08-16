@@ -323,8 +323,7 @@ export function ItemUploader({
             {!uploading && (
               <Button
                 onClick={openFileDialog}
-                variant="outline"
-                className="mt-4"
+                className="mt-4 bg-zinc-50 hover:bg-white border border-gray-200 hover:border-gray-300 text-zinc-700 hover:text-zinc-800 px-8 py-3 rounded-2xl shadow-sm hover:shadow-md transition-all duration-200"
               >
                 <Upload className="w-4 h-4 mr-2" />
                 Choose Photos

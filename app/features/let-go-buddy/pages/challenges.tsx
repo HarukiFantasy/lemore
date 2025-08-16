@@ -352,7 +352,7 @@ export default function ChallengesPage({ loaderData }: Route.ComponentProps) {
             </div>
             
             <div className="flex gap-3">
-              <Button asChild size="lg" className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm rounded-lg font-medium">
+              <Button asChild size="lg" className="bg-zinc-50 hover:bg-white border border-gray-200 hover:border-gray-300 text-zinc-700 hover:text-zinc-800 px-8 py-3 rounded-2xl shadow-sm hover:shadow-md transition-all duration-200">
                 <Link to="/let-go-buddy/new?scenario=C">
                   <Plus className="w-4 h-4 mr-2" />
                   New Challenge
@@ -609,7 +609,7 @@ export default function ChallengesPage({ loaderData }: Route.ComponentProps) {
                               <input type="hidden" name="action" value="complete_item" />
                               <input type="hidden" name="challengeId" value={challenge.item_id.toString()} />
                               <input type="hidden" name="reflection" value="" />
-                              <Button type="submit" variant="outline" size="sm" className="text-pink-500 hover:text-pink-50 hover:bg-pink-400" disabled={isSubmitting}>
+                              <Button type="submit" variant="outline" size="sm" className="bg-zinc-50 hover:bg-white border border-gray-200 hover:border-gray-300 text-zinc-700 hover:text-zinc-800 px-8 py-3 rounded-2xl shadow-sm hover:shadow-md transition-all duration-200" disabled={isSubmitting}>
                                 {isSubmitting && navigation.formData?.get('challengeId') === challenge.item_id.toString() ? (
                                   <Loader2 className="w-4 h-4 animate-spin" />
                                 ) : (
@@ -643,13 +643,13 @@ export default function ChallengesPage({ loaderData }: Route.ComponentProps) {
                 Start your first decluttering challenge or create a moving plan to get organized tasks in your calendar.
               </p>
               <div className="flex gap-4 justify-center">
-                <Button asChild size="lg" className="bg-pink-500 hover:bg-pink-600">
+                <Button asChild size="lg" className="bg-zinc-50 hover:bg-white border border-gray-200 hover:border-gray-300 text-zinc-700 hover:text-zinc-800 px-8 py-3 rounded-2xl shadow-sm hover:shadow-md transition-all duration-200">
                   <Link to="/let-go-buddy/new?scenario=C">
                     <Plus className="w-5 h-5 mr-2" />
                     Start Challenge
                   </Link>
                 </Button>
-                <Button asChild size="lg" variant="outline">
+                <Button asChild size="lg" className="bg-zinc-50 hover:bg-white border border-gray-200 hover:border-gray-300 text-zinc-700 hover:text-zinc-800 px-8 py-3 rounded-2xl shadow-sm hover:shadow-md transition-all duration-200">
                   <Link to="/let-go-buddy/new?scenario=B">
                     <Calendar className="w-5 h-5 mr-2" />
                     Moving Assistant

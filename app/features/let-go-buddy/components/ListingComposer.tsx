@@ -234,7 +234,7 @@ export function ListingComposer({
               />
               <Button 
                 type="button" 
-                variant="outline" 
+                className="bg-zinc-50 hover:bg-white border border-gray-200 hover:border-gray-300 text-zinc-700 hover:text-zinc-800 px-8 py-3 rounded-2xl shadow-sm hover:shadow-md transition-all duration-200" 
                 size="sm" 
                 onClick={handleAddFeature}
                 disabled={disabled || !newFeature.trim()}
@@ -285,10 +285,10 @@ export function ListingComposer({
           <Button 
             onClick={handleGenerate} 
             disabled={disabled || isGenerating}
-            className={`w-full ${
-              generationStatus === 'success' ? 'bg-green-600 hover:bg-green-700' :
-              generationStatus === 'error' ? 'bg-red-600 hover:bg-red-700' :
-              ''
+            className={`w-full px-8 py-3 rounded-2xl shadow-sm hover:shadow-md transition-all duration-200 ${
+              generationStatus === 'success' ? 'bg-green-600 hover:bg-green-700 text-white' :
+              generationStatus === 'error' ? 'bg-red-600 hover:bg-red-700 text-white' :
+              'bg-zinc-50 hover:bg-white border border-gray-200 hover:border-gray-300 text-zinc-700 hover:text-zinc-800'
             }`}
           >
             {generationStatus === 'generating' ? (
@@ -328,7 +328,7 @@ export function ListingComposer({
                 </div>
                 <div className="flex gap-2">
                   <Button
-                    variant="outline"
+                    className="bg-zinc-50 hover:bg-white border border-gray-200 hover:border-gray-300 text-zinc-700 hover:text-zinc-800 px-8 py-3 rounded-2xl shadow-sm hover:shadow-md transition-all duration-200"
                     size="sm"
                     onClick={() => copyToClipboard(`${listing.title}\n\n${listing.body}\n\n${listing.hashtags.map((tag: string) => `#${tag}`).join(' ')}`)}
                   >
@@ -336,7 +336,7 @@ export function ListingComposer({
                     Copy
                   </Button>
                   <Button
-                    variant="outline"
+                    className="bg-zinc-50 hover:bg-white border border-gray-200 hover:border-gray-300 text-zinc-700 hover:text-zinc-800 px-8 py-3 rounded-2xl shadow-sm hover:shadow-md transition-all duration-200"
                     size="sm"
                     onClick={() => createMarketplaceListing(listing)}
                   >

@@ -71,9 +71,9 @@ export const action = async ({ request }: Route.ActionArgs) => {
       days
     });
 
-    // Create session
+    // Handle scenario C (Declutter Challenge) - non-AI calendar creation
     if (scenario === 'C') {
-      // Challenge scenario - create session first, then challenge items
+      // Create session first
       const { data: sessionId, error: rpcError } = await client
         .rpc('rpc_create_session', {
           p_scenario: scenario,
@@ -90,32 +90,84 @@ export const action = async ({ request }: Route.ActionArgs) => {
       if (!sessionId) {
         throw new Error('Failed to create session - no session ID returned');
       }
-      
-      return redirect(`/let-go-buddy/session/${sessionId}`);
-    } else {
-      // Create session using RPC
-      console.log('Creating session for user:', user.id, 'scenario:', scenario);
-      
-      const { data: sessionId, error: rpcError } = await client
-        .rpc('rpc_create_session', {
-          p_scenario: scenario,
-          p_title: title,
-          p_move_date: move_date || undefined,
-          p_region: region || undefined
+
+      // Create challenge calendar items (non-AI)
+      const challengeDays = days || 7;
+      const startDate = new Date();
+      const calendarItems = [];
+
+      for (let day = 1; day <= challengeDays; day++) {
+        const itemDate = new Date(startDate);
+        itemDate.setDate(startDate.getDate() + day - 1);
+        
+        // Create simple daily challenges without AI
+        const dailyChallenges = [
+          "Sort through 10 items from your wardrobe",
+          "Declutter one drawer or shelf",
+          "Choose 5 books you no longer need",
+          "Clean out old files and documents", 
+          "Organize one area of your kitchen",
+          "Go through old electronics and cables",
+          "Sort through shoes and accessories",
+          "Declutter bathroom items and toiletries",
+          "Review and organize digital photos",
+          "Clean out bags, purses, or backpacks",
+          "Sort through craft or hobby supplies",
+          "Organize one storage area or closet",
+          "Review old magazines and papers",
+          "Declutter desk or workspace items"
+        ];
+
+        const challengeText = dailyChallenges[(day - 1) % dailyChallenges.length];
+        
+        calendarItems.push({
+          session_id: sessionId,
+          title: `Day ${day}: ${challengeText}`,
+          scheduled_date: itemDate.toISOString(),
+          completed: false,
+          tip: `Take your time and focus on one category at a time. Remember: keep, sell, donate, or dispose.`,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
         });
-      
-      if (rpcError) {
-        console.error('Session creation failed:', rpcError);
-        throw rpcError;
       }
-      
-      if (!sessionId) {
-        throw new Error('Failed to create session - no session ID returned');
+
+      // Insert calendar items into lgb_items table
+      if (calendarItems.length > 0) {
+        const { error: insertError } = await client
+          .from('lgb_items')
+          .insert(calendarItems);
+
+        if (insertError) {
+          console.error('Failed to create challenge items:', insertError);
+          throw new Error('Failed to create challenge calendar');
+        }
       }
-      
-      console.log('Session created successfully:', sessionId);
-      return redirect(`/let-go-buddy/session/${sessionId}`);
+
+      return redirect(`/let-go-buddy/challenges?new=${sessionId}`);
     }
+
+    // For scenarios A, B, E - create session using RPC
+    console.log('Creating session for user:', user.id, 'scenario:', scenario);
+    
+    const { data: sessionId, error: rpcError } = await client
+      .rpc('rpc_create_session', {
+        p_scenario: scenario,
+        p_title: title,
+        p_move_date: move_date || undefined,
+        p_region: region || undefined
+      });
+    
+    if (rpcError) {
+      console.error('Session creation failed:', rpcError);
+      throw rpcError;
+    }
+    
+    if (!sessionId) {
+      throw new Error('Failed to create session - no session ID returned');
+    }
+    
+    console.log('Session created successfully:', sessionId);
+    return redirect(`/let-go-buddy/session/${sessionId}`);
 
   } catch (error) {
     console.error('Session creation error:', error);
@@ -155,22 +207,26 @@ export default function NewSession({ loaderData }: Route.ComponentProps) {
     A: {
       title: 'Keep vs Sell Helper',
       description: 'Get AI guidance on individual items',
-      fields: ['title']
+      fields: ['title'],
+      usesAI: true
     },
     B: {
       title: 'Moving Assistant', 
       description: 'Plan your move with timeline',
-      fields: ['title', 'move_date', 'region']
+      fields: ['title', 'move_date', 'region'],
+      usesAI: true
     },
     C: {
       title: 'Declutter Challenge',
-      description: 'Daily decluttering habits',
-      fields: ['days']
+      description: 'Daily decluttering habits (no AI needed)',
+      fields: ['days'],
+      usesAI: false
     },
     E: {
       title: 'Quick Listing Generator',
       description: 'Just create listings fast',
-      fields: ['title']
+      fields: ['title'],
+      usesAI: true
     }
   };
 
@@ -181,7 +237,10 @@ export default function NewSession({ loaderData }: Route.ComponentProps) {
       <div className="max-w-2xl mx-auto px-6">
         {/* Header */}
         <div className="mb-8">
-          <Button variant="ghost" asChild className="mb-4">
+          <Button 
+            asChild 
+            className="mb-4 bg-zinc-50 hover:bg-white border border-gray-200 hover:border-gray-300 text-zinc-700 hover:text-zinc-800 px-8 py-3 rounded-2xl shadow-sm hover:shadow-md transition-all duration-200"
+          >
             <Link to="/let-go-buddy">
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back to Let Go Buddy
@@ -211,58 +270,68 @@ export default function NewSession({ loaderData }: Route.ComponentProps) {
 
         <Form method="post" className="space-y-8">
           {/* Scenario Selection */}
-          <Card className={`p-6 ${aiUsageData && !aiUsageData.canUse ? 'opacity-50' : ''}`}>
+          <Card className="p-6">
             <h2 className="text-xl font-semibold mb-4">Choose Your Scenario</h2>
             
             <div className="grid gap-4">
-              {Object.entries(scenarios).map(([key, scenario]) => (
-                <label key={key} className={`${
-                  aiUsageData && !aiUsageData.canUse ? 'cursor-not-allowed' : 'cursor-pointer'
-                }`}>
-                  <div className={`border-2 rounded-lg p-4 transition-all ${
-                    aiUsageData && !aiUsageData.canUse
-                      ? 'border-gray-200 bg-gray-50'
-                      : selectedScenario === key 
-                        ? 'border-purple-500 bg-purple-50' 
-                        : 'border-gray-200 hover:border-gray-300'
+              {Object.entries(scenarios).map(([key, scenario]) => {
+                const requiresAI = scenario.usesAI;
+                const isDisabled = requiresAI && aiUsageData && !aiUsageData.canUse;
+                
+                return (
+                  <label key={key} className={`${
+                    isDisabled ? 'cursor-not-allowed' : 'cursor-pointer'
                   }`}>
-                    <div className="flex items-start">
-                      <input
-                        type="radio"
-                        name="scenario"
-                        value={key}
-                        checked={selectedScenario === key}
-                        onChange={(e) => setSelectedScenario(e.target.value as Scenario)}
-                        className="mt-1 mr-3"
-                        disabled={aiUsageData ? !aiUsageData.canUse : false}
-                      />
-                      <div className="flex-1">
-                        <div className="flex items-center justify-between">
-                          <h3 className={`font-medium ${
-                            aiUsageData && !aiUsageData.canUse ? 'text-gray-500' : 'text-gray-900'
+                    <div className={`border-2 rounded-lg p-4 transition-all ${
+                      isDisabled
+                        ? 'border-gray-200 bg-gray-50'
+                        : selectedScenario === key 
+                          ? 'border-purple-500 bg-purple-50' 
+                          : 'border-gray-200 hover:border-gray-300'
+                    }`}>
+                      <div className="flex items-start">
+                        <input
+                          type="radio"
+                          name="scenario"
+                          value={key}
+                          checked={selectedScenario === key}
+                          onChange={(e) => setSelectedScenario(e.target.value as Scenario)}
+                          className="mt-1 mr-3"
+                          disabled={isDisabled || false}
+                        />
+                        <div className="flex-1">
+                          <div className="flex items-center justify-between">
+                            <h3 className={`font-medium ${
+                              isDisabled ? 'text-gray-500' : 'text-gray-900'
+                            }`}>
+                              {scenario.title}
+                              {isDisabled && (
+                                <Lock className="w-4 h-4 inline ml-2" />
+                              )}
+                              {!requiresAI && (
+                                <span className="ml-2 text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">
+                                  No AI Required
+                                </span>
+                              )}
+                            </h3>
+                            <Badge variant={isDisabled ? "secondary" : "outline"}>
+                              {key}
+                            </Badge>
+                          </div>
+                          <p className={`text-sm mt-1 ${
+                            isDisabled ? 'text-gray-400' : 'text-gray-600'
                           }`}>
-                            {scenario.title}
-                            {aiUsageData && !aiUsageData.canUse && (
-                              <Lock className="w-4 h-4 inline ml-2" />
-                            )}
-                          </h3>
-                          <Badge variant={aiUsageData && !aiUsageData.canUse ? "secondary" : "outline"}>
-                            {key}
-                          </Badge>
+                            {isDisabled && requiresAI
+                              ? 'AI limit reached - not available' 
+                              : scenario.description
+                            }
+                          </p>
                         </div>
-                        <p className={`text-sm mt-1 ${
-                          aiUsageData && !aiUsageData.canUse ? 'text-gray-400' : 'text-gray-600'
-                        }`}>
-                          {aiUsageData && !aiUsageData.canUse 
-                            ? 'AI limit reached - manual decisions only' 
-                            : scenario.description
-                          }
-                        </p>
                       </div>
                     </div>
-                  </div>
-                </label>
-              ))}
+                  </label>
+                );
+              })}
             </div>
           </Card>
 
@@ -346,6 +415,7 @@ export default function NewSession({ loaderData }: Route.ComponentProps) {
                   </Select>
                 </div>
               )}
+
             </div>
           </Card>
 
@@ -361,26 +431,26 @@ export default function NewSession({ loaderData }: Route.ComponentProps) {
             <Button 
               type="submit" 
               size="lg" 
-              className={`px-8 ${
-                aiUsageData && !aiUsageData.canUse 
-                  ? 'bg-gray-400 hover:bg-gray-400 cursor-not-allowed' 
-                  : ''
+              className={`px-8 py-3 rounded-2xl shadow-sm hover:shadow-md transition-all duration-200 ${
+                currentScenario.usesAI && aiUsageData && !aiUsageData.canUse 
+                  ? 'bg-gray-200 border border-gray-200 text-gray-400 cursor-not-allowed' 
+                  : 'bg-zinc-50 hover:bg-white border border-gray-200 hover:border-gray-300 text-zinc-700 hover:text-zinc-800'
               }`}
-              disabled={isSubmitting || (aiUsageData ? !aiUsageData.canUse : false)}
+              disabled={isSubmitting || (currentScenario.usesAI && aiUsageData && !aiUsageData.canUse) || false}
             >
               {isSubmitting ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                   Creating Session...
                 </>
-              ) : aiUsageData && !aiUsageData.canUse ? (
+              ) : currentScenario.usesAI && aiUsageData && !aiUsageData.canUse ? (
                 <>
                   <Lock className="w-4 h-4 mr-2" />
                   AI Limit Reached
                 </>
               ) : (
                 <>
-                  Create Session
+                  {currentScenario.usesAI ? 'Create Session' : 'Create Challenge'}
                   <ArrowRight className="w-4 h-4 ml-2" />
                 </>
               )}

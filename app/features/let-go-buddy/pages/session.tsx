@@ -231,7 +231,10 @@ export default function SessionPage({ loaderData }: Route.ComponentProps) {
       <div className="max-w-6xl mx-auto px-6">
         {/* Header */}
         <div className="mb-8">
-          <Button variant="ghost" asChild className="mb-4">
+          <Button 
+            asChild 
+            className="mb-4 bg-zinc-50 hover:bg-white border border-gray-200 hover:border-gray-300 text-zinc-700 hover:text-zinc-800 px-8 py-3 rounded-2xl shadow-sm hover:shadow-md transition-all duration-200"
+          >
             <Link to="/let-go-buddy">
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back to Let Go Buddy
@@ -350,7 +353,11 @@ export default function SessionPage({ loaderData }: Route.ComponentProps) {
                 <>
                   <Form method="post">
                     <input type="hidden" name="action" value="complete_session" />
-                    <Button type="submit" variant="outline" disabled={isSubmitting}>
+                    <Button 
+                      type="submit" 
+                      disabled={isSubmitting}
+                      className="bg-zinc-50 hover:bg-white border border-gray-200 hover:border-gray-300 text-zinc-700 hover:text-zinc-800 px-8 py-3 rounded-2xl shadow-sm hover:shadow-md transition-all duration-200"
+                    >
                       {isSubmitting && navigation.formData?.get('action') === 'complete_session' ? (
                         <>
                           <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -367,7 +374,11 @@ export default function SessionPage({ loaderData }: Route.ComponentProps) {
                   
                   <Form method="post">
                     <input type="hidden" name="action" value="archive_session" />
-                    <Button type="submit" variant="outline" disabled={isSubmitting}>
+                    <Button 
+                      type="submit" 
+                      disabled={isSubmitting}
+                      className="bg-zinc-50 hover:bg-white border border-gray-200 hover:border-gray-300 text-zinc-700 hover:text-zinc-800 px-8 py-3 rounded-2xl shadow-sm hover:shadow-md transition-all duration-200"
+                    >
                       {isSubmitting && navigation.formData?.get('action') === 'archive_session' ? (
                         <>
                           <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -488,7 +499,7 @@ export default function SessionPage({ loaderData }: Route.ComponentProps) {
                 </div>
                 <Button
                   onClick={() => window.location.href = '/let-go-buddy/challenges'}
-                  className="bg-blue-600 hover:bg-blue-700 text-white w-full sm:w-auto"
+                  className="bg-zinc-50 hover:bg-white border border-gray-200 hover:border-gray-300 text-zinc-700 hover:text-zinc-800 px-8 py-3 rounded-2xl shadow-sm hover:shadow-md transition-all duration-200 w-full sm:w-auto"
                 >
                   <Calendar className="w-4 h-4 mr-2" />
                   View Calendar
@@ -620,11 +631,14 @@ export default function SessionPage({ loaderData }: Route.ComponentProps) {
                       })
                       .eq('item_id', itemId);
 
-                    // Remove from uploading items and refresh to show the saved item
+                    // Remove from uploading items and add gentle refresh
                     setTimeout(() => {
                       setUploadingItems(prev => prev.filter(item => item.item_id !== itemId));
-                      revalidator.revalidate();
-                    }, 1500);
+                      // Add smooth refresh after user has seen the result
+                      setTimeout(() => {
+                        revalidator.revalidate();
+                      }, 500);
+                    }, 2500); // Show result for 2.5 seconds
 
                     return; // Exit early, don't call AI API
                   }
@@ -671,8 +685,9 @@ export default function SessionPage({ loaderData }: Route.ComponentProps) {
                   }
 
                   // Update item with AI results
-                  // Generate a title based on category and condition
-                  const generatedTitle = `${analysisResult.data.category || 'Unknown'} - ${analysisResult.data.condition || 'Unknown Condition'}`;
+                  // Use the AI-generated title if available, otherwise generate a descriptive title
+                  const generatedTitle = analysisResult.data.title || 
+                    `${analysisResult.data.category || 'Item'} (${analysisResult.data.condition || 'Good'} condition)`;
                   
                   const { error: updateError } = await browserClient
                     .from('lgb_items')
@@ -693,7 +708,7 @@ export default function SessionPage({ loaderData }: Route.ComponentProps) {
                     throw updateError;
                   }
 
-                  // Update the temporary item to show it's complete but keep it visible
+                  // Update the temporary item to show it's complete and keep it visible longer
                   setUploadingItems(prev => prev.map(item => 
                     item.item_id === itemId 
                       ? {
@@ -710,12 +725,14 @@ export default function SessionPage({ loaderData }: Route.ComponentProps) {
                       : item
                   ));
                   
-                  // Remove from uploading items and refresh to show the saved item
+                  // Remove from uploading items and add a gentle refresh mechanism
                   setTimeout(() => {
                     setUploadingItems(prev => prev.filter(item => item.item_id !== itemId));
-                    // Revalidate to get fresh data from database and show the item properly
-                    revalidator.revalidate();
-                  }, 1500);
+                    // Add a smooth refresh after user has seen the result
+                    setTimeout(() => {
+                      revalidator.revalidate();
+                    }, 500);
+                  }, 3000); // Show result for 3 seconds
 
                 } catch (error) {
                   console.error('Error processing item:', error);
@@ -762,7 +779,10 @@ export default function SessionPage({ loaderData }: Route.ComponentProps) {
                     // Remove from uploading items after showing error
                     setTimeout(() => {
                       setUploadingItems(prev => prev.filter(item => item.item_id !== currentItemId));
-                      // Reduced revalidation to avoid page refresh
+                      // Add gentle refresh after error
+                      setTimeout(() => {
+                        revalidator.revalidate();
+                      }, 500);
                     }, 3000); // Show error for 3 seconds
                   } else {
                     // Fallback: just remove any analyzing items

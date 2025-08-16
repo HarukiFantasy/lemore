@@ -262,14 +262,13 @@ export function ItemCard({
             {/* Action Buttons */}
             <div className="flex gap-2 mt-3">
               <Button 
-                variant="outline" 
-                className="flex-1"
+                className="flex-1 bg-zinc-50 hover:bg-white border border-gray-200 hover:border-gray-300 text-zinc-700 hover:text-zinc-800 px-8 py-3 rounded-2xl shadow-sm hover:shadow-md transition-all duration-200"
                 onClick={() => setShowListingGenerator(true)}
               >
                 <Sparkles className="w-4 h-4 mr-2" />
                 Generate Listing
               </Button>
-              <Button asChild className="flex-1">
+              <Button asChild className="flex-1 bg-zinc-50 hover:bg-white border border-gray-200 hover:border-gray-300 text-zinc-700 hover:text-zinc-800 px-8 py-3 rounded-2xl shadow-sm hover:shadow-md transition-all duration-200">
                 <Link 
                   to={`/secondhand/submit-a-listing?${new URLSearchParams({
                     from_lgb: 'true',
@@ -327,8 +326,7 @@ export function ItemCard({
             <div className="flex gap-2 mt-2">
               <Button 
                 size="sm" 
-                variant="outline" 
-                className="text-xs h-7"
+                className="text-xs h-7 bg-zinc-50 hover:bg-white border border-gray-200 hover:border-gray-300 text-zinc-700 hover:text-zinc-800 rounded-2xl shadow-sm hover:shadow-md transition-all duration-200"
                 onClick={() => setDonationModal({ isOpen: true, type: 'centers' })}
               >
                 <MapPin className="w-3 h-3 mr-1" />
@@ -336,8 +334,7 @@ export function ItemCard({
               </Button>
               <Button 
                 size="sm" 
-                variant="outline" 
-                className="text-xs h-7"
+                className="text-xs h-7 bg-zinc-50 hover:bg-white border border-gray-200 hover:border-gray-300 text-zinc-700 hover:text-zinc-800 rounded-2xl shadow-sm hover:shadow-md transition-all duration-200"
                 onClick={() => setDonationModal({ isOpen: true, type: 'tax' })}
               >
                 Tax Info
@@ -357,11 +354,11 @@ export function ItemCard({
               Dispose of this item responsibly. Check if it can be recycled or needs special disposal.
             </p>
             <div className="flex gap-2 mt-2">
-              <Button size="sm" variant="outline" className="text-xs h-7">
+              <Button size="sm" className="text-xs h-7 bg-zinc-50 hover:bg-white border border-gray-200 hover:border-gray-300 text-zinc-700 hover:text-zinc-800 rounded-2xl shadow-sm hover:shadow-md transition-all duration-200">
                 <Recycle className="w-3 h-3 mr-1" />
                 Recycling Info
               </Button>
-              <Button size="sm" variant="outline" className="text-xs h-7">
+              <Button size="sm" className="text-xs h-7 bg-zinc-50 hover:bg-white border border-gray-200 hover:border-gray-300 text-zinc-700 hover:text-zinc-800 rounded-2xl shadow-sm hover:shadow-md transition-all duration-200">
                 <MapPin className="w-3 h-3 mr-1" />
                 Drop-off Sites
               </Button>
@@ -430,7 +427,7 @@ export function ItemCard({
                 />
                 <div className="flex justify-end gap-2">
                   <Button
-                    variant="ghost"
+                    className="bg-zinc-50 hover:bg-white border border-gray-200 hover:border-gray-300 text-zinc-700 hover:text-zinc-800 px-8 py-3 rounded-2xl shadow-sm hover:shadow-md transition-all duration-200"
                     size="sm"
                     onClick={() => setShowReason(false)}
                   >
@@ -438,6 +435,7 @@ export function ItemCard({
                   </Button>
                   <Button
                     size="sm"
+                    className="bg-zinc-50 hover:bg-white border border-gray-200 hover:border-gray-300 text-zinc-700 hover:text-zinc-800 px-8 py-3 rounded-2xl shadow-sm hover:shadow-md transition-all duration-200"
                     onClick={handleReasonSubmit}
                     disabled={loadingPricing}
                   >
@@ -499,7 +497,7 @@ export function ItemCard({
               <Sparkles className="w-5 h-5 text-purple-600" />
               Generate Listing for {item.title}
             </h2>
-            <Button variant="ghost" size="sm" onClick={() => setShowListingGenerator(false)}>
+            <Button className="bg-zinc-50 hover:bg-white border border-gray-200 hover:border-gray-300 text-zinc-700 hover:text-zinc-800 px-8 py-3 rounded-2xl shadow-sm hover:shadow-md transition-all duration-200" size="sm" onClick={() => setShowListingGenerator(false)}>
               <X className="w-4 h-4" />
             </Button>
           </div>

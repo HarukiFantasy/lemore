@@ -104,6 +104,7 @@ export default function LetGoBuddyIndex({ loaderData }: Route.ComponentProps) {
       icon: <Heart className="w-6 h-6" />,
       color: 'bg-green-500',
       features: ['Photo analysis', 'Smart recommendations', 'Price suggestions'],
+      usesAI: true
     },
     {
       id: 'E',
@@ -112,6 +113,7 @@ export default function LetGoBuddyIndex({ loaderData }: Route.ComponentProps) {
       icon: <Zap className="w-6 h-6" />,
       color: 'bg-blue-500',
       features: ['AI listing copy', 'Professional tone', 'Copy & paste ready'],
+      usesAI: true
     },
     {
       id: 'B',
@@ -120,6 +122,7 @@ export default function LetGoBuddyIndex({ loaderData }: Route.ComponentProps) {
       icon: <Target className="w-6 h-6 " />,
       color: 'bg-orange-500',
       features: ['Timeline planning', 'Multi-channel posting', 'Translation help'],
+      usesAI: true
     }
   ];
 
@@ -190,18 +193,22 @@ export default function LetGoBuddyIndex({ loaderData }: Route.ComponentProps) {
                 <Button 
                   asChild 
                   size="lg"
-                  className="bg-stone-800 hover:bg-stone-700 text-white px-8 py-3 rounded-full"
+                  className="bg-zinc-50 hover:bg-white border border-gray-200 hover:border-gray-300 text-zinc-700 hover:text-zinc-800 px-8 py-3 rounded-2xl shadow-sm hover:shadow-md transition-all duration-200"
                   disabled={!canCreateNewSession.allowed}
                 >
                   <Link to="/let-go-buddy/new">
-                    <Sparkles className="w-5 h-5 mr-2" />
-                    Start New Session
+                    <Sparkles className="w-5 h-5 mr-2 text-amber-500" />
+                    Start New Session with AI
                   </Link>
                 </Button>
-                <Button asChild variant="outline" size="lg" className="rounded-full border-stone-300 text-stone-700 hover:bg-stone-50">
+                <Button 
+                  asChild 
+                  size="lg" 
+                  className="bg-zinc-50 hover:bg-white border border-gray-200 hover:border-gray-300 text-zinc-700 hover:text-zinc-800 px-8 py-3 rounded-2xl shadow-sm hover:shadow-md transition-all duration-200"
+                >
                   <Link to="/let-go-buddy/challenges">
-                    <Calendar className="w-5 h-5 mr-2" />
-                    Daily Challenges
+                    <Calendar className="w-5 h-5 mr-2 text-emerald-500" />
+                    Daily Challenges without AI
                   </Link>
                 </Button>
               </div>
@@ -210,7 +217,11 @@ export default function LetGoBuddyIndex({ loaderData }: Route.ComponentProps) {
 
           {!user && (
             <div className="pt-4">
-              <Button asChild size="lg" className="bg-stone-800 hover:bg-stone-700 text-white px-8 py-3 rounded-full">
+              <Button 
+                asChild 
+                size="lg" 
+                className="bg-slate-100 hover:bg-slate-200 border border-slate-200 hover:border-slate-300 text-slate-700 hover:text-slate-800 px-8 py-3 rounded-lg shadow-sm hover:shadow-md transition-all duration-200"
+              >
                 <Link to="/auth/join">
                   Get Started Free
                   <ArrowRight className="w-5 h-5 ml-2" />
@@ -297,7 +308,10 @@ export default function LetGoBuddyIndex({ loaderData }: Route.ComponentProps) {
                     />
                   </div>
                   
-                  <Button asChild variant="outline" className="w-full `bg-teal-50 text-teal-600 hover:bg-teal-700 hover:text-teal-50 ">
+                  <Button 
+                    asChild 
+                    className="w-full bg-gray-50 hover:bg-gray-100 border border-gray-200 hover:border-gray-300 text-gray-600 hover:text-gray-700 rounded-lg shadow-sm hover:shadow-md transition-all duration-200"
+                  >
                     <Link to={`/let-go-buddy/session/${session.session_id}`}>
                       {session.status === 'completed' ? 'Session Completed' : 'Continue Session'}
                       <ArrowRight className="w-4 h-4 ml-2" />
@@ -330,82 +344,89 @@ export default function LetGoBuddyIndex({ loaderData }: Route.ComponentProps) {
           )}
         </div>
 
-        <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8 ${
-          user && aiUsageData && !aiUsageData.canUse ? 'opacity-50' : ''
-        }`}>
-          {scenarios.map((scenario) => (
-            <Card key={scenario.id} className={`p-6 transition-all duration-300 group ${
-              user && aiUsageData && !aiUsageData.canUse 
-                ? 'bg-gray-50 cursor-not-allowed' 
-                : 'hover:shadow-xl'
-            }`}>
-              <div className="flex justify-center mb-4">
-                <div className={`p-3 rounded-lg ${
-                  user && aiUsageData && !aiUsageData.canUse 
-                    ? 'bg-gray-400' 
-                    : scenario.color
-                }`}>
-                  <div className="text-white">
-                    {user && aiUsageData && !aiUsageData.canUse ? (
-                      <Lock className="w-6 h-6" />
-                    ) : (
-                      scenario.icon
-                    )}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
+          {scenarios.map((scenario) => {
+            const requiresAI = scenario.usesAI;
+            const isDisabled = requiresAI && user && aiUsageData && !aiUsageData.canUse;
+            
+            return (
+              <Card key={scenario.id} className={`p-6 transition-all duration-300 group ${
+                isDisabled 
+                  ? 'bg-gray-50 cursor-not-allowed' 
+                  : 'hover:shadow-xl'
+              }`}>
+                <div className="flex justify-center mb-4">
+                  <div className={`p-3 rounded-lg ${
+                    isDisabled 
+                      ? 'bg-gray-400' 
+                      : scenario.color
+                  }`}>
+                    <div className="text-white">
+                      {isDisabled ? (
+                        <Lock className="w-6 h-6" />
+                      ) : (
+                        scenario.icon
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
-              
-              <h3 className={`text-xl font-semibold mb-2 ${
-                user && aiUsageData && !aiUsageData.canUse ? 'text-gray-500' : 'text-gray-900'
-              }`}>
-                {scenario.title}
-              </h3>
-              
-              <p className={`mb-4 leading-relaxed ${
-                user && aiUsageData && !aiUsageData.canUse ? 'text-gray-400' : 'text-gray-600'
-              }`}>
-                {scenario.description}
-              </p>
-
-              <div className="space-y-2 mb-6">
-                {scenario.features.map((feature, index) => (
-                  <div key={index} className={`flex items-center text-sm ${
-                    user && aiUsageData && !aiUsageData.canUse ? 'text-gray-400' : 'text-gray-600'
-                  }`}>
-                    <div className={`w-1.5 h-1.5 rounded-full mr-2 ${
-                      user && aiUsageData && !aiUsageData.canUse ? 'bg-gray-400' : 'bg-green-500'
-                    }`} />
-                    {feature}
-                  </div>
-                ))}
-              </div>
-
-              <Button 
-                asChild 
-                variant="secondary"
-                className={`bg-teal-50 text-teal-600 hover:bg-teal-100 hover:text-teal-600 shadow-gray-300 w-full transition-transform ${
-                  user && aiUsageData && !aiUsageData.canUse 
-                    ? 'bg-gray-400 hover:bg-gray-400 cursor-not-allowed pointer-events-none' 
-                    : 'group-hover:scale-105'
-                }`}
-                disabled={user && (!canCreateNewSession.allowed || (aiUsageData && !aiUsageData.canUse))}
-              >
-                <Link to={user && aiUsageData && !aiUsageData.canUse ? '#' : `/let-go-buddy/new?scenario=${scenario.id}`}>
-                  {user && aiUsageData && !aiUsageData.canUse ? (
-                    <>
-                      <Lock className="w-4 h-4 mr-2" />
-                      AI Limit Reached
-                    </>
-                  ) : (
-                    <>
-                      Start {scenario.title}
-                      <ArrowRight className="w-4 h-4 ml-2" />
-                    </>
+                
+                <h3 className={`text-xl font-semibold mb-2 ${
+                  isDisabled ? 'text-gray-500' : 'text-gray-900'
+                }`}>
+                  {scenario.title}
+                  {!requiresAI && (
+                    <span className="ml-2 text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">
+                      No AI
+                    </span>
                   )}
-                </Link>
-              </Button>
-            </Card>
-          ))}
+                </h3>
+                
+                <p className={`mb-4 leading-relaxed ${
+                  isDisabled ? 'text-gray-400' : 'text-gray-600'
+                }`}>
+                  {scenario.description}
+                </p>
+
+                <div className="space-y-2 mb-6">
+                  {scenario.features.map((feature, index) => (
+                    <div key={index} className={`flex items-center text-sm ${
+                      isDisabled ? 'text-gray-400' : 'text-gray-600'
+                    }`}>
+                      <div className={`w-1.5 h-1.5 rounded-full mr-2 ${
+                        isDisabled ? 'bg-gray-400' : 'bg-green-500'
+                      }`} />
+                      {feature}
+                    </div>
+                  ))}
+                </div>
+
+                <Button 
+                  asChild 
+                  className={`w-full rounded-lg shadow-sm hover:shadow-md transition-all duration-200 ${
+                    isDisabled 
+                      ? 'bg-gray-200 border border-gray-200 text-gray-400 cursor-not-allowed pointer-events-none' 
+                      : 'bg-gray-50 hover:bg-gray-100 border border-gray-200 hover:border-gray-300 text-gray-600 hover:text-gray-700 group-hover:scale-[1.02]'
+                  }`}
+                  disabled={user && (!canCreateNewSession.allowed || isDisabled)}
+                >
+                  <Link to={isDisabled ? '#' : `/let-go-buddy/new?scenario=${scenario.id}`}>
+                    {isDisabled ? (
+                      <>
+                        <Lock className="w-4 h-4 mr-2" />
+                        AI Limit Reached
+                      </>
+                    ) : (
+                      <>
+                        Start {scenario.title}
+                        <ArrowRight className="w-4 h-4 ml-2" />
+                      </>
+                    )}
+                  </Link>
+                </Button>
+              </Card>
+            );
+          })}
         </div>
       </div>
 

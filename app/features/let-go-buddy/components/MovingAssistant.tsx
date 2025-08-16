@@ -418,7 +418,7 @@ export function MovingAssistant({ session, onPlanGenerated }: MovingAssistantPro
                 {!addedToCalendar ? (
                   <Button
                     onClick={addToCalendar}
-                    className="bg-purple-500 hover:bg-purple-600 text-white"
+                    className="bg-zinc-50 hover:bg-white border border-gray-200 hover:border-gray-300 text-zinc-700 hover:text-zinc-800 px-8 py-3 rounded-2xl shadow-sm hover:shadow-md transition-all duration-200"
                     disabled={isAddingToCalendar}
                   >
                     {isAddingToCalendar ? (
@@ -441,8 +441,7 @@ export function MovingAssistant({ session, onPlanGenerated }: MovingAssistantPro
                     </div>
                     <Button 
                       onClick={() => window.location.href = '/let-go-buddy/challenges'}
-                      variant="outline"
-                      className="w-full"
+                      className="w-full bg-zinc-50 hover:bg-white border border-gray-200 hover:border-gray-300 text-zinc-700 hover:text-zinc-800 px-8 py-3 rounded-2xl shadow-sm hover:shadow-md transition-all duration-200"
                     >
                       View Calendar
                     </Button>
@@ -467,7 +466,7 @@ export function MovingAssistant({ session, onPlanGenerated }: MovingAssistantPro
         
         <Button
           onClick={() => setMovingPlan(null)}
-          variant="outline"
+          className="bg-zinc-50 hover:bg-white border border-gray-200 hover:border-gray-300 text-zinc-700 hover:text-zinc-800 px-8 py-3 rounded-2xl shadow-sm hover:shadow-md transition-all duration-200"
         >
           Edit Categories
         </Button>
@@ -596,7 +595,7 @@ export function MovingAssistant({ session, onPlanGenerated }: MovingAssistantPro
                       />
                       <Button
                         onClick={() => setActiveCategory(null)}
-                        variant="outline"
+                        className="bg-zinc-50 hover:bg-white border border-gray-200 hover:border-gray-300 text-zinc-700 hover:text-zinc-800 px-8 py-3 rounded-2xl shadow-sm hover:shadow-md transition-all duration-200"
                         size="sm"
                       >
                         Done
@@ -605,7 +604,7 @@ export function MovingAssistant({ session, onPlanGenerated }: MovingAssistantPro
                   ) : (
                     <Button
                       onClick={() => setActiveCategory(categoryId)}
-                      variant="outline"
+                      className="bg-zinc-50 hover:bg-white border border-gray-200 hover:border-gray-300 text-zinc-700 hover:text-zinc-800 px-8 py-3 rounded-2xl shadow-sm hover:shadow-md transition-all duration-200"
                       size="sm"
                       disabled={
                         aiUsage.total < aiUsage.maxFree && 
@@ -644,7 +643,7 @@ export function MovingAssistant({ session, onPlanGenerated }: MovingAssistantPro
               onClick={generateMovingPlan}
               size="lg"
               disabled={isGeneratingPlan || !aiUsage.canUse}
-              className="px-6 sm:px-8 w-full sm:w-auto"
+              className="w-full sm:w-auto bg-zinc-50 hover:bg-white border border-gray-200 hover:border-gray-300 text-zinc-700 hover:text-zinc-800 px-8 py-3 rounded-2xl shadow-sm hover:shadow-md transition-all duration-200"
             >
               {isGeneratingPlan ? (
                 <>
