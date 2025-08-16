@@ -402,7 +402,7 @@ export default function LetGoBuddyIndex({ loaderData }: Route.ComponentProps) {
                 asChild 
                 className={`w-full transition-transform ${
                   user && aiUsageData && !aiUsageData.canUse 
-                    ? 'bg-gray-400 hover:bg-gray-400 cursor-not-allowed' 
+                    ? 'bg-gray-400 hover:bg-gray-400 cursor-not-allowed pointer-events-none' 
                     : 'group-hover:scale-105'
                 }`}
                 disabled={user && (!canCreateNewSession.allowed || (aiUsageData && !aiUsageData.canUse))}

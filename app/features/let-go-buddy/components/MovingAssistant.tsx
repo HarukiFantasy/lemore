@@ -20,6 +20,7 @@ import {
   Calendar,
   MapPin,
   Loader2,
+  Lock,
 } from 'lucide-react';
 import { ItemUploader } from './ItemUploader';
 import { browserClient } from '~/supa-client';
@@ -465,15 +466,34 @@ export function MovingAssistant({ session, onPlanGenerated }: MovingAssistantPro
   return (
     <div className="space-y-6">
       {/* Step 1: Select Categories */}
-      <Card className="p-4 sm:p-6">
-        <h2 className="text-xl font-semibold mb-4">
-          Step 1: What items do you need to move?
-        </h2>
-        <p className="text-gray-600 mb-6">
-          Select all categories that apply to your move
-        </p>
+      <Card className={`p-4 sm:p-6 ${!aiUsage.canUse ? 'opacity-50' : ''}`}>
+        <div className="flex items-center gap-3 mb-4">
+          <h2 className="text-xl font-semibold">
+            Step 1: What items do you need to move?
+          </h2>
+          {!aiUsage.canUse && (
+            <Lock className="w-5 h-5 text-gray-400" />
+          )}
+        </div>
+        {!aiUsage.canUse ? (
+          <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+            <div className="flex items-center gap-2 text-amber-800 mb-2">
+              <Lock className="w-5 h-5" />
+              <span className="font-medium">
+                AI Analysis Limit Reached ({aiUsage.total}/{aiUsage.maxFree})
+              </span>
+            </div>
+            <p className="text-sm text-amber-700">
+              You've used all your free AI analyses. Moving plan generation is not available, but you can still view existing plans and manage tasks in your calendar.
+            </p>
+          </div>
+        ) : (
+          <p className="text-gray-600 mb-6">
+            Select all categories that apply to your move
+          </p>
+        )}
         
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+        <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 ${!aiUsage.canUse ? 'pointer-events-none' : ''}`}>
           {categories.map((category) => {
             const Icon = category.icon;
             const isSelected = selectedCategories.has(category.id);
@@ -482,12 +502,14 @@ export function MovingAssistant({ session, onPlanGenerated }: MovingAssistantPro
             return (
               <Card
                 key={category.id}
-                className={`p-3 sm:p-4 cursor-pointer transition-all ${
-                  isSelected 
-                    ? 'border-purple-500 bg-purple-50' 
-                    : 'hover:border-gray-300'
+                className={`p-3 sm:p-4 transition-all ${
+                  !aiUsage.canUse 
+                    ? 'cursor-not-allowed bg-gray-50 border-gray-200' 
+                    : isSelected 
+                      ? 'border-purple-500 bg-purple-50 cursor-pointer' 
+                      : 'hover:border-gray-300 cursor-pointer'
                 }`}
-                onClick={() => toggleCategory(category.id)}
+                onClick={() => !aiUsage.canUse ? null : toggleCategory(category.id)}
               >
                 <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 sm:gap-0">
                   <div className="flex items-start gap-2 sm:gap-3">
@@ -522,7 +544,7 @@ export function MovingAssistant({ session, onPlanGenerated }: MovingAssistantPro
 
       {/* Step 2: Upload Images for Selected Categories */}
       {selectedCategories.size > 0 && (
-        <Card className="p-4 sm:p-6">
+        <Card className={`p-4 sm:p-6 ${!aiUsage.canUse ? 'opacity-50 pointer-events-none' : ''}`}>
           <h2 className="text-lg sm:text-xl font-semibold mb-3 sm:mb-4">
             Step 2: Upload photos (optional)
           </h2>
@@ -597,7 +619,7 @@ export function MovingAssistant({ session, onPlanGenerated }: MovingAssistantPro
 
       {/* Step 3: Generate Plan */}
       {selectedCategories.size > 0 && (
-        <Card className="p-4 sm:p-6 bg-gradient-to-r from-purple-50 to-blue-50">
+        <Card className={`p-4 sm:p-6 bg-gradient-to-r from-purple-50 to-blue-50 ${!aiUsage.canUse ? 'opacity-50 pointer-events-none' : ''}`}>
           <div className="text-center">
             <Sparkles className="w-10 h-10 sm:w-12 sm:h-12 text-purple-600 mx-auto mb-3 sm:mb-4" />
             <h2 className="text-lg sm:text-xl font-semibold mb-2">
@@ -609,7 +631,7 @@ export function MovingAssistant({ session, onPlanGenerated }: MovingAssistantPro
             <Button
               onClick={generateMovingPlan}
               size="lg"
-              disabled={isGeneratingPlan}
+              disabled={isGeneratingPlan || !aiUsage.canUse}
               className="px-6 sm:px-8 w-full sm:w-auto"
             >
               {isGeneratingPlan ? (

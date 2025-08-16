@@ -17,7 +17,8 @@ import {
   Trash2,
   Sparkles,
   Calendar,
-  Loader2
+  Loader2,
+  Lock
 } from 'lucide-react';
 import type { Route } from './+types/session';
 import { makeSSRClient, getAuthUser, browserClient } from '~/supa-client';
@@ -56,7 +57,7 @@ export const loader = async ({ request, params }: Route.LoaderArgs) => {
   
   if (error) {
     console.log('View query failed, trying base table:', error);
-    // Fallback to base lgb_sessions table
+    // Fallback to base lgb_sessions table (without ai_plan_generated fields if they don't exist)
     const { data: baseSessionData, error: baseError } = await client
       .from('lgb_sessions')
       .select(`
@@ -78,12 +79,14 @@ export const loader = async ({ request, params }: Route.LoaderArgs) => {
       throw redirect('/let-go-buddy?error=session_not_found');
     }
     
-    // Add default values for dashboard stats
+    // Add default values for dashboard stats and missing fields
     session = {
       ...baseSessionData,
       item_count: 0,
       decided_count: 0,
-      expected_revenue: 0
+      expected_revenue: 0,
+      ai_plan_generated: false, // Default to false when column doesn't exist
+      ai_plan_generated_at: null // Default to null when column doesn't exist
     };
   } else {
     session = sessionData;
@@ -106,26 +109,55 @@ export const loader = async ({ request, params }: Route.LoaderArgs) => {
   // For Moving Assistant, get task counts from calendar
   let taskStats = null;
   if (session?.scenario === 'B') {
-    const { data: calendarTasks } = await client
-      .from('challenge_calendar_items')
-      .select('item_id, completed, name')
-      .eq('user_id', user.id)
-      .like('name', '%📦%')
-      .or('name.like.%⚡%');
+    // For Moving Assistant, we need to find tasks that were likely created for this session
+    // Since tasks aren't directly linked to sessions, we'll look for moving tasks
+    // created around the time this session was active or for sessions with the same move_date
     
-    if (calendarTasks) {
-      const totalTasks = calendarTasks.length;
-      const completedTasks = calendarTasks.filter(task => task.completed).length;
-      const pendingTasks = totalTasks - completedTasks;
-      const priorityTasks = calendarTasks.filter(task => task.name.startsWith('⚡')).length;
+    let calendarTasks: any[] = [];
+    
+    if ((session as any).ai_plan_generated) {
+      // If a plan was generated for this session, look for moving tasks
+      const { data: allCalendarTasks, error: taskError } = await client
+        .from('challenge_calendar_items')
+        .select('item_id, completed, name, created_at')
+        .eq('user_id', user.id);
       
-      taskStats = {
-        total: totalTasks,
-        completed: completedTasks,
-        pending: pendingTasks,
-        priority: priorityTasks
-      };
+      // Filter for moving tasks (tasks that start with 📦 or ⚡)
+      calendarTasks = allCalendarTasks?.filter(task => 
+        task.name && (task.name.startsWith('📦') || task.name.startsWith('⚡'))
+      ) || [];
+      
+      console.log('Moving Assistant task query:', { 
+        allTasksCount: allCalendarTasks?.length || 0,
+        movingTasksCount: calendarTasks.length,
+        calendarTasks: calendarTasks.map(t => ({ name: t.name, completed: t.completed })), 
+        taskError, 
+        userId: user.id,
+        sessionScenario: session?.scenario,
+        sessionCreated: session?.created_at,
+        planGenerated: (session as any).ai_plan_generated
+      });
+    } else {
+      console.log('Moving Assistant session has no plan generated yet:', {
+        sessionId: session.session_id,
+        planGenerated: (session as any).ai_plan_generated
+      });
     }
+    
+    // Always calculate stats, even if empty
+    const totalTasks = calendarTasks.length;
+    const completedTasks = calendarTasks.filter(task => task.completed).length;
+    const pendingTasks = totalTasks - completedTasks;
+    const priorityTasks = calendarTasks.filter(task => task.name && task.name.startsWith('⚡')).length;
+    
+    taskStats = {
+      total: totalTasks,
+      completed: completedTasks,
+      pending: pendingTasks,
+      priority: priorityTasks
+    };
+    
+    console.log('Calculated taskStats:', taskStats);
   }
   
   // Transform items to match expected format
@@ -191,6 +223,9 @@ export const action = async ({ request, params }: Route.ActionArgs) => {
 
 export default function SessionPage({ loaderData }: Route.ComponentProps) {
   const { session, items: initialItems, taskStats } = loaderData;
+  
+  // Debug taskStats on the client side
+  console.log('SessionPage taskStats:', taskStats, 'scenario:', session?.scenario);
   const revalidator = useRevalidator();
   const actionData = useActionData<typeof action>();
   const navigation = useNavigation();
@@ -593,11 +628,27 @@ export default function SessionPage({ loaderData }: Route.ComponentProps) {
 
         {/* Regular Item Upload Section (for scenarios A and C) */}
         {session?.scenario !== 'E' && session?.scenario !== 'B' && session?.status === 'active' && (
-          <Card className="p-6 mb-8">
+          <Card className={`p-6 mb-8 ${aiUsage && aiUsage.used >= aiUsage.max ? 'opacity-50 pointer-events-none' : ''}`}>
             <h2 className="text-xl font-semibold mb-4 flex items-center">
               <Plus className="w-5 h-5 mr-2" />
               Add New Items
+              {aiUsage && aiUsage.used >= aiUsage.max && (
+                <Lock className="w-5 h-5 ml-2 text-gray-400" />
+              )}
             </h2>
+            {aiUsage && aiUsage.used >= aiUsage.max ? (
+              <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                <div className="flex items-center gap-2 text-amber-800 mb-2">
+                  <Lock className="w-5 h-5" />
+                  <span className="font-medium">
+                    AI Analysis Limit Reached ({aiUsage.used}/{aiUsage.max})
+                  </span>
+                </div>
+                <p className="text-sm text-amber-700">
+                  You've used all your free AI analyses. Item upload and analysis is not available, but you can still manage existing items.
+                </p>
+              </div>
+            ) : null}
             <ItemUploader 
               onUpload={async (photos) => {
                 console.log('Photos uploaded:', photos);

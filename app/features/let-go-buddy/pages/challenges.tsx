@@ -428,29 +428,6 @@ export default function ChallengesPage({ loaderData }: Route.ComponentProps) {
                   );
                 })}
               </div>
-
-              {/* Moving Progress */}
-              <Card className="p-4 bg-gradient-to-r from-purple-50 to-pink-50 mt-6">
-                <h3 className="font-semibold mb-2">Moving Progress</h3>
-                <div className="flex items-center gap-4">
-                  <div className="flex-1">
-                    <div className="bg-gray-200 rounded-full h-3">
-                      <div 
-                        className="bg-purple-500 h-3 rounded-full transition-all"
-                        style={{ 
-                          width: `${(movingTasks.filter(t => t.completed).length / movingTasks.length) * 100}%` 
-                        }}
-                      />
-                    </div>
-                  </div>
-                  <span className="text-sm font-medium">
-                    {Math.round((movingTasks.filter(t => t.completed).length / movingTasks.length) * 100)}%
-                  </span>
-                </div>
-                <p className="text-sm text-gray-600 mt-2">
-                  {movingTasks.filter(t => t.completed).length} of {movingTasks.length} tasks completed
-                </p>
-              </Card>
             </div>
           )}
 

@@ -232,7 +232,7 @@ export default function NewSession({ loaderData }: Route.ComponentProps) {
                         checked={selectedScenario === key}
                         onChange={(e) => setSelectedScenario(e.target.value as Scenario)}
                         className="mt-1 mr-3"
-                        disabled={aiUsageData && !aiUsageData.canUse}
+                        disabled={aiUsageData ? !aiUsageData.canUse : false}
                       />
                       <div className="flex-1">
                         <div className="flex items-center justify-between">
@@ -364,7 +364,7 @@ export default function NewSession({ loaderData }: Route.ComponentProps) {
                   ? 'bg-gray-400 hover:bg-gray-400 cursor-not-allowed' 
                   : ''
               }`}
-              disabled={isSubmitting || (aiUsageData && !aiUsageData.canUse)}
+              disabled={isSubmitting || (aiUsageData ? !aiUsageData.canUse : false)}
             >
               {isSubmitting ? (
                 <>
