@@ -3,13 +3,51 @@ import type { LgbListing, Language } from '../types';
 
 /**
  * Save generated listings to the database
+ * @param listings - Array of listings to save
+ * @param sessionId - Optional session ID for standalone listings
  */
-export async function saveListingsToDatabase(listings: LgbListing[]): Promise<{ success: boolean; error?: string }> {
+export async function saveListingsToDatabase(listings: LgbListing[], sessionId?: string): Promise<{ success: boolean; error?: string }> {
   try {
     console.log('Saving listings to database:', listings);
 
     if (!listings || listings.length === 0) {
       return { success: true }; // Nothing to save
+    }
+
+    // For standalone listings (when item_id is a generated UUID), create placeholder items first
+    const standaloneListings = listings.filter(listing => 
+      listing.item_id && !listing.item_id.startsWith('lgb_item_')
+    );
+
+    for (const listing of standaloneListings) {
+      // Check if this item_id already exists
+      const { data: existingItem } = await browserClient
+        .from('lgb_items')
+        .select('item_id')
+        .eq('item_id', listing.item_id)
+        .single();
+
+      if (!existingItem) {
+        // Create a placeholder item for standalone listings
+        const { error: itemError } = await browserClient
+          .from('lgb_items')
+          .insert({
+            item_id: listing.item_id,
+            session_id: sessionId || crypto.randomUUID(), // Use provided session ID or generate one
+            title: listing.title,
+            category: 'Generated Listing',
+            condition: 'Unknown',
+            ai_recommendation: 'sell',
+            ai_rationale: 'Generated through Quick Listing Generator',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          });
+
+        if (itemError) {
+          console.error('Error creating placeholder item:', itemError);
+          return { success: false, error: `Failed to create placeholder item: ${itemError.message}` };
+        }
+      }
     }
 
     // Prepare data for database insertion

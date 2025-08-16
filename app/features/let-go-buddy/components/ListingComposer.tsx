@@ -119,7 +119,7 @@ export function ListingComposer({
       if (onListingGenerate && result.data.listings) {
         const listingsArray = Object.entries(result.data.listings).map(([lang, listing]: [string, any]) => ({
           listing_id: `${Date.now()}-${lang}`,
-          item_id: item?.item_id || 'standalone', // Use 'standalone' for items without specific IDs
+          item_id: item?.item_id || crypto.randomUUID(), // Generate a UUID for standalone listings
           lang: lang as Language,
           title: listing.title,
           body: listing.body,

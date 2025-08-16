@@ -449,8 +449,8 @@ export default function SessionPage({ loaderData }: Route.ComponentProps) {
               onListingGenerate={async (listings) => {
                 console.log('Generated listings for session:', listings);
                 
-                // Save listings to database
-                const saveResult = await saveListingsToDatabase(listings);
+                // Save listings to database with session ID for standalone listings
+                const saveResult = await saveListingsToDatabase(listings, session?.session_id || undefined);
                 if (saveResult.success) {
                   console.log('Listings successfully saved to database for session');
                 } else {

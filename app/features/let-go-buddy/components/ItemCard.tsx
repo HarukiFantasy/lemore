@@ -509,7 +509,7 @@ export function ItemCard({
               onListingGenerate={async (listings) => {
                 console.log('Generated listings for item:', item.item_id, listings);
                 
-                // Save listings to database
+                // Save listings to database (no sessionId needed for item-specific listings)
                 const saveResult = await saveListingsToDatabase(listings);
                 if (saveResult.success) {
                   console.log('Listings successfully saved to database');
