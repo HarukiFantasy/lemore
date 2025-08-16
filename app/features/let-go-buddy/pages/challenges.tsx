@@ -28,16 +28,22 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
     throw redirect('/auth/login?redirect=/let-go-buddy/challenges');
   }
 
-  // Get user's challenges
+  // Get user's challenges and moving tasks
   const { data: challenges } = await client
     .from('challenge_calendar_items')
     .select(`*`)
     .eq('user_id', user.id)
-    .order('scheduled_date', { ascending: false });
+    .order('scheduled_date', { ascending: true });
+
+  // Separate challenges from moving tasks
+  const regularChallenges = challenges?.filter(c => !c.challenge_type || c.challenge_type === 'challenge') || [];
+  const movingTasks = challenges?.filter(c => c.challenge_type === 'moving_task' || c.challenge_type === 'moving_priority') || [];
 
   return { 
     user,
-    challenges: challenges || []
+    challenges: challenges || [],
+    regularChallenges,
+    movingTasks
   };
 };
 
@@ -78,7 +84,7 @@ export const action = async ({ request }: Route.ActionArgs) => {
 };
 
 export default function ChallengesPage({ loaderData }: Route.ComponentProps) {
-  const { challenges } = loaderData;
+  const { challenges, regularChallenges, movingTasks } = loaderData;
   const actionData = useActionData<typeof action>();
 
   const getStatusColor = (completed: boolean) => {
@@ -138,119 +144,229 @@ export default function ChallengesPage({ loaderData }: Route.ComponentProps) {
           </Card>
         )}
 
-        {challenges.length === 0 ? (
-          // Empty State
-          <Card className="p-12 text-center">
-            <Calendar className="w-16 h-16 text-gray-400 mx-auto mb-6" />
-            <h2 className="text-2xl font-semibold text-gray-900 mb-4">
-              No challenges yet
-            </h2>
-            <p className="text-gray-600 mb-8 max-w-md mx-auto">
-              Start your first decluttering challenge to build consistent habits. 
-              Choose from 7, 14, or 30-day challenges.
-            </p>
-            <Button asChild size="lg" className="bg-pink-600 hover:bg-pink-700">
-              <Link to="/let-go-buddy/new?scenario=C">
-                <Plus className="w-5 h-5 mr-2" />
-                Start Your First Challenge
-              </Link>
-            </Button>
-          </Card>
-        ) : (
-          // Challenges List
-          <div className="space-y-6">
-            {challenges.map((challenge) => {
-              const completed = challenge.completed;
-              const daysSinceScheduled = getDaysFromScheduled(challenge.scheduled_date);
+        <div className="space-y-8">
+          {/* Moving Tasks Section */}
+          {movingTasks.length > 0 && (
+            <div>
+              <div className="flex items-center gap-3 mb-6">
+                <div className="bg-purple-100 p-2 rounded-lg">
+                  <Calendar className="w-6 h-6 text-purple-600" />
+                </div>
+                <h2 className="text-2xl font-semibold text-gray-900">Moving Plan Tasks</h2>
+                <Badge className="bg-purple-100 text-purple-800">
+                  {movingTasks.filter(t => t.completed).length}/{movingTasks.length} completed
+                </Badge>
+              </div>
 
-              return (
-                <Card key={challenge.item_id} className="p-6">
-                  <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
-                    {/* Challenge Info */}
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-4">
-                        <div className="bg-pink-100 p-2 rounded-lg">
-                          <Calendar className="w-6 h-6 text-pink-600" />
-                        </div>
-                        <div>
-                          <h3 className="text-xl font-semibold">
-                            {challenge.name || 'Daily Challenge'}
-                          </h3>
-                          <p className="text-sm text-gray-600">
-                            Scheduled for {new Date(challenge.scheduled_date).toLocaleDateString()}
-                          </p>
-                        </div>
-                        <Badge className={getStatusColor(completed)}>
-                          {completed ? 'Completed' : 'Pending'}
-                        </Badge>
-                      </div>
+              <div className="grid gap-4">
+                {movingTasks.map((task) => {
+                  const completed = task.completed;
+                  const daysSinceScheduled = getDaysFromScheduled(task.scheduled_date);
+                  const isOverdue = daysSinceScheduled > 0 && !completed;
+                  const isToday = daysSinceScheduled === 0;
+                  const isPriority = task.challenge_type === 'moving_priority';
 
-                      {/* Status Info */}
-                      <div className="flex items-center gap-4 mb-4 text-sm text-gray-600">
-                        <div className="flex items-center">
-                          <Clock className="w-4 h-4 mr-1" />
-                          {daysSinceScheduled === 0 && 'Today'}
-                          {daysSinceScheduled > 0 && `${daysSinceScheduled} days ago`}
-                          {daysSinceScheduled < 0 && `In ${Math.abs(daysSinceScheduled)} days`}
-                        </div>
-                      </div>
-
-                      {/* Reflection */}
-                      {challenge.reflection && (
-                        <div className="bg-green-50 rounded-lg p-3 mb-4">
-                          <p className="text-sm text-green-800">
-                            <strong>Reflection:</strong> {challenge.reflection}
-                          </p>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Actions */}
-                    <div className="flex flex-col gap-3">
-                      {!completed && (
-                        <Form method="post" className="space-y-3">
-                          <input type="hidden" name="action" value="complete_item" />
-                          <input type="hidden" name="challengeId" value={challenge.item_id.toString()} />
-                          
-                          <div>
-                            <label className="text-sm font-medium text-gray-700">
-                              Reflection (optional):
-                            </label>
-                            <textarea
-                              name="reflection"
-                              rows={2}
-                              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
-                              placeholder="How did this challenge go?"
-                            />
+                  return (
+                    <Card key={task.item_id} className={`p-4 ${
+                      isPriority ? 'border-orange-300 bg-orange-50' :
+                      isOverdue ? 'border-red-300 bg-red-50' :
+                      isToday ? 'border-blue-300 bg-blue-50' :
+                      completed ? 'border-green-300 bg-green-50' : 'border-gray-200'
+                    }`}>
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <h3 className={`font-medium ${completed ? 'line-through text-gray-500' : ''}`}>
+                              {task.name?.replace(/^(📦|⚡)\s/, '') || 'Moving Task'}
+                            </h3>
+                            {isPriority && <Badge variant="destructive" className="text-xs">Priority</Badge>}
+                            {isToday && !completed && <Badge className="bg-blue-600 text-xs">Today</Badge>}
+                            {isOverdue && <Badge variant="destructive" className="text-xs">Overdue</Badge>}
                           </div>
-                          
-                          <Button type="submit" className="w-full bg-pink-600 hover:bg-pink-700">
-                            <CheckCircle className="w-4 h-4 mr-2" />
-                            Complete Challenge
-                          </Button>
-                        </Form>
-                      )}
-
-                      {completed && (
-                        <div className="text-center p-4 bg-green-50 rounded-lg">
-                          <CheckCircle className="w-8 h-8 text-green-500 mx-auto mb-2" />
-                          <p className="text-sm font-medium text-green-800">
-                            Completed!
+                          <p className="text-sm text-gray-600 mt-1">
+                            {isToday ? 'Today' : 
+                             daysSinceScheduled > 0 ? `${daysSinceScheduled} days ago` :
+                             `In ${Math.abs(daysSinceScheduled)} days`} • 
+                            {new Date(task.scheduled_date).toLocaleDateString()}
                           </p>
-                          {challenge.completed_at && (
-                            <p className="text-xs text-green-600 mt-1">
-                              {new Date(challenge.completed_at).toLocaleDateString()}
-                            </p>
+                          {task.reflection && (
+                            <p className="text-sm text-green-700 mt-2 italic">"{task.reflection}"</p>
                           )}
                         </div>
-                      )}
+
+                        <div className="flex items-center gap-2">
+                          {!completed ? (
+                            <Form method="post" className="flex items-center gap-2">
+                              <input type="hidden" name="action" value="complete_item" />
+                              <input type="hidden" name="challengeId" value={task.item_id.toString()} />
+                              <Button type="submit" size="sm" className="bg-purple-600 hover:bg-purple-700">
+                                <CheckCircle className="w-4 h-4" />
+                              </Button>
+                            </Form>
+                          ) : (
+                            <div className="flex items-center gap-1 text-green-600">
+                              <CheckCircle className="w-5 h-5" />
+                              <span className="text-xs font-medium">Done</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </Card>
+                  );
+                })}
+              </div>
+
+              {/* Moving Progress */}
+              <Card className="p-4 bg-gradient-to-r from-purple-50 to-pink-50 mt-6">
+                <h3 className="font-semibold mb-2">Moving Progress</h3>
+                <div className="flex items-center gap-4">
+                  <div className="flex-1">
+                    <div className="bg-gray-200 rounded-full h-3">
+                      <div 
+                        className="bg-purple-500 h-3 rounded-full transition-all"
+                        style={{ 
+                          width: `${(movingTasks.filter(t => t.completed).length / movingTasks.length) * 100}%` 
+                        }}
+                      />
                     </div>
                   </div>
-                </Card>
-              );
-            })}
-          </div>
-        )}
+                  <span className="text-sm font-medium">
+                    {Math.round((movingTasks.filter(t => t.completed).length / movingTasks.length) * 100)}%
+                  </span>
+                </div>
+                <p className="text-sm text-gray-600 mt-2">
+                  {movingTasks.filter(t => t.completed).length} of {movingTasks.length} tasks completed
+                </p>
+              </Card>
+            </div>
+          )}
+
+          {/* Regular Challenges Section */}
+          {regularChallenges.length > 0 && (
+            <div>
+              <h2 className="text-2xl font-semibold text-gray-900 mb-6">Daily Challenges</h2>
+              <div className="space-y-6">
+                {regularChallenges.map((challenge) => {
+                  const completed = challenge.completed;
+                  const daysSinceScheduled = getDaysFromScheduled(challenge.scheduled_date);
+
+                  return (
+                    <Card key={challenge.item_id} className="p-6">
+                      <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
+                        {/* Challenge Info */}
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3 mb-4">
+                            <div className="bg-pink-100 p-2 rounded-lg">
+                              <Calendar className="w-6 h-6 text-pink-600" />
+                            </div>
+                            <div>
+                              <h3 className="text-xl font-semibold">
+                                {challenge.name || 'Daily Challenge'}
+                              </h3>
+                              <p className="text-sm text-gray-600">
+                                Scheduled for {new Date(challenge.scheduled_date).toLocaleDateString()}
+                              </p>
+                            </div>
+                            <Badge className={getStatusColor(completed)}>
+                              {completed ? 'Completed' : 'Pending'}
+                            </Badge>
+                          </div>
+
+                          {/* Status Info */}
+                          <div className="flex items-center gap-4 mb-4 text-sm text-gray-600">
+                            <div className="flex items-center">
+                              <Clock className="w-4 h-4 mr-1" />
+                              {daysSinceScheduled === 0 && 'Today'}
+                              {daysSinceScheduled > 0 && `${daysSinceScheduled} days ago`}
+                              {daysSinceScheduled < 0 && `In ${Math.abs(daysSinceScheduled)} days`}
+                            </div>
+                          </div>
+
+                          {/* Reflection */}
+                          {challenge.reflection && (
+                            <div className="bg-green-50 rounded-lg p-3 mb-4">
+                              <p className="text-sm text-green-800">
+                                <strong>Reflection:</strong> {challenge.reflection}
+                              </p>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Actions */}
+                        <div className="flex flex-col gap-3">
+                          {!completed && (
+                            <Form method="post" className="space-y-3">
+                              <input type="hidden" name="action" value="complete_item" />
+                              <input type="hidden" name="challengeId" value={challenge.item_id.toString()} />
+                              
+                              <div>
+                                <label className="text-sm font-medium text-gray-700">
+                                  Reflection (optional):
+                                </label>
+                                <textarea
+                                  name="reflection"
+                                  rows={2}
+                                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                                  placeholder="How did this challenge go?"
+                                />
+                              </div>
+                              
+                              <Button type="submit" className="w-full bg-pink-600 hover:bg-pink-700">
+                                <CheckCircle className="w-4 h-4 mr-2" />
+                                Complete Challenge
+                              </Button>
+                            </Form>
+                          )}
+
+                          {completed && (
+                            <div className="text-center p-4 bg-green-50 rounded-lg">
+                              <CheckCircle className="w-8 h-8 text-green-500 mx-auto mb-2" />
+                              <p className="text-sm font-medium text-green-800">
+                                Completed!
+                              </p>
+                              {challenge.completed_at && (
+                                <p className="text-xs text-green-600 mt-1">
+                                  {new Date(challenge.completed_at).toLocaleDateString()}
+                                </p>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </Card>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Empty State */}
+          {challenges.length === 0 && (
+            <Card className="p-12 text-center">
+              <Calendar className="w-16 h-16 text-gray-400 mx-auto mb-6" />
+              <h2 className="text-2xl font-semibold text-gray-900 mb-4">
+                No challenges yet
+              </h2>
+              <p className="text-gray-600 mb-8 max-w-md mx-auto">
+                Start your first decluttering challenge or create a moving plan to get organized tasks in your calendar.
+              </p>
+              <div className="flex gap-4 justify-center">
+                <Button asChild size="lg" className="bg-pink-600 hover:bg-pink-700">
+                  <Link to="/let-go-buddy/new?scenario=C">
+                    <Plus className="w-5 h-5 mr-2" />
+                    Start Challenge
+                  </Link>
+                </Button>
+                <Button asChild size="lg" variant="outline">
+                  <Link to="/let-go-buddy/new?scenario=B">
+                    <Calendar className="w-5 h-5 mr-2" />
+                    Moving Assistant
+                  </Link>
+                </Button>
+              </div>
+            </Card>
+          )}
+        </div>
 
         {/* Tips Section */}
         <Card className="p-6 mt-8 bg-gradient-to-r from-pink-50 to-purple-50">

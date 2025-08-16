@@ -57,6 +57,8 @@ export function MovingAssistant({ session, onPlanGenerated }: MovingAssistantPro
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [isGeneratingPlan, setIsGeneratingPlan] = useState(false);
   const [movingPlan, setMovingPlan] = useState<any>(null);
+  const [isAddingToCalendar, setIsAddingToCalendar] = useState(false);
+  const [addedToCalendar, setAddedToCalendar] = useState(false);
   const { toast } = useToast();
 
   const toggleCategory = (categoryId: string) => {
@@ -80,6 +82,103 @@ export function MovingAssistant({ session, onPlanGenerated }: MovingAssistantPro
       ...prev,
       [categoryId]: images
     }));
+  };
+
+  const addToCalendar = async () => {
+    if (!movingPlan || !session.move_date) {
+      toast({
+        title: "Cannot add to calendar",
+        description: "No moving plan or move date available",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsAddingToCalendar(true);
+    
+    try {
+      const moveDate = new Date(session.move_date);
+      const calendarEntries = [];
+
+      // Convert each week's tasks into calendar entries
+      if (movingPlan.timeline) {
+        for (const week of movingPlan.timeline) {
+          // Calculate the start date for this week (working backwards from move date)
+          const weekStartDate = new Date(moveDate);
+          weekStartDate.setDate(moveDate.getDate() - (7 * (movingPlan.timeline.length - week.week)));
+          
+          // Add each task as a separate calendar entry
+          if (week.tasks) {
+            for (let taskIndex = 0; taskIndex < week.tasks.length; taskIndex++) {
+              const task = week.tasks[taskIndex];
+              const taskDate = new Date(weekStartDate);
+              taskDate.setDate(weekStartDate.getDate() + taskIndex + 1); // Spread tasks across the week
+              
+              calendarEntries.push({
+                name: `📦 ${task}`,
+                scheduled_date: taskDate.toISOString(),
+                challenge_type: 'moving_task',
+                moving_week: week.week,
+                priority: week.priority || 'medium'
+              });
+            }
+          }
+        }
+      }
+
+      // Add priority action items as high-priority tasks
+      if (movingPlan.actionItems) {
+        const urgentDate = new Date();
+        urgentDate.setDate(urgentDate.getDate() + 1); // Tomorrow
+        
+        for (const actionItem of movingPlan.actionItems) {
+          calendarEntries.push({
+            name: `⚡ ${actionItem}`,
+            scheduled_date: urgentDate.toISOString(),
+            challenge_type: 'moving_priority',
+            priority: 'high'
+          });
+        }
+      }
+
+      // Get current user for calendar entries
+      const { data: { user } } = await browserClient.auth.getUser();
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+
+      // Add user_id to all calendar entries
+      const entriesWithUserId = calendarEntries.map(entry => ({
+        ...entry,
+        user_id: user.id
+      }));
+
+      // Save all calendar entries to database
+      const { error } = await browserClient
+        .from('challenge_calendar_items')
+        .insert(entriesWithUserId);
+
+      if (error) {
+        throw error;
+      }
+
+      setAddedToCalendar(true);
+      toast({
+        title: "Added to calendar!",
+        description: `${calendarEntries.length} moving tasks added to your challenge calendar`,
+        className: "bg-green-50 border-green-200"
+      });
+
+    } catch (error) {
+      console.error('Error adding to calendar:', error);
+      toast({
+        title: "Failed to add to calendar",
+        description: "Please try again or contact support",
+        variant: "destructive"
+      });
+    } finally {
+      setIsAddingToCalendar(false);
+    }
   };
 
   const generateMovingPlan = async () => {
@@ -204,6 +303,47 @@ export function MovingAssistant({ session, onPlanGenerated }: MovingAssistantPro
                 </ul>
               </Card>
             )}
+
+            {/* Add to Calendar Button */}
+            <Card className="p-4 bg-gradient-to-r from-purple-50 to-pink-50 border-purple-200">
+              <div className="text-center">
+                <Calendar className="w-8 h-8 text-purple-600 mx-auto mb-3" />
+                <h3 className="font-semibold mb-2">Stay on Track</h3>
+                <p className="text-sm text-gray-600 mb-4">
+                  Add your moving tasks to the challenge calendar for daily tracking and reminders
+                </p>
+                {!addedToCalendar ? (
+                  <Button
+                    onClick={addToCalendar}
+                    className="bg-purple-600 hover:bg-purple-700"
+                    disabled={isAddingToCalendar}
+                  >
+                    {isAddingToCalendar ? (
+                      <>Adding to Calendar...</>
+                    ) : (
+                      <>
+                        <Calendar className="w-4 h-4 mr-2" />
+                        Add to Calendar
+                      </>
+                    )}
+                  </Button>
+                ) : (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-center gap-2 text-green-600">
+                      <Check className="w-5 h-5" />
+                      <span className="font-medium">Added to Calendar!</span>
+                    </div>
+                    <Button 
+                      onClick={() => window.location.href = '/let-go-buddy/challenges'}
+                      variant="outline"
+                      className="w-full"
+                    >
+                      View Calendar
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </Card>
 
             {/* Tips */}
             {movingPlan.tips && (
