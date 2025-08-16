@@ -238,6 +238,7 @@ export interface DecisionBarProps {
   decision?: ItemDecision;
   onDecisionChange: (decision: ItemDecision, reason?: string) => void;
   disabled?: boolean;
+  loadingDecision?: ItemDecision;
 }
 
 export interface PriceSuggestProps {

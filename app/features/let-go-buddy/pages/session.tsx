@@ -303,44 +303,44 @@ export default function SessionPage({ loaderData }: Route.ComponentProps) {
 
           {/* Decision Breakdown for Scenario A */}
           {session?.scenario === 'A' && allItems.length > 0 && (
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 mb-8">
-              <h3 className="text-xl font-light text-gray-900 mb-6">Decision Summary</h3>
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 mb-6">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">Decision Summary</h3>
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 <div className="text-center">
-                  <div className="w-16 h-16 bg-emerald-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                    <Heart className="w-7 h-7 text-emerald-600" />
+                  <div className="w-12 h-12 bg-emerald-50 rounded-xl flex items-center justify-center mx-auto mb-2">
+                    <Heart className="w-5 h-5 text-emerald-600" />
                   </div>
-                  <div className="text-2xl font-light text-emerald-700 mb-1">
+                  <div className="text-xl font-semibold text-emerald-700 mb-1">
                     {allItems.filter(item => item.decision === 'keep').length}
                   </div>
-                  <div className="text-sm text-gray-500 font-medium">Keep</div>
+                  <div className="text-xs text-gray-500 font-medium">Keep</div>
                 </div>
                 <div className="text-center">
-                  <div className="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                    <ShoppingCart className="w-7 h-7 text-blue-600" />
+                  <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center mx-auto mb-2">
+                    <ShoppingCart className="w-5 h-5 text-blue-600" />
                   </div>
-                  <div className="text-2xl font-light text-blue-700 mb-1">
+                  <div className="text-xl font-semibold text-blue-700 mb-1">
                     {allItems.filter(item => item.decision === 'sell').length}
                   </div>
-                  <div className="text-sm text-gray-500 font-medium">Sell</div>
+                  <div className="text-xs text-gray-500 font-medium">Sell</div>
                 </div>
                 <div className="text-center">
-                  <div className="w-16 h-16 bg-purple-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                    <Gift className="w-7 h-7 text-purple-600" />
+                  <div className="w-12 h-12 bg-purple-50 rounded-xl flex items-center justify-center mx-auto mb-2">
+                    <Gift className="w-5 h-5 text-purple-600" />
                   </div>
-                  <div className="text-2xl font-light text-purple-700 mb-1">
+                  <div className="text-xl font-semibold text-purple-700 mb-1">
                     {allItems.filter(item => item.decision === 'donate').length}
                   </div>
-                  <div className="text-sm text-gray-500 font-medium">Donate</div>
+                  <div className="text-xs text-gray-500 font-medium">Donate</div>
                 </div>
                 <div className="text-center">
-                  <div className="w-16 h-16 bg-gray-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                    <Trash2 className="w-7 h-7 text-gray-600" />
+                  <div className="w-12 h-12 bg-gray-50 rounded-xl flex items-center justify-center mx-auto mb-2">
+                    <Trash2 className="w-5 h-5 text-gray-600" />
                   </div>
-                  <div className="text-2xl font-light text-gray-700 mb-1">
+                  <div className="text-xl font-semibold text-gray-700 mb-1">
                     {allItems.filter(item => item.decision === 'dispose').length}
                   </div>
-                  <div className="text-sm text-gray-500 font-medium">Dispose</div>
+                  <div className="text-xs text-gray-500 font-medium">Dispose</div>
                 </div>
               </div>
             </div>
@@ -528,19 +528,6 @@ export default function SessionPage({ loaderData }: Route.ComponentProps) {
                 <Lock className="w-5 h-5 ml-2 text-gray-400" />
               )}
             </h2>
-            {aiUsage && aiUsage.used >= aiUsage.max ? (
-              <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-lg">
-                <div className="flex items-center gap-2 text-amber-800 mb-2">
-                  <Lock className="w-5 h-5" />
-                  <span className="font-medium">
-                    AI Analysis Limit Reached ({aiUsage.used}/{aiUsage.max})
-                  </span>
-                </div>
-                <p className="text-sm text-amber-700">
-                  You've used all your free AI analyses. Item upload and analysis is not available, but you can still manage existing items.
-                </p>
-              </div>
-            ) : null}
             <ItemUploader 
               onUpload={async (photos) => {
                 console.log('Photos uploaded:', photos);
@@ -603,7 +590,6 @@ export default function SessionPage({ loaderData }: Route.ComponentProps) {
                   const canAnalyze = aiUsage.canUse;
 
                   if (!canAnalyze) {
-                    console.log('AI analysis limit reached:', { used: aiUsage.total, max: aiUsage.maxFree });
                     // Show limit reached message and don't perform analysis
                     const basicItem = {
                       item_id: itemId,
@@ -631,14 +617,11 @@ export default function SessionPage({ loaderData }: Route.ComponentProps) {
                       })
                       .eq('item_id', itemId);
 
-                    // Remove from uploading items and add gentle refresh
+                    // Remove from uploading items and refresh after user has seen the result
                     setTimeout(() => {
                       setUploadingItems(prev => prev.filter(item => item.item_id !== itemId));
-                      // Add smooth refresh after user has seen the result
-                      setTimeout(() => {
-                        revalidator.revalidate();
-                      }, 500);
-                    }, 2500); // Show result for 2.5 seconds
+                      revalidator.revalidate();
+                    }, 3000); // Show result for 3 seconds, then refresh once
 
                     return; // Exit early, don't call AI API
                   }
@@ -663,6 +646,8 @@ export default function SessionPage({ loaderData }: Route.ComponentProps) {
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                       photos: photos,
+                      title: "Please analyze this item from the photo(s) and generate a descriptive title",
+                      notes: "Generate a specific, descriptive title based on what you see in the image(s)",
                       context: {
                         scenario: session?.scenario,
                         region: (session as any)?.region || null
@@ -725,14 +710,11 @@ export default function SessionPage({ loaderData }: Route.ComponentProps) {
                       : item
                   ));
                   
-                  // Remove from uploading items and add a gentle refresh mechanism
+                  // Remove from uploading items and refresh after user has seen the result
                   setTimeout(() => {
                     setUploadingItems(prev => prev.filter(item => item.item_id !== itemId));
-                    // Add a smooth refresh after user has seen the result
-                    setTimeout(() => {
-                      revalidator.revalidate();
-                    }, 500);
-                  }, 3000); // Show result for 3 seconds
+                    revalidator.revalidate();
+                  }, 4000); // Show result for 4 seconds, then refresh once
 
                 } catch (error) {
                   console.error('Error processing item:', error);
@@ -776,14 +758,11 @@ export default function SessionPage({ loaderData }: Route.ComponentProps) {
                       console.error('Error updating item with error state:', updateError);
                     }
 
-                    // Remove from uploading items after showing error
+                    // Remove from uploading items and refresh after showing error
                     setTimeout(() => {
                       setUploadingItems(prev => prev.filter(item => item.item_id !== currentItemId));
-                      // Add gentle refresh after error
-                      setTimeout(() => {
-                        revalidator.revalidate();
-                      }, 500);
-                    }, 3000); // Show error for 3 seconds
+                      revalidator.revalidate();
+                    }, 3000); // Show error for 3 seconds, then refresh once
                   } else {
                     // Fallback: just remove any analyzing items
                     setUploadingItems(prev => prev.filter(item => item.status !== 'analyzing'));

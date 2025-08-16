@@ -310,7 +310,7 @@ export default function LetGoBuddyIndex({ loaderData }: Route.ComponentProps) {
                   
                   <Button 
                     asChild 
-                    className="w-full bg-gray-50 hover:bg-gray-100 border border-gray-200 hover:border-gray-300 text-gray-600 hover:text-gray-700 rounded-lg shadow-sm hover:shadow-md transition-all duration-200"
+                    className="w-full bg-zinc-50 hover:bg-white border border-gray-200 hover:border-gray-300 text-zinc-700 hover:text-zinc-800 px-8 py-3 rounded-lg shadow-sm hover:shadow-md transition-all duration-200"
                   >
                     <Link to={`/let-go-buddy/session/${session.session_id}`}>
                       {session.status === 'completed' ? 'Session Completed' : 'Continue Session'}
@@ -406,7 +406,7 @@ export default function LetGoBuddyIndex({ loaderData }: Route.ComponentProps) {
                   className={`w-full rounded-lg shadow-sm hover:shadow-md transition-all duration-200 ${
                     isDisabled 
                       ? 'bg-gray-200 border border-gray-200 text-gray-400 cursor-not-allowed pointer-events-none' 
-                      : 'bg-gray-50 hover:bg-gray-100 border border-gray-200 hover:border-gray-300 text-gray-600 hover:text-gray-700 group-hover:scale-[1.02]'
+                      : 'bg-zinc-50 hover:bg-white border border-gray-200 hover:border-gray-300 text-zinc-700 hover:text-zinc-800 px-8 py-3 rounded-lg shadow-sm hover:shadow-md transition-all duration-200 group-hover:scale-[1.02]'
                   }`}
                   disabled={user && (!canCreateNewSession.allowed || isDisabled)}
                 >

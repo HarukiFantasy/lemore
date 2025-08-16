@@ -36,6 +36,7 @@ export function ItemCard({
   const [showReason, setShowReason] = useState(false);
   const [reason, setReason] = useState(item.decision_reason || '');
   const [loadingPricing, setLoadingPricing] = useState(false);
+  const [loadingDecision, setLoadingDecision] = useState<ItemDecision | null>(null);
   const [donationModal, setDonationModal] = useState<{ isOpen: boolean; type: 'centers' | 'tax' | null }>({
     isOpen: false,
     type: null
@@ -47,7 +48,8 @@ export function ItemCard({
       // Same decision clicked - show reason input
       setShowReason(true);
     } else {
-      // New decision - show loading for sell decisions
+      // New decision - show loading state
+      setLoadingDecision(decision);
       if (decision === 'sell') {
         setLoadingPricing(true);
       }
@@ -55,6 +57,7 @@ export function ItemCard({
       try {
         await onDecisionChange?.(decision, reason);
       } finally {
+        setLoadingDecision(null);
         setLoadingPricing(false);
         setShowReason(false);
       }
@@ -63,6 +66,7 @@ export function ItemCard({
 
   const handleReasonSubmit = async () => {
     if (item.decision) {
+      setLoadingDecision(item.decision);
       if (item.decision === 'sell') {
         setLoadingPricing(true);
       }
@@ -70,6 +74,7 @@ export function ItemCard({
       try {
         await onDecisionChange?.(item.decision, reason);
       } finally {
+        setLoadingDecision(null);
         setLoadingPricing(false);
       }
     }
@@ -413,6 +418,7 @@ export function ItemCard({
               decision={item.decision}
               onDecisionChange={handleDecisionChange}
               disabled={loadingPricing}
+              loadingDecision={loadingDecision || undefined}
             />
             
             {/* Reason Input */}

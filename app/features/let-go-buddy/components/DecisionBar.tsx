@@ -1,11 +1,12 @@
 import { Button } from '~/common/components/ui/button';
-import { Heart, ShoppingCart, Gift, Trash2 } from 'lucide-react';
+import { Heart, ShoppingCart, Gift, Trash2, Loader2 } from 'lucide-react';
 import type { DecisionBarProps, ItemDecision } from '../types';
 
 export function DecisionBar({ 
   decision, 
   onDecisionChange, 
-  disabled = false 
+  disabled = false,
+  loadingDecision
 }: DecisionBarProps) {
   // Once a decision is made, only allow clicking the same decision (for reason input)
   const isLocked = !!decision;
@@ -59,6 +60,7 @@ export function DecisionBar({
       <div className="grid grid-cols-2 gap-2">
         {decisions.map((item) => {
           const isSelected = decision === item.key;
+          const isLoading = loadingDecision === item.key;
           const isDisabled = disabled || (isLocked && decision !== item.key);
           
           return (
@@ -73,16 +75,20 @@ export function DecisionBar({
                   : 'hover:bg-gray-50 border-gray-200'
               }`}
               onClick={() => handleDecisionClick(item.key)}
-              disabled={isDisabled}
+              disabled={isDisabled || isLoading}
             >
               <div className="flex items-center gap-1">
-                {item.icon}
+                {isLoading ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  item.icon
+                )}
                 <span className="font-medium text-sm">{item.label}</span>
               </div>
               <span className={`text-xs ${
                 isSelected ? 'text-white/90' : 'text-gray-500'
               }`}>
-                {item.description}
+                {isLoading ? 'Processing...' : item.description}
               </span>
             </Button>
           );
