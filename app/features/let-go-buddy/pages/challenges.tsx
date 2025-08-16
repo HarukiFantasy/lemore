@@ -11,7 +11,7 @@ import {
   ChevronRight,
   Loader2
 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useMemo, memo, useCallback } from 'react';
 import type { Route } from './+types/challenges';
 import { makeSSRClient, getAuthUser } from '~/supa-client';
 
@@ -31,11 +31,20 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
     throw redirect('/auth/login?redirect=/let-go-buddy/challenges');
   }
 
-  // Get user's challenges and moving tasks
+  // Get only relevant challenges (limit to recent and upcoming)
+  const today = new Date();
+  const thirtyDaysAgo = new Date(today);
+  thirtyDaysAgo.setDate(today.getDate() - 30);
+  const sixtyDaysAhead = new Date(today);
+  sixtyDaysAhead.setDate(today.getDate() + 60);
+
+  // Optimized query with date range
   const { data: challenges } = await client
     .from('challenge_calendar_items')
-    .select(`*`)
+    .select('item_id, user_id, name, scheduled_date, completed, completed_at, reflection')
     .eq('user_id', user.id)
+    .gte('scheduled_date', thirtyDaysAgo.toISOString())
+    .lte('scheduled_date', sixtyDaysAhead.toISOString())
     .order('scheduled_date', { ascending: true });
 
   // Separate challenges from moving tasks (identify by name prefix)
@@ -86,6 +95,85 @@ export const action = async ({ request }: Route.ActionArgs) => {
   }
 };
 
+// Memoized task card component
+const TaskCard = memo(({ task, isSubmitting, navigation, getDaysFromScheduled }: any) => {
+  const completed = task.completed;
+  const daysSinceScheduled = getDaysFromScheduled(task.scheduled_date);
+  const isOverdue = daysSinceScheduled > 0 && !completed;
+  const isToday = daysSinceScheduled === 0;
+  const isPriority = task.name.startsWith('⚡');
+
+  return (
+    <div className={`p-4 rounded-xl border-2 transition-all ${
+      completed ? 'border-emerald-200 bg-emerald-50/50' :
+      isPriority ? 'border-orange-200 bg-orange-50/50' :
+      isOverdue ? 'border-red-200 bg-red-50/50' :
+      isToday ? 'border-blue-200 bg-blue-50/50' :
+      'border-gray-200 bg-white hover:border-gray-300'
+    }`}>
+      <div className="space-y-3">
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex-1 min-w-0">
+            <h4 className={`font-medium text-sm ${completed ? 'line-through text-gray-500' : 'text-gray-900'}`}>
+              {task.name?.replace(/^(📦|⚡)\s/, '') || 'Moving Task'}
+            </h4>
+            <div className="flex flex-wrap items-center gap-2 mt-2">
+              {isPriority && (
+                <span className="px-2 py-1 bg-orange-100 text-orange-700 rounded-md text-xs font-medium">
+                  ⚡ Priority
+                </span>
+              )}
+              {isToday && !completed && (
+                <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded-md text-xs font-medium">
+                  Today
+                </span>
+              )}
+              {isOverdue && (
+                <span className="px-2 py-1 bg-red-100 text-red-700 rounded-md text-xs font-medium">
+                  Overdue
+                </span>
+              )}
+            </div>
+            <p className="text-xs text-gray-600 mt-2">
+              {new Date(task.scheduled_date).toLocaleDateString()}
+            </p>
+          </div>
+          
+          {!completed ? (
+            <Form method="post">
+              <input type="hidden" name="action" value="complete_item" />
+              <input type="hidden" name="challengeId" value={task.item_id.toString()} />
+              <Button type="submit" variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-emerald-100" disabled={isSubmitting}>
+                {isSubmitting && navigation.formData?.get('challengeId') === task.item_id.toString() ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <CheckCircle className="w-4 h-4 text-gray-400 hover:text-emerald-600" />
+                )}
+              </Button>
+            </Form>
+          ) : (
+            <div className="flex items-center gap-1 text-emerald-600">
+              <CheckCircle className="w-4 h-4" />
+            </div>
+          )}
+        </div>
+        
+        {task.reflection && (
+          <div className="text-xs text-emerald-700 italic bg-emerald-50 p-2 rounded-lg">
+            "{task.reflection}"
+          </div>
+        )}
+        
+        {(task as any).tip && (
+          <div className="text-xs text-blue-700 bg-blue-50 p-2 rounded-lg border-l-2 border-blue-300">
+            💡 {(task as any).tip}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+});
+
 export default function ChallengesPage({ loaderData }: Route.ComponentProps) {
   const { challenges, regularChallenges, movingTasks } = loaderData;
   const actionData = useActionData<typeof action>();
@@ -95,19 +183,19 @@ export default function ChallengesPage({ loaderData }: Route.ComponentProps) {
   const isSubmitting = navigation.state === 'submitting';
 
 
-  const getDaysFromScheduled = (scheduledDate: string) => {
+  const getDaysFromScheduled = useCallback((scheduledDate: string) => {
     const scheduled = new Date(scheduledDate);
     const today = new Date();
     const daysDiff = Math.ceil((today.getTime() - scheduled.getTime()) / (1000 * 60 * 60 * 24));
     return daysDiff;
-  };
+  }, []);
 
-  // Group moving tasks by week
-  const groupTasksByWeek = (tasks: typeof movingTasks) => {
+  // Memoize expensive computations
+  const weeklyTasks = useMemo(() => {
     const today = new Date();
-    const weeks: { [key: string]: typeof tasks } = {};
+    const weeks: { [key: string]: typeof movingTasks } = {};
     
-    tasks.forEach(task => {
+    movingTasks.forEach(task => {
       const taskDate = new Date(task.scheduled_date);
       const daysDiff = Math.floor((taskDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
       
@@ -129,11 +217,9 @@ export default function ChallengesPage({ loaderData }: Route.ComponentProps) {
     });
     
     return weeks;
-  };
-
-  const weeklyTasks = groupTasksByWeek(movingTasks);
+  }, [movingTasks]);
   
-  const getWeekTitle = (weekKey: string) => {
+  const getWeekTitle = useCallback((weekKey: string) => {
     switch (weekKey) {
       case 'past': return 'Past Due';
       case 'thisWeek': return 'This Week';
@@ -141,10 +227,10 @@ export default function ChallengesPage({ loaderData }: Route.ComponentProps) {
       case 'future': return 'Future';
       default: return 'Other';
     }
-  };
+  }, []);
 
-  // Calendar helper functions
-  const getCalendarDays = (date: Date) => {
+  // Calendar helper functions - memoized
+  const getCalendarDays = useCallback((date: Date) => {
     if (viewMode === 'week') {
       const startOfWeek = new Date(date);
       startOfWeek.setDate(date.getDate() - date.getDay());
@@ -173,17 +259,17 @@ export default function ChallengesPage({ loaderData }: Route.ComponentProps) {
     }
     
     return days;
-  };
+  }, [viewMode]);
 
-  const getTasksForDate = (date: Date) => {
+  const getTasksForDate = useCallback((date: Date) => {
     const dateStr = date.toISOString().split('T')[0];
     return challenges.filter(task => {
       const taskDate = new Date(task.scheduled_date).toISOString().split('T')[0];
       return taskDate === dateStr;
     });
-  };
+  }, [challenges]);
 
-  const navigateMonth = (direction: 'prev' | 'next') => {
+  const navigateMonth = useCallback((direction: 'prev' | 'next') => {
     setCurrentDate(prev => {
       const newDate = new Date(prev);
       if (viewMode === 'week') {
@@ -193,11 +279,20 @@ export default function ChallengesPage({ loaderData }: Route.ComponentProps) {
       }
       return newDate;
     });
-  };
+  }, [viewMode]);
 
-  const getDateRangeText = () => {
+  const getDateRangeText = useMemo(() => {
     if (viewMode === 'week') {
-      const days = getCalendarDays(currentDate);
+      const startOfWeek = new Date(currentDate);
+      startOfWeek.setDate(currentDate.getDate() - currentDate.getDay());
+      
+      const days = [];
+      for (let i = 0; i < 7; i++) {
+        const day = new Date(startOfWeek);
+        day.setDate(startOfWeek.getDate() + i);
+        days.push(day);
+      }
+      
       const start = days[0];
       const end = days[6];
       if (start.getMonth() === end.getMonth()) {
@@ -207,7 +302,7 @@ export default function ChallengesPage({ loaderData }: Route.ComponentProps) {
       }
     }
     return currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-  };
+  }, [currentDate, viewMode]);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -313,7 +408,7 @@ export default function ChallengesPage({ loaderData }: Route.ComponentProps) {
                       <ChevronLeft className="w-4 h-4" />
                     </Button>
                     <span className="px-4 py-2 font-medium text-gray-900 text-sm min-w-[140px] text-center">
-                      {getDateRangeText()}
+                      {getDateRangeText}
                     </span>
                     <Button 
                       onClick={() => navigateMonth('next')}
@@ -339,7 +434,7 @@ export default function ChallengesPage({ loaderData }: Route.ComponentProps) {
               </div>
 
               <div className="grid grid-cols-7 gap-1">
-                {getCalendarDays(currentDate).map((day, index) => {
+                {useMemo(() => getCalendarDays(currentDate), [currentDate, getCalendarDays]).map((day, index) => {
                   const isCurrentMonth = viewMode === 'week' || day.getMonth() === currentDate.getMonth();
                   const isToday = day.toDateString() === new Date().toDateString();
                   const dayTasks = getTasksForDate(day);
@@ -421,83 +516,15 @@ export default function ChallengesPage({ loaderData }: Route.ComponentProps) {
                   </div>
                   
                   <div className="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {tasks.map((task) => {
-                      const completed = task.completed;
-                      const daysSinceScheduled = getDaysFromScheduled(task.scheduled_date);
-                      const isOverdue = daysSinceScheduled > 0 && !completed;
-                      const isToday = daysSinceScheduled === 0;
-                      const isPriority = task.name.startsWith('⚡');
-
-                      return (
-                        <div key={task.item_id} className={`p-4 rounded-xl border-2 transition-all ${
-                          completed ? 'border-emerald-200 bg-emerald-50/50' :
-                          isPriority ? 'border-orange-200 bg-orange-50/50' :
-                          isOverdue ? 'border-red-200 bg-red-50/50' :
-                          isToday ? 'border-blue-200 bg-blue-50/50' :
-                          'border-gray-200 bg-white hover:border-gray-300'
-                        }`}>
-                          <div className="space-y-3">
-                            <div className="flex items-start justify-between gap-3">
-                              <div className="flex-1 min-w-0">
-                                <h4 className={`font-medium text-sm ${completed ? 'line-through text-gray-500' : 'text-gray-900'}`}>
-                                  {task.name?.replace(/^(📦|⚡)\s/, '') || 'Moving Task'}
-                                </h4>
-                                <div className="flex flex-wrap items-center gap-2 mt-2">
-                                  {isPriority && (
-                                    <span className="px-2 py-1 bg-orange-100 text-orange-700 rounded-md text-xs font-medium">
-                                      ⚡ Priority
-                                    </span>
-                                  )}
-                                  {isToday && !completed && (
-                                    <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded-md text-xs font-medium">
-                                      Today
-                                    </span>
-                                  )}
-                                  {isOverdue && (
-                                    <span className="px-2 py-1 bg-red-100 text-red-700 rounded-md text-xs font-medium">
-                                      Overdue
-                                    </span>
-                                  )}
-                                </div>
-                                <p className="text-xs text-gray-600 mt-2">
-                                  {new Date(task.scheduled_date).toLocaleDateString()}
-                                </p>
-                              </div>
-                              
-                              {!completed ? (
-                                <Form method="post">
-                                  <input type="hidden" name="action" value="complete_item" />
-                                  <input type="hidden" name="challengeId" value={task.item_id.toString()} />
-                                  <Button type="submit" variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-emerald-100" disabled={isSubmitting}>
-                                    {isSubmitting && navigation.formData?.get('challengeId') === task.item_id.toString() ? (
-                                      <Loader2 className="w-4 h-4 animate-spin" />
-                                    ) : (
-                                      <CheckCircle className="w-4 h-4 text-gray-400 hover:text-emerald-600" />
-                                    )}
-                                  </Button>
-                                </Form>
-                              ) : (
-                                <div className="flex items-center gap-1 text-emerald-600">
-                                  <CheckCircle className="w-4 h-4" />
-                                </div>
-                              )}
-                            </div>
-                            
-                            {task.reflection && (
-                              <div className="text-xs text-emerald-700 italic bg-emerald-50 p-2 rounded-lg">
-                                "{task.reflection}"
-                              </div>
-                            )}
-                            
-                            {(task as any).tip && (
-                              <div className="text-xs text-blue-700 bg-blue-50 p-2 rounded-lg border-l-2 border-blue-300">
-                                💡 {(task as any).tip}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })}
+                    {tasks.map((task) => (
+                      <TaskCard 
+                        key={task.item_id}
+                        task={task}
+                        isSubmitting={isSubmitting}
+                        navigation={navigation}
+                        getDaysFromScheduled={getDaysFromScheduled}
+                      />
+                    ))}
                   </div>
                 </div>
               ))}

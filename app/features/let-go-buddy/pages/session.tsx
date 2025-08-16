@@ -298,60 +298,50 @@ export default function SessionPage({ loaderData }: Route.ComponentProps) {
                 </div>
               </div>
 
-              {/* Progress Bar */}
-              {(session?.item_count || 0) > 0 && (
-                <div className="w-full bg-gray-200 rounded-full h-3 mb-6">
-                  <div 
-                    className="bg-blue-500 h-3 rounded-full transition-all"
-                    style={{ width: `${getCompletionPercentage()}%` }}
-                  />
-                </div>
-              )}
-
-              {/* Decision Breakdown for Scenario A */}
-              {session?.scenario === 'A' && allItems.length > 0 && (
-                <div className="bg-white rounded-lg border p-4 mb-6">
-                  <h3 className="text-lg font-semibold mb-3">Decision Summary</h3>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
-                    <div className="text-center">
-                      <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-2">
-                        <Heart className="w-6 h-6 text-green-600" />
-                      </div>
-                      <div className="text-2xl font-bold text-green-700">
-                        {allItems.filter(item => item.decision === 'keep').length}
-                      </div>
-                      <div className="text-sm text-gray-600">Keep</div>
-                    </div>
-                    <div className="text-center">
-                      <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-2">
-                        <ShoppingCart className="w-6 h-6 text-blue-600" />
-                      </div>
-                      <div className="text-2xl font-bold text-blue-700">
-                        {allItems.filter(item => item.decision === 'sell').length}
-                      </div>
-                      <div className="text-sm text-gray-600">Sell</div>
-                    </div>
-                    <div className="text-center">
-                      <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-2">
-                        <Gift className="w-6 h-6 text-purple-600" />
-                      </div>
-                      <div className="text-2xl font-bold text-purple-700">
-                        {allItems.filter(item => item.decision === 'donate').length}
-                      </div>
-                      <div className="text-sm text-gray-600">Donate</div>
-                    </div>
-                    <div className="text-center">
-                      <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-2">
-                        <Trash2 className="w-6 h-6 text-gray-600" />
-                      </div>
-                      <div className="text-2xl font-bold text-gray-700">
-                        {allItems.filter(item => item.decision === 'dispose').length}
-                      </div>
-                      <div className="text-sm text-gray-600">Dispose</div>
-                    </div>
+          {/* Decision Breakdown for Scenario A */}
+          {session?.scenario === 'A' && allItems.length > 0 && (
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 mb-8">
+              <h3 className="text-xl font-light text-gray-900 mb-6">Decision Summary</h3>
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+                <div className="text-center">
+                  <div className="w-16 h-16 bg-emerald-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                    <Heart className="w-7 h-7 text-emerald-600" />
                   </div>
+                  <div className="text-2xl font-light text-emerald-700 mb-1">
+                    {allItems.filter(item => item.decision === 'keep').length}
+                  </div>
+                  <div className="text-sm text-gray-500 font-medium">Keep</div>
                 </div>
-              )}
+                <div className="text-center">
+                  <div className="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                    <ShoppingCart className="w-7 h-7 text-blue-600" />
+                  </div>
+                  <div className="text-2xl font-light text-blue-700 mb-1">
+                    {allItems.filter(item => item.decision === 'sell').length}
+                  </div>
+                  <div className="text-sm text-gray-500 font-medium">Sell</div>
+                </div>
+                <div className="text-center">
+                  <div className="w-16 h-16 bg-purple-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                    <Gift className="w-7 h-7 text-purple-600" />
+                  </div>
+                  <div className="text-2xl font-light text-purple-700 mb-1">
+                    {allItems.filter(item => item.decision === 'donate').length}
+                  </div>
+                  <div className="text-sm text-gray-500 font-medium">Donate</div>
+                </div>
+                <div className="text-center">
+                  <div className="w-16 h-16 bg-gray-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                    <Trash2 className="w-7 h-7 text-gray-600" />
+                  </div>
+                  <div className="text-2xl font-light text-gray-700 mb-1">
+                    {allItems.filter(item => item.decision === 'dispose').length}
+                  </div>
+                  <div className="text-sm text-gray-500 font-medium">Dispose</div>
+                </div>
+              </div>
+            </div>
+          )}
             </div>
 
             {/* Actions */}

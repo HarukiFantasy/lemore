@@ -7,7 +7,7 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
+  // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "12.2.3 (519615d)"
@@ -210,13 +210,6 @@ export type Database = {
             foreignKeyName: "lgb_items_session_id_fkey"
             columns: ["session_id"]
             isOneToOne: false
-            referencedRelation: "v_session_full"
-            referencedColumns: ["session_id"]
-          },
-          {
-            foreignKeyName: "lgb_items_session_id_fkey"
-            columns: ["session_id"]
-            isOneToOne: false
             referencedRelation: "view_session_dashboard"
             referencedColumns: ["session_id"]
           },
@@ -265,6 +258,8 @@ export type Database = {
       }
       lgb_sessions: {
         Row: {
+          ai_plan_generated: boolean | null
+          ai_plan_generated_at: string | null
           created_at: string | null
           decided_count: number | null
           expected_revenue: number | null
@@ -275,11 +270,12 @@ export type Database = {
           session_id: string
           status: string | null
           title: string | null
-          trade_method: string | null
           updated_at: string | null
           user_id: string
         }
         Insert: {
+          ai_plan_generated?: boolean | null
+          ai_plan_generated_at?: string | null
           created_at?: string | null
           decided_count?: number | null
           expected_revenue?: number | null
@@ -290,11 +286,12 @@ export type Database = {
           session_id?: string
           status?: string | null
           title?: string | null
-          trade_method?: string | null
           updated_at?: string | null
           user_id: string
         }
         Update: {
+          ai_plan_generated?: boolean | null
+          ai_plan_generated_at?: string | null
           created_at?: string | null
           decided_count?: number | null
           expected_revenue?: number | null
@@ -305,7 +302,6 @@ export type Database = {
           session_id?: string
           status?: string | null
           title?: string | null
-          trade_method?: string | null
           updated_at?: string | null
           user_id?: string
         }
@@ -2054,25 +2050,6 @@ export type Database = {
         }
         Relationships: []
       }
-      v_session_full: {
-        Row: {
-          created_at: string | null
-          decided_count: number | null
-          expected_revenue: number | null
-          item_count: number | null
-          items: Json | null
-          move_date: string | null
-          region: string | null
-          scenario: string | null
-          session_id: string | null
-          status: string | null
-          title: string | null
-          trade_method: string | null
-          updated_at: string | null
-          user_id: string | null
-        }
-        Relationships: []
-      }
       view_session_dashboard: {
         Row: {
           completion_percentage: number | null
@@ -2080,52 +2057,42 @@ export type Database = {
           decided_count: number | null
           expected_revenue: number | null
           item_count: number | null
+          move_date: string | null
+          region: string | null
           scenario: string | null
           session_id: string | null
           status: string | null
           title: string | null
-        }
-        Insert: {
-          completion_percentage?: never
-          created_at?: string | null
-          decided_count?: number | null
-          expected_revenue?: number | null
-          item_count?: number | null
-          scenario?: string | null
-          session_id?: string | null
-          status?: string | null
-          title?: string | null
-        }
-        Update: {
-          completion_percentage?: never
-          created_at?: string | null
-          decided_count?: number | null
-          expected_revenue?: number | null
-          item_count?: number | null
-          scenario?: string | null
-          session_id?: string | null
-          status?: string | null
-          title?: string | null
+          user_id: string | null
         }
         Relationships: []
       }
     }
     Functions: {
+      create_lgb_item_with_photos: {
+        Args: {
+          p_notes?: string
+          p_photos: string[]
+          p_session_id: string
+          p_title?: string
+        }
+        Returns: string
+      }
       get_or_create_conversation_with_participants: {
         Args: {
-          p_user_id: string
           p_other_user_id: string
           p_product_id?: number
+          p_user_id: string
         }
         Returns: Json
       }
       get_user_products: {
         Args: { user_id_param: string }
         Returns: {
+          is_sold: boolean
+          price: number
           product_id: number
           title: string
-          price: number
-          is_sold: boolean
         }[]
       }
       rpc_can_open_new_session: {
@@ -2134,11 +2101,10 @@ export type Database = {
       }
       rpc_create_session: {
         Args: {
-          p_scenario: string
-          p_title?: string
           p_move_date?: string
           p_region?: string
-          p_trade_method?: string
+          p_scenario: string
+          p_title: string
         }
         Returns: string
       }

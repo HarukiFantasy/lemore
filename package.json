@@ -7,10 +7,10 @@
     "dev": "NODE_OPTIONS='--import ./instrument.server.mjs' react-router dev",
     "start": "NODE_OPTIONS='--import ./instrument.server.mjs' react-router-serve ./build/server/index.js",
     "typecheck": "react-router typegen && tsc",
-    "db:generate": "drizzle-kit --config=app/drizzle.config.ts generate",
-    "db:push": "drizzle-kit --config=app/drizzle.config.ts push",
-    "db:studio": "drizzle-kit --config=app/drizzle.config.ts studio",
-    "db:migrate": "drizzle-kit --config=app/drizzle.config.ts migrate",
+    "db:generate": "drizzle-kit generate --config=app/drizzle.config.ts",
+    "db:push": "drizzle-kit push --config=app/drizzle.config.ts",
+    "db:studio": "drizzle-kit studio --config=app/drizzle.config.ts",
+    "db:migrate": "drizzle-kit migrate --config=app/drizzle.config.ts",
     "db:typegen": "supabase gen types typescript --project-id vyzdklycsuzzgmnuzvnn > database.types.ts"
   },
   "dependencies": {
@@ -98,7 +98,7 @@
     "@types/react": "^19.1.2",
     "@types/react-dom": "^19.1.2",
     "@types/react-router-dom": "^5.3.3",
-    "drizzle-kit": "^0.18.1",
+    "drizzle-kit": "^0.31.4",
     "tailwindcss": "^4.1.10",
     "tsx": "^4.20.3",
     "tw-animate-css": "^1.3.4",
