@@ -11,10 +11,13 @@ import {
   Users,
   ArrowRight,
   Clock,
-  Target
+  Target,
+  Lock
 } from 'lucide-react';
+import { useState, useEffect } from 'react';
 import type { Route } from './+types/index';
 import { makeSSRClient, getAuthUser } from '~/supa-client';
+import { getAIUsageCount } from '../utils/aiUsage';
 
 export const meta: Route.MetaFunction = () => {
   return [
@@ -31,6 +34,7 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
   
   let userSessions = null;
   let canCreateNewSession = { allowed: true, active_count: 0, limit: 2 };
+  let aiUsage = null;
   
   if (user) {
     try {
@@ -42,6 +46,17 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
         .order('created_at', { ascending: false })
         .limit(3);
       
+      // Debugging: also get direct sessions data to compare
+      const { data: directSessions } = await client
+        .from('lgb_sessions')
+        .select('session_id, ai_plan_generated, ai_plan_generated_at, title, scenario')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(3);
+        
+      console.log('View sessions:', sessions);
+      console.log('Direct sessions:', directSessions);
+      
       userSessions = sessions || [];
       
       // Check session limits
@@ -51,6 +66,10 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
       if (limitCheck && typeof limitCheck === 'object' && 'allowed' in limitCheck) {
         canCreateNewSession = limitCheck as { allowed: boolean; active_count: number; limit: number; };
       }
+      
+      // Check AI usage limits for browser-based usage tracking
+      // Note: This requires browserClient, so we'll pass user ID to component for client-side check
+      aiUsage = { userId: user.id };
     } catch (error) {
       console.error('Error loading user data:', error);
     }
@@ -59,12 +78,27 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
   return { 
     user,
     userSessions,
-    canCreateNewSession
+    canCreateNewSession,
+    aiUsage
   };
 };
 
 export default function LetGoBuddyIndex({ loaderData }: Route.ComponentProps) {
-  const { user, userSessions, canCreateNewSession } = loaderData;
+  const { user, userSessions, canCreateNewSession, aiUsage } = loaderData;
+  const [aiUsageData, setAiUsageData] = useState<{ canUse: boolean; total: number; maxFree: number } | null>(null);
+  
+  // Check AI usage limits on component mount
+  useEffect(() => {
+    if (user && aiUsage?.userId) {
+      getAIUsageCount(aiUsage.userId).then(usage => {
+        setAiUsageData({
+          canUse: usage.canUse,
+          total: usage.total,
+          maxFree: usage.maxFree
+        });
+      });
+    }
+  }, [user, aiUsage]);
 
   const scenarios = [
     {
@@ -152,7 +186,7 @@ export default function LetGoBuddyIndex({ loaderData }: Route.ComponentProps) {
             >
               <span className="inline font-normal text-transparent bg-clip-text bg-gradient-to-br from-stone-800 via-stone-700 to-stone-800">Let Go with Confidence, </span>
               <br />
-              <span className="inline font-light bg-gradient-to-r from-purple-600 to-amber-600 bg-clip-text text-transparen">
+              <span className="inline font-light bg-gradient-to-r from-purple-600 to-amber-600 bg-clip-text text-transparent">
                 Live Lighter
               </span>
               <br />
@@ -293,35 +327,72 @@ export default function LetGoBuddyIndex({ loaderData }: Route.ComponentProps) {
         <div className="text-center mb-12">
           <h2 className="text-3xl font-bold text-gray-900 mb-4">Choose Your Approach</h2>
           <p className="text-xl text-gray-600">Different scenarios for different needs</p>
+          {user && aiUsageData && !aiUsageData.canUse && (
+            <div className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+              <div className="flex items-center justify-center gap-2 text-amber-800">
+                <Lock className="w-5 h-5" />
+                <span className="font-medium">
+                  AI Analysis Limit Reached ({aiUsageData.total}/{aiUsageData.maxFree})
+                </span>
+              </div>
+              <p className="text-sm text-amber-700 mt-1">
+                You've used all your free AI analyses. You can still create sessions and make manual decisions.
+              </p>
+            </div>
+          )}
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
+        <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8 ${
+          user && aiUsageData && !aiUsageData.canUse ? 'opacity-50' : ''
+        }`}>
           {scenarios.map((scenario) => (
-            <Card key={scenario.id} className="p-6 hover:shadow-xl transition-all duration-300 group">
+            <Card key={scenario.id} className={`p-6 transition-all duration-300 group ${
+              user && aiUsageData && !aiUsageData.canUse 
+                ? 'bg-gray-50 cursor-not-allowed' 
+                : 'hover:shadow-xl'
+            }`}>
               <div className="flex items-center mb-4">
-                <div className={`p-3 rounded-lg ${scenario.color} mr-4`}>
+                <div className={`p-3 rounded-lg ${
+                  user && aiUsageData && !aiUsageData.canUse 
+                    ? 'bg-gray-400' 
+                    : scenario.color
+                } mr-4`}>
                   <div className="text-white">
-                    {scenario.icon}
+                    {user && aiUsageData && !aiUsageData.canUse ? (
+                      <Lock className="w-6 h-6" />
+                    ) : (
+                      scenario.icon
+                    )}
                   </div>
                 </div>
-                <div className="flex items-center text-sm text-gray-500">
+                <div className={`flex items-center text-sm ${
+                  user && aiUsageData && !aiUsageData.canUse ? 'text-gray-400' : 'text-gray-500'
+                }`}>
                   <Clock className="w-4 h-4 mr-1" />
                   {scenario.time}
                 </div>
               </div>
               
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">
+              <h3 className={`text-xl font-semibold mb-2 ${
+                user && aiUsageData && !aiUsageData.canUse ? 'text-gray-500' : 'text-gray-900'
+              }`}>
                 {scenario.title}
               </h3>
               
-              <p className="text-gray-600 mb-4 leading-relaxed">
+              <p className={`mb-4 leading-relaxed ${
+                user && aiUsageData && !aiUsageData.canUse ? 'text-gray-400' : 'text-gray-600'
+              }`}>
                 {scenario.description}
               </p>
 
               <div className="space-y-2 mb-6">
                 {scenario.features.map((feature, index) => (
-                  <div key={index} className="flex items-center text-sm text-gray-600">
-                    <div className="w-1.5 h-1.5 bg-green-500 rounded-full mr-2" />
+                  <div key={index} className={`flex items-center text-sm ${
+                    user && aiUsageData && !aiUsageData.canUse ? 'text-gray-400' : 'text-gray-600'
+                  }`}>
+                    <div className={`w-1.5 h-1.5 rounded-full mr-2 ${
+                      user && aiUsageData && !aiUsageData.canUse ? 'bg-gray-400' : 'bg-green-500'
+                    }`} />
                     {feature}
                   </div>
                 ))}
@@ -329,12 +400,25 @@ export default function LetGoBuddyIndex({ loaderData }: Route.ComponentProps) {
 
               <Button 
                 asChild 
-                className="w-full group-hover:scale-105 transition-transform"
-                disabled={user && !canCreateNewSession.allowed}
+                className={`w-full transition-transform ${
+                  user && aiUsageData && !aiUsageData.canUse 
+                    ? 'bg-gray-400 hover:bg-gray-400 cursor-not-allowed' 
+                    : 'group-hover:scale-105'
+                }`}
+                disabled={user && (!canCreateNewSession.allowed || (aiUsageData && !aiUsageData.canUse))}
               >
-                <Link to={`/let-go-buddy/new?scenario=${scenario.id}`}>
-                  Start {scenario.title}
-                  <ArrowRight className="w-4 h-4 ml-2" />
+                <Link to={user && aiUsageData && !aiUsageData.canUse ? '#' : `/let-go-buddy/new?scenario=${scenario.id}`}>
+                  {user && aiUsageData && !aiUsageData.canUse ? (
+                    <>
+                      <Lock className="w-4 h-4 mr-2" />
+                      AI Limit Reached
+                    </>
+                  ) : (
+                    <>
+                      Start {scenario.title}
+                      <ArrowRight className="w-4 h-4 ml-2" />
+                    </>
+                  )}
                 </Link>
               </Button>
             </Card>

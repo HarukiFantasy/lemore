@@ -102,6 +102,31 @@ export const loader = async ({ request, params }: Route.LoaderArgs) => {
     `)
     .eq('session_id', sessionId)
     .order('created_at', { ascending: false });
+
+  // For Moving Assistant, get task counts from calendar
+  let taskStats = null;
+  if (session?.scenario === 'B') {
+    const { data: calendarTasks } = await client
+      .from('challenge_calendar_items')
+      .select('item_id, completed, name')
+      .eq('user_id', user.id)
+      .like('name', '%📦%')
+      .or('name.like.%⚡%');
+    
+    if (calendarTasks) {
+      const totalTasks = calendarTasks.length;
+      const completedTasks = calendarTasks.filter(task => task.completed).length;
+      const pendingTasks = totalTasks - completedTasks;
+      const priorityTasks = calendarTasks.filter(task => task.name.startsWith('⚡')).length;
+      
+      taskStats = {
+        total: totalTasks,
+        completed: completedTasks,
+        pending: pendingTasks,
+        priority: priorityTasks
+      };
+    }
+  }
   
   // Transform items to match expected format
   const items = (itemsData || []).map(item => ({
@@ -112,7 +137,8 @@ export const loader = async ({ request, params }: Route.LoaderArgs) => {
 
   return { 
     session,
-    items
+    items,
+    taskStats
   };
 };
 
@@ -164,7 +190,7 @@ export const action = async ({ request, params }: Route.ActionArgs) => {
 };
 
 export default function SessionPage({ loaderData }: Route.ComponentProps) {
-  const { session, items: initialItems } = loaderData;
+  const { session, items: initialItems, taskStats } = loaderData;
   const revalidator = useRevalidator();
   const actionData = useActionData<typeof action>();
   const navigation = useNavigation();
@@ -249,55 +275,109 @@ export default function SessionPage({ loaderData }: Route.ComponentProps) {
 
               {/* Quick Stats */}
               <div className="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
-                <div className="bg-white p-4 rounded-lg shadow-sm">
-                  <div className="flex items-center">
-                    <Package className="w-5 h-5 text-blue-500 mr-2" />
-                    <div>
-                      <div className="text-2xl font-bold">{session?.item_count || 0}</div>
-                      <div className="text-sm text-gray-600">Items</div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="bg-white p-4 rounded-lg shadow-sm">
-                  <div className="flex items-center">
-                    <Target className="w-5 h-5 text-green-500 mr-2" />
-                    <div>
-                      <div className="text-2xl font-bold">{session?.decided_count || 0}</div>
-                      <div className="text-sm text-gray-600">Decided</div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="bg-white p-4 rounded-lg shadow-sm">
-                  <div className="flex items-center">
-                    <DollarSign className="w-5 h-5 text-purple-500 mr-2" />
-                    <div>
-                      <div className="text-2xl font-bold">
-                        ${session?.expected_revenue?.toFixed(0) || '0'}
+                {session?.scenario === 'B' ? (
+                  // Moving Assistant Stats
+                  <>
+                    <div className="bg-white p-4 rounded-lg shadow-sm">
+                      <div className="flex items-center">
+                        <Calendar className="w-5 h-5 text-blue-500 mr-2" />
+                        <div>
+                          <div className="text-2xl font-bold">{taskStats?.total || 0}</div>
+                          <div className="text-sm text-gray-600">Total Tasks</div>
+                        </div>
                       </div>
-                      <div className="text-sm text-gray-600">Expected</div>
                     </div>
-                  </div>
-                </div>
 
-                <div className="bg-white p-4 rounded-lg shadow-sm">
-                  <div className="flex items-center">
-                    <BarChart3 className="w-5 h-5 text-orange-500 mr-2" />
-                    <div>
-                      <div className="text-2xl font-bold">{getCompletionPercentage()}%</div>
-                      <div className="text-sm text-gray-600">Complete</div>
+                    <div className="bg-white p-4 rounded-lg shadow-sm">
+                      <div className="flex items-center">
+                        <Target className="w-5 h-5 text-green-500 mr-2" />
+                        <div>
+                          <div className="text-2xl font-bold">{taskStats?.completed || 0}</div>
+                          <div className="text-sm text-gray-600">Completed</div>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                </div>
+
+                    <div className="bg-white p-4 rounded-lg shadow-sm">
+                      <div className="flex items-center">
+                        <Package className="w-5 h-5 text-orange-500 mr-2" />
+                        <div>
+                          <div className="text-2xl font-bold">{taskStats?.pending || 0}</div>
+                          <div className="text-sm text-gray-600">Pending</div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="bg-white p-4 rounded-lg shadow-sm">
+                      <div className="flex items-center">
+                        <BarChart3 className="w-5 h-5 text-purple-500 mr-2" />
+                        <div>
+                          <div className="text-2xl font-bold">
+                            {taskStats?.total ? Math.round((taskStats.completed / taskStats.total) * 100) : 0}%
+                          </div>
+                          <div className="text-sm text-gray-600">Progress</div>
+                        </div>
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  // Regular Item Stats
+                  <>
+                    <div className="bg-white p-4 rounded-lg shadow-sm">
+                      <div className="flex items-center">
+                        <Package className="w-5 h-5 text-blue-500 mr-2" />
+                        <div>
+                          <div className="text-2xl font-bold">{session?.item_count || 0}</div>
+                          <div className="text-sm text-gray-600">Items</div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="bg-white p-4 rounded-lg shadow-sm">
+                      <div className="flex items-center">
+                        <Target className="w-5 h-5 text-green-500 mr-2" />
+                        <div>
+                          <div className="text-2xl font-bold">{session?.decided_count || 0}</div>
+                          <div className="text-sm text-gray-600">Decided</div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="bg-white p-4 rounded-lg shadow-sm">
+                      <div className="flex items-center">
+                        <DollarSign className="w-5 h-5 text-purple-500 mr-2" />
+                        <div>
+                          <div className="text-2xl font-bold">
+                            ${session?.expected_revenue?.toFixed(0) || '0'}
+                          </div>
+                          <div className="text-sm text-gray-600">Expected</div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="bg-white p-4 rounded-lg shadow-sm">
+                      <div className="flex items-center">
+                        <BarChart3 className="w-5 h-5 text-orange-500 mr-2" />
+                        <div>
+                          <div className="text-2xl font-bold">{getCompletionPercentage()}%</div>
+                          <div className="text-sm text-gray-600">Complete</div>
+                        </div>
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
 
               {/* Progress Bar */}
-              {(session?.item_count || 0) > 0 && (
+              {(session?.scenario === 'B' ? (taskStats?.total || 0) > 0 : (session?.item_count || 0) > 0) && (
                 <div className="w-full bg-gray-200 rounded-full h-3 mb-6">
                   <div 
                     className="bg-blue-500 h-3 rounded-full transition-all"
-                    style={{ width: `${getCompletionPercentage()}%` }}
+                    style={{ 
+                      width: session?.scenario === 'B' 
+                        ? `${taskStats?.total ? Math.round((taskStats.completed / taskStats.total) * 100) : 0}%`
+                        : `${getCompletionPercentage()}%`
+                    }}
                   />
                 </div>
               )}

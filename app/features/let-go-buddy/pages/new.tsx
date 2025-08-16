@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Form, useActionData, redirect, Link, useNavigation } from 'react-router';
 import { Button } from '~/common/components/ui/button';
 import { Input } from '~/common/components/ui/input';
@@ -6,11 +6,12 @@ import { Label } from '~/common/components/ui/label';
 import { Card } from '~/common/components/ui/card';
 import { Badge } from '~/common/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/common/components/ui/select';
-import { ArrowLeft, ArrowRight, Loader2 } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Loader2, Lock } from 'lucide-react';
 import type { Route } from './+types/new';
 import { makeSSRClient, getAuthUser } from '~/supa-client';
 import { z } from 'zod';
 import type { Scenario } from '../types';
+import { getAIUsageCount } from '../utils/aiUsage';
 
 const createSessionSchema = z.object({
   scenario: z.enum(['A', 'B', 'C', 'E']),
@@ -35,7 +36,10 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
   const url = new URL(request.url);
   const preselectedScenario = url.searchParams.get('scenario') as Scenario;
   
-  return { preselectedScenario };
+  return { 
+    preselectedScenario,
+    userId: user.id
+  };
 };
 
 export const action = async ({ request }: Route.ActionArgs) => {
@@ -121,15 +125,29 @@ export const action = async ({ request }: Route.ActionArgs) => {
 };
 
 export default function NewSession({ loaderData }: Route.ComponentProps) {
-  const { preselectedScenario } = loaderData;
+  const { preselectedScenario, userId } = loaderData;
   const actionData = useActionData<typeof action>();
   const navigation = useNavigation();
 
   const [selectedScenario, setSelectedScenario] = useState<Scenario>(
     preselectedScenario || 'A'
   );
+  const [aiUsageData, setAiUsageData] = useState<{ canUse: boolean; total: number; maxFree: number } | null>(null);
 
   const isSubmitting = navigation.state === 'submitting';
+  
+  // Check AI usage limits on component mount
+  useEffect(() => {
+    if (userId) {
+      getAIUsageCount(userId).then(usage => {
+        setAiUsageData({
+          canUse: usage.canUse,
+          total: usage.total,
+          maxFree: usage.maxFree
+        });
+      });
+    }
+  }, [userId]);
 
   const scenarios = {
     A: {
@@ -174,20 +192,37 @@ export default function NewSession({ loaderData }: Route.ComponentProps) {
           <p className="text-gray-600">
             Choose your approach and we'll guide you through the process
           </p>
+          {aiUsageData && !aiUsageData.canUse && (
+            <div className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+              <div className="flex items-center gap-2 text-amber-800">
+                <Lock className="w-5 h-5" />
+                <span className="font-medium">
+                  AI Analysis Limit Reached ({aiUsageData.total}/{aiUsageData.maxFree})
+                </span>
+              </div>
+              <p className="text-sm text-amber-700 mt-1">
+                You've used all your free AI analyses. You can still create sessions and make manual decisions.
+              </p>
+            </div>
+          )}
         </div>
 
         <Form method="post" className="space-y-8">
           {/* Scenario Selection */}
-          <Card className="p-6">
+          <Card className={`p-6 ${aiUsageData && !aiUsageData.canUse ? 'opacity-50' : ''}`}>
             <h2 className="text-xl font-semibold mb-4">Choose Your Scenario</h2>
             
             <div className="grid gap-4">
               {Object.entries(scenarios).map(([key, scenario]) => (
-                <label key={key} className="cursor-pointer">
+                <label key={key} className={`${
+                  aiUsageData && !aiUsageData.canUse ? 'cursor-not-allowed' : 'cursor-pointer'
+                }`}>
                   <div className={`border-2 rounded-lg p-4 transition-all ${
-                    selectedScenario === key 
-                      ? 'border-purple-500 bg-purple-50' 
-                      : 'border-gray-200 hover:border-gray-300'
+                    aiUsageData && !aiUsageData.canUse
+                      ? 'border-gray-200 bg-gray-50'
+                      : selectedScenario === key 
+                        ? 'border-purple-500 bg-purple-50' 
+                        : 'border-gray-200 hover:border-gray-300'
                   }`}>
                     <div className="flex items-start">
                       <input
@@ -197,16 +232,29 @@ export default function NewSession({ loaderData }: Route.ComponentProps) {
                         checked={selectedScenario === key}
                         onChange={(e) => setSelectedScenario(e.target.value as Scenario)}
                         className="mt-1 mr-3"
+                        disabled={aiUsageData && !aiUsageData.canUse}
                       />
                       <div className="flex-1">
                         <div className="flex items-center justify-between">
-                          <h3 className="font-medium text-gray-900">
+                          <h3 className={`font-medium ${
+                            aiUsageData && !aiUsageData.canUse ? 'text-gray-500' : 'text-gray-900'
+                          }`}>
                             {scenario.title}
+                            {aiUsageData && !aiUsageData.canUse && (
+                              <Lock className="w-4 h-4 inline ml-2" />
+                            )}
                           </h3>
-                          <Badge variant="outline">{key}</Badge>
+                          <Badge variant={aiUsageData && !aiUsageData.canUse ? "secondary" : "outline"}>
+                            {key}
+                          </Badge>
                         </div>
-                        <p className="text-sm text-gray-600 mt-1">
-                          {scenario.description}
+                        <p className={`text-sm mt-1 ${
+                          aiUsageData && !aiUsageData.canUse ? 'text-gray-400' : 'text-gray-600'
+                        }`}>
+                          {aiUsageData && !aiUsageData.canUse 
+                            ? 'AI limit reached - manual decisions only' 
+                            : scenario.description
+                          }
                         </p>
                       </div>
                     </div>
@@ -311,13 +359,22 @@ export default function NewSession({ loaderData }: Route.ComponentProps) {
             <Button 
               type="submit" 
               size="lg" 
-              className="px-8"
-              disabled={isSubmitting}
+              className={`px-8 ${
+                aiUsageData && !aiUsageData.canUse 
+                  ? 'bg-gray-400 hover:bg-gray-400 cursor-not-allowed' 
+                  : ''
+              }`}
+              disabled={isSubmitting || (aiUsageData && !aiUsageData.canUse)}
             >
               {isSubmitting ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                   Creating Session...
+                </>
+              ) : aiUsageData && !aiUsageData.canUse ? (
+                <>
+                  <Lock className="w-4 h-4 mr-2" />
+                  AI Limit Reached
                 </>
               ) : (
                 <>
