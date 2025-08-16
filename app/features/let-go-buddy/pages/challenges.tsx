@@ -18,7 +18,7 @@ import { makeSSRClient, getAuthUser } from '~/supa-client';
 
 export const meta: Route.MetaFunction = () => {
   return [
-    { title: "Daily Challenges - Let Go Buddy | Lemore" },
+    { title: "Challenges - Let Go Buddy | Lemore" },
     { name: "description", content: "Build decluttering habits with daily challenges and streak tracking." },
   ];
 };
@@ -395,9 +395,9 @@ export default function ChallengesPage({ loaderData }: Route.ComponentProps) {
                               {task.name?.replace(/^(📦|⚡)\s/, '') || 'Moving Task'}
                             </h3>
                             <div className="flex flex-wrap items-center gap-1.5">
-                              {isPriority && <Badge variant="destructive" className="text-xs text-white">Priority</Badge>}
+                              {isPriority && <Badge variant="outline" className="text-xs text-white">Priority</Badge>}
                               {isToday && !completed && <Badge className="bg-blue-600 text-white text-xs">Today</Badge>}
-                              {isOverdue && <Badge variant="destructive" className="text-xs text-white">Overdue</Badge>}
+                              {isOverdue && <Badge variant="outline" className="text-xs text-white">Overdue</Badge>}
                             </div>
                           </div>
                           <p className="text-xs sm:text-sm text-gray-600 mt-2">
@@ -421,7 +421,7 @@ export default function ChallengesPage({ loaderData }: Route.ComponentProps) {
                             <Form method="post" className="flex items-center gap-2">
                               <input type="hidden" name="action" value="complete_item" />
                               <input type="hidden" name="challengeId" value={task.item_id.toString()} />
-                              <Button type="submit" size="sm" className="bg-purple-500 hover:bg-purple-600 text-white" disabled={isSubmitting}>
+                              <Button type="submit" variant="outline" size="sm" className="bg-purple-500 hover:bg-purple-600 text-white" disabled={isSubmitting}>
                                 {isSubmitting && navigation.formData?.get('challengeId') === task.item_id.toString() ? (
                                   <Loader2 className="w-4 h-4 animate-spin" />
                                 ) : (
@@ -454,105 +454,85 @@ export default function ChallengesPage({ loaderData }: Route.ComponentProps) {
                   const daysSinceScheduled = getDaysFromScheduled(challenge.scheduled_date);
 
                   return (
-                    <Card key={challenge.item_id} className="p-6">
-                      <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
-                        {/* Challenge Info */}
-                        <div className="flex-1">
-                          <div className="flex items-center gap-3 mb-4">
-                            <div className="bg-pink-100 p-2 rounded-lg">
-                              <Calendar className="w-6 h-6 text-pink-600" />
-                            </div>
-                            <div>
-                              <h3 className="text-xl font-semibold">
-                                {challenge.name || 'Daily Challenge'}
-                              </h3>
-                              <p className="text-sm text-gray-600">
-                                Scheduled for {new Date(challenge.scheduled_date).toLocaleDateString()}
-                              </p>
-                            </div>
-                            <Badge className={getStatusColor(completed)}>
-                              {completed ? 'Completed' : 'Pending'}
-                            </Badge>
-                          </div>
-
-                          {/* Status Info */}
-                          <div className="flex items-center gap-4 mb-4 text-sm text-gray-600">
-                            <div className="flex items-center">
-                              <Clock className="w-4 h-4 mr-1" />
-                              {daysSinceScheduled === 0 && 'Today'}
-                              {daysSinceScheduled > 0 && `${daysSinceScheduled} days ago`}
-                              {daysSinceScheduled < 0 && `In ${Math.abs(daysSinceScheduled)} days`}
-                            </div>
-                          </div>
-
-                          {/* Reflection */}
-                          {challenge.reflection && (
-                            <div className="bg-green-50 rounded-lg p-3 mb-4">
-                              <p className="text-sm text-green-800">
-                                <strong>Reflection:</strong> {challenge.reflection}
-                              </p>
-                            </div>
-                          )}
-                          
-                          {/* Tip */}
-                          {(challenge as any).tip && (
-                            <div className="bg-blue-50 rounded-lg p-3 mb-4">
-                              <p className="text-sm text-blue-800">
-                                💡 <strong>Tip:</strong> {(challenge as any).tip}
-                              </p>
-                            </div>
-                          )}
+                    <Card key={challenge.item_id} className="p-4 flex flex-col h-full">
+                      {/* Header */}
+                      <div className="flex items-center gap-2 mb-3">
+                        <div className="bg-pink-100 p-1.5 rounded-lg flex-shrink-0">
+                          <Calendar className="w-4 h-4 text-pink-600" />
                         </div>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-medium text-sm truncate">
+                            {challenge.name || 'Daily Challenge'}
+                          </h3>
+                          <p className="text-xs text-gray-600">
+                            {new Date(challenge.scheduled_date).toLocaleDateString()}
+                          </p>
+                        </div>
+                        <Badge className={`${getStatusColor(completed)} text-xs`}>
+                          {completed ? 'Done' : 'Pending'}
+                        </Badge>
+                      </div>
 
-                        {/* Actions */}
-                        <div className="flex flex-col gap-3">
-                          {!completed && (
-                            <Form method="post" className="space-y-3">
-                              <input type="hidden" name="action" value="complete_item" />
-                              <input type="hidden" name="challengeId" value={challenge.item_id.toString()} />
-                              
-                              <div>
-                                <label className="text-sm font-medium text-gray-700">
-                                  Reflection (optional):
-                                </label>
-                                <textarea
-                                  name="reflection"
-                                  rows={2}
-                                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
-                                  placeholder="How did this challenge go?"
-                                />
-                              </div>
-                              
-                              <Button type="submit" className="w-full bg-pink-500 hover:bg-pink-600 text-white" disabled={isSubmitting}>
-                                {isSubmitting && navigation.formData?.get('action') === 'complete_challenge' ? (
-                                  <>
-                                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                    Completing...
-                                  </>
-                                ) : (
-                                  <>
-                                    <CheckCircle className="w-4 h-4 mr-2" />
-                                    Complete Challenge
-                                  </>
-                                )}
-                              </Button>
-                            </Form>
-                          )}
+                      {/* Status */}
+                      <div className="flex items-center gap-1 mb-3 text-xs text-gray-600">
+                        <Clock className="w-3 h-3" />
+                        {daysSinceScheduled === 0 && 'Today'}
+                        {daysSinceScheduled > 0 && `${daysSinceScheduled} days ago`}
+                        {daysSinceScheduled < 0 && `In ${Math.abs(daysSinceScheduled)} days`}
+                      </div>
 
-                          {completed && (
-                            <div className="text-center p-4 bg-green-50 rounded-lg">
-                              <CheckCircle className="w-8 h-8 text-green-500 mx-auto mb-2" />
-                              <p className="text-sm font-medium text-green-800">
-                                Completed!
-                              </p>
-                              {challenge.completed_at && (
-                                <p className="text-xs text-green-600 mt-1">
-                                  {new Date(challenge.completed_at).toLocaleDateString()}
-                                </p>
+                      {/* Reflection */}
+                      {challenge.reflection && (
+                        <div className="bg-green-50 rounded p-2 mb-3">
+                          <p className="text-xs text-green-800">
+                            <strong>Reflection:</strong> {challenge.reflection}
+                          </p>
+                        </div>
+                      )}
+                      
+                      {/* Tip */}
+                      {(challenge as any).tip && (
+                        <div className="bg-blue-50 rounded p-2 mb-3">
+                          <p className="text-xs text-blue-800">
+                            💡 <strong>Tip:</strong> {(challenge as any).tip}
+                          </p>
+                        </div>
+                      )}
+
+                      {/* Action */}
+                      <div className="mt-auto">
+                        {!completed ? (
+                          <Form method="post" className="space-y-2">
+                            <input type="hidden" name="action" value="complete_item" />
+                            <input type="hidden" name="challengeId" value={challenge.item_id.toString()} />
+                            
+                            <textarea
+                              name="reflection"
+                              rows={2}
+                              className="w-full px-2 py-1 border border-gray-300 rounded text-xs"
+                              placeholder="How did this go?"
+                            />
+                            
+                            <Button type="submit" size="sm" className="w-full bg-pink-500 hover:bg-pink-600 text-white" disabled={isSubmitting}>
+                              {isSubmitting && navigation.formData?.get('challengeId') === challenge.item_id.toString() ? (
+                                <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                              ) : (
+                                <CheckCircle className="w-3 h-3 mr-1" />
                               )}
-                            </div>
-                          )}
-                        </div>
+                              Complete
+                            </Button>
+                          </Form>
+                        ) : (
+                          <div className="text-center p-2 bg-green-50 rounded">
+                            <CheckCircle className="w-5 h-5 text-green-500 mx-auto mb-1" />
+                            <p className="text-xs font-medium text-green-800">Completed!</p>
+                            {challenge.completed_at && (
+                              <p className="text-xs text-green-600">
+                                {new Date(challenge.completed_at).toLocaleDateString()}
+                              </p>
+                            )}
+                          </div>
+                        )}
                       </div>
                     </Card>
                   );
