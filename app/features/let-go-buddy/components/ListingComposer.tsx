@@ -34,6 +34,7 @@ export function ListingComposer({
 }: ListingComposerProps) {
   const { toast } = useToast();
   const [isGenerating, setIsGenerating] = useState(false);
+  const [generationStatus, setGenerationStatus] = useState<'idle' | 'generating' | 'success' | 'error'>('idle');
   const [formData, setFormData] = useState({
     title: item?.title || '',
     condition: item?.condition || 'very-good',
@@ -84,6 +85,7 @@ export function ListingComposer({
     formData.selectedLanguages = ['en'];
 
     setIsGenerating(true);
+    setGenerationStatus('generating');
     
     try {
       const response = await fetch('/api/ai/listing-generate', {
@@ -111,6 +113,7 @@ export function ListingComposer({
       }
 
       setGeneratedListings(result.data.listings);
+      setGenerationStatus('success');
       
       // Call the callback if provided
       if (onListingGenerate && result.data.listings) {
@@ -126,19 +129,19 @@ export function ListingComposer({
         onListingGenerate(listingsArray);
       }
 
-      toast({
-        title: "Listing Generated! ✨",
-        description: "Your marketplace listing is ready",
-        className: "bg-green-50 border-green-200"
-      });
+      // Reset status after a short delay
+      setTimeout(() => {
+        setGenerationStatus('idle');
+      }, 3000);
 
     } catch (error) {
       console.error('Error generating listings:', error);
-      toast({
-        title: "Generation Failed",
-        description: error instanceof Error ? error.message : 'Please try again',
-        variant: "destructive"
-      });
+      setGenerationStatus('error');
+      
+      // Reset error status after a delay
+      setTimeout(() => {
+        setGenerationStatus('idle');
+      }, 3000);
     } finally {
       setIsGenerating(false);
     }
@@ -281,12 +284,26 @@ export function ListingComposer({
           <Button 
             onClick={handleGenerate} 
             disabled={disabled || isGenerating}
-            className="w-full"
+            className={`w-full ${
+              generationStatus === 'success' ? 'bg-green-600 hover:bg-green-700' :
+              generationStatus === 'error' ? 'bg-red-600 hover:bg-red-700' :
+              ''
+            }`}
           >
-            {isGenerating ? (
+            {generationStatus === 'generating' ? (
               <>
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                 Generating Listings...
+              </>
+            ) : generationStatus === 'success' ? (
+              <>
+                <CheckCircle className="w-4 h-4 mr-2" />
+                Listing Created!
+              </>
+            ) : generationStatus === 'error' ? (
+              <>
+                <X className="w-4 h-4 mr-2" />
+                Generation Failed
               </>
             ) : (
               <>

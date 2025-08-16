@@ -507,11 +507,6 @@ export function ItemCard({
               item={item}
               onListingGenerate={(listings) => {
                 console.log('Generated listings for item:', item.item_id, listings);
-                toast({
-                  title: "Listings Generated! ✨",
-                  description: `Created ${listings.length} listing(s) for ${item.title}`,
-                  className: "bg-green-50 border-green-200"
-                });
                 // TODO: Save listings to database
                 setShowListingGenerator(false);
               }}
