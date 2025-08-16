@@ -79,7 +79,7 @@ Make the listings compelling but honest. Focus on what makes this item valuable 
 
     // Call OpenAI API
     const completion = await openai.chat.completions.create({
-      model: 'gpt-4',
+      model: 'gpt-4o',
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userPrompt }
@@ -138,7 +138,7 @@ Make the listings compelling but honest. Focus on what makes this item valuable 
       meta: {
         request_id: requestId,
         duration_ms: Date.now() - startTime,
-        model: 'gpt-4',
+        model: 'gpt-4o',
         version: '1.0.0'
       }
     };
