@@ -34,7 +34,16 @@ export function ItemUploader({
         throw new Error('Authentication required for file upload');
       }
 
-      console.log('User authenticated, uploading to letgobuddy-product bucket...');
+      console.log('User authenticated:', user.id, 'uploading to letgobuddy-product bucket...');
+      
+      // Check authentication status more thoroughly
+      const { data: session } = await client.auth.getSession();
+      if (!session?.session?.access_token) {
+        console.error('No valid session found');
+        throw new Error('Session expired. Please refresh the page and try again.');
+      }
+      
+      console.log('Session valid, attempting upload...');
       
       // Upload file to letgobuddy-product bucket
       const { data, error } = await client.storage
@@ -58,6 +67,8 @@ export function ItemUploader({
           throw new Error('Storage permissions issue. Please check your account settings.');
         } else if (error.message?.includes('CORS')) {
           throw new Error('Storage configuration issue. Please try again later.');
+        } else if (error.message?.includes('network') || error.message?.includes('fetch')) {
+          throw new Error('Network connection issue. Please check your internet connection and try again.');
         }
         
         throw error;
@@ -74,7 +85,18 @@ export function ItemUploader({
       return publicUrl;
     } catch (error) {
       console.error('uploadToStorage error:', error);
-      return null;
+      
+      // Handle specific error types
+      if (error instanceof TypeError && error.message === 'Failed to fetch') {
+        throw new Error('Network connection failed. Please check your internet connection and try again. If the problem persists, try refreshing the page.');
+      }
+      
+      // Re-throw the error so the calling function can handle it properly
+      if (error instanceof Error) {
+        throw error;
+      } else {
+        throw new Error(`Upload failed: ${String(error)}`);
+      }
     }
   };
 
@@ -168,14 +190,17 @@ export function ItemUploader({
         }
 
         console.log('Processing file:', file.name);
-        const url = await uploadToStorage(file);
-        console.log('Upload result for', file.name, ':', url ? 'success' : 'failed');
-        if (url) {
-          newPhotos.push(url);
-        } else {
+        try {
+          const url = await uploadToStorage(file);
+          console.log('Upload result for', file.name, ':', url ? 'success' : 'failed');
+          if (url) {
+            newPhotos.push(url);
+          }
+        } catch (uploadError) {
+          console.error('Upload error for', file.name, ':', uploadError);
           toast({
             title: "Upload failed",
-            description: `Failed to upload ${file.name}. Please try again.`,
+            description: uploadError instanceof Error ? uploadError.message : `Failed to upload ${file.name}. Please try again.`,
             variant: "destructive"
           });
         }

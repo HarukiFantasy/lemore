@@ -263,14 +263,12 @@ export default function LetGoBuddyIndex({ loaderData }: Route.ComponentProps) {
                       <span>Decided:</span>
                       <span>{session.decided_count}/{session.item_count}</span>
                     </div>
-                    {session.expected_revenue > 0 && (
-                      <div className="flex justify-between">
-                        <span>Expected:</span>
-                        <span className="font-medium text-green-600">
-                          ${session.expected_revenue.toFixed(0)}
-                        </span>
-                      </div>
-                    )}
+                    <div className="flex justify-between">
+                      <span>Expected:</span>
+                      <span className="font-medium text-green-600">
+                        ${session.expected_revenue ? session.expected_revenue.toFixed(0) : '0'}
+                      </span>
+                    </div>
                   </div>
 
                   {completion > 0 && (
@@ -284,20 +282,13 @@ export default function LetGoBuddyIndex({ loaderData }: Route.ComponentProps) {
                   
                   <Button asChild className="w-full">
                     <Link to={`/let-go-buddy/session/${session.session_id}`}>
-                      Continue Session
+                      {session.status === 'completed' ? 'Session Completed' : 'Continue Session'}
                       <ArrowRight className="w-4 h-4 ml-2" />
                     </Link>
                   </Button>
                 </Card>
               );
             })}
-          </div>
-
-          <div className="text-center mt-8">
-            <p className="text-sm text-gray-600 mb-4">
-              Active sessions: {canCreateNewSession.active_count}/{canCreateNewSession.limit} 
-              {!canCreateNewSession.allowed && " (limit reached)"}
-            </p>
           </div>
         </div>
       )}
