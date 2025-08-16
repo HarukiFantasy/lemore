@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { Link, Form, useActionData, redirect, useRevalidator } from 'react-router';
 import { Button } from '~/common/components/ui/button';
 import { Card } from '~/common/components/ui/card';
@@ -153,6 +153,43 @@ export default function SessionPage({ loaderData }: Route.ComponentProps) {
   const revalidator = useRevalidator();
   const actionData = useActionData<typeof action>();
   const [uploadingItems, setUploadingItems] = useState<any[]>([]);
+  const [aiUsage, setAiUsage] = useState<{ used: number; max: number; limitReached: boolean }>({ used: 0, max: 2, limitReached: false });
+
+  // Check AI usage on component mount
+  React.useEffect(() => {
+    const checkAiUsage = async () => {
+      try {
+        const { data: { user } } = await browserClient.auth.getUser();
+        if (!user) return;
+
+        const { data: userSessions } = await browserClient
+          .from('lgb_sessions')
+          .select('session_id')
+          .eq('user_id', user.id);
+        
+        const sessionIds = userSessions?.map(s => s.session_id) || [];
+        
+        const { count: analysisCount } = await browserClient
+          .from('lgb_items')
+          .select('item_id', { count: 'exact' })
+          .in('session_id', sessionIds.length > 0 ? sessionIds : ['dummy'])
+          .not('ai_recommendation', 'is', null)
+          .not('ai_rationale', 'like', '%AI analysis limit reached%')
+          .not('ai_rationale', 'like', '%Analysis Failed%')
+          .neq('ai_rationale', 'Analyzing...');
+
+        const maxFreeAnalyses = 2;
+        const usedAnalyses = analysisCount || 0;
+        const limitReached = usedAnalyses >= maxFreeAnalyses;
+
+        setAiUsage({ used: usedAnalyses, max: maxFreeAnalyses, limitReached });
+      } catch (error) {
+        console.error('Error checking AI usage:', error);
+      }
+    };
+
+    checkAiUsage();
+  }, [initialItems]); // Re-check when items change
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -339,6 +376,50 @@ export default function SessionPage({ loaderData }: Route.ComponentProps) {
           </Card>
         )}
 
+        {/* AI Usage Warning */}
+        {aiUsage.limitReached && (
+          <Card className="p-4 border-amber-200 bg-amber-50 mb-6">
+            <div className="flex items-start gap-3">
+              <div className="text-amber-600">⚠️</div>
+              <div className="flex-1">
+                <h3 className="font-semibold text-amber-800 mb-1">AI Analysis Limit Reached</h3>
+                <p className="text-amber-700 text-sm mb-3">
+                  You've used <strong>{aiUsage.used}/{aiUsage.max}</strong> free AI analyses. 
+                  You can still upload items and make decisions manually, but new uploads won't include AI recommendations.
+                </p>
+                <p className="text-amber-600 text-xs">
+                  💡 To get more AI analyses, please contact the administrator. A payment system will be available soon!
+                </p>
+              </div>
+            </div>
+          </Card>
+        )}
+
+        {/* AI Usage Progress (when not at limit) */}
+        {!aiUsage.limitReached && aiUsage.used > 0 && (
+          <Card className="p-4 border-blue-200 bg-blue-50 mb-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-semibold text-blue-800 mb-1">AI Analysis Usage</h3>
+                <p className="text-blue-700 text-sm">
+                  {aiUsage.used}/{aiUsage.max} free analyses used
+                </p>
+              </div>
+              <div className="text-right">
+                <div className="w-20 bg-blue-100 rounded-full h-2 mb-1">
+                  <div 
+                    className="bg-blue-500 h-2 rounded-full transition-all"
+                    style={{ width: `${(aiUsage.used / aiUsage.max) * 100}%` }}
+                  />
+                </div>
+                <span className="text-xs text-blue-600">
+                  {aiUsage.max - aiUsage.used} remaining
+                </span>
+              </div>
+            </div>
+          </Card>
+        )}
+
         {/* Item Upload Section */}
         {session?.status === 'active' && (
           <Card className="p-6 mb-8">
@@ -411,12 +492,14 @@ export default function SessionPage({ loaderData }: Route.ComponentProps) {
                   
                   const sessionIds = userSessions?.map(s => s.session_id) || [];
                   
-                  const { data: analysisItems, count: analysisCount } = await browserClient
+                  const { count: analysisCount } = await browserClient
                     .from('lgb_items')
                     .select('item_id', { count: 'exact' })
                     .in('session_id', sessionIds.length > 0 ? sessionIds : ['dummy'])
                     .not('ai_recommendation', 'is', null)
-                    .neq('ai_recommendation', 'keep'); // Don't count placeholder values
+                    .not('ai_rationale', 'like', '%AI analysis limit reached%')
+                    .not('ai_rationale', 'like', '%Analysis Failed%')
+                    .neq('ai_rationale', 'Analyzing...'); // Count only successfully analyzed items
 
                   const maxFreeAnalyses = 2;
                   const usedAnalyses = analysisCount || 0;

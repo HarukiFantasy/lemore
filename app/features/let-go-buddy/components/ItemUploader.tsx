@@ -118,19 +118,22 @@ export function ItemUploader({
         .select('item_id', { count: 'exact' })
         .in('session_id', sessionIds.length > 0 ? sessionIds : ['dummy'])
         .not('ai_recommendation', 'is', null)
-        .neq('ai_recommendation', 'keep'); // Don't count placeholder values
+        .not('ai_rationale', 'like', '%AI analysis limit reached%')
+        .not('ai_rationale', 'like', '%Analysis Failed%')
+        .neq('ai_rationale', 'Analyzing...'); // Count only successfully analyzed items
 
       const maxFreeAnalyses = 2;
       const usedAnalyses = analysisCount || 0;
       const canAnalyze = usedAnalyses < maxFreeAnalyses;
 
       if (!canAnalyze) {
+        console.log('AI limit reached, allowing manual upload without analysis');
+        // Don't return here - allow manual upload without AI analysis
         toast({
-          title: "AI Analysis Limit Reached",
-          description: `You've used ${usedAnalyses}/${maxFreeAnalyses} free AI analyses. You can still upload items but they won't be analyzed automatically.`,
-          variant: "destructive"
+          title: "Manual Upload Mode",
+          description: `AI analysis limit reached (${usedAnalyses}/${maxFreeAnalyses}). Upload will continue without AI recommendations.`,
+          className: "bg-amber-50 border-amber-200"
         });
-        return;
       }
     } catch (error) {
       console.error('Error checking AI limits:', error);
