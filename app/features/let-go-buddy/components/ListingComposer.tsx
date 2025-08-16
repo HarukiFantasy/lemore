@@ -118,7 +118,7 @@ export function ListingComposer({
       // Call the callback if provided
       if (onListingGenerate && result.data.listings) {
         const listingsArray = Object.entries(result.data.listings).map(([lang, listing]: [string, any]) => ({
-          listing_id: `${Date.now()}-${lang}`,
+          listing_id: crypto.randomUUID(), // Generate proper UUID for listing_id
           item_id: item?.item_id || crypto.randomUUID(), // Generate a UUID for standalone listings
           lang: lang as Language,
           title: listing.title,
