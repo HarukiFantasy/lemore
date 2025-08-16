@@ -60,12 +60,11 @@ export function MovingAssistant({ session, onPlanGenerated }: MovingAssistantPro
   const [isAddingToCalendar, setIsAddingToCalendar] = useState(false);
   const [addedToCalendar, setAddedToCalendar] = useState(false);
   const [aiUsage, setAiUsage] = useState<{ total: number; maxFree: number; canUse: boolean }>({ total: 0, maxFree: 2, canUse: true });
-  const [hasPreviousPlan, setHasPreviousPlan] = useState(false);
   const { toast } = useToast();
   
-  // Check AI usage and previous plans on component mount
+  // Check AI usage on component mount
   useEffect(() => {
-    const checkAiUsageAndPreviousPlan = async () => {
+    const checkAiUsage = async () => {
       try {
         const { data: { user } } = await browserClient.auth.getUser();
         if (!user) return;
@@ -77,27 +76,12 @@ export function MovingAssistant({ session, onPlanGenerated }: MovingAssistantPro
           canUse: usage.canUse 
         });
 
-        // Check if this session has a previous plan
-        // TODO: Uncomment after ai_plan_generated migration is applied
-        /*
-        if (session?.session_id) {
-          const { data: sessionData } = await browserClient
-            .from('lgb_sessions')
-            .select('ai_plan_generated')
-            .eq('session_id', session.session_id)
-            .single();
-          
-          if (sessionData?.ai_plan_generated) {
-            setHasPreviousPlan(true);
-          }
-        }
-        */
       } catch (error) {
-        console.error('Error checking AI usage or previous plan:', error);
+        console.error('Error checking AI usage:', error);
       }
     };
 
-    checkAiUsageAndPreviousPlan();
+    checkAiUsage();
   }, [session?.session_id]);
 
   const toggleCategory = (categoryId: string) => {
@@ -441,41 +425,11 @@ export function MovingAssistant({ session, onPlanGenerated }: MovingAssistantPro
 
   return (
     <div className="space-y-6">
-      {/* Previous Plan Available - Show Calendar Link */}
-      {hasPreviousPlan && !movingPlan && (
-        <Card className="p-6 bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200">
-          <div className="text-center">
-            <Calendar className="w-12 h-12 text-blue-600 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold mb-2">Moving Plan Already Generated</h3>
-            <p className="text-gray-600 mb-4">
-              You've already created a moving plan for this session. Your tasks have been added to your calendar.
-            </p>
-            <div className="flex justify-center gap-3">
-              <Button
-                onClick={() => window.location.href = '/let-go-buddy/challenges'}
-                className="bg-blue-600 hover:bg-blue-700 text-white"
-              >
-                <Calendar className="w-4 h-4 mr-2" />
-                View Calendar
-              </Button>
-              <Button
-                onClick={() => setHasPreviousPlan(false)}
-                variant="outline"
-              >
-                Generate New Plan
-              </Button>
-            </div>
-          </div>
-        </Card>
-      )}
-
       {/* Step 1: Select Categories */}
-      {!hasPreviousPlan && (
-        <>
-          <Card className="p-6">
-            <h2 className="text-xl font-semibold mb-4">
-              Step 1: What items do you need to move?
-            </h2>
+      <Card className="p-6">
+        <h2 className="text-xl font-semibold mb-4">
+          Step 1: What items do you need to move?
+        </h2>
         <p className="text-gray-600 mb-6">
           Select all categories that apply to your move
         </p>
@@ -630,9 +584,6 @@ export function MovingAssistant({ session, onPlanGenerated }: MovingAssistantPro
             </Button>
           </div>
         </Card>
-      )}
-      
-        </>
       )}
     </div>
   );

@@ -15,7 +15,8 @@ import {
   ShoppingCart,
   Gift,
   Trash2,
-  Sparkles
+  Sparkles,
+  Calendar
 } from 'lucide-react';
 import type { Route } from './+types/session';
 import { makeSSRClient, getAuthUser, browserClient } from '~/supa-client';
@@ -455,14 +456,40 @@ export default function SessionPage({ loaderData }: Route.ComponentProps) {
 
         {/* Moving Assistant Section for Scenario B */}
         {session?.scenario === 'B' && session?.status === 'active' && (
-          <MovingAssistant 
-            session={session}
-            onPlanGenerated={(plan) => {
-              console.log('Moving plan generated:', plan);
-              // Optionally refresh to show updated session
-              revalidator.revalidate();
-            }}
-          />
+          <>
+            {/* View Calendar Card for Moving Assistant */}
+            <Card className="p-6 mb-6 bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="bg-blue-100 p-3 rounded-full">
+                    <Calendar className="w-6 h-6 text-blue-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900">Moving Plan Calendar</h3>
+                    <p className="text-gray-600 text-sm">
+                      View your moving tasks and timeline in calendar format
+                    </p>
+                  </div>
+                </div>
+                <Button
+                  onClick={() => window.location.href = '/let-go-buddy/challenges'}
+                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                >
+                  <Calendar className="w-4 h-4 mr-2" />
+                  View Calendar
+                </Button>
+              </div>
+            </Card>
+
+            <MovingAssistant 
+              session={session}
+              onPlanGenerated={(plan) => {
+                console.log('Moving plan generated:', plan);
+                // Optionally refresh to show updated session
+                revalidator.revalidate();
+              }}
+            />
+          </>
         )}
 
         {/* Regular Item Upload Section (for scenarios A and C) */}
