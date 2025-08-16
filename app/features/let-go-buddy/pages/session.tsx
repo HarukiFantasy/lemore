@@ -438,7 +438,7 @@ export default function SessionPage({ loaderData }: Route.ComponentProps) {
               Quick Listing Generator
             </h2>
             <p className="text-gray-600 mb-6">
-              Generate marketplace-ready listings in English and Korean without uploading photos. 
+              Generate marketplace-ready listings in English without uploading photos. 
               Perfect for creating listings quickly with just basic item information.
             </p>
             <ListingComposer
@@ -448,7 +448,7 @@ export default function SessionPage({ loaderData }: Route.ComponentProps) {
                 // TODO: Save to database if needed
                 // For now, listings are shown in the component
               }}
-              languages={['en', 'ko']}
+              languages={['en']}
             />
           </Card>
         )}

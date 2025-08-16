@@ -79,10 +79,10 @@ export default function LetGoBuddyIndex({ loaderData }: Route.ComponentProps) {
     {
       id: 'E',
       title: 'Quick Listing Generator',
-      description: 'Create marketplace-ready listings in English and Korean',
+      description: 'Create marketplace-ready listings in English quickly',
       icon: <Zap className="w-6 h-6" />,
       color: 'bg-blue-500',
-      features: ['AI listing copy', 'Multi-language', 'Copy & paste ready'],
+      features: ['AI listing copy', 'Professional tone', 'Copy & paste ready'],
       time: '2-3 min per item'
     },
     {

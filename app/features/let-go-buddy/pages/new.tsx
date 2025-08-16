@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Form, useActionData, redirect, Link } from 'react-router';
+import { Form, useActionData, redirect, Link, useNavigation } from 'react-router';
 import { Button } from '~/common/components/ui/button';
 import { Input } from '~/common/components/ui/input';
 import { Label } from '~/common/components/ui/label';
@@ -88,6 +88,8 @@ export const action = async ({ request }: Route.ActionArgs) => {
       return redirect(`/let-go-buddy/challenges?new=${challenge.item_id}`);
     } else {
       // Create session using RPC
+      console.log('Creating session for user:', user.id, 'scenario:', scenario);
+      
       const { data: sessionId, error: rpcError } = await client
         .rpc('rpc_create_session', {
           p_scenario: scenario,
@@ -106,6 +108,7 @@ export const action = async ({ request }: Route.ActionArgs) => {
         throw new Error('Failed to create session - no session ID returned');
       }
       
+      console.log('Session created successfully:', sessionId);
       return redirect(`/let-go-buddy/session/${sessionId}`);
     }
 
@@ -121,10 +124,13 @@ export const action = async ({ request }: Route.ActionArgs) => {
 export default function NewSession({ loaderData }: Route.ComponentProps) {
   const { preselectedScenario } = loaderData;
   const actionData = useActionData<typeof action>();
+  const navigation = useNavigation();
 
   const [selectedScenario, setSelectedScenario] = useState<Scenario>(
     preselectedScenario || 'A'
   );
+
+  const isSubmitting = navigation.state === 'submitting';
 
   const scenarios = {
     A: {
@@ -308,8 +314,13 @@ export default function NewSession({ loaderData }: Route.ComponentProps) {
 
           {/* Submit */}
           <div className="flex justify-end">
-            <Button type="submit" size="lg" className="px-8">
-              Create Session
+            <Button 
+              type="submit" 
+              size="lg" 
+              className="px-8"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? 'Creating Session...' : 'Create Session'}
               <ArrowRight className="w-4 h-4 ml-2" />
             </Button>
           </div>

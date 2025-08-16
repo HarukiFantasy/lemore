@@ -515,7 +515,7 @@ export function ItemCard({
                 // TODO: Save listings to database
                 setShowListingGenerator(false);
               }}
-              languages={['en', 'ko']}
+              languages={['en']}
             />
           </div>
         </div>

@@ -20,7 +20,7 @@ import {
 } from 'lucide-react';
 import type { ListingComposerProps, Language } from '../types';
 
-const availableLanguages: Language[] = ['en', 'ko'];
+const availableLanguages: Language[] = ['en'];
 const toneOptions = [
   { value: 'friendly', label: 'Friendly' },
   { value: 'plain', label: 'Plain/Professional' }
@@ -36,9 +36,9 @@ export function ListingComposer({
   const [isGenerating, setIsGenerating] = useState(false);
   const [formData, setFormData] = useState({
     title: item?.title || '',
-    condition: item?.condition || 'good',
+    condition: item?.condition || 'very-good',
     features: [] as string[],
-    selectedLanguages: languages,
+    selectedLanguages: ['en'] as Language[],
     tone: 'friendly' as 'friendly' | 'plain'
   });
   const [newFeature, setNewFeature] = useState('');
@@ -80,14 +80,8 @@ export function ListingComposer({
       return;
     }
 
-    if (formData.selectedLanguages.length === 0) {
-      toast({
-        title: "Language Required", 
-        description: "Please select at least one language",
-        variant: "destructive"
-      });
-      return;
-    }
+    // Language is always English for expats
+    formData.selectedLanguages = ['en'];
 
     setIsGenerating(true);
     
@@ -133,8 +127,8 @@ export function ListingComposer({
       }
 
       toast({
-        title: "Listings Generated! ✨",
-        description: `Created listings in ${formData.selectedLanguages.join(' and ')}`,
+        title: "Listing Generated! ✨",
+        description: "Your marketplace listing is ready",
         className: "bg-green-50 border-green-200"
       });
 
@@ -214,10 +208,11 @@ export function ListingComposer({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="excellent">Excellent - Like new</SelectItem>
-                <SelectItem value="good">Good - Minor wear</SelectItem>
-                <SelectItem value="fair">Fair - Some wear</SelectItem>
-                <SelectItem value="poor">Poor - Heavy wear</SelectItem>
+                <SelectItem value="new">New/Like New - Perfect condition</SelectItem>
+                <SelectItem value="very-good">Very Good - Minor signs of use</SelectItem>
+                <SelectItem value="good">Good - Some visible use</SelectItem>
+                <SelectItem value="fair">Fair - Noticeable wear but functional</SelectItem>
+                <SelectItem value="poor">Poor - Significant damage or issues</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -259,26 +254,7 @@ export function ListingComposer({
             </div>
           </div>
 
-          {/* Languages */}
-          <div>
-            <Label>Languages *</Label>
-            <div className="flex gap-4 mt-2">
-              {availableLanguages.map((lang) => (
-                <div key={lang} className="flex items-center space-x-2">
-                  <Checkbox
-                    id={lang}
-                    checked={formData.selectedLanguages.includes(lang)}
-                    onCheckedChange={() => handleLanguageToggle(lang)}
-                    disabled={disabled}
-                  />
-                  <Label htmlFor={lang} className="flex items-center gap-1">
-                    <Languages className="w-4 h-4" />
-                    {lang === 'en' ? 'English' : 'Korean'}
-                  </Label>
-                </div>
-              ))}
-            </div>
-          </div>
+          {/* Language is fixed to English for expats */}
 
           {/* Tone */}
           <div>
@@ -330,9 +306,7 @@ export function ListingComposer({
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
                   <CheckCircle className="w-5 h-5 text-green-600" />
-                  <h4 className="font-semibold">
-                    {lang === 'en' ? '🇺🇸 English' : '🇰🇷 Korean'} Listing
-                  </h4>
+                  <h4 className="font-semibold">Generated Listing</h4>
                 </div>
                 <div className="flex gap-2">
                   <Button
