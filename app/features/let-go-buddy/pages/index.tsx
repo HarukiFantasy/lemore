@@ -158,24 +158,55 @@ export default function LetGoBuddyIndex({ loaderData }: Route.ComponentProps) {
             </p>
 
             {user && (
-              <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
-                <Button 
-                  asChild 
-                  size="lg"
-                  className="bg-purple-600 hover:bg-purple-700 text-white px-8 py-3"
-                  disabled={!canCreateNewSession.allowed}
-                >
-                  <Link to="/let-go-buddy/new">
-                    <Sparkles className="w-5 h-5 mr-2" />
-                    Start New Session
-                  </Link>
-                </Button>
-                <Button asChild variant="outline" size="lg">
-                  <Link to="/let-go-buddy/challenges">
-                    <Calendar className="w-5 h-5 mr-2" />
-                    Daily Challenges
-                  </Link>
-                </Button>
+              <div className="space-y-6 pt-4">
+                {/* Session Explanation */}
+                <div className="max-w-2xl mx-auto">
+                  <div className="bg-white/80 backdrop-blur-sm rounded-xl p-6 border border-purple-100">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-3">What is a Decluttering Session?</h3>
+                    <p className="text-gray-600 mb-4">
+                      A session helps you organize one specific area or life transition. Upload photos of items, 
+                      get AI recommendations, and make smart decisions about what to keep, sell, donate, or dispose of.
+                    </p>
+                    <div className="grid sm:grid-cols-2 gap-3 text-sm">
+                      <div className="flex items-center gap-2">
+                        <Package className="w-4 h-4 text-purple-600" />
+                        <span>Upload item photos</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Sparkles className="w-4 h-4 text-purple-600" />
+                        <span>Get AI recommendations</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Heart className="w-4 h-4 text-purple-600" />
+                        <span>Make informed decisions</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Target className="w-4 h-4 text-purple-600" />
+                        <span>Track your progress</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                  <Button 
+                    asChild 
+                    size="lg"
+                    className="bg-purple-600 hover:bg-purple-700 text-white px-8 py-3"
+                    disabled={!canCreateNewSession.allowed}
+                  >
+                    <Link to="/let-go-buddy/new">
+                      <Sparkles className="w-5 h-5 mr-2" />
+                      Start New Session
+                    </Link>
+                  </Button>
+                  <Button asChild variant="outline" size="lg">
+                    <Link to="/let-go-buddy/challenges">
+                      <Calendar className="w-5 h-5 mr-2" />
+                      Daily Challenges
+                    </Link>
+                  </Button>
+                </div>
               </div>
             )}
 

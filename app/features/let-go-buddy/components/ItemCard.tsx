@@ -4,6 +4,7 @@ import { Card } from '~/common/components/ui/card';
 import { Badge } from '~/common/components/ui/badge';
 import { Button } from '~/common/components/ui/button';
 import { Textarea } from '~/common/components/ui/textarea';
+import { useToast } from '~/common/components/ui/use-toast';
 import { 
   Heart, 
   ShoppingCart, 
@@ -20,6 +21,7 @@ import {
 } from 'lucide-react';
 import type { ItemCardProps, ItemDecision } from '../types';
 import { DecisionBar } from './DecisionBar';
+import { DonationModal } from './DonationModal';
 
 export function ItemCard({ 
   item, 
@@ -27,9 +29,14 @@ export function ItemCard({
   showDecisionControls = false,
   showListings = false 
 }: ItemCardProps) {
+  const { toast } = useToast();
   const [showReason, setShowReason] = useState(false);
   const [reason, setReason] = useState(item.decision_reason || '');
   const [loadingPricing, setLoadingPricing] = useState(false);
+  const [donationModal, setDonationModal] = useState<{ isOpen: boolean; type: 'centers' | 'tax' | null }>({
+    isOpen: false,
+    type: null
+  });
 
   const handleDecisionChange = async (decision: ItemDecision) => {
     if (decision === item.decision) {
@@ -95,7 +102,8 @@ export function ItemCard({
   };
 
   return (
-    <Card className="overflow-hidden">
+    <>
+      <Card className="overflow-hidden">
       {/* Photo Gallery */}
       {item.photos && item.photos.length > 0 && (
         <div className="aspect-square bg-gray-100">
@@ -179,19 +187,33 @@ export function ItemCard({
           </div>
         )}
 
-        {/* Usage Score */}
-        {typeof item.usage_score === 'number' && (
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-gray-600">Usage Score:</span>
-            <div className="flex items-center gap-2">
-              <div className="w-20 bg-gray-200 rounded-full h-2">
-                <div 
-                  className="bg-blue-500 h-2 rounded-full"
-                  style={{ width: `${item.usage_score}%` }}
-                />
+        {/* Estimated Usage Score */}
+        {(item.usage_score !== null && item.usage_score !== undefined) ? (
+          <div className="bg-amber-50 rounded-lg p-3 space-y-2">
+            <div className="flex items-center justify-between">
+              <div>
+                <span className="text-sm font-medium text-amber-800">Estimated Typical Usage</span>
+                <p className="text-xs text-amber-600 mt-0.5">Based on item type analysis</p>
               </div>
-              <span className="font-medium">{item.usage_score}%</span>
+              <span className="text-lg font-bold text-amber-900">{item.usage_score}%</span>
             </div>
+            <div className="w-full bg-amber-100 rounded-full h-3">
+              <div 
+                className="bg-gradient-to-r from-amber-400 to-amber-600 h-3 rounded-full transition-all duration-300"
+                style={{ width: `${Math.max(5, item.usage_score)}%` }}
+              />
+            </div>
+            <p className="text-xs text-amber-700 font-medium">
+              {item.usage_score >= 80 ? "📅 Items like this are typically used daily" :
+               item.usage_score >= 60 ? "📆 Items like this are typically used weekly" :
+               item.usage_score >= 40 ? "🗓️ Items like this are typically used monthly" :
+               item.usage_score >= 20 ? "📌 Items like this are typically used occasionally" :
+               "💤 Items like this are typically rarely used"}
+            </p>
+          </div>
+        ) : item.ai_recommendation && item.status !== 'analyzing' && (
+          <div className="bg-gray-50 rounded-lg p-3">
+            <p className="text-xs text-gray-500">Usage frequency not analyzed</p>
           </div>
         )}
 
@@ -275,15 +297,35 @@ export function ItemCard({
               <Gift className="w-4 h-4 text-purple-600" />
               <span className="text-sm font-medium text-purple-700">Donation Options</span>
             </div>
-            <p className="text-xs text-purple-700">
-              This item can help someone in need. Consider local charities, community centers, or online donation platforms.
-            </p>
+            
+            {/* Show selected center if decision reason contains donation info */}
+            {item.decision_reason && item.decision_reason.includes('Donating to') ? (
+              <div className="bg-purple-100 rounded p-2">
+                <p className="text-xs font-medium text-purple-800">
+                  📍 {item.decision_reason}
+                </p>
+              </div>
+            ) : (
+              <p className="text-xs text-purple-700">
+                This item can help someone in need. Consider local charities, community centers, or online donation platforms.
+              </p>
+            )}
             <div className="flex gap-2 mt-2">
-              <Button size="sm" variant="outline" className="text-xs h-7">
+              <Button 
+                size="sm" 
+                variant="outline" 
+                className="text-xs h-7"
+                onClick={() => setDonationModal({ isOpen: true, type: 'centers' })}
+              >
                 <MapPin className="w-3 h-3 mr-1" />
                 Find Centers
               </Button>
-              <Button size="sm" variant="outline" className="text-xs h-7">
+              <Button 
+                size="sm" 
+                variant="outline" 
+                className="text-xs h-7"
+                onClick={() => setDonationModal({ isOpen: true, type: 'tax' })}
+              >
                 Tax Info
               </Button>
             </div>
@@ -410,5 +452,29 @@ export function ItemCard({
         )}
       </div>
     </Card>
+
+    {/* Donation Modal */}
+    {donationModal.type && (
+      <DonationModal
+        isOpen={donationModal.isOpen}
+        onClose={() => setDonationModal({ isOpen: false, type: null })}
+        type={donationModal.type as 'centers' | 'tax'}
+        onSelectCenter={async (center) => {
+          // Update the item with the selected donation center
+          if (item.item_id && onDecisionChange) {
+            await onDecisionChange('donate', `Donating to ${center.name} at ${center.address}`);
+            
+            // Show success toast
+            toast({
+              title: "Donation Center Selected ✅",
+              description: `Your item will be donated to ${center.name}`,
+              className: "bg-purple-50 border-purple-200"
+            });
+          }
+          setDonationModal({ isOpen: false, type: null });
+        }}
+      />
+    )}
+    </>
   );
 }

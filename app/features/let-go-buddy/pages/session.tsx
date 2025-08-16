@@ -511,7 +511,7 @@ export default function SessionPage({ loaderData }: Route.ComponentProps) {
                       title: generatedTitle,
                       category: analysisResult.data.category || 'Other',
                       condition: analysisResult.data.condition || 'Good',
-                      usage_score: analysisResult.data.usage_score || 50,
+                      usage_score: analysisResult.data.usage_score,
                       ai_recommendation: analysisResult.data.recommendation || 'keep',
                       ai_rationale: analysisResult.data.rationale || 'AI analysis completed',
                       sentiment: analysisResult.data.sentiment || 'neutral',
@@ -534,7 +534,7 @@ export default function SessionPage({ loaderData }: Route.ComponentProps) {
                           condition: analysisResult.data.condition || 'Good',
                           ai_recommendation: analysisResult.data.recommendation || 'keep',
                           ai_rationale: analysisResult.data.rationale || 'AI analysis completed',
-                          usage_score: analysisResult.data.usage_score || 50,
+                          usage_score: analysisResult.data.usage_score,
                           sentiment: analysisResult.data.sentiment || 'neutral',
                           status: 'analyzed'
                         }

@@ -38,20 +38,26 @@ export async function action({ request }: { request: Request }) {
 {
   "category": "string (e.g., 'furniture', 'clothing', 'electronics', 'books', 'kitchenware', 'decor', 'sports', 'toys', 'other')",
   "condition": "string (e.g., 'excellent', 'good', 'fair', 'poor')",
-  "usage_score": number (0-100, where 100 = actively used daily, 0 = never used),
+  "usage_score": number (0-100, ESTIMATED typical usage frequency based on item type - 100 = items typically used daily, 80 = weekly items, 60 = monthly items, 40 = seasonal/occasional items, 20 = rarely used items, 0 = decorative/collectible items),
   "sentiment": "string (e.g., 'attached', 'neutral', 'ready_to_let_go')",
   "recommendation": "string ('keep', 'sell', 'donate', or 'dispose')",
   "rationale": "string (brief explanation for the recommendation)"
 }
 
-Consider these factors:
+IMPORTANT for usage_score:
+- This is an ESTIMATE of typical usage frequency based on the item type, NOT actual user behavior
+- Base the score on how often items of this type are generally used in households
+- Examples: toothbrush/phone = 90-100 (daily), workout equipment = 60-80 (few times/week), board games = 20-40 (occasional), holiday decorations = 10-20 (seasonal)
+- Consider item condition as a hint: worn items might indicate higher usage than pristine ones
+- Be conservative - when unsure, estimate lower rather than higher
+
+Other factors:
 - Condition and marketability
-- Practical utility and usage frequency
 - Emotional attachment indicators
-- Storage space efficiency
+- Storage space efficiency  
 - Market demand and resale value
 
-Be practical and honest in your assessment.`;
+Be realistic about actual usage patterns, not ideal usage.`;
 
     // Skip blob URL check - use real OpenAI API for all requests
     
