@@ -581,9 +581,8 @@ export default function SessionPage({ loaderData }: Route.ComponentProps) {
                       })
                       .eq('item_id', itemId);
 
-                    // Refresh and remove from uploading items
+                    // Remove from uploading items without revalidating (avoid page refresh)
                     setTimeout(() => {
-                      revalidator.revalidate();
                       setUploadingItems(prev => prev.filter(item => item.item_id !== itemId));
                     }, 1000);
 
@@ -671,12 +670,11 @@ export default function SessionPage({ loaderData }: Route.ComponentProps) {
                       : item
                   ));
                   
-                  // Refresh data from database (this is async internally)
-                  revalidator.revalidate();
-                  
-                  // Wait briefly then remove from uploading items since it's now in the database
+                  // Remove from uploading items and update state locally to avoid page refresh
                   setTimeout(() => {
                     setUploadingItems(prev => prev.filter(item => item.item_id !== itemId));
+                    // Only revalidate if needed to get fresh data (comment out to reduce refreshes)
+                    // revalidator.revalidate();
                   }, 1000);
 
                 } catch (error) {
@@ -721,10 +719,10 @@ export default function SessionPage({ loaderData }: Route.ComponentProps) {
                       console.error('Error updating item with error state:', updateError);
                     }
 
-                    // Refresh after delay
+                    // Remove from uploading items after showing error
                     setTimeout(() => {
-                      revalidator.revalidate();
                       setUploadingItems(prev => prev.filter(item => item.item_id !== currentItemId));
+                      // Reduced revalidation to avoid page refresh
                     }, 3000); // Show error for 3 seconds
                   } else {
                     // Fallback: just remove any analyzing items

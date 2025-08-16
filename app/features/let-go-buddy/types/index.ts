@@ -1,6 +1,6 @@
 // Let Go Buddy TypeScript Types
 
-export type Scenario = 'A' | 'B' | 'C' | 'D' | 'E';
+export type Scenario = 'A' | 'B' | 'C' | 'E';
 
 export type SessionStatus = 'active' | 'completed' | 'archived';
 export type ItemDecision = 'keep' | 'sell' | 'donate' | 'dispose';

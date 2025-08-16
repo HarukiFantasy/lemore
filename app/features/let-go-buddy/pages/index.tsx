@@ -86,15 +86,6 @@ export default function LetGoBuddyIndex({ loaderData }: Route.ComponentProps) {
       time: '2-3 min per item'
     },
     {
-      id: 'D',
-      title: 'Category Focus',
-      description: 'Declutter specific categories like closets, books, or kitchen items',
-      icon: <Package className="w-6 h-6" />,
-      color: 'bg-purple-500',
-      features: ['Batch processing', 'Category tips', 'Bundle suggestions'],
-      time: '10-20 min per session'
-    },
-    {
       id: 'B',
       title: 'Moving Assistant',
       description: 'Plan your move or departure with week-by-week action plans',

@@ -56,7 +56,6 @@ export function ItemUploader({
       if (error) {
         console.error('Storage upload error details:', {
           message: error.message,
-          statusCode: error.statusCode,
           error: error
         });
         

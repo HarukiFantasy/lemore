@@ -13,7 +13,7 @@ import { z } from 'zod';
 import type { Scenario } from '../types';
 
 const createSessionSchema = z.object({
-  scenario: z.enum(['A', 'B', 'C', 'D', 'E']),
+  scenario: z.enum(['A', 'B', 'C', 'E']),
   title: z.string().optional(),
   move_date: z.string().optional(),
   region: z.string().optional(),
@@ -147,11 +147,6 @@ export default function NewSession({ loaderData }: Route.ComponentProps) {
       title: 'Declutter Challenge',
       description: 'Daily decluttering habits',
       fields: ['days']
-    },
-    D: {
-      title: 'Category Focus',
-      description: 'Batch process specific categories',
-      fields: ['title', 'region']
     },
     E: {
       title: 'Quick Listing Generator',
