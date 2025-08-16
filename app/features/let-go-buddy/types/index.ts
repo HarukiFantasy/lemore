@@ -244,7 +244,7 @@ export interface PriceSuggestProps {
 }
 
 export interface ListingComposerProps {
-  item: LgbItem;
+  item?: LgbItem | null;
   onListingGenerate: (listings: LgbListing[]) => void;
   languages?: Language[];
   disabled?: boolean;

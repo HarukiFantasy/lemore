@@ -115,6 +115,12 @@ export const action = async ({ request, params }: Route.ActionArgs) => {
   const { client } = makeSSRClient(request);
   const sessionId = params.sessionId;
   
+  // Check if user is authenticated
+  const { data: { user } } = await getAuthUser(client);
+  if (!user) {
+    throw redirect('/auth/login?redirect=/let-go-buddy');
+  }
+  
   const formData = await request.formData();
   const action = formData.get('action') as string;
 
@@ -123,7 +129,8 @@ export const action = async ({ request, params }: Route.ActionArgs) => {
       const { error } = await client
         .from('lgb_sessions')
         .update({ status: 'archived' })
-        .eq('session_id', sessionId);
+        .eq('session_id', sessionId)
+        .eq('user_id', user.id); // SECURITY: Only allow user to modify their own sessions
 
       if (error) throw error;
       return redirect('/let-go-buddy');
@@ -133,7 +140,8 @@ export const action = async ({ request, params }: Route.ActionArgs) => {
       const { error } = await client
         .from('lgb_sessions')
         .update({ status: 'completed' })
-        .eq('session_id', sessionId);
+        .eq('session_id', sessionId)
+        .eq('user_id', user.id); // SECURITY: Only allow user to modify their own sessions
 
       if (error) throw error;
       return redirect('/let-go-buddy');

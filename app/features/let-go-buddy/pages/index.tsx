@@ -38,6 +38,7 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
       const { data: sessions } = await client
         .from('view_session_dashboard')
         .select('*')
+        .eq('user_id', user.id)
         .order('created_at', { ascending: false })
         .limit(3);
       
