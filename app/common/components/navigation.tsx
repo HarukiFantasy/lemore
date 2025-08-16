@@ -312,11 +312,6 @@ export function Navigation({
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild className="cursor-pointer">
-                    <Link to="/my/AIcoach">
-                      <BotIcon className="w-4 h-4 mr-2" />AI Coach
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild className="cursor-pointer">
                     <Link to="/my/likes">
                       <HeartIcon className="w-4 h-4 mr-2" />Likes
                     </Link>
