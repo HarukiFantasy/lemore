@@ -190,33 +190,45 @@ export function MovingAssistant({ session, onPlanGenerated }: MovingAssistantPro
         throw new Error('User not authenticated');
       }
 
-      // Add user_id to all calendar entries
-      const entriesWithUserId = calendarEntries.map(entry => ({
+      // Prepare calendar entries for lgb_items insertion
+      const entriesForItems = calendarEntries.map(entry => ({
         name: entry.name,
         scheduled_date: entry.scheduled_date,
-        user_id: user.id,
         completed: false,
         tip: entry.tip || null
       }));
 
-      console.log('Inserting calendar entries:', entriesWithUserId);
+      console.log('Inserting calendar entries:', entriesForItems);
 
-      // Insert calendar entries one by one to avoid bulk insert issues
-      for (const entry of entriesWithUserId) {
+      // Convert calendar entries to lgb_items format for unified data model
+      const itemsToInsert = entriesForItems.map(entry => ({
+        session_id: session.session_id,
+        title: entry.name,
+        scheduled_date: entry.scheduled_date,
+        completed: entry.completed,
+        tip: entry.tip,
+        // Calendar-specific fields for Moving Assistant
+        // Leave other fields null: photos, category, decision, etc.
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }));
+
+      // Insert into lgb_items table (unified approach)
+      for (const item of itemsToInsert) {
         const { error: insertError } = await browserClient
-          .from('challenge_calendar_items')
-          .insert([entry]);
+          .from('lgb_items')
+          .insert([item]);
         
         if (insertError) {
-          console.error('Insert error for entry:', entry, insertError);
-          throw new Error(`Failed to add calendar entry: ${insertError.message}`);
+          console.error('Insert error for item:', item, insertError);
+          throw new Error(`Failed to add moving task: ${insertError.message}`);
         }
       }
 
       setAddedToCalendar(true);
       toast({
         title: "Added to calendar!",
-        description: `${entriesWithUserId.length} moving tasks added to your challenge calendar`,
+        description: `${itemsToInsert.length} moving tasks added to your session`,
         className: "bg-green-50 border-green-200"
       });
 

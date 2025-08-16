@@ -75,6 +75,7 @@ CREATE TABLE IF NOT EXISTS challenge_calendar_items (
   completed_at timestamp,
   reflection text,
   tip text, -- For AI-generated tips
+  scenario text CHECK (scenario IN ('A','B','C','D','E')) DEFAULT 'C', -- Scenario for categorizing tasks
   created_at timestamp NOT NULL DEFAULT now(),
   updated_at timestamp NOT NULL DEFAULT now()
 );

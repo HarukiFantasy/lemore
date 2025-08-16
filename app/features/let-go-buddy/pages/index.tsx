@@ -38,13 +38,17 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
   
   if (user) {
     try {
-      // Get user's recent sessions
+      // Get user's recent sessions with plan counts for Moving Assistant
       const { data: sessions } = await client
         .from('view_session_dashboard')
         .select('*')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
         .limit(3);
+      
+      // No need for separate plan counting - unified lgb_items table handles this automatically
+      // Moving Assistant tasks are now stored in lgb_items with scheduled_date
+      // The existing item_count field in lgb_sessions is updated by triggers
       
       // Debugging: also get direct sessions data to compare
       const { data: directSessions } = await client
@@ -131,13 +135,11 @@ export default function LetGoBuddyIndex({ loaderData }: Route.ComponentProps) {
   ];
 
   const getCompletionPercentage = (session: any) => {
-    // For Moving Assistant (scenario B), completion is based on plan generation
-    if (session.scenario === 'B') {
-      return session.ai_plan_generated ? 100 : 0;
-    }
-    
-    // For other scenarios, use item completion
+    // Unified completion logic for all scenarios
     if (session.item_count === 0) return 0;
+    
+    // For Moving Assistant (B): decided_count = completed tasks
+    // For other scenarios: decided_count = items with decisions
     return Math.round((session.decided_count / session.item_count) * 100);
   };
 
@@ -267,12 +269,12 @@ export default function LetGoBuddyIndex({ loaderData }: Route.ComponentProps) {
                       // Moving Assistant specific display
                       <>
                         <div className="flex justify-between">
-                          <span>Plans:</span>
-                          <span>{session.ai_plan_generated ? '1' : '0'}</span>
+                          <span>Tasks:</span>
+                          <span>{session.item_count || 0}</span>
                         </div>
                         <div className="flex justify-between">
-                          <span>Status:</span>
-                          <span>{session.ai_plan_generated ? 'Plan Generated' : 'Planning'}</span>
+                          <span>Completed:</span>
+                          <span>{session.decided_count || 0}/{session.item_count || 0}</span>
                         </div>
                         <div className="flex justify-between">
                           <span>Move Date:</span>
@@ -309,7 +311,7 @@ export default function LetGoBuddyIndex({ loaderData }: Route.ComponentProps) {
                     />
                   </div>
                   
-                  <Button asChild className="w-full">
+                  <Button asChild className="w-full bg-amber-200 hover:bg-amber-300" variant="secondary">
                     <Link to={`/let-go-buddy/session/${session.session_id}`}>
                       {session.status === 'completed' ? 'Session Completed' : 'Continue Session'}
                       <ArrowRight className="w-4 h-4 ml-2" />

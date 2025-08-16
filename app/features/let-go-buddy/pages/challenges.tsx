@@ -38,18 +38,29 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
   const sixtyDaysAhead = new Date(today);
   sixtyDaysAhead.setDate(today.getDate() + 60);
 
-  // Optimized query with date range
+  // Query unified lgb_items table for both Moving tasks and regular challenges
   const { data: challenges } = await client
-    .from('challenge_calendar_items')
-    .select('item_id, user_id, name, scheduled_date, completed, completed_at, reflection')
-    .eq('user_id', user.id)
+    .from('lgb_items')
+    .select(`
+      item_id, 
+      session_id,
+      title,
+      scheduled_date, 
+      completed, 
+      completed_at, 
+      reflection,
+      tip,
+      lgb_sessions!inner(user_id, scenario)
+    `)
+    .eq('lgb_sessions.user_id', user.id)
+    .not('scheduled_date', 'is', null) // Only items with scheduled dates (calendar items)
     .gte('scheduled_date', thirtyDaysAgo.toISOString())
     .lte('scheduled_date', sixtyDaysAhead.toISOString())
     .order('scheduled_date', { ascending: true });
 
-  // Separate challenges from moving tasks (identify by name prefix)
-  const regularChallenges = challenges?.filter(c => !c.name.startsWith('📦') && !c.name.startsWith('⚡')) || [];
-  const movingTasks = challenges?.filter(c => c.name.startsWith('📦') || c.name.startsWith('⚡')) || [];
+  // Separate challenges from moving tasks (identify by scenario type)
+  const regularChallenges = challenges?.filter(c => c.lgb_sessions.scenario !== 'B') || [];
+  const movingTasks = challenges?.filter(c => c.lgb_sessions.scenario === 'B') || [];
 
   return { 
     user,
@@ -71,17 +82,18 @@ export const action = async ({ request }: Route.ActionArgs) => {
       const reflection = formData.get('reflection') as string;
       
       const { error } = await client
-        .from('challenge_calendar_items')
+        .from('lgb_items')
         .update({
           completed: true,
           completed_at: new Date().toISOString(),
-          reflection: reflection || null
+          reflection: reflection || null,
+          updated_at: new Date().toISOString()
         })
-        .eq('item_id', parseInt(challengeId));
+        .eq('item_id', challengeId); // item_id is UUID in lgb_items, not integer
 
       if (error) throw error;
       
-      return { success: true, message: 'Challenge item completed!' };
+      return { success: true, message: 'Task completed!' };
     }
 
     return { success: true };
@@ -101,7 +113,7 @@ const TaskCard = memo(({ task, isSubmitting, navigation, getDaysFromScheduled }:
   const daysSinceScheduled = getDaysFromScheduled(task.scheduled_date);
   const isOverdue = daysSinceScheduled > 0 && !completed;
   const isToday = daysSinceScheduled === 0;
-  const isPriority = task.name.startsWith('⚡');
+  const isPriority = task.title.startsWith('⚡');
 
   return (
     <div className={`p-4 rounded-xl border-2 transition-all ${
@@ -115,7 +127,7 @@ const TaskCard = memo(({ task, isSubmitting, navigation, getDaysFromScheduled }:
         <div className="flex items-start justify-between gap-3">
           <div className="flex-1 min-w-0">
             <h4 className={`font-medium text-sm ${completed ? 'line-through text-gray-500' : 'text-gray-900'}`}>
-              {task.name?.replace(/^(📦|⚡)\s/, '') || 'Moving Task'}
+              {task.title?.replace(/^(📦|⚡)\s/, '') || 'Moving Task'}
             </h4>
             <div className="flex flex-wrap items-center gap-2 mt-2">
               {isPriority && (
@@ -438,8 +450,8 @@ export default function ChallengesPage({ loaderData }: Route.ComponentProps) {
                   const isCurrentMonth = viewMode === 'week' || day.getMonth() === currentDate.getMonth();
                   const isToday = day.toDateString() === new Date().toDateString();
                   const dayTasks = getTasksForDate(day);
-                  const hasMovingTasks = dayTasks.some(t => t.name.startsWith('📦') || t.name.startsWith('⚡'));
-                  const hasRegularTasks = dayTasks.some(t => !t.name.startsWith('📦') && !t.name.startsWith('⚡'));
+                  const hasMovingTasks = dayTasks.some(t => t.lgb_sessions.scenario === 'B');
+                  const hasRegularTasks = dayTasks.some(t => t.lgb_sessions.scenario !== 'B');
                   const completedTasks = dayTasks.filter(t => t.completed).length;
                   
                   return (
@@ -462,12 +474,12 @@ export default function ChallengesPage({ loaderData }: Route.ComponentProps) {
                         <div className="space-y-1">
                           {hasMovingTasks && (
                             <div className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-md font-medium">
-                              📦 Moving ({dayTasks.filter(t => t.name.startsWith('📦') || t.name.startsWith('⚡')).length})
+                              📦 Moving ({dayTasks.filter(t => t.lgb_sessions.scenario === 'B').length})
                             </div>
                           )}
                           {hasRegularTasks && (
                             <div className="text-xs bg-emerald-100 text-emerald-700 px-2 py-1 rounded-md font-medium">
-                              🎯 Challenges ({dayTasks.filter(t => !t.name.startsWith('📦') && !t.name.startsWith('⚡')).length})
+                              🎯 Challenges ({dayTasks.filter(t => t.lgb_sessions.scenario !== 'B').length})
                             </div>
                           )}
                           {completedTasks > 0 && (
@@ -568,7 +580,7 @@ export default function ChallengesPage({ loaderData }: Route.ComponentProps) {
                         <div className="flex-1 min-w-0">
                           <div className="flex flex-col gap-2">
                             <h3 className={`font-medium text-sm sm:text-base line-clamp-2 ${completed ? 'line-through text-gray-500' : ''}`}>
-                              {challenge.name || 'Daily Challenge'}
+                              {challenge.title || 'Daily Challenge'}
                             </h3>
                             <div className="flex flex-wrap items-center gap-1.5">
                               {isToday && !completed && <Badge variant="outline" className="text-teal-700 text-xs bg-teal-200">Today</Badge>}
