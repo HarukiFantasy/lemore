@@ -145,23 +145,30 @@ export function MovingAssistant({ session, onPlanGenerated }: MovingAssistantPro
 
       // Add user_id to all calendar entries
       const entriesWithUserId = calendarEntries.map(entry => ({
-        ...entry,
-        user_id: user.id
+        name: entry.name,
+        scheduled_date: entry.scheduled_date,
+        user_id: user.id,
+        completed: false
       }));
 
-      // Save all calendar entries to database
-      const { error } = await browserClient
-        .from('challenge_calendar_items')
-        .insert(entriesWithUserId);
+      console.log('Inserting calendar entries:', entriesWithUserId);
 
-      if (error) {
-        throw error;
+      // Insert calendar entries one by one to avoid bulk insert issues
+      for (const entry of entriesWithUserId) {
+        const { error: insertError } = await browserClient
+          .from('challenge_calendar_items')
+          .insert([entry]);
+        
+        if (insertError) {
+          console.error('Insert error for entry:', entry, insertError);
+          throw new Error(`Failed to add calendar entry: ${insertError.message}`);
+        }
       }
 
       setAddedToCalendar(true);
       toast({
         title: "Added to calendar!",
-        description: `${calendarEntries.length} moving tasks added to your challenge calendar`,
+        description: `${entriesWithUserId.length} moving tasks added to your challenge calendar`,
         className: "bg-green-50 border-green-200"
       });
 
@@ -327,7 +334,7 @@ export function MovingAssistant({ session, onPlanGenerated }: MovingAssistantPro
                 {!addedToCalendar ? (
                   <Button
                     onClick={addToCalendar}
-                    className="bg-purple-600 hover:bg-purple-700"
+                    className="bg-purple-300 hover:bg-purple-400 text-white"
                     disabled={isAddingToCalendar}
                   >
                     {isAddingToCalendar ? (
