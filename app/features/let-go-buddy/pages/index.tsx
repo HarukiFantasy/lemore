@@ -123,67 +123,89 @@ export default function LetGoBuddyIndex({ loaderData }: Route.ComponentProps) {
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50">
       {/* Hero Section */}
-      <div className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-purple-600/10 to-blue-600/10" />
+      <div className="relative overflow-hidden px-4 sm:px-6 py-6 sm:py-8 md:py-12">
+        {/* Background Image */}
+        <div className="absolute inset-0 z-0">
+          <img 
+            src="/searchbar_bg2.png" 
+            alt="Let Go Buddy Background" 
+            className="w-full h-full object-cover opacity-70"
+          />
+          {/* Overlay for better text readability */}
+          <div className="absolute inset-0 bg-gradient-to-br from-white/50 via-white/30 to-white/50"></div>
+        </div>
         
-        <div className="relative max-w-7xl mx-auto px-6 py-16 md:py-24">
-          <div className="text-center space-y-6 max-w-4xl mx-auto">
-            <div className="inline-flex items-center px-4 py-2 bg-purple-100 rounded-full text-purple-700 text-sm font-medium">
-              <Sparkles className="w-4 h-4 mr-2" />
-              AI-Powered Decluttering Assistant
-            </div>
+        <div className="relative z-10 max-w-4xl mx-auto text-center space-y-6">
+          <div className="inline-flex items-center px-4 py-2 bg-purple-100/80 backdrop-blur-sm rounded-full text-purple-700 text-sm font-medium">
+            <Sparkles className="w-4 h-4 mr-2" />
+            AI-Powered Decluttering Assistant
+          </div>
+          
+          {/* Main Heading */}
+          <div className="relative">
+            {/* Subtle background accent */}
+            <div className="absolute inset-0 bg-gradient-to-r from-purple-600/10 via-transparent to-blue-600/10 blur-2xl transform scale-110 opacity-50"></div>
             
-            <h1 className="text-4xl md:text-6xl font-bold text-gray-900 leading-tight">
-              Let Go with Confidence,
-              <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-blue-600">
+            <h1 
+              className="relative text-2xl sm:text-3xl md:text-5xl font-light leading-[1.1] tracking-tight"
+              style={{ fontFamily: "'Poppins', sans-serif" }}
+            >
+              <span className="inline font-normal text-transparent bg-clip-text bg-gradient-to-br from-stone-800 via-stone-700 to-stone-800">Let Go with Confidence, </span>
+              <span className="inline font-light bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
                 Live Lighter
+              </span>
+              <br />
+              <span className="inline-block text-[0.8em] font-extralight text-stone-700 opacity-90 mt-3">
+                Smart decluttering guidance
               </span>
             </h1>
             
-            <p className="text-xl text-gray-600 leading-relaxed max-w-2xl mx-auto">
-              Get smart, personalized guidance on what to keep, sell, donate, or dispose of. 
-              Turn decluttering from overwhelming to empowering.
-            </p>
+            {/* Subtle underline accent */}
+            <div className="mx-auto mt-3 w-20 h-0.5 bg-gradient-to-r from-purple-400 to-blue-400 rounded-full opacity-50"></div>
+          </div>
+            
+          <p className="text-lg sm:text-xl text-stone-600 leading-relaxed max-w-2xl mx-auto">
+            Get smart, personalized guidance on what to keep, sell, donate, or dispose of. 
+            Turn decluttering from overwhelming to empowering.
+          </p>
 
-            {user && (
-              <div className="space-y-6 pt-4">
-                <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                  <Button 
-                    asChild 
-                    size="lg"
-                    className="bg-purple-600 hover:bg-purple-700 text-white px-8 py-3"
-                    disabled={!canCreateNewSession.allowed}
-                  >
-                    <Link to="/let-go-buddy/new">
-                      <Sparkles className="w-5 h-5 mr-2" />
-                      Start New Session
-                    </Link>
-                  </Button>
-                  <Button asChild variant="outline" size="lg">
-                    <Link to="/let-go-buddy/challenges">
-                      <Calendar className="w-5 h-5 mr-2" />
-                      Daily Challenges
-                    </Link>
-                  </Button>
-                </div>
-              </div>
-            )}
-
-            {!user && (
-              <div className="pt-4">
-                <Button asChild size="lg" className="bg-purple-600 hover:bg-purple-700 text-white px-8 py-3">
-                  <Link to="/auth/join">
-                    Get Started Free
-                    <ArrowRight className="w-5 h-5 ml-2" />
+          {user && (
+            <div className="space-y-6 pt-4">
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <Button 
+                  asChild 
+                  size="lg"
+                  className="bg-stone-800 hover:bg-stone-700 text-white px-8 py-3 rounded-full"
+                  disabled={!canCreateNewSession.allowed}
+                >
+                  <Link to="/let-go-buddy/new">
+                    <Sparkles className="w-5 h-5 mr-2" />
+                    Start New Session
                   </Link>
                 </Button>
-                <p className="text-sm text-gray-500 mt-2">
-                  No credit card required • 2 free sessions
-                </p>
+                <Button asChild variant="outline" size="lg" className="rounded-full border-stone-300 text-stone-700 hover:bg-stone-50">
+                  <Link to="/let-go-buddy/challenges">
+                    <Calendar className="w-5 h-5 mr-2" />
+                    Daily Challenges
+                  </Link>
+                </Button>
               </div>
-            )}
-          </div>
+            </div>
+          )}
+
+          {!user && (
+            <div className="pt-4">
+              <Button asChild size="lg" className="bg-stone-800 hover:bg-stone-700 text-white px-8 py-3 rounded-full">
+                <Link to="/auth/join">
+                  Get Started Free
+                  <ArrowRight className="w-5 h-5 ml-2" />
+                </Link>
+              </Button>
+              <p className="text-sm text-stone-500 mt-2">
+                No credit card required • 2 free sessions
+              </p>
+            </div>
+          )}
         </div>
       </div>
 

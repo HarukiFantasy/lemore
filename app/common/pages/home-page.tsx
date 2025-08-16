@@ -383,8 +383,7 @@ export default function HomePage() {
             {displayedProducts && displayedProducts.length > 0 ? (
               displayedProducts.map((product: any, index: number) => (
                 <BlurFade key={product.product_id} delay={Math.min(index * 0.05, 0.3)}>
-                  <div className="transform transition-all duration-300 hover:scale-105 hover:shadow-xl rounded-lg">
-                    <ProductCard
+                  <ProductCard
                       productId={product.product_id}
                       image={product.primary_image || `/no_image.png`}
                       title={product.title || "No title"}
@@ -401,7 +400,6 @@ export default function HomePage() {
                       isLikedByUser={userLikedProducts?.includes(product.product_id) || false}
                       currentUserId={user?.id}
                     />
-                  </div>
                 </BlurFade>
               ))
             ) : (

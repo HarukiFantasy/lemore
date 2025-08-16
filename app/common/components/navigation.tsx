@@ -25,7 +25,7 @@ const menus = [
       {
         name: 'My Listings',
         description: 'Manage your active and sold items',
-        to: '/my/dashboard',
+        to: '/my/listings',
       },
       {
         name: 'My Likes',
@@ -324,11 +324,6 @@ export function Navigation({
                   <DropdownMenuItem asChild className="cursor-pointer">
                     <Link to="/my/profile">
                       <UserIcon className="w-4 h-4 mr-2" />Profile
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild className="cursor-pointer">
-                    <Link to="/my/likes">
-                      <HeartIcon className="w-4 h-4 mr-2" />Likes
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem 
