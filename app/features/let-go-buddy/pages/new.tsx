@@ -95,8 +95,7 @@ export const action = async ({ request }: Route.ActionArgs) => {
           p_scenario: scenario,
           p_title: title,
           p_move_date: move_date || undefined,
-          p_region: region || undefined,
-          p_trade_method: trade_method || null
+          p_region: region || undefined
         });
       
       if (rpcError) {
