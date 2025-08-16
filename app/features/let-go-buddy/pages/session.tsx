@@ -106,59 +106,8 @@ export const loader = async ({ request, params }: Route.LoaderArgs) => {
     .eq('session_id', sessionId)
     .order('created_at', { ascending: false });
 
-  // For Moving Assistant, get task counts from calendar
-  let taskStats = null;
-  if (session?.scenario === 'B') {
-    // For Moving Assistant, we need to find tasks that were likely created for this session
-    // Since tasks aren't directly linked to sessions, we'll look for moving tasks
-    // created around the time this session was active or for sessions with the same move_date
-    
-    let calendarTasks: any[] = [];
-    
-    if ((session as any).ai_plan_generated) {
-      // If a plan was generated for this session, look for moving tasks
-      const { data: allCalendarTasks, error: taskError } = await client
-        .from('challenge_calendar_items')
-        .select('item_id, completed, name, created_at')
-        .eq('user_id', user.id);
-      
-      // Filter for moving tasks (tasks that start with 📦 or ⚡)
-      calendarTasks = allCalendarTasks?.filter(task => 
-        task.name && (task.name.startsWith('📦') || task.name.startsWith('⚡'))
-      ) || [];
-      
-      console.log('Moving Assistant task query:', { 
-        allTasksCount: allCalendarTasks?.length || 0,
-        movingTasksCount: calendarTasks.length,
-        calendarTasks: calendarTasks.map(t => ({ name: t.name, completed: t.completed })), 
-        taskError, 
-        userId: user.id,
-        sessionScenario: session?.scenario,
-        sessionCreated: session?.created_at,
-        planGenerated: (session as any).ai_plan_generated
-      });
-    } else {
-      console.log('Moving Assistant session has no plan generated yet:', {
-        sessionId: session.session_id,
-        planGenerated: (session as any).ai_plan_generated
-      });
-    }
-    
-    // Always calculate stats, even if empty
-    const totalTasks = calendarTasks.length;
-    const completedTasks = calendarTasks.filter(task => task.completed).length;
-    const pendingTasks = totalTasks - completedTasks;
-    const priorityTasks = calendarTasks.filter(task => task.name && task.name.startsWith('⚡')).length;
-    
-    taskStats = {
-      total: totalTasks,
-      completed: completedTasks,
-      pending: pendingTasks,
-      priority: priorityTasks
-    };
-    
-    console.log('Calculated taskStats:', taskStats);
-  }
+  // Remove Moving Assistant stats calculation since it's not working properly
+  // Moving Assistant sessions will just use regular stats layout
   
   // Transform items to match expected format
   const items = (itemsData || []).map(item => ({
@@ -169,8 +118,7 @@ export const loader = async ({ request, params }: Route.LoaderArgs) => {
 
   return { 
     session,
-    items,
-    taskStats
+    items
   };
 };
 
@@ -222,10 +170,7 @@ export const action = async ({ request, params }: Route.ActionArgs) => {
 };
 
 export default function SessionPage({ loaderData }: Route.ComponentProps) {
-  const { session, items: initialItems, taskStats } = loaderData;
-  
-  // Debug taskStats on the client side
-  console.log('SessionPage taskStats:', taskStats, 'scenario:', session?.scenario);
+  const { session, items: initialItems } = loaderData;
   const revalidator = useRevalidator();
   const actionData = useActionData<typeof action>();
   const navigation = useNavigation();
@@ -308,111 +253,57 @@ export default function SessionPage({ loaderData }: Route.ComponentProps) {
                 Scenario {session?.scenario || 'A'} • Created {session?.created_at ? new Date(session.created_at).toLocaleDateString() : 'Unknown'}
               </p>
 
-              {/* Quick Stats */}
+              {/* Quick Stats - Regular Item Stats for all scenarios */}
               <div className="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
-                {session?.scenario === 'B' ? (
-                  // Moving Assistant Stats
-                  <>
-                    <div className="bg-white p-4 rounded-lg shadow-sm">
-                      <div className="flex items-center">
-                        <Calendar className="w-5 h-5 text-blue-500 mr-2" />
-                        <div>
-                          <div className="text-2xl font-bold">{taskStats?.total || 0}</div>
-                          <div className="text-sm text-gray-600">Total Tasks</div>
-                        </div>
-                      </div>
+                <div className="bg-white p-4 rounded-lg shadow-sm">
+                  <div className="flex items-center">
+                    <Package className="w-5 h-5 text-blue-500 mr-2" />
+                    <div>
+                      <div className="text-2xl font-bold">{session?.item_count || 0}</div>
+                      <div className="text-sm text-gray-600">Items</div>
                     </div>
+                  </div>
+                </div>
 
-                    <div className="bg-white p-4 rounded-lg shadow-sm">
-                      <div className="flex items-center">
-                        <Target className="w-5 h-5 text-green-500 mr-2" />
-                        <div>
-                          <div className="text-2xl font-bold">{taskStats?.completed || 0}</div>
-                          <div className="text-sm text-gray-600">Completed</div>
-                        </div>
-                      </div>
+                <div className="bg-white p-4 rounded-lg shadow-sm">
+                  <div className="flex items-center">
+                    <Target className="w-5 h-5 text-green-500 mr-2" />
+                    <div>
+                      <div className="text-2xl font-bold">{session?.decided_count || 0}</div>
+                      <div className="text-sm text-gray-600">Decided</div>
                     </div>
+                  </div>
+                </div>
 
-                    <div className="bg-white p-4 rounded-lg shadow-sm">
-                      <div className="flex items-center">
-                        <Package className="w-5 h-5 text-orange-500 mr-2" />
-                        <div>
-                          <div className="text-2xl font-bold">{taskStats?.pending || 0}</div>
-                          <div className="text-sm text-gray-600">Pending</div>
-                        </div>
+                <div className="bg-white p-4 rounded-lg shadow-sm">
+                  <div className="flex items-center">
+                    <DollarSign className="w-5 h-5 text-purple-500 mr-2" />
+                    <div>
+                      <div className="text-2xl font-bold">
+                        ${session?.expected_revenue?.toFixed(0) || '0'}
                       </div>
+                      <div className="text-sm text-gray-600">Expected</div>
                     </div>
+                  </div>
+                </div>
 
-                    <div className="bg-white p-4 rounded-lg shadow-sm">
-                      <div className="flex items-center">
-                        <BarChart3 className="w-5 h-5 text-purple-500 mr-2" />
-                        <div>
-                          <div className="text-2xl font-bold">
-                            {taskStats?.total ? Math.round((taskStats.completed / taskStats.total) * 100) : 0}%
-                          </div>
-                          <div className="text-sm text-gray-600">Progress</div>
-                        </div>
-                      </div>
+                <div className="bg-white p-4 rounded-lg shadow-sm">
+                  <div className="flex items-center">
+                    <BarChart3 className="w-5 h-5 text-orange-500 mr-2" />
+                    <div>
+                      <div className="text-2xl font-bold">{getCompletionPercentage()}%</div>
+                      <div className="text-sm text-gray-600">Complete</div>
                     </div>
-                  </>
-                ) : (
-                  // Regular Item Stats
-                  <>
-                    <div className="bg-white p-4 rounded-lg shadow-sm">
-                      <div className="flex items-center">
-                        <Package className="w-5 h-5 text-blue-500 mr-2" />
-                        <div>
-                          <div className="text-2xl font-bold">{session?.item_count || 0}</div>
-                          <div className="text-sm text-gray-600">Items</div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="bg-white p-4 rounded-lg shadow-sm">
-                      <div className="flex items-center">
-                        <Target className="w-5 h-5 text-green-500 mr-2" />
-                        <div>
-                          <div className="text-2xl font-bold">{session?.decided_count || 0}</div>
-                          <div className="text-sm text-gray-600">Decided</div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="bg-white p-4 rounded-lg shadow-sm">
-                      <div className="flex items-center">
-                        <DollarSign className="w-5 h-5 text-purple-500 mr-2" />
-                        <div>
-                          <div className="text-2xl font-bold">
-                            ${session?.expected_revenue?.toFixed(0) || '0'}
-                          </div>
-                          <div className="text-sm text-gray-600">Expected</div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="bg-white p-4 rounded-lg shadow-sm">
-                      <div className="flex items-center">
-                        <BarChart3 className="w-5 h-5 text-orange-500 mr-2" />
-                        <div>
-                          <div className="text-2xl font-bold">{getCompletionPercentage()}%</div>
-                          <div className="text-sm text-gray-600">Complete</div>
-                        </div>
-                      </div>
-                    </div>
-                  </>
-                )}
+                  </div>
+                </div>
               </div>
 
               {/* Progress Bar */}
-              {(session?.scenario === 'B' ? (taskStats?.total || 0) > 0 : (session?.item_count || 0) > 0) && (
+              {(session?.item_count || 0) > 0 && (
                 <div className="w-full bg-gray-200 rounded-full h-3 mb-6">
                   <div 
                     className="bg-blue-500 h-3 rounded-full transition-all"
-                    style={{ 
-                      width: session?.scenario === 'B' 
-                        ? `${taskStats?.total ? Math.round((taskStats.completed / taskStats.total) * 100) : 0}%`
-                        : `${getCompletionPercentage()}%`
-                    }}
+                    style={{ width: `${getCompletionPercentage()}%` }}
                   />
                 </div>
               )}

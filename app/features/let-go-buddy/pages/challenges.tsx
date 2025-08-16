@@ -177,7 +177,7 @@ export default function ChallengesPage({ loaderData }: Route.ComponentProps) {
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-purple-50">
       {/* Header */}
-      <div className="bg-white shadow-sm">
+      <div className="bg-white border-b border-gray-100">
         <div className="max-w-6xl mx-auto px-6 py-8">
           <Button variant="ghost" asChild className="mb-4">
             <Link to="/let-go-buddy">
@@ -191,9 +191,22 @@ export default function ChallengesPage({ loaderData }: Route.ComponentProps) {
               <h1 className="text-3xl font-bold text-gray-900 mb-2">
                 Daily Challenges
               </h1>
-              <p className="text-xl text-gray-600">
+              <p className="text-xl text-gray-600 mb-6">
                 Build consistent decluttering habits with daily goals
               </p>
+              
+              {/* Challenge Tips */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <Badge variant="outline" className="w-fit bg-blue-50 border-blue-200 text-blue-700">
+                  Start Small: Even 1 item per day builds momentum
+                </Badge>
+                <Badge variant="outline" className="w-fit bg-green-50 border-green-200 text-green-700">
+                  Be Consistent: Daily action beats weekend marathons
+                </Badge>
+                <Badge variant="outline" className="w-fit bg-purple-50 border-purple-200 text-purple-700">
+                  Track Progress: Reflections help you see patterns and wins
+                </Badge>
+              </div>
             </div>
             
             <div className="flex gap-3">
@@ -201,13 +214,13 @@ export default function ChallengesPage({ loaderData }: Route.ComponentProps) {
                 onClick={() => setShowCalendar(!showCalendar)}
                 size="lg" 
                 variant={showCalendar ? "default" : "outline"}
-                className={showCalendar ? "bg-purple-600 hover:bg-purple-700 text-white" : ""}
+                className={showCalendar ? "bg-purple-500 hover:bg-purple-600 text-white" : ""}
               >
                 <Calendar className="w-5 h-5 mr-2" />
                 {showCalendar ? "List View" : "Calendar View"}
               </Button>
               
-              <Button asChild size="lg" className="bg-pink-600 hover:bg-pink-700 text-white">
+              <Button asChild size="lg" className="bg-pink-500 hover:bg-pink-600 text-white">
                 <Link to="/let-go-buddy/new?scenario=C">
                   <Plus className="w-5 h-5 mr-2" />
                   New Challenge
@@ -360,7 +373,7 @@ export default function ChallengesPage({ loaderData }: Route.ComponentProps) {
                 </Badge>
               </div>
 
-              <div className="grid gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                 {movingTasks.map((task) => {
                   const completed = task.completed;
                   const daysSinceScheduled = getDaysFromScheduled(task.scheduled_date);
@@ -408,7 +421,7 @@ export default function ChallengesPage({ loaderData }: Route.ComponentProps) {
                             <Form method="post" className="flex items-center gap-2">
                               <input type="hidden" name="action" value="complete_item" />
                               <input type="hidden" name="challengeId" value={task.item_id.toString()} />
-                              <Button type="submit" size="sm" className="bg-purple-600 hover:bg-purple-700 text-white" disabled={isSubmitting}>
+                              <Button type="submit" size="sm" className="bg-purple-500 hover:bg-purple-600 text-white" disabled={isSubmitting}>
                                 {isSubmitting && navigation.formData?.get('challengeId') === task.item_id.toString() ? (
                                   <Loader2 className="w-4 h-4 animate-spin" />
                                 ) : (
@@ -435,7 +448,7 @@ export default function ChallengesPage({ loaderData }: Route.ComponentProps) {
           {regularChallenges.length > 0 && (
             <div>
               <h2 className="text-2xl font-semibold text-gray-900 mb-6">Daily Challenges</h2>
-              <div className="space-y-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {regularChallenges.map((challenge) => {
                   const completed = challenge.completed;
                   const daysSinceScheduled = getDaysFromScheduled(challenge.scheduled_date);
@@ -510,7 +523,7 @@ export default function ChallengesPage({ loaderData }: Route.ComponentProps) {
                                 />
                               </div>
                               
-                              <Button type="submit" className="w-full bg-pink-600 hover:bg-pink-700 text-white" disabled={isSubmitting}>
+                              <Button type="submit" className="w-full bg-pink-500 hover:bg-pink-600 text-white" disabled={isSubmitting}>
                                 {isSubmitting && navigation.formData?.get('action') === 'complete_challenge' ? (
                                   <>
                                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -559,7 +572,7 @@ export default function ChallengesPage({ loaderData }: Route.ComponentProps) {
                 Start your first decluttering challenge or create a moving plan to get organized tasks in your calendar.
               </p>
               <div className="flex gap-4 justify-center">
-                <Button asChild size="lg" className="bg-pink-600 hover:bg-pink-700">
+                <Button asChild size="lg" className="bg-pink-500 hover:bg-pink-600">
                   <Link to="/let-go-buddy/new?scenario=C">
                     <Plus className="w-5 h-5 mr-2" />
                     Start Challenge
@@ -576,24 +589,6 @@ export default function ChallengesPage({ loaderData }: Route.ComponentProps) {
           )}
         </div>
 
-        {/* Tips Section */}
-        <Card className="p-6 mt-8 bg-gradient-to-r from-pink-50 to-purple-50">
-          <h3 className="text-lg font-semibold mb-4 flex items-center">
-            <Calendar className="w-5 h-5 mr-2 text-pink-600" />
-            Challenge Tips
-          </h3>
-          <div className="grid md:grid-cols-3 gap-4 text-sm text-gray-700">
-            <div>
-              <strong>Start Small:</strong> Even 1 item per day builds momentum
-            </div>
-            <div>
-              <strong>Be Consistent:</strong> Daily action beats weekend marathons
-            </div>
-            <div>
-              <strong>Track Progress:</strong> Reflections help you see patterns and wins
-            </div>
-          </div>
-        </Card>
       </div>
     </div>
   );
