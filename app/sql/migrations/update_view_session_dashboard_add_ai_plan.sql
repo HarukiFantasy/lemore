@@ -1,5 +1,5 @@
--- Let Go Buddy Session Dashboard View
--- This view provides session summary data for the dashboard
+-- Update view_session_dashboard to include ai_plan_generated fields
+-- This fixes the issue where Moving Assistant sessions don't show proper completion status
 
 DROP VIEW IF EXISTS view_session_dashboard CASCADE;
 

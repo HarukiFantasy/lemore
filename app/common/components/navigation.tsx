@@ -13,9 +13,24 @@ const menus = [
     to: '/secondhand',
     items: [
       {
+        name: 'Browse Items',
+        description: 'Discover preloved treasures from your community',
+        to: '/',
+      },
+      {
         name: 'Submit a Listing',
         description: 'Sell your stuff. Make some cash',
         to: '/secondhand/submit-a-listing',
+      },
+      {
+        name: 'My Listings',
+        description: 'Manage your active and sold items',
+        to: '/my/dashboard',
+      },
+      {
+        name: 'My Likes',
+        description: 'Items you\'ve saved for later',
+        to: '/my/likes',
       },
     ],
   },
