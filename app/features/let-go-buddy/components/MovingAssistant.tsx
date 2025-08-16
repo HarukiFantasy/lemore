@@ -334,7 +334,7 @@ export function MovingAssistant({ session, onPlanGenerated }: MovingAssistantPro
                 {!addedToCalendar ? (
                   <Button
                     onClick={addToCalendar}
-                    className="bg-purple-300 hover:bg-purple-400 text-white"
+                    className="bg-purple-500 hover:bg-purple-600 text-white"
                     disabled={isAddingToCalendar}
                   >
                     {isAddingToCalendar ? (
