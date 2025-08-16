@@ -202,11 +202,11 @@ Please analyze this item and provide recommendations. I've included ${validatedD
         errorMessage = 'Analysis timed out. Please try with smaller images.';
       } 
       // Handle OpenAI specific errors (including BadRequestError from OpenAI SDK)
-      else if ('code' in error || 
+      else if (('code' in error && typeof error === 'object') || 
                (error instanceof Error && error.message.includes('Timeout while downloading')) ||
                (error?.constructor?.name === 'BadRequestError') ||
                (error instanceof Error && error.toString().includes('Timeout while downloading'))) {
-        if (error.code === 'invalid_image_url' || 
+        if (('code' in error && (error as any).code === 'invalid_image_url') || 
             (error instanceof Error && error.message.includes('Timeout while downloading')) ||
             (error?.constructor?.name === 'BadRequestError' && error.toString().includes('Timeout while downloading')) ||
             ('error' in error && typeof error.error === 'object' && error.error && 

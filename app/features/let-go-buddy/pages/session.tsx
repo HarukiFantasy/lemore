@@ -22,6 +22,7 @@ import { makeSSRClient, getAuthUser, browserClient } from '~/supa-client';
 import { ItemUploader } from '../components/ItemUploader';
 import { ItemCard } from '../components/ItemCard';
 import { ListingComposer } from '../components/ListingComposer';
+import { MovingAssistant } from '../components/MovingAssistant';
 import { saveListingsToDatabase } from '../utils/listings';
 
 export const meta: Route.MetaFunction = ({ params }) => {
@@ -467,8 +468,20 @@ export default function SessionPage({ loaderData }: Route.ComponentProps) {
           </Card>
         )}
 
-        {/* Regular Item Upload Section (for other scenarios) */}
-        {session?.scenario !== 'E' && session?.status === 'active' && (
+        {/* Moving Assistant Section for Scenario B */}
+        {session?.scenario === 'B' && session?.status === 'active' && (
+          <MovingAssistant 
+            session={session}
+            onPlanGenerated={(plan) => {
+              console.log('Moving plan generated:', plan);
+              // Optionally refresh to show updated session
+              revalidator.revalidate();
+            }}
+          />
+        )}
+
+        {/* Regular Item Upload Section (for scenarios A and C) */}
+        {session?.scenario !== 'E' && session?.scenario !== 'B' && session?.status === 'active' && (
           <Card className="p-6 mb-8">
             <h2 className="text-xl font-semibold mb-4 flex items-center">
               <Plus className="w-5 h-5 mr-2" />
@@ -581,10 +594,11 @@ export default function SessionPage({ loaderData }: Route.ComponentProps) {
                       })
                       .eq('item_id', itemId);
 
-                    // Remove from uploading items without revalidating (avoid page refresh)
+                    // Remove from uploading items and refresh to show the saved item
                     setTimeout(() => {
                       setUploadingItems(prev => prev.filter(item => item.item_id !== itemId));
-                    }, 1000);
+                      revalidator.revalidate();
+                    }, 1500);
 
                     return; // Exit early, don't call AI API
                   }
@@ -670,12 +684,12 @@ export default function SessionPage({ loaderData }: Route.ComponentProps) {
                       : item
                   ));
                   
-                  // Remove from uploading items and update state locally to avoid page refresh
+                  // Remove from uploading items and refresh to show the saved item
                   setTimeout(() => {
                     setUploadingItems(prev => prev.filter(item => item.item_id !== itemId));
-                    // Only revalidate if needed to get fresh data (comment out to reduce refreshes)
-                    // revalidator.revalidate();
-                  }, 1000);
+                    // Revalidate to get fresh data from database and show the item properly
+                    revalidator.revalidate();
+                  }, 1500);
 
                 } catch (error) {
                   console.error('Error processing item:', error);
@@ -736,7 +750,7 @@ export default function SessionPage({ loaderData }: Route.ComponentProps) {
         )}
 
         {/* Items Grid */}
-        {session?.scenario !== 'E' && (
+        {session?.scenario !== 'E' && session?.scenario !== 'B' && (
           <div className="space-y-6">
             <div className="flex items-center justify-between">
               <h2 className="text-2xl font-semibold">

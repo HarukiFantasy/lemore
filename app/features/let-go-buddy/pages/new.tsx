@@ -141,7 +141,7 @@ export default function NewSession({ loaderData }: Route.ComponentProps) {
     B: {
       title: 'Moving Assistant', 
       description: 'Plan your move with timeline',
-      fields: ['title', 'move_date', 'region', 'trade_method']
+      fields: ['title', 'move_date', 'region']
     },
     C: {
       title: 'Declutter Challenge',
