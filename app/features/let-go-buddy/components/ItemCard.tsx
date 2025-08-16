@@ -24,6 +24,7 @@ import type { ItemCardProps, ItemDecision } from '../types';
 import { DecisionBar } from './DecisionBar';
 import { DonationModal } from './DonationModal';
 import { ListingComposer } from './ListingComposer';
+import { saveListingsToDatabase } from '../utils/listings';
 
 export function ItemCard({ 
   item, 
@@ -505,9 +506,22 @@ export function ItemCard({
           <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
             <ListingComposer
               item={item}
-              onListingGenerate={(listings) => {
+              onListingGenerate={async (listings) => {
                 console.log('Generated listings for item:', item.item_id, listings);
-                // TODO: Save listings to database
+                
+                // Save listings to database
+                const saveResult = await saveListingsToDatabase(listings);
+                if (saveResult.success) {
+                  console.log('Listings successfully saved to database');
+                } else {
+                  console.error('Failed to save listings to database:', saveResult.error);
+                  toast({
+                    title: "Save Error",
+                    description: `Failed to save listings: ${saveResult.error}`,
+                    variant: "destructive"
+                  });
+                }
+                
                 setShowListingGenerator(false);
               }}
               languages={['en']}

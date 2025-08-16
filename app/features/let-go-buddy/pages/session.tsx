@@ -3,6 +3,7 @@ import { Link, Form, useActionData, redirect, useRevalidator } from 'react-route
 import { Button } from '~/common/components/ui/button';
 import { Card } from '~/common/components/ui/card';
 import { Badge } from '~/common/components/ui/badge';
+import { useToast } from '~/common/components/ui/use-toast';
 import { 
   ArrowLeft,
   Plus,
@@ -21,6 +22,7 @@ import { makeSSRClient, getAuthUser, browserClient } from '~/supa-client';
 import { ItemUploader } from '../components/ItemUploader';
 import { ItemCard } from '../components/ItemCard';
 import { ListingComposer } from '../components/ListingComposer';
+import { saveListingsToDatabase } from '../utils/listings';
 
 export const meta: Route.MetaFunction = ({ params }) => {
   return [
@@ -162,6 +164,7 @@ export default function SessionPage({ loaderData }: Route.ComponentProps) {
   const { session, items: initialItems } = loaderData;
   const revalidator = useRevalidator();
   const actionData = useActionData<typeof action>();
+  const { toast } = useToast();
   const [uploadingItems, setUploadingItems] = useState<any[]>([]);
   const [aiUsage, setAiUsage] = useState<{ used: number; max: number; limitReached: boolean }>({ used: 0, max: 2, limitReached: false });
 
@@ -445,8 +448,19 @@ export default function SessionPage({ loaderData }: Route.ComponentProps) {
               item={null}
               onListingGenerate={async (listings) => {
                 console.log('Generated listings for session:', listings);
-                // TODO: Save to database if needed
-                // For now, listings are shown in the component
+                
+                // Save listings to database
+                const saveResult = await saveListingsToDatabase(listings);
+                if (saveResult.success) {
+                  console.log('Listings successfully saved to database for session');
+                } else {
+                  console.error('Failed to save listings to database:', saveResult.error);
+                  toast({
+                    title: "Save Error",
+                    description: `Failed to save listings: ${saveResult.error}`,
+                    variant: "destructive"
+                  });
+                }
               }}
               languages={['en']}
             />

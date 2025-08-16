@@ -119,11 +119,12 @@ export function ListingComposer({
       if (onListingGenerate && result.data.listings) {
         const listingsArray = Object.entries(result.data.listings).map(([lang, listing]: [string, any]) => ({
           listing_id: `${Date.now()}-${lang}`,
-          item_id: item?.item_id || null,
+          item_id: item?.item_id || 'standalone', // Use 'standalone' for items without specific IDs
           lang: lang as Language,
           title: listing.title,
           body: listing.body,
-          hashtags: listing.hashtags,
+          hashtags: listing.hashtags || [],
+          channels: [], // Default empty channels array
           created_at: new Date().toISOString()
         }));
         onListingGenerate(listingsArray);
@@ -171,7 +172,7 @@ export function ListingComposer({
       title: listing.title,
       description: listing.body,
       category: item?.category || 'Other',
-      images: JSON.stringify(item?.photos || []),
+      images: JSON.stringify('photos' in (item || {}) ? (item as any).photos : []),
       price_mid: item?.price_mid?.toString() || ''
     });
     window.open(`/secondhand/submit-a-listing?${params.toString()}`, '_blank');
