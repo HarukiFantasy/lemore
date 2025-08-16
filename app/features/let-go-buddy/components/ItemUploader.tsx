@@ -3,6 +3,7 @@ import { Upload, X, Image as ImageIcon, Loader2 } from 'lucide-react';
 import { Button } from '~/common/components/ui/button';
 import { useToast } from '~/common/components/ui/use-toast';
 import { browserClient } from '~/supa-client';
+import { getAIUsageCount } from '../utils/aiUsage';
 import type { ItemUploaderProps } from '../types';
 
 export function ItemUploader({ 
@@ -126,33 +127,16 @@ export function ItemUploader({
         return;
       }
 
-      // Count user's AI analyses
-      const { data: userSessions } = await browserClient
-        .from('lgb_sessions')
-        .select('session_id')
-        .eq('user_id', user.id);
-      
-      const sessionIds = userSessions?.map(s => s.session_id) || [];
-      
-      const { count: analysisCount } = await browserClient
-        .from('lgb_items')
-        .select('item_id', { count: 'exact' })
-        .in('session_id', sessionIds.length > 0 ? sessionIds : ['dummy'])
-        .not('ai_recommendation', 'is', null)
-        .not('ai_rationale', 'like', '%AI analysis limit reached%')
-        .not('ai_rationale', 'like', '%Analysis Failed%')
-        .neq('ai_rationale', 'Analyzing...'); // Count only successfully analyzed items
-
-      const maxFreeAnalyses = 2;
-      const usedAnalyses = analysisCount || 0;
-      const canAnalyze = usedAnalyses < maxFreeAnalyses;
+      // Check AI usage limits (including item analyses and moving plans)
+      const aiUsage = await getAIUsageCount(user.id);
+      const canAnalyze = aiUsage.canUse;
 
       if (!canAnalyze) {
         console.log('AI limit reached, allowing manual upload without analysis');
         // Don't return here - allow manual upload without AI analysis
         toast({
           title: "Manual Upload Mode",
-          description: `AI analysis limit reached (${usedAnalyses}/${maxFreeAnalyses}). Upload will continue without AI recommendations.`,
+          description: `AI limit reached (${aiUsage.total}/${aiUsage.maxFree} used: ${aiUsage.itemAnalyses} analyses + ${aiUsage.movingPlans} plans). Upload continues without AI.`,
           className: "bg-amber-50 border-amber-200"
         });
       }

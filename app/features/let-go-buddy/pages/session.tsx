@@ -24,6 +24,7 @@ import { ItemCard } from '../components/ItemCard';
 import { ListingComposer } from '../components/ListingComposer';
 import { MovingAssistant } from '../components/MovingAssistant';
 import { saveListingsToDatabase } from '../utils/listings';
+import { getAIUsageCount } from '../utils/aiUsage';
 
 export const meta: Route.MetaFunction = ({ params }) => {
   return [
@@ -176,27 +177,12 @@ export default function SessionPage({ loaderData }: Route.ComponentProps) {
         const { data: { user } } = await browserClient.auth.getUser();
         if (!user) return;
 
-        const { data: userSessions } = await browserClient
-          .from('lgb_sessions')
-          .select('session_id')
-          .eq('user_id', user.id);
-        
-        const sessionIds = userSessions?.map(s => s.session_id) || [];
-        
-        const { count: analysisCount } = await browserClient
-          .from('lgb_items')
-          .select('item_id', { count: 'exact' })
-          .in('session_id', sessionIds.length > 0 ? sessionIds : ['dummy'])
-          .not('ai_recommendation', 'is', null)
-          .not('ai_rationale', 'like', '%AI analysis limit reached%')
-          .not('ai_rationale', 'like', '%Analysis Failed%')
-          .neq('ai_rationale', 'Analyzing...');
-
-        const maxFreeAnalyses = 2;
-        const usedAnalyses = analysisCount || 0;
-        const limitReached = usedAnalyses >= maxFreeAnalyses;
-
-        setAiUsage({ used: usedAnalyses, max: maxFreeAnalyses, limitReached });
+        const aiUsage = await getAIUsageCount(user.id);
+        setAiUsage({ 
+          used: aiUsage.total, 
+          max: aiUsage.maxFree, 
+          limitReached: !aiUsage.canUse 
+        });
       } catch (error) {
         console.error('Error checking AI usage:', error);
       }
@@ -544,29 +530,12 @@ export default function SessionPage({ loaderData }: Route.ComponentProps) {
                     return;
                   }
 
-                  // Count user's AI analyses directly
-                  const { data: userSessions } = await browserClient
-                    .from('lgb_sessions')
-                    .select('session_id')
-                    .eq('user_id', user.id);
-                  
-                  const sessionIds = userSessions?.map(s => s.session_id) || [];
-                  
-                  const { count: analysisCount } = await browserClient
-                    .from('lgb_items')
-                    .select('item_id', { count: 'exact' })
-                    .in('session_id', sessionIds.length > 0 ? sessionIds : ['dummy'])
-                    .not('ai_recommendation', 'is', null)
-                    .not('ai_rationale', 'like', '%AI analysis limit reached%')
-                    .not('ai_rationale', 'like', '%Analysis Failed%')
-                    .neq('ai_rationale', 'Analyzing...'); // Count only successfully analyzed items
-
-                  const maxFreeAnalyses = 2;
-                  const usedAnalyses = analysisCount || 0;
-                  const canAnalyze = usedAnalyses < maxFreeAnalyses;
+                  // Check AI usage limits (including item analyses and moving plans)
+                  const aiUsage = await getAIUsageCount(user.id);
+                  const canAnalyze = aiUsage.canUse;
 
                   if (!canAnalyze) {
-                    console.log('AI analysis limit reached:', { used: usedAnalyses, max: maxFreeAnalyses });
+                    console.log('AI analysis limit reached:', { used: aiUsage.total, max: aiUsage.maxFree });
                     // Show limit reached message and don't perform analysis
                     const basicItem = {
                       item_id: itemId,
@@ -576,7 +545,7 @@ export default function SessionPage({ loaderData }: Route.ComponentProps) {
                       category: 'Other',
                       status: 'limit_reached',
                       ai_recommendation: 'keep',
-                      ai_rationale: `AI analysis limit reached (${usedAnalyses}/${maxFreeAnalyses}). You can still make decisions manually.`,
+                      ai_rationale: `AI analysis limit reached (${aiUsage.total}/${aiUsage.maxFree}). You can still make decisions manually.`,
                       created_at: new Date().toISOString()
                     };
                     setUploadingItems(prev => [...prev, basicItem]);
@@ -589,7 +558,7 @@ export default function SessionPage({ loaderData }: Route.ComponentProps) {
                         category: 'Other',
                         condition: 'Good',
                         ai_recommendation: 'keep',
-                        ai_rationale: `AI analysis limit reached (${usedAnalyses}/${maxFreeAnalyses}). You can still make decisions manually.`,
+                        ai_rationale: `AI analysis limit reached (${aiUsage.total}/${aiUsage.maxFree}). You can still make decisions manually.`,
                         updated_at: new Date().toISOString()
                       })
                       .eq('item_id', itemId);
@@ -612,7 +581,7 @@ export default function SessionPage({ loaderData }: Route.ComponentProps) {
                     category: 'Analyzing',
                     status: 'analyzing',
                     ai_recommendation: null,
-                    ai_rationale: `AI is analyzing your item... (${usedAnalyses + 1}/${maxFreeAnalyses} analyses used)`,
+                    ai_rationale: `AI is analyzing your item... (${aiUsage.total + 1}/${aiUsage.maxFree} analyses used)`,
                     created_at: new Date().toISOString()
                   };
                   setUploadingItems(prev => [...prev, tempItem]);

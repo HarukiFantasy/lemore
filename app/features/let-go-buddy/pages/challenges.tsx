@@ -35,9 +35,9 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
     .eq('user_id', user.id)
     .order('scheduled_date', { ascending: true });
 
-  // Separate challenges from moving tasks
-  const regularChallenges = challenges?.filter(c => !c.challenge_type || c.challenge_type === 'challenge') || [];
-  const movingTasks = challenges?.filter(c => c.challenge_type === 'moving_task' || c.challenge_type === 'moving_priority') || [];
+  // Separate challenges from moving tasks (identify by name prefix)
+  const regularChallenges = challenges?.filter(c => !c.name.startsWith('📦') && !c.name.startsWith('⚡')) || [];
+  const movingTasks = challenges?.filter(c => c.name.startsWith('📦') || c.name.startsWith('⚡')) || [];
 
   return { 
     user,
@@ -164,7 +164,7 @@ export default function ChallengesPage({ loaderData }: Route.ComponentProps) {
                   const daysSinceScheduled = getDaysFromScheduled(task.scheduled_date);
                   const isOverdue = daysSinceScheduled > 0 && !completed;
                   const isToday = daysSinceScheduled === 0;
-                  const isPriority = task.challenge_type === 'moving_priority';
+                  const isPriority = task.name.startsWith('⚡');
 
                   return (
                     <Card key={task.item_id} className={`p-4 ${

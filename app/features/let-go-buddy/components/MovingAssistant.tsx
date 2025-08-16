@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import { ItemUploader } from './ItemUploader';
 import { browserClient } from '~/supa-client';
+import { getAIUsageCount } from '../utils/aiUsage';
 import type { LgbSession } from '../types';
 
 interface MovingCategory {
@@ -115,11 +116,8 @@ export function MovingAssistant({ session, onPlanGenerated }: MovingAssistantPro
               taskDate.setDate(weekStartDate.getDate() + taskIndex + 1); // Spread tasks across the week
               
               calendarEntries.push({
-                name: `📦 ${task}`,
-                scheduled_date: taskDate.toISOString(),
-                challenge_type: 'moving_task',
-                moving_week: week.week,
-                priority: week.priority || 'medium'
+                name: `📦 Week ${week.week}: ${task}`,
+                scheduled_date: taskDate.toISOString()
               });
             }
           }
@@ -133,10 +131,8 @@ export function MovingAssistant({ session, onPlanGenerated }: MovingAssistantPro
         
         for (const actionItem of movingPlan.actionItems) {
           calendarEntries.push({
-            name: `⚡ ${actionItem}`,
-            scheduled_date: urgentDate.toISOString(),
-            challenge_type: 'moving_priority',
-            priority: 'high'
+            name: `⚡ PRIORITY: ${actionItem}`,
+            scheduled_date: urgentDate.toISOString()
           });
         }
       }
@@ -191,6 +187,27 @@ export function MovingAssistant({ session, onPlanGenerated }: MovingAssistantPro
       return;
     }
 
+    // Check AI usage limits before generating plan
+    const { data: { user } } = await browserClient.auth.getUser();
+    if (!user) {
+      toast({
+        title: "Authentication required",
+        description: "Please log in to generate a moving plan",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const aiUsage = await getAIUsageCount(user.id);
+    if (!aiUsage.canUse) {
+      toast({
+        title: "AI Usage Limit Reached",
+        description: `You've used ${aiUsage.total}/${aiUsage.maxFree} free AI features (${aiUsage.itemAnalyses} item analyses + ${aiUsage.movingPlans} moving plans). Please contact support for more.`,
+        variant: "destructive"
+      });
+      return;
+    }
+
     setIsGeneratingPlan(true);
     
     try {
@@ -224,23 +241,18 @@ export function MovingAssistant({ session, onPlanGenerated }: MovingAssistantPro
       const result = await response.json();
       setMovingPlan(result.data);
       
-      // TODO: Save plan to database when table is created
-      // await browserClient
-      //   .from('lgb_moving_plans')
-      //   .insert({
-      //     session_id: session.session_id,
-      //     plan_data: result.data,
-      //     inventory_summary: inventory
-      //   });
+      // Mark session as having AI plan generated (using generic update)
+      await browserClient
+        .from('lgb_sessions')
+        .update({
+          ai_plan_generated: true,
+          ai_plan_generated_at: new Date().toISOString()
+        } as any)
+        .eq('session_id', session.session_id);
 
       if (onPlanGenerated) {
         onPlanGenerated(result.data);
       }
-
-      toast({
-        title: "Moving plan generated!",
-        description: "Your personalized moving schedule is ready"
-      });
 
     } catch (error) {
       console.error('Error generating moving plan:', error);

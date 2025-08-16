@@ -21,6 +21,8 @@ export interface LgbSession {
   item_count: number;
   decided_count: number;
   expected_revenue: number;
+  ai_plan_generated?: boolean;
+  ai_plan_generated_at?: string;
   created_at: string;
   updated_at: string;
 }
