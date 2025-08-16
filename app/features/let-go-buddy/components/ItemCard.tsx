@@ -17,11 +17,13 @@ import {
   ExternalLink,
   Home,
   MapPin,
-  Recycle
+  Recycle,
+  X
 } from 'lucide-react';
 import type { ItemCardProps, ItemDecision } from '../types';
 import { DecisionBar } from './DecisionBar';
 import { DonationModal } from './DonationModal';
+import { ListingComposer } from './ListingComposer';
 
 export function ItemCard({ 
   item, 
@@ -37,6 +39,7 @@ export function ItemCard({
     isOpen: false,
     type: null
   });
+  const [showListingGenerator, setShowListingGenerator] = useState(false);
 
   const handleDecisionChange = async (decision: ItemDecision) => {
     if (decision === item.decision) {
@@ -255,22 +258,32 @@ export function ItemCard({
               )}
             </div>
             
-            {/* Create Listing Button */}
-            <Button asChild className="w-full mt-3">
-              <Link 
-                to={`/secondhand/submit-a-listing?${new URLSearchParams({
-                  from_lgb: 'true',
-                  title: item.title || 'Untitled Item',
-                  description: item.ai_rationale || '',
-                  category: item.category || 'Other',
-                  images: JSON.stringify(item.photos || []),
-                  price_mid: item.price_mid?.toString() || ''
-                }).toString()}`}
+            {/* Action Buttons */}
+            <div className="flex gap-2 mt-3">
+              <Button 
+                variant="outline" 
+                className="flex-1"
+                onClick={() => setShowListingGenerator(true)}
               >
-                <ExternalLink className="w-4 h-4 mr-2" />
-                Create Listing
-              </Link>
-            </Button>
+                <Sparkles className="w-4 h-4 mr-2" />
+                Generate Listing
+              </Button>
+              <Button asChild className="flex-1">
+                <Link 
+                  to={`/secondhand/submit-a-listing?${new URLSearchParams({
+                    from_lgb: 'true',
+                    title: item.title || 'Untitled Item',
+                    description: item.ai_rationale || '',
+                    category: item.category || 'Other',
+                    images: JSON.stringify(item.photos || []),
+                    price_mid: item.price_mid?.toString() || ''
+                  }).toString()}`}
+                >
+                  <ExternalLink className="w-4 h-4 mr-2" />
+                  Create Listing
+                </Link>
+              </Button>
+            </div>
           </div>
         )}
 
@@ -474,6 +487,39 @@ export function ItemCard({
           setDonationModal({ isOpen: false, type: null });
         }}
       />
+    )}
+
+    {/* Listing Generator Modal */}
+    {showListingGenerator && (
+      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-hidden">
+          <div className="flex items-center justify-between p-6 border-b">
+            <h2 className="text-xl font-semibold flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-purple-600" />
+              Generate Listing for {item.title}
+            </h2>
+            <Button variant="ghost" size="sm" onClick={() => setShowListingGenerator(false)}>
+              <X className="w-4 h-4" />
+            </Button>
+          </div>
+          <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
+            <ListingComposer
+              item={item}
+              onListingGenerate={(listings) => {
+                console.log('Generated listings for item:', item.item_id, listings);
+                toast({
+                  title: "Listings Generated! ✨",
+                  description: `Created ${listings.length} listing(s) for ${item.title}`,
+                  className: "bg-green-50 border-green-200"
+                });
+                // TODO: Save listings to database
+                setShowListingGenerator(false);
+              }}
+              languages={['en', 'ko']}
+            />
+          </div>
+        </div>
+      </div>
     )}
     </>
   );

@@ -13,12 +13,14 @@ import {
   Heart,
   ShoppingCart,
   Gift,
-  Trash2
+  Trash2,
+  Sparkles
 } from 'lucide-react';
 import type { Route } from './+types/session';
 import { makeSSRClient, getAuthUser, browserClient } from '~/supa-client';
 import { ItemUploader } from '../components/ItemUploader';
 import { ItemCard } from '../components/ItemCard';
+import { ListingComposer } from '../components/ListingComposer';
 
 export const meta: Route.MetaFunction = ({ params }) => {
   return [
@@ -420,8 +422,31 @@ export default function SessionPage({ loaderData }: Route.ComponentProps) {
           </Card>
         )}
 
-        {/* Item Upload Section */}
-        {session?.status === 'active' && (
+        {/* Scenario E: Quick Listing Generator */}
+        {session?.scenario === 'E' && session?.status === 'active' && (
+          <Card className="p-6 mb-8">
+            <h2 className="text-xl font-semibold mb-4 flex items-center">
+              <Sparkles className="w-5 h-5 mr-2" />
+              Quick Listing Generator
+            </h2>
+            <p className="text-gray-600 mb-6">
+              Generate marketplace-ready listings in English and Korean without uploading photos. 
+              Perfect for creating listings quickly with just basic item information.
+            </p>
+            <ListingComposer
+              item={null}
+              onListingGenerate={async (listings) => {
+                console.log('Generated listings for session:', listings);
+                // TODO: Save to database if needed
+                // For now, listings are shown in the component
+              }}
+              languages={['en', 'ko']}
+            />
+          </Card>
+        )}
+
+        {/* Regular Item Upload Section (for other scenarios) */}
+        {session?.scenario !== 'E' && session?.status === 'active' && (
           <Card className="p-6 mb-8">
             <h2 className="text-xl font-semibold mb-4 flex items-center">
               <Plus className="w-5 h-5 mr-2" />
@@ -691,23 +716,24 @@ export default function SessionPage({ loaderData }: Route.ComponentProps) {
         )}
 
         {/* Items Grid */}
-        <div className="space-y-6">
-          <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-semibold">
-              Your Items ({allItems.length})
-            </h2>
-          </div>
+        {session?.scenario !== 'E' && (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h2 className="text-2xl font-semibold">
+                Your Items ({allItems.length})
+              </h2>
+            </div>
 
-          {allItems.length === 0 ? (
-            <Card className="p-12 text-center">
-              <Package className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">
-                No items yet
-              </h3>
-              <p className="text-gray-600">
-                Start by uploading photos of items you want to declutter
-              </p>
-            </Card>
+            {allItems.length === 0 ? (
+              <Card className="p-12 text-center">
+                <Package className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                  No items yet
+                </h3>
+                <p className="text-gray-600">
+                  Start by uploading photos of items you want to declutter
+                </p>
+              </Card>
           ) : (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {allItems.map((item) => (
@@ -820,7 +846,23 @@ export default function SessionPage({ loaderData }: Route.ComponentProps) {
               ))}
             </div>
           )}
-        </div>
+          </div>
+        )}
+
+        {/* Scenario E: Show generated listings history if needed */}
+        {session?.scenario === 'E' && (
+          <div className="space-y-6">
+            <div className="text-center py-8">
+              <Sparkles className="w-12 h-12 text-purple-400 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">
+                Quick Listing Generator
+              </h3>
+              <p className="text-gray-600">
+                Use the generator above to create marketplace listings instantly
+              </p>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
