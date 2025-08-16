@@ -151,23 +151,16 @@ export default function LetGoBuddyIndex({ loaderData }: Route.ComponentProps) {
               style={{ fontFamily: "'Poppins', sans-serif" }}
             >
               <span className="inline font-normal text-transparent bg-clip-text bg-gradient-to-br from-stone-800 via-stone-700 to-stone-800">Let Go with Confidence, </span>
-              <span className="inline font-light bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+              <br />
+              <span className="inline font-light bg-gradient-to-r from-purple-600 to-amber-600 bg-clip-text text-transparen">
                 Live Lighter
               </span>
               <br />
-              <span className="inline-block text-[0.8em] font-extralight text-stone-700 opacity-90 mt-3">
-                Smart decluttering guidance
-              </span>
             </h1>
             
             {/* Subtle underline accent */}
             <div className="mx-auto mt-3 w-20 h-0.5 bg-gradient-to-r from-purple-400 to-blue-400 rounded-full opacity-50"></div>
           </div>
-            
-          <p className="text-lg sm:text-xl text-stone-600 leading-relaxed max-w-2xl mx-auto">
-            Get smart, personalized guidance on what to keep, sell, donate, or dispose of. 
-            Turn decluttering from overwhelming to empowering.
-          </p>
 
           {user && (
             <div className="space-y-6 pt-4">

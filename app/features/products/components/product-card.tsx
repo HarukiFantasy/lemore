@@ -161,9 +161,9 @@ export const ProductCard = memo(function ProductCard({
     return (
     <div onClick={handleCardClick} className="cursor-pointer">
       <div className="relative group p-1 
-        transition-all duration-200 ease-out
+        transition-all duration-300 ease-out
         active:scale-95 
-        md:hover:scale-100
+        md:hover:scale-105
       ">
         <div className="bg-white rounded-lg shadow h-full flex flex-col pb-2 
           active:bg-gray-50 
