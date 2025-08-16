@@ -382,8 +382,8 @@ export default function LetGoBuddyIndex({ loaderData }: Route.ComponentProps) {
 
               <Button 
                 asChild 
-                variant="outline"
-                className={`bg-teal-50 text-teal-600 hover:bg-teal-700 hover:text-teal-50 w-full transition-transform ${
+                variant="secondary"
+                className={`bg-teal-50 text-teal-600 hover:bg-teal-100 hover:text-teal-600 shadow-gray-300 w-full transition-transform ${
                   user && aiUsageData && !aiUsageData.canUse 
                     ? 'bg-gray-400 hover:bg-gray-400 cursor-not-allowed pointer-events-none' 
                     : 'group-hover:scale-105'
