@@ -194,35 +194,23 @@ export default function ChallengesPage({ loaderData }: Route.ComponentProps) {
               <p className="text-xl text-gray-600 mb-6">
                 Build consistent decluttering habits with daily goals
               </p>
-              
-              {/* Challenge Tips */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                <Badge variant="outline" className="w-fit bg-blue-50 border-blue-200 text-blue-700">
-                  Start Small: Even 1 item per day builds momentum
-                </Badge>
-                <Badge variant="outline" className="w-fit bg-green-50 border-green-200 text-green-700">
-                  Be Consistent: Daily action beats weekend marathons
-                </Badge>
-                <Badge variant="outline" className="w-fit bg-purple-50 border-purple-200 text-purple-700">
-                  Track Progress: Reflections help you see patterns and wins
-                </Badge>
-              </div>
+
             </div>
             
             <div className="flex gap-3">
               <Button 
                 onClick={() => setShowCalendar(!showCalendar)}
                 size="lg" 
-                variant={showCalendar ? "default" : "outline"}
-                className={showCalendar ? "bg-purple-500 hover:bg-purple-600 text-white" : ""}
+                variant={showCalendar ? "default" : "secondary"}
+                className={showCalendar ? "bg-purple-500 hover:bg-purple-600 text-white" : "text-purple-600 bg-purple-200 hover:text-purple-50 hover:bg-purple-400"}
               >
                 <Calendar className="w-5 h-5 mr-2" />
                 {showCalendar ? "List View" : "Calendar View"}
               </Button>
               
               <Button asChild size="lg" 
-              variant="outline"
-              className="text-rose-600 hover:text-rose-700 hover:bg-pink-50">
+              variant="secondary"
+              className="text-rose-600 bg-rose-200 hover:text-rose-50 hover:bg-pink-400">
                 <Link to="/let-go-buddy/new?scenario=C">
                   <Plus className="w-5 h-5 mr-2" />
                   New Challenge
@@ -397,9 +385,9 @@ export default function ChallengesPage({ loaderData }: Route.ComponentProps) {
                               {task.name?.replace(/^(📦|⚡)\s/, '') || 'Moving Task'}
                             </h3>
                             <div className="flex flex-wrap items-center gap-1.5">
-                              {isPriority && <Badge variant="outline" className="text-xs text-rose-600" >Priority</Badge>}
-                              {isToday && !completed && <Badge variant="outline" className="text-teal-700 text-xs">Today</Badge>}
-                              {isOverdue && <Badge variant="outline" className="text-xs text-white">Overdue</Badge>}
+                              {isPriority && <Badge variant="outline" className="text-xs text-rose-600 bg-rose-200" >Priority</Badge>}
+                              {isToday && !completed && <Badge variant="outline" className="text-teal-700 text-xs bg-teal-200">Today</Badge>}
+                              {isOverdue && <Badge variant="outline" className="text-xs text-red-600 bg-red-200">Overdue</Badge>}
                             </div>
                           </div>
                           <p className="text-xs sm:text-sm text-gray-600 mt-2">
@@ -423,7 +411,7 @@ export default function ChallengesPage({ loaderData }: Route.ComponentProps) {
                             <Form method="post" className="flex items-center gap-2">
                               <input type="hidden" name="action" value="complete_item" />
                               <input type="hidden" name="challengeId" value={task.item_id.toString()} />
-                              <Button type="submit" variant="outline" size="sm" className="text-purple-500" disabled={isSubmitting}>
+                              <Button type="submit" variant="outline" size="sm" className="text-purple-500 bg-purple-200 hover:text-purple-50 hover:bg-purple-400" disabled={isSubmitting}>
                                 {isSubmitting && navigation.formData?.get('challengeId') === task.item_id.toString() ? (
                                   <Loader2 className="w-4 h-4 animate-spin" />
                                 ) : (
@@ -515,7 +503,9 @@ export default function ChallengesPage({ loaderData }: Route.ComponentProps) {
                               placeholder="How did this go?"
                             />
                             
-                            <Button type="submit" size="sm" className="w-full bg-pink-500 hover:bg-pink-600 text-white" disabled={isSubmitting}>
+                            <Button type="submit" size="sm" 
+                            variant="secondary"
+                            className="w-full text-pink-600 bg-pink-200 hover:text-pink-50 hover:bg-pink-400" disabled={isSubmitting}>
                               {isSubmitting && navigation.formData?.get('challengeId') === challenge.item_id.toString() ? (
                                 <Loader2 className="w-3 h-3 mr-1 animate-spin" />
                               ) : (
