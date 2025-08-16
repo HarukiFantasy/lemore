@@ -45,6 +45,7 @@ export default [
   route("/api/ai/analyze-item", "api/ai/analyze-item.ts"),
   route("/api/ai/price-suggest", "api/ai/price-suggest.ts"),
   route("/api/ai/listing-generate", "api/ai/listing-generate.ts"),
+  route("/api/ai/moving-plan", "api/ai/moving-plan.ts"),
   
   route("/privacy-policy", "common/pages/privacy-policy-page.tsx"),
   route("/terms-of-service", "common/pages/terms-of-service-page.tsx"),
