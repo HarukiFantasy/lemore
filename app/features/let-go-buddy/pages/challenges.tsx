@@ -220,7 +220,9 @@ export default function ChallengesPage({ loaderData }: Route.ComponentProps) {
                 {showCalendar ? "List View" : "Calendar View"}
               </Button>
               
-              <Button asChild size="lg" className="bg-pink-500 hover:bg-pink-600 text-white">
+              <Button asChild size="lg" 
+              variant="outline"
+              className="text-rose-600 hover:text-rose-700 hover:bg-pink-50">
                 <Link to="/let-go-buddy/new?scenario=C">
                   <Plus className="w-5 h-5 mr-2" />
                   New Challenge
@@ -395,8 +397,8 @@ export default function ChallengesPage({ loaderData }: Route.ComponentProps) {
                               {task.name?.replace(/^(📦|⚡)\s/, '') || 'Moving Task'}
                             </h3>
                             <div className="flex flex-wrap items-center gap-1.5">
-                              {isPriority && <Badge variant="outline" className="text-xs text-white">Priority</Badge>}
-                              {isToday && !completed && <Badge className="bg-blue-600 text-white text-xs">Today</Badge>}
+                              {isPriority && <Badge variant="outline" className="text-xs text-rose-600" >Priority</Badge>}
+                              {isToday && !completed && <Badge variant="outline" className="text-teal-700 text-xs">Today</Badge>}
                               {isOverdue && <Badge variant="outline" className="text-xs text-white">Overdue</Badge>}
                             </div>
                           </div>
@@ -421,7 +423,7 @@ export default function ChallengesPage({ loaderData }: Route.ComponentProps) {
                             <Form method="post" className="flex items-center gap-2">
                               <input type="hidden" name="action" value="complete_item" />
                               <input type="hidden" name="challengeId" value={task.item_id.toString()} />
-                              <Button type="submit" variant="outline" size="sm" className="bg-purple-500 hover:bg-purple-600 text-white" disabled={isSubmitting}>
+                              <Button type="submit" variant="outline" size="sm" className="text-purple-500" disabled={isSubmitting}>
                                 {isSubmitting && navigation.formData?.get('challengeId') === task.item_id.toString() ? (
                                   <Loader2 className="w-4 h-4 animate-spin" />
                                 ) : (
