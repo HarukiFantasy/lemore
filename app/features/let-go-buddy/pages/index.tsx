@@ -93,19 +93,16 @@ export default function LetGoBuddyIndex({ loaderData }: Route.ComponentProps) {
       color: 'bg-orange-500',
       features: ['Timeline planning', 'Multi-channel posting', 'Translation help'],
       time: '20-30 min setup'
-    },
-    {
-      id: 'C',
-      title: 'Declutter Challenge',
-      description: 'Daily habits to gradually declutter with streak tracking',
-      icon: <Calendar className="w-6 h-6" />,
-      color: 'bg-pink-500',
-      features: ['Daily missions', 'Streak rewards', 'Progress tracking'],
-      time: '5 min daily'
     }
   ];
 
   const getCompletionPercentage = (session: any) => {
+    // For Moving Assistant (scenario B), completion is based on plan generation
+    if (session.scenario === 'B') {
+      return session.ai_plan_generated ? 100 : 0;
+    }
+    
+    // For other scenarios, use item completion
     if (session.item_count === 0) return 0;
     return Math.round((session.decided_count / session.item_count) * 100);
   };
@@ -151,35 +148,6 @@ export default function LetGoBuddyIndex({ loaderData }: Route.ComponentProps) {
 
             {user && (
               <div className="space-y-6 pt-4">
-                {/* Session Explanation */}
-                <div className="max-w-2xl mx-auto">
-                  <div className="bg-white/80 backdrop-blur-sm rounded-xl p-6 border border-purple-100">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-3">What is a Decluttering Session?</h3>
-                    <p className="text-gray-600 mb-4">
-                      A session helps you organize one specific area or life transition. Upload photos of items, 
-                      get AI recommendations, and make smart decisions about what to keep, sell, donate, or dispose of.
-                    </p>
-                    <div className="grid sm:grid-cols-2 gap-3 text-sm">
-                      <div className="flex items-center gap-2">
-                        <Package className="w-4 h-4 text-purple-600" />
-                        <span>Upload item photos</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Sparkles className="w-4 h-4 text-purple-600" />
-                        <span>Get AI recommendations</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Heart className="w-4 h-4 text-purple-600" />
-                        <span>Make informed decisions</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Target className="w-4 h-4 text-purple-600" />
-                        <span>Track your progress</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
                 <div className="flex flex-col sm:flex-row gap-4 justify-center">
                   <Button 
                     asChild 
@@ -246,30 +214,51 @@ export default function LetGoBuddyIndex({ loaderData }: Route.ComponentProps) {
                   </h3>
                   
                   <div className="space-y-2 text-sm text-gray-600 mb-4">
-                    <div className="flex justify-between">
-                      <span>Items:</span>
-                      <span>{session.item_count}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Decided:</span>
-                      <span>{session.decided_count}/{session.item_count}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Expected:</span>
-                      <span className="font-medium text-green-600">
-                        ${session.expected_revenue ? session.expected_revenue.toFixed(0) : '0'}
-                      </span>
-                    </div>
+                    {session.scenario === 'B' ? (
+                      // Moving Assistant specific display
+                      <>
+                        <div className="flex justify-between">
+                          <span>Plans:</span>
+                          <span>{session.ai_plan_generated ? '1' : '0'}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Status:</span>
+                          <span>{session.ai_plan_generated ? 'Plan Generated' : 'Planning'}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Move Date:</span>
+                          <span className="font-medium text-blue-600">
+                            {session.move_date ? new Date(session.move_date).toLocaleDateString() : 'Not set'}
+                          </span>
+                        </div>
+                      </>
+                    ) : (
+                      // Other scenarios display
+                      <>
+                        <div className="flex justify-between">
+                          <span>Items:</span>
+                          <span>{session.item_count}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Decided:</span>
+                          <span>{session.decided_count}/{session.item_count}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Expected:</span>
+                          <span className="font-medium text-green-600">
+                            ${session.expected_revenue ? session.expected_revenue.toFixed(0) : '0'}
+                          </span>
+                        </div>
+                      </>
+                    )}
                   </div>
 
-                  {completion > 0 && (
-                    <div className="w-full bg-gray-200 rounded-full h-2 mb-4">
-                      <div 
-                        className="bg-blue-500 h-2 rounded-full transition-all"
-                        style={{ width: `${completion}%` }}
-                      />
-                    </div>
-                  )}
+                  <div className="w-full bg-gray-200 rounded-full h-2 mb-4">
+                    <div 
+                      className="bg-blue-500 h-2 rounded-full transition-all"
+                      style={{ width: `${completion}%` }}
+                    />
+                  </div>
                   
                   <Button asChild className="w-full">
                     <Link to={`/let-go-buddy/session/${session.session_id}`}>
