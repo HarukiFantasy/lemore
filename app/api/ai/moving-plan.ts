@@ -24,10 +24,16 @@ export interface MovingPlanResponse {
     week: number;
     startDate: string;
     endDate: string;
-    tasks: string[];
+    tasks: {
+      task: string;
+      tip: string;
+    }[];
     priority: 'high' | 'medium' | 'low';
   }[];
-  actionItems: string[];
+  actionItems: {
+    action: string;
+    tip: string;
+  }[];
   tips: string[];
   estimatedBoxes: number;
   specialConsiderations: string[];
@@ -62,18 +68,30 @@ Return a JSON response with this structure:
       "week": 1,
       "startDate": "YYYY-MM-DD",
       "endDate": "YYYY-MM-DD", 
-      "tasks": ["task1", "task2", ...],
+      "tasks": [
+        {
+          "task": "Sort through clothing items",
+          "tip": "Try on clothes you haven't worn in 6 months to decide if you still need them"
+        }
+      ],
       "priority": "high" | "medium" | "low"
     }
   ],
-  "actionItems": ["urgent action 1", "urgent action 2", ...],
-  "tips": ["helpful tip 1", "helpful tip 2", ...],
+  "actionItems": [
+    {
+      "action": "Book moving company",
+      "tip": "Get at least 3 quotes and book 4-6 weeks in advance for better rates"
+    }
+  ],
+  "tips": ["helpful general tip 1", "helpful general tip 2", ...],
   "estimatedBoxes": number,
   "specialConsiderations": ["consideration 1", "consideration 2", ...]
 }
 
 Create a realistic week-by-week schedule leading up to the move date.
 Focus on practical tasks like sorting, packing, selling unwanted items, arranging movers, etc.
+Each task should have a specific, actionable tip that helps the user complete it more effectively.
+Each action item should have a tip with specific advice on timing, approach, or best practices.
 The plan should be specific to the categories of items they have.`;
 
     const userPrompt = `Create a moving plan for:

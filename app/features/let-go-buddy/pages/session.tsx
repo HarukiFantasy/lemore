@@ -477,22 +477,22 @@ export default function SessionPage({ loaderData }: Route.ComponentProps) {
         {session?.scenario === 'B' && session?.status === 'active' && (
           <>
             {/* View Calendar Card for Moving Assistant */}
-            <Card className="p-6 mb-6 bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className="bg-blue-100 p-3 rounded-full">
-                    <Calendar className="w-6 h-6 text-blue-600" />
+            <Card className="p-4 sm:p-6 mb-4 sm:mb-6 bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+                <div className="flex items-center gap-3 sm:gap-4">
+                  <div className="bg-blue-100 p-2.5 sm:p-3 rounded-full flex-shrink-0">
+                    <Calendar className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />
                   </div>
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900">Moving Plan Calendar</h3>
-                    <p className="text-gray-600 text-sm">
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-base sm:text-lg font-semibold text-gray-900">Moving Plan Calendar</h3>
+                    <p className="text-gray-600 text-xs sm:text-sm">
                       View your moving tasks and timeline in calendar format
                     </p>
                   </div>
                 </div>
                 <Button
                   onClick={() => window.location.href = '/let-go-buddy/challenges'}
-                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                  className="bg-blue-600 hover:bg-blue-700 text-white w-full sm:w-auto"
                 >
                   <Calendar className="w-4 h-4 mr-2" />
                   View Calendar

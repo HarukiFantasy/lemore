@@ -93,6 +93,7 @@ export default function ChallengesPage({ loaderData }: Route.ComponentProps) {
   const navigation = useNavigation();
   const [showCalendar, setShowCalendar] = useState(false);
   const [currentDate, setCurrentDate] = useState(new Date());
+  const [viewMode, setViewMode] = useState<'month' | 'week'>('week');
   const isSubmitting = navigation.state === 'submitting';
 
   const getStatusColor = (completed: boolean) => {
@@ -108,6 +109,19 @@ export default function ChallengesPage({ loaderData }: Route.ComponentProps) {
 
   // Calendar helper functions
   const getCalendarDays = (date: Date) => {
+    if (viewMode === 'week') {
+      const startOfWeek = new Date(date);
+      startOfWeek.setDate(date.getDate() - date.getDay());
+      
+      const days = [];
+      for (let i = 0; i < 7; i++) {
+        const day = new Date(startOfWeek);
+        day.setDate(startOfWeek.getDate() + i);
+        days.push(day);
+      }
+      return days;
+    }
+    
     const year = date.getFullYear();
     const month = date.getMonth();
     
@@ -137,9 +151,27 @@ export default function ChallengesPage({ loaderData }: Route.ComponentProps) {
   const navigateMonth = (direction: 'prev' | 'next') => {
     setCurrentDate(prev => {
       const newDate = new Date(prev);
-      newDate.setMonth(prev.getMonth() + (direction === 'next' ? 1 : -1));
+      if (viewMode === 'week') {
+        newDate.setDate(prev.getDate() + (direction === 'next' ? 7 : -7));
+      } else {
+        newDate.setMonth(prev.getMonth() + (direction === 'next' ? 1 : -1));
+      }
       return newDate;
     });
+  };
+
+  const getDateRangeText = () => {
+    if (viewMode === 'week') {
+      const days = getCalendarDays(currentDate);
+      const start = days[0];
+      const end = days[6];
+      if (start.getMonth() === end.getMonth()) {
+        return `${start.toLocaleDateString('en-US', { month: 'long' })} ${start.getDate()}-${end.getDate()}, ${start.getFullYear()}`;
+      } else {
+        return `${start.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${end.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}, ${end.getFullYear()}`;
+      }
+    }
+    return currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
   };
 
   return (
@@ -169,13 +201,13 @@ export default function ChallengesPage({ loaderData }: Route.ComponentProps) {
                 onClick={() => setShowCalendar(!showCalendar)}
                 size="lg" 
                 variant={showCalendar ? "default" : "outline"}
-                className={showCalendar ? "bg-purple-600 hover:bg-purple-700" : ""}
+                className={showCalendar ? "bg-purple-600 hover:bg-purple-700 text-white" : ""}
               >
                 <Calendar className="w-5 h-5 mr-2" />
                 {showCalendar ? "List View" : "Calendar View"}
               </Button>
               
-              <Button asChild size="lg" className="bg-pink-600 hover:bg-pink-700">
+              <Button asChild size="lg" className="bg-pink-600 hover:bg-pink-700 text-white">
                 <Link to="/let-go-buddy/new?scenario=C">
                   <Plus className="w-5 h-5 mr-2" />
                   New Challenge
@@ -186,7 +218,7 @@ export default function ChallengesPage({ loaderData }: Route.ComponentProps) {
         </div>
       </div>
 
-      <div className="max-w-6xl mx-auto px-6 py-8">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
         {/* Success/Error Messages */}
         {actionData?.success && (
           <Card className="p-4 border-green-200 bg-green-50 mb-6">
@@ -202,42 +234,67 @@ export default function ChallengesPage({ loaderData }: Route.ComponentProps) {
 
         {/* Calendar View */}
         {showCalendar && challenges.length > 0 && (
-          <Card className="p-6 mb-8">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-semibold text-gray-900">Task Calendar</h2>
-              <div className="flex items-center gap-2">
-                <Button 
-                  onClick={() => navigateMonth('prev')}
-                  variant="outline"
-                  size="sm"
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                </Button>
-                <span className="px-4 py-2 font-semibold text-gray-900">
-                  {currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
-                </span>
-                <Button 
-                  onClick={() => navigateMonth('next')}
-                  variant="outline"
-                  size="sm"
-                >
-                  <ChevronRight className="w-4 h-4" />
-                </Button>
+          <Card className="p-4 sm:p-6 mb-8">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+              <h2 className="text-xl sm:text-2xl font-semibold text-gray-900">Task Calendar</h2>
+              
+              {/* Mobile-first controls */}
+              <div className="flex flex-col sm:flex-row gap-3">
+                {/* View Mode Toggle */}
+                <div className="flex rounded-lg border border-gray-200 p-1">
+                  <button
+                    onClick={() => setViewMode('week')}
+                    className={`px-3 py-1 text-xs sm:text-sm rounded-md transition-colors ${
+                      viewMode === 'week' ? 'bg-purple-100 text-purple-700' : 'text-gray-600 hover:text-gray-900'
+                    }`}
+                  >
+                    Week
+                  </button>
+                  <button
+                    onClick={() => setViewMode('month')}
+                    className={`px-3 py-1 text-xs sm:text-sm rounded-md transition-colors ${
+                      viewMode === 'month' ? 'bg-purple-100 text-purple-700' : 'text-gray-600 hover:text-gray-900'
+                    }`}
+                  >
+                    Month
+                  </button>
+                </div>
+                
+                {/* Navigation */}
+                <div className="flex items-center gap-2">
+                  <Button 
+                    onClick={() => navigateMonth('prev')}
+                    variant="outline"
+                    size="sm"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </Button>
+                  <span className="px-2 sm:px-4 py-2 font-semibold text-gray-900 text-xs sm:text-sm whitespace-nowrap">
+                    {getDateRangeText()}
+                  </span>
+                  <Button 
+                    onClick={() => navigateMonth('next')}
+                    variant="outline"
+                    size="sm"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </Button>
+                </div>
               </div>
             </div>
 
             {/* Calendar Grid */}
-            <div className="grid grid-cols-7 gap-1 mb-4">
+            <div className="grid grid-cols-7 gap-0.5 sm:gap-1 mb-2 sm:mb-4">
               {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-                <div key={day} className="text-center py-2 font-semibold text-gray-600 text-sm">
-                  {day}
+                <div key={day} className="text-center py-1 sm:py-2 font-semibold text-gray-600 text-xs sm:text-sm">
+                  {viewMode === 'week' ? day.slice(0, 1) : day.slice(0, 3)}
                 </div>
               ))}
             </div>
 
-            <div className="grid grid-cols-7 gap-1">
+            <div className="grid grid-cols-7 gap-0.5 sm:gap-1">
               {getCalendarDays(currentDate).map((day, index) => {
-                const isCurrentMonth = day.getMonth() === currentDate.getMonth();
+                const isCurrentMonth = viewMode === 'week' || day.getMonth() === currentDate.getMonth();
                 const isToday = day.toDateString() === new Date().toDateString();
                 const dayTasks = getTasksForDate(day);
                 const hasMovingTasks = dayTasks.some(t => t.name.startsWith('📦') || t.name.startsWith('⚡'));
@@ -248,33 +305,34 @@ export default function ChallengesPage({ loaderData }: Route.ComponentProps) {
                   <div
                     key={index}
                     className={`
-                      min-h-[80px] p-1 border rounded-lg cursor-pointer transition-colors
+                      ${viewMode === 'week' ? 'min-h-[100px] sm:min-h-[120px]' : 'min-h-[60px] sm:min-h-[80px]'} 
+                      p-1 sm:p-2 border rounded-md sm:rounded-lg cursor-pointer transition-colors
                       ${isCurrentMonth ? 'bg-white' : 'bg-gray-50'}
                       ${isToday ? 'border-blue-500 bg-blue-50' : 'border-gray-200'}
                       ${dayTasks.length > 0 ? 'hover:bg-gray-50' : ''}
                     `}
                   >
-                    <div className={`text-sm font-medium ${
+                    <div className={`text-xs sm:text-sm font-medium ${
                       isCurrentMonth ? 'text-gray-900' : 'text-gray-400'
-                    } ${isToday ? 'text-blue-600' : ''}`}>
+                    } ${isToday ? 'text-blue-600' : ''} mb-1`}>
                       {day.getDate()}
                     </div>
                     
                     {dayTasks.length > 0 && (
-                      <div className="space-y-1 mt-1">
+                      <div className="space-y-0.5 sm:space-y-1">
                         {hasMovingTasks && (
-                          <div className="text-xs bg-purple-100 text-purple-700 px-1 rounded truncate">
-                            📦 Moving ({dayTasks.filter(t => t.name.startsWith('📦') || t.name.startsWith('⚡')).length})
+                          <div className="text-[10px] sm:text-xs bg-purple-100 text-purple-700 px-1 rounded truncate">
+                            📦 {viewMode === 'week' ? 'Moving' : 'M'} ({dayTasks.filter(t => t.name.startsWith('📦') || t.name.startsWith('⚡')).length})
                           </div>
                         )}
                         {hasRegularTasks && (
-                          <div className="text-xs bg-pink-100 text-pink-700 px-1 rounded truncate">
-                            🎯 Challenge ({dayTasks.filter(t => !t.name.startsWith('📦') && !t.name.startsWith('⚡')).length})
+                          <div className="text-[10px] sm:text-xs bg-pink-100 text-pink-700 px-1 rounded truncate">
+                            🎯 {viewMode === 'week' ? 'Challenge' : 'C'} ({dayTasks.filter(t => !t.name.startsWith('📦') && !t.name.startsWith('⚡')).length})
                           </div>
                         )}
                         {completedTasks > 0 && (
-                          <div className="text-xs text-green-600">
-                            ✓ {completedTasks} done
+                          <div className="text-[10px] sm:text-xs text-green-600">
+                            ✓ {completedTasks}
                           </div>
                         )}
                       </div>
@@ -290,12 +348,14 @@ export default function ChallengesPage({ loaderData }: Route.ComponentProps) {
           {/* Moving Tasks Section */}
           {movingTasks.length > 0 && (
             <div>
-              <div className="flex items-center gap-3 mb-6">
-                <div className="bg-purple-100 p-2 rounded-lg">
-                  <Calendar className="w-6 h-6 text-purple-600" />
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 mb-4 sm:mb-6">
+                <div className="flex items-center gap-3">
+                  <div className="bg-purple-100 p-2 rounded-lg flex-shrink-0">
+                    <Calendar className="w-5 h-5 sm:w-6 sm:h-6 text-purple-600" />
+                  </div>
+                  <h2 className="text-xl sm:text-2xl font-semibold text-gray-900">Moving Plan Tasks</h2>
                 </div>
-                <h2 className="text-2xl font-semibold text-gray-900">Moving Plan Tasks</h2>
-                <Badge className="bg-purple-100 text-purple-800">
+                <Badge className="bg-purple-100 text-purple-800 self-start sm:self-auto">
                   {movingTasks.filter(t => t.completed).length}/{movingTasks.length} completed
                 </Badge>
               </div>
@@ -309,39 +369,46 @@ export default function ChallengesPage({ loaderData }: Route.ComponentProps) {
                   const isPriority = task.name.startsWith('⚡');
 
                   return (
-                    <Card key={task.item_id} className={`p-4 ${
+                    <Card key={task.item_id} className={`p-3 sm:p-4 ${
                       isPriority ? 'border-orange-300 bg-orange-50' :
                       isOverdue ? 'border-red-300 bg-red-50' :
                       isToday ? 'border-blue-300 bg-blue-50' :
                       completed ? 'border-green-300 bg-green-50' : 'border-gray-200'
                     }`}>
-                      <div className="flex items-center justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2">
-                            <h3 className={`font-medium ${completed ? 'line-through text-gray-500' : ''}`}>
+                      <div className="flex flex-col sm:flex-row sm:items-start gap-3">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex flex-col gap-2">
+                            <h3 className={`font-medium text-sm sm:text-base ${completed ? 'line-through text-gray-500' : ''}`}>
                               {task.name?.replace(/^(📦|⚡)\s/, '') || 'Moving Task'}
                             </h3>
-                            {isPriority && <Badge variant="destructive" className="text-xs">Priority</Badge>}
-                            {isToday && !completed && <Badge className="bg-blue-600 text-xs">Today</Badge>}
-                            {isOverdue && <Badge variant="destructive" className="text-xs">Overdue</Badge>}
+                            <div className="flex flex-wrap items-center gap-1.5">
+                              {isPriority && <Badge variant="destructive" className="text-xs text-white">Priority</Badge>}
+                              {isToday && !completed && <Badge className="bg-blue-600 text-white text-xs">Today</Badge>}
+                              {isOverdue && <Badge variant="destructive" className="text-xs text-white">Overdue</Badge>}
+                            </div>
                           </div>
-                          <p className="text-sm text-gray-600 mt-1">
+                          <p className="text-xs sm:text-sm text-gray-600 mt-2">
                             {isToday ? 'Today' : 
                              daysSinceScheduled > 0 ? `${daysSinceScheduled} days ago` :
                              `In ${Math.abs(daysSinceScheduled)} days`} • 
                             {new Date(task.scheduled_date).toLocaleDateString()}
                           </p>
                           {task.reflection && (
-                            <p className="text-sm text-green-700 mt-2 italic">"{task.reflection}"</p>
+                            <p className="text-xs sm:text-sm text-green-700 mt-2 italic">"{task.reflection}"</p>
+                          )}
+                          {(task as any).tip && (
+                            <div className="text-xs sm:text-sm text-blue-700 mt-2 pl-3 border-l-2 border-blue-300 bg-blue-50 p-2 rounded-r">
+                              💡 <strong>Tip:</strong> {(task as any).tip}
+                            </div>
                           )}
                         </div>
 
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center justify-end sm:justify-start gap-2 flex-shrink-0">
                           {!completed ? (
                             <Form method="post" className="flex items-center gap-2">
                               <input type="hidden" name="action" value="complete_item" />
                               <input type="hidden" name="challengeId" value={task.item_id.toString()} />
-                              <Button type="submit" size="sm" className="bg-purple-600 hover:bg-purple-700" disabled={isSubmitting}>
+                              <Button type="submit" size="sm" className="bg-purple-600 hover:bg-purple-700 text-white" disabled={isSubmitting}>
                                 {isSubmitting && navigation.formData?.get('challengeId') === task.item_id.toString() ? (
                                   <Loader2 className="w-4 h-4 animate-spin" />
                                 ) : (
@@ -351,7 +418,7 @@ export default function ChallengesPage({ loaderData }: Route.ComponentProps) {
                             </Form>
                           ) : (
                             <div className="flex items-center gap-1 text-green-600">
-                              <CheckCircle className="w-5 h-5" />
+                              <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5" />
                               <span className="text-xs font-medium">Done</span>
                             </div>
                           )}
@@ -436,6 +503,15 @@ export default function ChallengesPage({ loaderData }: Route.ComponentProps) {
                               </p>
                             </div>
                           )}
+                          
+                          {/* Tip */}
+                          {(challenge as any).tip && (
+                            <div className="bg-blue-50 rounded-lg p-3 mb-4">
+                              <p className="text-sm text-blue-800">
+                                💡 <strong>Tip:</strong> {(challenge as any).tip}
+                              </p>
+                            </div>
+                          )}
                         </div>
 
                         {/* Actions */}
@@ -457,7 +533,7 @@ export default function ChallengesPage({ loaderData }: Route.ComponentProps) {
                                 />
                               </div>
                               
-                              <Button type="submit" className="w-full bg-pink-600 hover:bg-pink-700" disabled={isSubmitting}>
+                              <Button type="submit" className="w-full bg-pink-600 hover:bg-pink-700 text-white" disabled={isSubmitting}>
                                 {isSubmitting && navigation.formData?.get('action') === 'complete_challenge' ? (
                                   <>
                                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />

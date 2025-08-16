@@ -147,13 +147,18 @@ export function MovingAssistant({ session, onPlanGenerated }: MovingAssistantPro
           // Add each task as a separate calendar entry
           if (week.tasks) {
             for (let taskIndex = 0; taskIndex < week.tasks.length; taskIndex++) {
-              const task = week.tasks[taskIndex];
+              const taskItem = week.tasks[taskIndex];
               const taskDate = new Date(weekStartDate);
               taskDate.setDate(weekStartDate.getDate() + taskIndex + 1); // Spread tasks across the week
               
+              // Handle both old (string) and new (object) task formats
+              const taskName = typeof taskItem === 'string' ? taskItem : taskItem.task;
+              const taskTip = typeof taskItem === 'string' ? null : taskItem.tip;
+              
               calendarEntries.push({
-                name: `📦 Week ${week.week}: ${task}`,
-                scheduled_date: taskDate.toISOString()
+                name: `📦 Week ${week.week}: ${taskName}`,
+                scheduled_date: taskDate.toISOString(),
+                tip: taskTip
               });
             }
           }
@@ -166,9 +171,14 @@ export function MovingAssistant({ session, onPlanGenerated }: MovingAssistantPro
         urgentDate.setDate(urgentDate.getDate() + 1); // Tomorrow
         
         for (const actionItem of movingPlan.actionItems) {
+          // Handle both old (string) and new (object) action formats
+          const actionName = typeof actionItem === 'string' ? actionItem : actionItem.action;
+          const actionTip = typeof actionItem === 'string' ? null : actionItem.tip;
+          
           calendarEntries.push({
-            name: `⚡ PRIORITY: ${actionItem}`,
-            scheduled_date: urgentDate.toISOString()
+            name: `⚡ PRIORITY: ${actionName}`,
+            scheduled_date: urgentDate.toISOString(),
+            tip: actionTip
           });
         }
       }
@@ -184,7 +194,8 @@ export function MovingAssistant({ session, onPlanGenerated }: MovingAssistantPro
         name: entry.name,
         scheduled_date: entry.scheduled_date,
         user_id: user.id,
-        completed: false
+        completed: false,
+        tip: entry.tip || null
       }));
 
       console.log('Inserting calendar entries:', entriesWithUserId);
@@ -311,15 +322,15 @@ export function MovingAssistant({ session, onPlanGenerated }: MovingAssistantPro
 
   if (movingPlan) {
     return (
-      <div className="space-y-6">
-        <Card className="p-6">
-          <div className="flex items-center gap-3 mb-4">
-            <Calendar className="w-6 h-6 text-purple-500" />
-            <h2 className="text-2xl font-bold">Your Moving Plan</h2>
+      <div className="space-y-4 sm:space-y-6">
+        <Card className="p-4 sm:p-6">
+          <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
+            <Calendar className="w-5 h-5 sm:w-6 sm:h-6 text-purple-500" />
+            <h2 className="text-xl sm:text-2xl font-bold">Your Moving Plan</h2>
           </div>
           
           <div className="space-y-4">
-            <div className="flex items-center gap-4 text-sm text-gray-600">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-xs sm:text-sm text-gray-600">
               <div className="flex items-center gap-2">
                 <MapPin className="w-4 h-4" />
                 <span>To: {session.region}</span>
@@ -333,15 +344,27 @@ export function MovingAssistant({ session, onPlanGenerated }: MovingAssistantPro
             {/* Timeline */}
             <div className="mt-6 space-y-4">
               {movingPlan.timeline?.map((week: any, index: number) => (
-                <Card key={index} className="p-4">
-                  <h3 className="font-semibold mb-2">Week {index + 1}</h3>
+                <Card key={index} className="p-3 sm:p-4">
+                  <h3 className="font-semibold text-sm sm:text-base mb-2">Week {index + 1}</h3>
                   <ul className="space-y-2">
-                    {week.tasks?.map((task: string, taskIndex: number) => (
-                      <li key={taskIndex} className="flex items-start gap-2">
-                        <Check className="w-4 h-4 text-green-500 mt-0.5" />
-                        <span className="text-sm">{task}</span>
-                      </li>
-                    ))}
+                    {week.tasks?.map((taskItem: any, taskIndex: number) => {
+                      const taskName = typeof taskItem === 'string' ? taskItem : taskItem.task;
+                      const taskTip = typeof taskItem === 'string' ? null : taskItem.tip;
+                      
+                      return (
+                        <li key={taskIndex} className="flex items-start gap-2">
+                          <Check className="w-3 h-3 sm:w-4 sm:h-4 text-green-500 mt-0.5 flex-shrink-0" />
+                          <div className="flex-1">
+                            <span className="text-xs sm:text-sm">{taskName}</span>
+                            {taskTip && (
+                              <div className="text-xs text-gray-600 mt-1 pl-2 border-l-2 border-blue-200 bg-blue-50 p-2 rounded-r">
+                                💡 {taskTip}
+                              </div>
+                            )}
+                          </div>
+                        </li>
+                      );
+                    })}
                   </ul>
                 </Card>
               ))}
@@ -349,22 +372,34 @@ export function MovingAssistant({ session, onPlanGenerated }: MovingAssistantPro
 
             {/* Action Items */}
             {movingPlan.actionItems && (
-              <Card className="p-4 bg-blue-50">
-                <h3 className="font-semibold mb-2">Priority Actions</h3>
-                <ul className="space-y-1">
-                  {movingPlan.actionItems.map((item: string, index: number) => (
-                    <li key={index} className="text-sm">• {item}</li>
-                  ))}
+              <Card className="p-3 sm:p-4 bg-blue-50">
+                <h3 className="font-semibold text-sm sm:text-base mb-2">Priority Actions</h3>
+                <ul className="space-y-2">
+                  {movingPlan.actionItems.map((actionItem: any, index: number) => {
+                    const actionName = typeof actionItem === 'string' ? actionItem : actionItem.action;
+                    const actionTip = typeof actionItem === 'string' ? null : actionItem.tip;
+                    
+                    return (
+                      <li key={index} className="text-xs sm:text-sm">
+                        <div>• {actionName}</div>
+                        {actionTip && (
+                          <div className="text-xs text-gray-600 mt-1 ml-3 pl-2 border-l-2 border-orange-200 bg-orange-50 p-2 rounded-r">
+                            💡 {actionTip}
+                          </div>
+                        )}
+                      </li>
+                    );
+                  })}
                 </ul>
               </Card>
             )}
 
             {/* Add to Calendar Button */}
-            <Card className="p-4 bg-gradient-to-r from-purple-50 to-pink-50 border-purple-200">
+            <Card className="p-3 sm:p-4 bg-gradient-to-r from-purple-50 to-pink-50 border-purple-200">
               <div className="text-center">
-                <Calendar className="w-8 h-8 text-purple-600 mx-auto mb-3" />
-                <h3 className="font-semibold mb-2">Stay on Track</h3>
-                <p className="text-sm text-gray-600 mb-4">
+                <Calendar className="w-6 h-6 sm:w-8 sm:h-8 text-purple-600 mx-auto mb-2 sm:mb-3" />
+                <h3 className="font-semibold text-sm sm:text-base mb-2">Stay on Track</h3>
+                <p className="text-xs sm:text-sm text-gray-600 mb-3 sm:mb-4">
                   Add your moving tasks to the challenge calendar for daily tracking and reminders
                 </p>
                 {!addedToCalendar ? (
@@ -405,11 +440,11 @@ export function MovingAssistant({ session, onPlanGenerated }: MovingAssistantPro
 
             {/* Tips */}
             {movingPlan.tips && (
-              <Card className="p-4 bg-green-50">
-                <h3 className="font-semibold mb-2">Moving Tips</h3>
+              <Card className="p-3 sm:p-4 bg-green-50">
+                <h3 className="font-semibold text-sm sm:text-base mb-2">Moving Tips</h3>
                 <ul className="space-y-1">
                   {movingPlan.tips.map((tip: string, index: number) => (
-                    <li key={index} className="text-sm">💡 {tip}</li>
+                    <li key={index} className="text-xs sm:text-sm">💡 {tip}</li>
                   ))}
                 </ul>
               </Card>
@@ -430,7 +465,7 @@ export function MovingAssistant({ session, onPlanGenerated }: MovingAssistantPro
   return (
     <div className="space-y-6">
       {/* Step 1: Select Categories */}
-      <Card className="p-6">
+      <Card className="p-4 sm:p-6">
         <h2 className="text-xl font-semibold mb-4">
           Step 1: What items do you need to move?
         </h2>
@@ -438,7 +473,7 @@ export function MovingAssistant({ session, onPlanGenerated }: MovingAssistantPro
           Select all categories that apply to your move
         </p>
         
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
           {categories.map((category) => {
             const Icon = category.icon;
             const isSelected = selectedCategories.has(category.id);
@@ -447,28 +482,28 @@ export function MovingAssistant({ session, onPlanGenerated }: MovingAssistantPro
             return (
               <Card
                 key={category.id}
-                className={`p-4 cursor-pointer transition-all ${
+                className={`p-3 sm:p-4 cursor-pointer transition-all ${
                   isSelected 
                     ? 'border-purple-500 bg-purple-50' 
                     : 'hover:border-gray-300'
                 }`}
                 onClick={() => toggleCategory(category.id)}
               >
-                <div className="flex items-start justify-between">
-                  <div className="flex items-start gap-3">
-                    <div className={`p-2 rounded-lg ${
+                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 sm:gap-0">
+                  <div className="flex items-start gap-2 sm:gap-3">
+                    <div className={`p-1.5 sm:p-2 rounded-lg flex-shrink-0 ${
                       isSelected ? 'bg-purple-100' : 'bg-gray-100'
                     }`}>
-                      <Icon className={`w-5 h-5 ${
+                      <Icon className={`w-4 h-4 sm:w-5 sm:h-5 ${
                         isSelected ? 'text-purple-600' : 'text-gray-600'
                       }`} />
                     </div>
-                    <div>
-                      <h3 className="font-medium">{category.name}</h3>
-                      <p className="text-sm text-gray-500">{category.description}</p>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-medium text-sm sm:text-base truncate">{category.name}</h3>
+                      <p className="text-xs sm:text-sm text-gray-500 line-clamp-2">{category.description}</p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1 sm:gap-2 self-start sm:self-auto">
                     {hasImages && (
                       <Badge variant="secondary" className="text-xs">
                         {categoryImages[category.id].length} pics
@@ -487,8 +522,8 @@ export function MovingAssistant({ session, onPlanGenerated }: MovingAssistantPro
 
       {/* Step 2: Upload Images for Selected Categories */}
       {selectedCategories.size > 0 && (
-        <Card className="p-6">
-          <h2 className="text-xl font-semibold mb-4">
+        <Card className="p-4 sm:p-6">
+          <h2 className="text-lg sm:text-xl font-semibold mb-3 sm:mb-4">
             Step 2: Upload photos (optional)
           </h2>
           <p className="text-gray-600 mb-6">
@@ -507,10 +542,10 @@ export function MovingAssistant({ session, onPlanGenerated }: MovingAssistantPro
               const Icon = category.icon;
               
               return (
-                <Card key={categoryId} className="p-4">
-                  <div className="flex items-center gap-3 mb-4">
-                    <Icon className="w-5 h-5 text-purple-600" />
-                    <h3 className="font-medium">{category.name}</h3>
+                <Card key={categoryId} className="p-3 sm:p-4">
+                  <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
+                    <Icon className="w-4 h-4 sm:w-5 sm:h-5 text-purple-600 flex-shrink-0" />
+                    <h3 className="font-medium text-sm sm:text-base">{category.name}</h3>
                     {categoryImages[categoryId]?.length > 0 && (
                       <Badge variant="secondary">
                         {categoryImages[categoryId].length} photos
@@ -562,20 +597,20 @@ export function MovingAssistant({ session, onPlanGenerated }: MovingAssistantPro
 
       {/* Step 3: Generate Plan */}
       {selectedCategories.size > 0 && (
-        <Card className="p-6 bg-gradient-to-r from-purple-50 to-blue-50">
+        <Card className="p-4 sm:p-6 bg-gradient-to-r from-purple-50 to-blue-50">
           <div className="text-center">
-            <Sparkles className="w-12 h-12 text-purple-600 mx-auto mb-4" />
-            <h2 className="text-xl font-semibold mb-2">
+            <Sparkles className="w-10 h-10 sm:w-12 sm:h-12 text-purple-600 mx-auto mb-3 sm:mb-4" />
+            <h2 className="text-lg sm:text-xl font-semibold mb-2">
               Ready to generate your moving plan?
             </h2>
-            <p className="text-gray-600 mb-6">
+            <p className="text-sm sm:text-base text-gray-600 mb-4 sm:mb-6">
               AI will create a personalized schedule based on your items and move date
             </p>
             <Button
               onClick={generateMovingPlan}
               size="lg"
               disabled={isGeneratingPlan}
-              className="px-8"
+              className="px-6 sm:px-8 w-full sm:w-auto"
             >
               {isGeneratingPlan ? (
                 <>
