@@ -65,8 +65,7 @@ export const loader = async ({ request, params }: Route.LoaderArgs) => {
         status,
         created_at,
         move_date,
-        region,
-        trade_method
+        region
       `)
       .eq('session_id', sessionId)
       .eq('user_id', user.id)

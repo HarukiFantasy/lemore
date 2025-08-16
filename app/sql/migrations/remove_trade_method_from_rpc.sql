@@ -1,6 +1,13 @@
 -- Remove trade_method parameter from rpc_create_session function
 -- Since no current scenarios use trade_method, we can simplify the function
 
+-- First, drop all existing versions of the function
+DROP FUNCTION IF EXISTS rpc_create_session(text, text, timestamp, text, text);
+DROP FUNCTION IF EXISTS rpc_create_session(text, text, date, text, text);
+DROP FUNCTION IF EXISTS rpc_create_session(text, text, timestamp, text);
+DROP FUNCTION IF EXISTS rpc_create_session(text, text, date, text);
+
+-- Create the new simplified function without trade_method
 CREATE OR REPLACE FUNCTION rpc_create_session(
   p_scenario text,
   p_title text,
