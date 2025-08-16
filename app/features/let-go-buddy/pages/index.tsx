@@ -10,7 +10,6 @@ import {
   Zap,
   Users,
   ArrowRight,
-  Clock,
   Target,
   Lock
 } from 'lucide-react';
@@ -46,20 +45,13 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
         .order('created_at', { ascending: false })
         .limit(3);
       
-      // No need for separate plan counting - unified lgb_items table handles this automatically
-      // Moving Assistant tasks are now stored in lgb_items with scheduled_date
-      // The existing item_count field in lgb_sessions is updated by triggers
-      
-      // Debugging: also get direct sessions data to compare
       const { data: directSessions } = await client
         .from('lgb_sessions')
         .select('session_id, ai_plan_generated, ai_plan_generated_at, title, scenario')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
         .limit(3);
-        
-      console.log('View sessions:', sessions);
-      console.log('Direct sessions:', directSessions);
+  
       
       userSessions = sessions || [];
       
@@ -110,36 +102,30 @@ export default function LetGoBuddyIndex({ loaderData }: Route.ComponentProps) {
       title: 'Keep vs Sell Helper',
       description: 'Get AI guidance on whether to keep, sell, donate, or dispose of your items',
       icon: <Heart className="w-6 h-6" />,
-      color: 'bg-green-500',
+      color: 'bg-green-200',
       features: ['Photo analysis', 'Smart recommendations', 'Price suggestions'],
-      time: '5-10 min per item'
     },
     {
       id: 'E',
       title: 'Quick Listing Generator',
       description: 'Create marketplace-ready listings in English quickly',
       icon: <Zap className="w-6 h-6" />,
-      color: 'bg-blue-500',
+      color: 'bg-blue-200',
       features: ['AI listing copy', 'Professional tone', 'Copy & paste ready'],
-      time: '2-3 min per item'
     },
     {
       id: 'B',
       title: 'Moving Assistant',
       description: 'Plan your move or departure with week-by-week action plans',
-      icon: <Target className="w-6 h-6" />,
-      color: 'bg-orange-500',
+      icon: <Target className="w-6 h-6 " />,
+      color: 'bg-orange-200',
       features: ['Timeline planning', 'Multi-channel posting', 'Translation help'],
-      time: '20-30 min setup'
     }
   ];
 
   const getCompletionPercentage = (session: any) => {
-    // Unified completion logic for all scenarios
     if (session.item_count === 0) return 0;
     
-    // For Moving Assistant (B): decided_count = completed tasks
-    // For other scenarios: decided_count = items with decisions
     return Math.round((session.decided_count / session.item_count) * 100);
   };
 
@@ -311,7 +297,7 @@ export default function LetGoBuddyIndex({ loaderData }: Route.ComponentProps) {
                     />
                   </div>
                   
-                  <Button asChild className="w-full bg-amber-200 hover:bg-amber-300" variant="secondary">
+                  <Button asChild className="w-full">
                     <Link to={`/let-go-buddy/session/${session.session_id}`}>
                       {session.status === 'completed' ? 'Session Completed' : 'Continue Session'}
                       <ArrowRight className="w-4 h-4 ml-2" />
@@ -353,12 +339,12 @@ export default function LetGoBuddyIndex({ loaderData }: Route.ComponentProps) {
                 ? 'bg-gray-50 cursor-not-allowed' 
                 : 'hover:shadow-xl'
             }`}>
-              <div className="flex items-center mb-4">
+              <div className="flex justify-center mb-4">
                 <div className={`p-3 rounded-lg ${
                   user && aiUsageData && !aiUsageData.canUse 
                     ? 'bg-gray-400' 
                     : scenario.color
-                } mr-4`}>
+                }`}>
                   <div className="text-white">
                     {user && aiUsageData && !aiUsageData.canUse ? (
                       <Lock className="w-6 h-6" />
@@ -366,12 +352,6 @@ export default function LetGoBuddyIndex({ loaderData }: Route.ComponentProps) {
                       scenario.icon
                     )}
                   </div>
-                </div>
-                <div className={`flex items-center text-sm ${
-                  user && aiUsageData && !aiUsageData.canUse ? 'text-gray-400' : 'text-gray-500'
-                }`}>
-                  <Clock className="w-4 h-4 mr-1" />
-                  {scenario.time}
                 </div>
               </div>
               
@@ -402,6 +382,7 @@ export default function LetGoBuddyIndex({ loaderData }: Route.ComponentProps) {
 
               <Button 
                 asChild 
+                variant="outline"
                 className={`w-full transition-transform ${
                   user && aiUsageData && !aiUsageData.canUse 
                     ? 'bg-gray-400 hover:bg-gray-400 cursor-not-allowed pointer-events-none' 
